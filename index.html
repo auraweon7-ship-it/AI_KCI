@@ -5413,24 +5413,39 @@ function downloadHTMLReport() {
 /* ============================================================
    Google 로그인 / 로그아웃
    ============================================================ */
-const GOOGLE_CLIENT_ID = '831aboreg.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = '494247553294-ggqld30l4qen8kfn16iq8lai2k8s7unm.apps.googleusercontent.com';
 let currentUser = null;
+let googleTokenClient = null;
 
 function handleGoogleLogin() {
   if (typeof google === 'undefined' || !google.accounts) {
     alert('Google 로그인 서비스를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
     return;
   }
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: onGoogleSignIn,
-    auto_select: false,
-  });
-  google.accounts.id.prompt();
+  if (!googleTokenClient) {
+    googleTokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: GOOGLE_CLIENT_ID,
+      scope: 'email profile',
+      callback: (tokenResponse) => {
+        if (tokenResponse.access_token) {
+          fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: 'Bearer ' + tokenResponse.access_token }
+          })
+          .then(r => r.json())
+          .then(payload => {
+            onGoogleSignIn({ _payload: payload });
+          });
+        }
+      },
+    });
+  }
+  googleTokenClient.requestAccessToken();
 }
 
 function onGoogleSignIn(response) {
-  const payload = JSON.parse(atob(response.credential.split('.')[1]));
+  const payload = response._payload
+    ? response._payload
+    : JSON.parse(atob(response.credential.split('.')[1]));
   currentUser = {
     name: payload.name,
     email: payload.email,
