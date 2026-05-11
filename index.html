@@ -3167,77 +3167,114 @@ input, select, textarea { font-family: inherit; }
       <div class="page-section" id="page-network">
         <div class="page-title">
           <h1>&#x1F517; 연구자 네트워크</h1>
-          <p>주요 연구자 간 협업 관계를 시각화하고 공동연구 가능성을 탐색합니다</p>
+          <p>KCI 실제 데이터 기반으로 연구자 간 협업·인용 관계를 분석합니다</p>
         </div>
 
-        <div class="insight-box">
+        <!-- 검색 바 -->
+        <div class="card" style="margin-bottom:20px;padding:20px 24px;">
+          <div class="kw-search-bar">
+            <input type="text" id="netSearchInput" class="kw-search-input" placeholder="분석할 키워드 입력 (예: 인공지능, 교육)">
+            <button onclick="runNetworkAnalysis()" style="background:var(--brand-green);color:#fff;border:none;padding:10px 24px;border-radius:10px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+              &#x1F50D; 네트워크 분석
+            </button>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;">
+            <span class="kw-quick-tag" onclick="quickNetwork('인공지능')">인공지능</span>
+            <span class="kw-quick-tag" onclick="quickNetwork('교육')">교육</span>
+            <span class="kw-quick-tag" onclick="quickNetwork('빅데이터')">빅데이터</span>
+            <span class="kw-quick-tag" onclick="quickNetwork('심리학')">심리학</span>
+            <span class="kw-quick-tag" onclick="quickNetwork('경영학')">경영학</span>
+            <span style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+              <label style="font-size:0.82rem;color:var(--gray-500);">노드 수:</label>
+              <select id="netNodeCount" style="padding:5px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:0.82rem;">
+                <option value="10">10개</option>
+                <option value="15" selected>15개</option>
+                <option value="20">20개</option>
+                <option value="30">30개</option>
+              </select>
+            </span>
+          </div>
+        </div>
+
+        <!-- 인사이트 -->
+        <div class="insight-box" id="netInsightBox" style="display:none;">
           <div class="insight-icon">&#x1F91D;</div>
           <div class="insight-content">
             <h4>네트워크 분석 인사이트</h4>
-            <p>교육공학 분야의 핵심 연구 네트워크는 서울대-한양대-이화여대를 중심으로 형성되어 있습니다. 공동연구 가능성이 높은 연구자 그룹으로는 AI 교육 응용 클러스터와 학습분석 클러스터가 있으며, 두 그룹 간 교차 연구가 새로운 연구 기회를 제공합니다.</p>
+            <p id="netInsightText"></p>
           </div>
         </div>
 
+        <!-- 공동연구 네트워크 -->
         <div class="card" style="margin-bottom:24px;">
           <div class="card-header">
-            <h3>연구자 공동연구 네트워크</h3>
-            <div class="card-actions">
-              <select id="networkFieldFilter" onchange="applyNetworkFilter()" style="padding:6px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:0.85rem;background:var(--white);cursor:pointer;">
-                <option value="all">전체 분야</option>
-                <option value="교육공학">교육공학</option>
-                <option value="인공지능">인공지능</option>
-                <option value="사회과학">사회과학</option>
-                <option value="자연과학">자연과학</option>
-                <option value="공학">공학</option>
-                <option value="의학">의학</option>
-                <option value="인문학">인문학</option>
-                <option value="예술체육">예술체육</option>
-              </select>
-              <button class="active" onclick="setNetworkView('all',this)">전체</button>
-              <button onclick="setNetworkView('cluster',this)">클러스터별</button>
+            <h3>&#x1F465; 연구자 공동연구 네트워크</h3>
+            <span class="card-badge" style="background:rgba(0,200,100,0.15);color:#00684a;">Co-Author</span>
+          </div>
+          <div class="card-body" style="position:relative;">
+            <canvas id="coAuthorCanvas" width="800" height="500" style="width:100%;cursor:pointer;"></canvas>
+            <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;justify-content:center;">
+              <span style="font-size:0.78rem;color:var(--gray-500);">&#x25CF; 노드 크기 = 논문 수</span>
+              <span style="font-size:0.78rem;color:var(--gray-500);">&#x2500; 연결선 굵기 = 공저 횟수</span>
+              <span style="font-size:0.78rem;color:var(--gray-500);">&#x1F449; 노드 클릭 = 상세정보</span>
             </div>
           </div>
-          <div class="card-body">
-            <div class="network-viz" id="networkViz"></div>
-          </div>
         </div>
 
-        <div class="insight-box">
-          <div class="insight-icon">&#x1F4A1;</div>
-          <div class="insight-content">
-            <h4>공동연구 제안</h4>
-            <p>현재 네트워크 분석 결과, <strong>김OO(서울대)</strong>과 <strong>이OO(한양대)</strong> 연구자 그룹이 유사한 주제를 독립적으로 연구 중입니다. 이 두 그룹의 교차 협력은 AI 기반 적응형 학습 시스템 분야에서 새로운 연구 성과를 만들어낼 수 있습니다.</p>
-          </div>
-        </div>
-
+        <!-- 인용 네트워크 -->
         <div class="card" style="margin-bottom:24px;">
           <div class="card-header">
             <h3>&#x1F4C8; 연구자 인용 네트워크</h3>
-            <div class="card-actions">
-              <button class="active" onclick="setCitationView('all',this)">전체</button>
-              <button onclick="setCitationView('edu-ai',this)">AI교육</button>
-              <button onclick="setCitationView('learning-analytics',this)">학습분석</button>
-            </div>
+            <span class="card-badge" style="background:rgba(231,76,60,0.15);color:#e74c3c;">Citation</span>
           </div>
-          <div class="card-body">
-            <div class="network-viz" id="citationNetworkViz" style="min-height:420px;"></div>
-            <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;align-items:center;justify-content:center;">
-              <span style="font-size:0.78rem;color:var(--gray-500);">&#x25CF; 노드 크기 = 피인용 횟수</span>
-              <span style="font-size:0.78rem;color:var(--gray-500);">&#x27A1; 화살표 = 인용 방향 (A→B: A가 B를 인용)</span>
-              <span style="font-size:0.78rem;color:#e74c3c;">&#x25CF; AI교육</span>
-              <span style="font-size:0.78rem;color:#3498db;">&#x25CF; 학습분석</span>
-              <span style="font-size:0.78rem;color:#2ecc71;">&#x25CF; 교수설계</span>
-              <span style="font-size:0.78rem;color:#9b59b6;">&#x25CF; 언어교육</span>
+          <div class="card-body" style="position:relative;">
+            <canvas id="citNetCanvas" width="800" height="500" style="width:100%;cursor:pointer;"></canvas>
+            <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;justify-content:center;">
+              <span style="font-size:0.78rem;color:var(--gray-500);">&#x25CF; 노드 크기 = 총 인용수</span>
+              <span style="font-size:0.78rem;color:var(--gray-500);">&#x27A1; 화살표 = 공통 키워드/학술지 연결</span>
+              <span style="font-size:0.78rem;color:var(--gray-500);">&#x1F449; 노드 클릭 = 상세정보</span>
             </div>
           </div>
         </div>
 
-        <div class="insight-box">
-          <div class="insight-icon">&#x1F50D;</div>
-          <div class="insight-content">
-            <h4>인용 네트워크 분석 인사이트</h4>
-            <p id="citationInsightText">KCI 데이터 기반 분석 결과, <strong>김형민(삼육대)</strong>의 ChatGPT 한국어교육 연구(피인용 86회)와 <strong>김정아(제주융합과학연구원)</strong>의 생성형 AI 교육 활용 연구(피인용 69회)가 교육 AI 분야의 핵심 허브 논문으로 기능하고 있습니다. 특히 2023년 이후 생성형 AI 관련 인용 네트워크가 급격히 확장되는 추세입니다.</p>
+        <!-- 통계 + 랭킹 -->
+        <div class="grid-2" id="netStatsSection" style="display:none;">
+          <div class="card">
+            <div class="card-header"><h3>&#x1F4CA; 공동연구 통계</h3></div>
+            <div class="card-body" id="coAuthorStatsBody"></div>
           </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>&#x1F3C6; Top 연구자 랭킹</h3>
+              <span class="card-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;">Ranking</span>
+            </div>
+            <div class="card-body" style="overflow-x:auto;">
+              <table class="data-table">
+                <thead><tr><th>#</th><th>연구자</th><th>소속</th><th>논문수</th><th>공저자수</th><th>인용수</th></tr></thead>
+                <tbody id="netRankBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 추천 인사이트 -->
+        <div class="insight-box" id="netRecommendBox" style="display:none;background:linear-gradient(135deg,#f0fdf4,#ecfdf5);border-left:4px solid var(--brand-green);">
+          <div class="insight-icon">&#x1F4A1;</div>
+          <div class="insight-content">
+            <h4>협업 연구 전략 제안</h4>
+            <p id="netRecommendText"></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 노드 상세정보 모달 -->
+      <div id="netNodeModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:9999;" onclick="if(event.target===this)this.style.display='none'">
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;padding:28px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 id="netModalTitle" style="margin:0;font-size:1.1rem;"></h3>
+            <button onclick="document.getElementById('netNodeModal').style.display='none'" style="background:none;border:none;font-size:1.3rem;cursor:pointer;padding:4px;">&#x2715;</button>
+          </div>
+          <div id="netModalBody"></div>
         </div>
       </div>
 
@@ -6579,9 +6616,452 @@ function injectChartInsights() {
 }
 
 /* ============================================================
-   연구자 네트워크 시각화
+   연구자 네트워크 시각화 (KCI 실제 데이터 기반)
    ============================================================ */
-const NETWORK_DATA = {
+let _netState = { coNodes: [], coEdges: [], citNodes: [], citEdges: [], articles: [] };
+
+function quickNetwork(kw) {
+  document.getElementById('netSearchInput').value = kw;
+  runNetworkAnalysis();
+}
+
+function _canvasMsg(canvas, msg) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, rect.width, rect.height);
+  ctx.fillStyle = '#6b7280';
+  ctx.font = '14px Pretendard, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(msg, rect.width / 2, rect.height / 2);
+}
+
+async function runNetworkAnalysis() {
+  const keyword = document.getElementById('netSearchInput').value.trim();
+  if (!keyword) { alert('키워드를 입력해주세요.'); return; }
+  const maxNodes = parseInt(document.getElementById('netNodeCount').value) || 15;
+  const coCanvas = document.getElementById('coAuthorCanvas');
+  const citCanvas = document.getElementById('citNetCanvas');
+  _canvasMsg(coCanvas, '🔄 "' + keyword + '" 공동연구 네트워크 분석 중...');
+  _canvasMsg(citCanvas, '🔄 "' + keyword + '" 인용 네트워크 분석 중...');
+
+  try {
+    const xmlText = await kciSearch({ apiCode: 'articleSearch', title: keyword, displayCount: 100 });
+    const { articles } = parseKCIArticles(xmlText);
+    if (!articles.length) {
+      _canvasMsg(coCanvas, '검색 결과가 없습니다. 다른 키워드를 시도하세요.');
+      _canvasMsg(citCanvas, '검색 결과가 없습니다.');
+      return;
+    }
+    // 인용수 추정
+    articles.forEach(a => { if (a.citedCount < 0) a.citedCount = estimateCitation(a); });
+    _netState.articles = articles;
+
+    // 공동연구 네트워크 구축
+    const coData = _buildCoAuthorNet(articles, maxNodes);
+    _netState.coNodes = coData.nodes; _netState.coEdges = coData.edges;
+    _drawCoAuthorNet(coCanvas, coData);
+
+    // 인용 네트워크 구축
+    const citData = _buildCitationNet(articles, maxNodes);
+    _netState.citNodes = citData.nodes; _netState.citEdges = citData.edges;
+    _drawCitationNet(citCanvas, citData);
+
+    // 인사이트·통계·추천 업데이트
+    _updateNetInsights(keyword, articles, coData, citData);
+    _updateNetStats(keyword, articles, coData, citData);
+  } catch (e) {
+    _canvasMsg(coCanvas, '분석 중 오류: ' + e.message);
+    _canvasMsg(citCanvas, '분석 중 오류: ' + e.message);
+  }
+}
+
+/* --- 공동연구 네트워크 구축 --- */
+function _buildCoAuthorNet(articles, maxNodes) {
+  const authorMap = {}; // name -> { inst, papers, coauthors: Set, citations }
+  const pairMap = {};   // "a|b" -> count
+
+  articles.forEach(art => {
+    const al = art.authorList || [];
+    if (al.length < 1) return;
+    al.forEach(a => {
+      const key = a.name;
+      if (!authorMap[key]) authorMap[key] = { name: a.name, inst: a.inst, papers: 0, coauthors: new Set(), citations: 0, journals: new Set(), keywords: [], titles: [] };
+      authorMap[key].papers++;
+      authorMap[key].citations += Math.max(art.citedCount, 0);
+      if (a.inst && !authorMap[key].inst) authorMap[key].inst = a.inst;
+      if (art.journal) authorMap[key].journals.add(art.journal);
+      if (art.title) authorMap[key].titles.push(art.title);
+      if (art.keywords) art.keywords.split(';').forEach(k => { const t = k.trim(); if (t) authorMap[key].keywords.push(t); });
+    });
+    // 공저 관계
+    for (let i = 0; i < al.length; i++) {
+      for (let j = i + 1; j < al.length; j++) {
+        const a = al[i].name, b = al[j].name;
+        authorMap[a]?.coauthors.add(b);
+        authorMap[b]?.coauthors.add(a);
+        const pk = [a, b].sort().join('|');
+        pairMap[pk] = (pairMap[pk] || 0) + 1;
+      }
+    }
+  });
+
+  // 상위 N명 선정 (논문 수 기준)
+  const sorted = Object.values(authorMap)
+    .filter(a => a.name.length > 1)
+    .sort((a, b) => b.papers - a.papers || b.citations - a.citations)
+    .slice(0, maxNodes);
+  const nameSet = new Set(sorted.map(n => n.name));
+
+  // 노드 배치 (원형 + 중심 중요도 보정)
+  const colors = ['#00684a','#0098a1','#00303d','#00ed64','#06b6d4','#10b981','#8b5cf6','#f59e0b','#ec4899','#14b8a6','#e74c3c','#3498db','#2ecc71','#9b59b6','#6366f1'];
+  const nodes = sorted.map((a, i) => {
+    const angle = (2 * Math.PI * i) / sorted.length - Math.PI / 2;
+    const r = 0.32 + (i / sorted.length) * 0.08;
+    return {
+      name: a.name, inst: a.inst, papers: a.papers, citations: a.citations,
+      coauthors: [...a.coauthors].filter(c => nameSet.has(c)),
+      journals: [...a.journals], keywords: a.keywords.slice(0, 10), titles: a.titles.slice(0, 5),
+      x: 0.5 + r * Math.cos(angle), y: 0.5 + r * Math.sin(angle),
+      size: Math.max(20, Math.min(60, 18 + a.papers * 6)),
+      color: colors[i % colors.length]
+    };
+  });
+
+  // 엣지 (표시 노드 내에서만)
+  const edges = [];
+  const nameIdx = {};
+  nodes.forEach((n, i) => nameIdx[n.name] = i);
+  Object.entries(pairMap).forEach(([key, count]) => {
+    const [a, b] = key.split('|');
+    if (nameIdx[a] !== undefined && nameIdx[b] !== undefined) {
+      edges.push({ from: nameIdx[a], to: nameIdx[b], weight: count });
+    }
+  });
+
+  return { nodes, edges };
+}
+
+/* --- 인용 네트워크 구축 --- */
+function _buildCitationNet(articles, maxNodes) {
+  const authorMap = {};
+  articles.forEach(art => {
+    const al = art.authorList || [];
+    const firstAuthor = al[0];
+    if (!firstAuthor) return;
+    const key = firstAuthor.name;
+    if (!authorMap[key]) authorMap[key] = { name: firstAuthor.name, inst: firstAuthor.inst, totalCite: 0, papers: 0, journals: new Set(), keywords: [], titles: [], years: [] };
+    authorMap[key].totalCite += Math.max(art.citedCount, 0);
+    authorMap[key].papers++;
+    if (art.journal) authorMap[key].journals.add(art.journal);
+    if (art.title) authorMap[key].titles.push(art.title);
+    if (art.year) authorMap[key].years.push(art.year);
+    if (art.keywords) art.keywords.split(';').forEach(k => { const t = k.trim(); if (t) authorMap[key].keywords.push(t); });
+  });
+
+  const sorted = Object.values(authorMap)
+    .filter(a => a.name.length > 1)
+    .sort((a, b) => b.totalCite - a.totalCite || b.papers - a.papers)
+    .slice(0, maxNodes);
+
+  const colors = ['#e74c3c','#3498db','#2ecc71','#9b59b6','#f59e0b','#00684a','#0098a1','#ec4899','#06b6d4','#14b8a6','#00303d','#6366f1','#10b981','#8b5cf6','#00ed64'];
+  const nodes = sorted.map((a, i) => {
+    const angle = (2 * Math.PI * i) / sorted.length - Math.PI / 2;
+    const r = 0.3 + (1 - Math.min(a.totalCite / (sorted[0]?.totalCite || 1), 1)) * 0.12;
+    return {
+      name: a.name, inst: a.inst, totalCite: a.totalCite, papers: a.papers,
+      journals: [...a.journals], keywords: a.keywords.slice(0, 10), titles: a.titles.slice(0, 5),
+      years: a.years,
+      x: 0.5 + r * Math.cos(angle), y: 0.5 + r * Math.sin(angle),
+      size: Math.max(20, Math.min(65, 18 + a.totalCite * 3)),
+      color: colors[i % colors.length]
+    };
+  });
+
+  // 엣지: 공통 키워드 또는 같은 학술지 게재 연구자 연결
+  const edges = [];
+  for (let i = 0; i < nodes.length; i++) {
+    for (let j = i + 1; j < nodes.length; j++) {
+      const kwI = new Set(nodes[i].keywords);
+      const commonKw = nodes[j].keywords.filter(k => kwI.has(k)).length;
+      const jrnI = new Set(nodes[i].journals);
+      const commonJrn = nodes[j].journals.filter(j2 => jrnI.has(j2)).length;
+      const strength = commonKw * 2 + commonJrn;
+      if (strength >= 1) {
+        edges.push({ from: i, to: j, weight: Math.min(strength, 5) });
+      }
+    }
+  }
+
+  return { nodes, edges };
+}
+
+/* --- Canvas 네트워크 렌더링 --- */
+function _drawCoAuthorNet(canvas, data) {
+  _drawNetCanvas(canvas, data, 'coauthor');
+}
+function _drawCitationNet(canvas, data) {
+  _drawNetCanvas(canvas, data, 'citation');
+}
+
+function _drawNetCanvas(canvas, data, type) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  const w = rect.width, h = rect.height || 400;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+
+  const { nodes, edges } = data;
+  if (!nodes.length) { _canvasMsg(canvas, '데이터 없음'); return; }
+
+  // 배경 그라데이션
+  const bg = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w*0.6);
+  bg.addColorStop(0, 'rgba(0,104,74,0.03)');
+  bg.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, w, h);
+
+  // 엣지 그리기
+  edges.forEach(e => {
+    const n1 = nodes[e.from], n2 = nodes[e.to];
+    const x1 = n1.x * w, y1 = n1.y * h;
+    const x2 = n2.x * w, y2 = n2.y * h;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+    ctx.lineWidth = Math.max(0.5, Math.min(e.weight, 4));
+    ctx.stroke();
+
+    // 인용 네트워크: 화살표
+    if (type === 'citation') {
+      const dx = x2 - x1, dy = y2 - y1;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist < 1) return;
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      const angle = Math.atan2(dy, dx);
+      ctx.save();
+      ctx.translate(mx, my);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(5, 0);
+      ctx.lineTo(-3, -3);
+      ctx.lineTo(-3, 3);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.fill();
+      ctx.restore();
+    }
+  });
+
+  // 노드 그리기
+  nodes.forEach((n, i) => {
+    const cx = n.x * w, cy = n.y * h, r = n.size / 2;
+    // 글로우
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
+    ctx.fillStyle = n.color + '22';
+    ctx.fill();
+    // 원
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = n.color;
+    ctx.fill();
+    ctx.strokeStyle = '#fff';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // 이름
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold ' + Math.max(8, Math.min(11, r * 0.55)) + 'px Pretendard, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const nameParts = n.name.length > 5 ? [n.name] : [n.name];
+    ctx.fillText(n.name, cx, cy - 4);
+    // 소속 (축약)
+    if (n.inst) {
+      ctx.font = Math.max(7, Math.min(9, r * 0.4)) + 'px Pretendard, sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      const shortInst = n.inst.length > 6 ? n.inst.substring(0, 6) + '..' : n.inst;
+      ctx.fillText(shortInst, cx, cy + 8);
+    }
+    // 수치 라벨 (바깥)
+    ctx.font = '10px Pretendard, sans-serif';
+    ctx.fillStyle = n.color;
+    const label = type === 'citation' ? (n.totalCite + '회') : (n.papers + '편');
+    ctx.fillText(label, cx, cy + r + 12);
+  });
+
+  // 클릭 이벤트
+  canvas.onclick = function(evt) {
+    const cRect = canvas.getBoundingClientRect();
+    const mx = evt.clientX - cRect.left, my = evt.clientY - cRect.top;
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const n = nodes[i];
+      const cx = n.x * w, cy = n.y * h, r = n.size / 2 + 5;
+      if ((mx - cx) ** 2 + (my - cy) ** 2 <= r * r) {
+        _showNodeDetail(n, type);
+        break;
+      }
+    }
+  };
+}
+
+/* --- 노드 상세정보 팝업 --- */
+function _showNodeDetail(node, type) {
+  const modal = document.getElementById('netNodeModal');
+  const title = document.getElementById('netModalTitle');
+  const body = document.getElementById('netModalBody');
+
+  title.innerHTML = '&#x1F464; ' + escapeHtml(node.name) + (node.inst ? ' <span style="font-size:0.85rem;color:#6b7280;">(' + escapeHtml(node.inst) + ')</span>' : '');
+
+  let html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">';
+  if (type === 'coauthor') {
+    html += '<div style="background:#f0fdf4;padding:12px;border-radius:10px;text-align:center;"><div style="font-size:1.4rem;font-weight:700;color:#00684a;">' + node.papers + '</div><div style="font-size:0.78rem;color:#6b7280;">논문 수</div></div>';
+    html += '<div style="background:#f0f9ff;padding:12px;border-radius:10px;text-align:center;"><div style="font-size:1.4rem;font-weight:700;color:#0098a1;">' + (node.coauthors?.length || 0) + '</div><div style="font-size:0.78rem;color:#6b7280;">공저자 수</div></div>';
+    html += '<div style="background:#fef3c7;padding:12px;border-radius:10px;text-align:center;"><div style="font-size:1.4rem;font-weight:700;color:#f59e0b;">' + node.citations + '</div><div style="font-size:0.78rem;color:#6b7280;">총 인용수</div></div>';
+    html += '<div style="background:#fce7f3;padding:12px;border-radius:10px;text-align:center;"><div style="font-size:1.4rem;font-weight:700;color:#ec4899;">' + node.journals.length + '</div><div style="font-size:0.78rem;color:#6b7280;">학술지 수</div></div>';
+  } else {
+    html += '<div style="background:#fef2f2;padding:12px;border-radius:10px;text-align:center;"><div style="font-size:1.4rem;font-weight:700;color:#e74c3c;">' + node.totalCite + '</div><div style="font-size:0.78rem;color:#6b7280;">총 인용수</div></div>';
+    html += '<div style="background:#f0fdf4;padding:12px;border-radius:10px;text-align:center;"><div style="font-size:1.4rem;font-weight:700;color:#00684a;">' + node.papers + '</div><div style="font-size:0.78rem;color:#6b7280;">논문 수</div></div>';
+    html += '<div style="background:#f0f9ff;padding:12px;border-radius:10px;text-align:center;"><div style="font-size:1.4rem;font-weight:700;color:#0098a1;">' + (node.totalCite / Math.max(node.papers, 1)).toFixed(1) + '</div><div style="font-size:0.78rem;color:#6b7280;">평균 인용</div></div>';
+    html += '<div style="background:#fce7f3;padding:12px;border-radius:10px;text-align:center;"><div style="font-size:1.4rem;font-weight:700;color:#ec4899;">' + node.journals.length + '</div><div style="font-size:0.78rem;color:#6b7280;">학술지 수</div></div>';
+  }
+  html += '</div>';
+
+  // 공저자 목록 (공동연구 네트워크인 경우)
+  if (type === 'coauthor' && node.coauthors?.length) {
+    html += '<div style="margin-bottom:14px;"><h4 style="font-size:0.88rem;margin:0 0 6px;">&#x1F465; 공저자</h4><div style="display:flex;flex-wrap:wrap;gap:4px;">';
+    node.coauthors.slice(0, 12).forEach(c => { html += '<span style="background:#e8edeb;padding:3px 8px;border-radius:12px;font-size:0.78rem;">' + escapeHtml(c) + '</span>'; });
+    html += '</div></div>';
+  }
+
+  // 주요 키워드
+  if (node.keywords?.length) {
+    html += '<div style="margin-bottom:14px;"><h4 style="font-size:0.88rem;margin:0 0 6px;">&#x1F3F7; 주요 키워드</h4><div style="display:flex;flex-wrap:wrap;gap:4px;">';
+    const kwSet = [...new Set(node.keywords)].slice(0, 8);
+    kwSet.forEach(k => { html += '<span style="background:#dbeafe;padding:3px 8px;border-radius:12px;font-size:0.78rem;color:#1d4ed8;">' + escapeHtml(k) + '</span>'; });
+    html += '</div></div>';
+  }
+
+  // 학술지
+  if (node.journals?.length) {
+    html += '<div style="margin-bottom:14px;"><h4 style="font-size:0.88rem;margin:0 0 6px;">&#x1F4DA; 게재 학술지</h4><ul style="margin:0;padding-left:18px;font-size:0.82rem;color:#374151;">';
+    node.journals.slice(0, 5).forEach(j => { html += '<li>' + escapeHtml(j) + '</li>'; });
+    html += '</ul></div>';
+  }
+
+  // 대표 논문
+  if (node.titles?.length) {
+    html += '<div><h4 style="font-size:0.88rem;margin:0 0 6px;">&#x1F4C4; 대표 논문</h4><ol style="margin:0;padding-left:18px;font-size:0.82rem;color:#374151;">';
+    node.titles.slice(0, 5).forEach(t => { html += '<li style="margin-bottom:4px;">' + escapeHtml(t.length > 50 ? t.substring(0, 50) + '...' : t) + '</li>'; });
+    html += '</ol></div>';
+  }
+
+  body.innerHTML = html;
+  modal.style.display = 'block';
+}
+
+/* --- 인사이트 업데이트 --- */
+function _updateNetInsights(keyword, articles, coData, citData) {
+  const box = document.getElementById('netInsightBox');
+  const txt = document.getElementById('netInsightText');
+  box.style.display = '';
+
+  const topCoAuthor = coData.nodes[0];
+  const topCited = citData.nodes[0];
+  const totalAuthors = new Set();
+  articles.forEach(a => (a.authorList || []).forEach(au => totalAuthors.add(au.name)));
+
+  let insight = '"<strong>' + escapeHtml(keyword) + '</strong>" 관련 ' + articles.length + '편의 논문에서 <strong>' + totalAuthors.size + '명</strong>의 연구자를 분석했습니다. ';
+  if (topCoAuthor) insight += '가장 활발한 공동연구자는 <strong>' + escapeHtml(topCoAuthor.name) + '(' + escapeHtml(topCoAuthor.inst || '정보없음') + ')</strong>이며 ' + topCoAuthor.papers + '편의 논문에 참여했습니다. ';
+  if (topCited) insight += '최다 인용 연구자는 <strong>' + escapeHtml(topCited.name) + '</strong>(총 ' + topCited.totalCite + '회 인용)입니다.';
+  txt.innerHTML = insight;
+}
+
+/* --- 통계·랭킹 업데이트 --- */
+function _updateNetStats(keyword, articles, coData, citData) {
+  document.getElementById('netStatsSection').style.display = '';
+
+  // 공동연구 통계
+  const statsBody = document.getElementById('coAuthorStatsBody');
+  const totalEdges = coData.edges.length;
+  const avgCoauthors = coData.nodes.length ? (coData.nodes.reduce((s, n) => s + (n.coauthors?.length || 0), 0) / coData.nodes.length).toFixed(1) : 0;
+  const maxPapers = coData.nodes.length ? coData.nodes[0].papers : 0;
+  const totalPapers = articles.length;
+
+  statsBody.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div style="text-align:center;padding:16px;background:#f9fafb;border-radius:10px;">
+        <div style="font-size:1.6rem;font-weight:700;color:#00684a;">${totalPapers}</div>
+        <div style="font-size:0.78rem;color:#6b7280;">분석 논문 수</div>
+      </div>
+      <div style="text-align:center;padding:16px;background:#f9fafb;border-radius:10px;">
+        <div style="font-size:1.6rem;font-weight:700;color:#0098a1;">${totalEdges}</div>
+        <div style="font-size:0.78rem;color:#6b7280;">공저 관계 수</div>
+      </div>
+      <div style="text-align:center;padding:16px;background:#f9fafb;border-radius:10px;">
+        <div style="font-size:1.6rem;font-weight:700;color:#f59e0b;">${avgCoauthors}</div>
+        <div style="font-size:0.78rem;color:#6b7280;">평균 공저자 수</div>
+      </div>
+      <div style="text-align:center;padding:16px;background:#f9fafb;border-radius:10px;">
+        <div style="font-size:1.6rem;font-weight:700;color:#8b5cf6;">${maxPapers}</div>
+        <div style="font-size:0.78rem;color:#6b7280;">최다 논문 (1인)</div>
+      </div>
+    </div>`;
+
+  // 랭킹 테이블
+  const rankBody = document.getElementById('netRankBody');
+  const merged = {};
+  coData.nodes.forEach(n => {
+    merged[n.name] = { ...n, totalCite: n.citations };
+  });
+  citData.nodes.forEach(n => {
+    if (merged[n.name]) merged[n.name].totalCite = Math.max(merged[n.name].totalCite || 0, n.totalCite);
+    else merged[n.name] = { name: n.name, inst: n.inst, papers: n.papers, coauthors: [], totalCite: n.totalCite };
+  });
+  const rankList = Object.values(merged).sort((a, b) => b.papers - a.papers || (b.totalCite || 0) - (a.totalCite || 0)).slice(0, 10);
+
+  rankBody.innerHTML = rankList.map((r, i) => `<tr>
+    <td><span class="keyword-rank" ${i < 3 ? 'style="background:var(--brand-green);color:#fff;"' : ''}>${i + 1}</span></td>
+    <td style="font-weight:600;">${escapeHtml(r.name)}</td>
+    <td style="font-size:0.82rem;color:#6b7280;">${escapeHtml((r.inst || '').length > 10 ? r.inst.substring(0, 10) + '..' : (r.inst || '-'))}</td>
+    <td style="text-align:right;">${r.papers}</td>
+    <td style="text-align:right;">${r.coauthors?.length || '-'}</td>
+    <td style="text-align:right;font-weight:600;color:#e74c3c;">${r.totalCite || 0}</td>
+  </tr>`).join('');
+
+  // 추천
+  const recBox = document.getElementById('netRecommendBox');
+  const recTxt = document.getElementById('netRecommendText');
+  recBox.style.display = '';
+
+  const topJournals = {};
+  articles.forEach(a => { if (a.journal) topJournals[a.journal] = (topJournals[a.journal] || 0) + 1; });
+  const bestJournal = Object.entries(topJournals).sort((a, b) => b[1] - a[1])[0];
+  const isolatedAuthors = coData.nodes.filter(n => (n.coauthors?.length || 0) === 0);
+
+  let rec = '"' + keyword + '" 분야에서 공동연구 영향력을 높이려면, ';
+  if (bestJournal) rec += '<strong>' + escapeHtml(bestJournal[0]) + '</strong> 등 주요 학술지에 투고를 고려하세요. ';
+  if (rankList[0]) rec += '현재 가장 활발한 연구자인 <strong>' + escapeHtml(rankList[0].name) + '</strong>과의 공동연구를 추천합니다. ';
+  if (isolatedAuthors.length) rec += '독립 연구 경향의 ' + isolatedAuthors.length + '명 연구자와의 새로운 협업은 네트워크 확장에 도움이 됩니다. ';
+  rec += '최근 논문들의 공통 키워드를 활용한 학제간 연구도 효과적입니다.';
+  recTxt.innerHTML = rec;
+}
+
+// 기존 정적 데이터 및 함수 호환성 유지
+function initNetwork() {}
+function applyNetworkFilter() {}
+function setNetworkView() {}
+function initCitationNetwork() {}
+function setCitationView() {}
+
+const _LEGACY_NETWORK_DATA = {
   'all': {
     nodes: [
       { name: '김OO\n서울대', x: 50, y: 50, size: 70, color: '#00684a' },
@@ -6687,14 +7167,14 @@ const NETWORK_DATA = {
   }
 };
 
-function initNetwork(field) {
+function _legacyInitNetwork(field) {
   const viz = document.getElementById('networkViz');
-  if (!field && viz.dataset.init) return;
+  if (!viz || (!field && viz.dataset.init)) return;
   viz.dataset.init = 'true';
   viz.innerHTML = '';
 
   const key = field || 'all';
-  const data = NETWORK_DATA[key] || NETWORK_DATA['all'];
+  const data = _LEGACY_NETWORK_DATA[key] || _LEGACY_NETWORK_DATA['all'];
   const nodes = data.nodes;
   const connections = data.connections;
 
@@ -6733,9 +7213,9 @@ function initNetwork(field) {
   });
 }
 
-function applyNetworkFilter() {
-  const field = document.getElementById('networkFieldFilter').value;
-  initNetwork(field === 'all' ? null : field);
+function _legacyApplyNetworkFilter() {
+  const field = document.getElementById('networkFieldFilter')?.value;
+  _legacyInitNetwork(field === 'all' ? null : field);
   const insightMap = {
     '교육공학': '교육공학 분야의 핵심 연구 네트워크는 서울대-한양대-이화여대를 중심으로 형성되어 있습니다. AI 교육 응용과 학습분석 두 클러스터 간 교차 연구가 새로운 기회를 제공합니다.',
     '인공지능': 'AI 분야는 KAIST-서울대-POSTECH 삼각 축을 중심으로 긴밀한 공동연구 네트워크가 형성되어 있습니다. 최근 KIST와의 산학연 협력이 빠르게 확대되고 있습니다.',
@@ -6754,16 +7234,17 @@ function applyNetworkFilter() {
   }
 }
 
-function setNetworkView(mode, btn) {
+function _legacySetNetworkView(mode, btn) {
+  if (!btn) return;
   const actions = btn.parentElement.querySelectorAll('button');
   actions.forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 }
 
 /* ============================================================
-   연구자 인용 네트워크 (KCI 실제 데이터 기반)
+   연구자 인용 네트워크 (레거시 정적 데이터 - 미사용)
    ============================================================ */
-const CITATION_DATA = {
+const _LEGACY_CITATION_DATA = {
   'all': {
     nodes: [
       { name: '김형민\n삼육대', x: 50, y: 25, size: 74, color: '#e74c3c', citations: 86, field: 'AI교육' },
@@ -6828,13 +7309,13 @@ const CITATION_DATA = {
   }
 };
 
-function initCitationNetwork(view) {
+function _legacyInitCitationNetwork(view) {
   const viz = document.getElementById('citationNetworkViz');
   if (!viz) return;
   viz.innerHTML = '';
 
   const key = view || 'all';
-  const data = CITATION_DATA[key] || CITATION_DATA['all'];
+  const data = _LEGACY_CITATION_DATA[key] || _LEGACY_CITATION_DATA['all'];
   const nodes = data.nodes;
   const edges = data.edges;
 
@@ -6910,7 +7391,7 @@ function initCitationNetwork(view) {
   });
 }
 
-function setCitationView(view, btn) {
+function _legacySetCitationView(view, btn) {
   const actions = btn.parentElement.querySelectorAll('button');
   actions.forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
@@ -7117,9 +7598,19 @@ function parseKCIArticles(xml) {
     const citedRaw = getText('cited-count') || getText('citedCount') || getText('citation-count') || getText('citationCount') || '';
     const citedCount = citedRaw ? parseInt(citedRaw) : -1; // -1 = 데이터 없음
 
+    // 개별 저자-소속 매핑 배열
+    const authorList = [];
+    authorEls.forEach(a => {
+      const raw = a.textContent.trim();
+      const m = raw.match(/^([^(]+?)(?:\(([^)]+)\))?$/);
+      if (m) authorList.push({ name: m[1].trim(), inst: (m[2] || '').trim() });
+      else authorList.push({ name: raw, inst: '' });
+    });
+
     articles.push({
       title: title,
       authors: authorNames.join(', '),
+      authorList: authorList,
       institution: [...new Set(institutions)].join(', '),
       journal: getText('journal-name') || getText('journalName') || '',
       year: getText('pub-year') || getText('pubYear') || '',
