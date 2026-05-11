@@ -1658,9 +1658,33 @@ input, select, textarea { font-family: inherit; }
 }
 .search-form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
+  grid-template-columns: 1.2fr 0.8fr 0.9fr 1.2fr auto;
   gap: 16px;
   align-items: end;
+}
+@media (max-width: 1100px) {
+  .search-form-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+#articleTable thead th {
+  background: var(--gray-50);
+  padding: 10px 12px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--gray-600);
+  border-bottom: 2px solid var(--gray-200);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+}
+#articleTable tbody td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--gray-100);
+  vertical-align: middle;
+}
+#articleTable tbody tr:hover {
+  background: var(--green-50, #f0fdf4);
 }
 .search-form-grid .form-group { margin-bottom: 0; }
 .search-btn {
@@ -2303,7 +2327,16 @@ input, select, textarea { font-family: inherit; }
               </select>
             </div>
             <div class="form-group">
-              <label>키워드</label>
+              <label>논문편수</label>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <input type="number" id="srcCountMin" value="10" min="1" max="999" style="width:70px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:var(--radius-sm);font-size:0.9rem;color:var(--gray-700);text-align:center;">
+                <span style="color:var(--gray-400);font-size:0.85rem;">~</span>
+                <input type="number" id="srcCountMax" value="100" min="1" max="999" style="width:70px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:var(--radius-sm);font-size:0.9rem;color:var(--gray-700);text-align:center;">
+                <span style="color:var(--gray-400);font-size:0.8rem;">편</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>키워드 <span style="font-size:0.75rem;color:var(--gray-400);font-weight:400;">(미입력 시 학문분야 검색)</span></label>
               <input type="text" placeholder="예: 인공지능, 머신러닝" id="srcKeyword" onkeydown="if(event.key==='Enter')executeSearch()">
             </div>
             <button class="search-btn" id="searchBtn" onclick="executeSearch()">
@@ -2362,15 +2395,34 @@ input, select, textarea { font-family: inherit; }
           <div class="tab-content active" id="tab-articles">
             <div class="card">
               <div class="card-header">
-                <h3>검색된 논문 (<span id="articleCount">0</span>건)</h3>
+                <h3>&#x1F4C4; 검색된 논문 (<span id="articleCount">0</span>건)</h3>
+                <div class="card-actions">
+                  <span id="articleFilterInfo" style="font-size:0.78rem;color:var(--gray-500);"></span>
+                </div>
               </div>
-              <div class="card-body">
+              <div class="card-body" style="padding:0;">
                 <div id="articleListLoading" class="loading-spinner" style="display:none;">
                   <div class="spinner"></div>
                   <span class="loading-text">KCI에서 논문을 검색하고 있습니다...</span>
                 </div>
-                <ul class="article-list" id="articleList"></ul>
-                <div class="pagination" id="articlePagination"></div>
+                <div style="overflow-x:auto;">
+                  <table class="data-table" id="articleTable" style="width:100%;min-width:900px;">
+                    <thead>
+                      <tr>
+                        <th style="width:36px;text-align:center;">#</th>
+                        <th style="width:100px;">저자</th>
+                        <th style="width:100px;">소속</th>
+                        <th style="min-width:250px;">논문제목</th>
+                        <th style="width:60px;text-align:center;">발표년도</th>
+                        <th style="width:160px;">저널명</th>
+                        <th style="width:160px;">키워드</th>
+                      </tr>
+                    </thead>
+                    <tbody id="articleTableBody"></tbody>
+                  </table>
+                </div>
+                <div id="articleEmptyMsg" style="display:none;text-align:center;padding:40px 20px;color:var(--gray-400);font-size:0.9rem;">검색 결과가 없습니다.</div>
+                <div class="pagination" id="articlePagination" style="padding:16px;"></div>
               </div>
             </div>
           </div>
@@ -2447,7 +2499,7 @@ input, select, textarea { font-family: inherit; }
             <div class="card-body" style="text-align:center; padding:60px 40px;">
               <div style="font-size:3rem; margin-bottom:16px;">&#x1F50D;</div>
               <h3 style="font-size:1.2rem; font-weight:700; color:var(--gray-900); margin-bottom:8px;">KCI 논문 검색 &amp; AI 분석</h3>
-              <p style="color:var(--gray-500); font-size:0.95rem; max-width:500px; margin:0 auto 24px;">학문분야와 키워드를 입력하면 KCI 논문을 검색하고,<br>Claude AI가 연구 동향을 분석하여 인사이트를 제공합니다.</p>
+              <p style="color:var(--gray-500); font-size:0.95rem; max-width:500px; margin:0 auto 24px;">학문분야를 선택하거나 키워드를 입력하면 KCI 논문을 검색하고,<br>Claude AI가 연구 동향을 분석하여 인사이트를 제공합니다.</p>
               <div style="display:flex; justify-content:center; gap:16px; flex-wrap:wrap;">
                 <div style="background:var(--brand-green-soft); border-radius:var(--radius-card); padding:16px 20px; text-align:left; max-width:220px;">
                   <div style="font-size:1.2rem; margin-bottom:6px;">&#x1F4C4;</div>
@@ -6257,25 +6309,39 @@ let searchState = {
   lastAIAnalysis: ''
 };
 
-/* KCI API 호출 */
+/* KCI API 호출 (로컬 프록시 → 직접 호출 순서로 시도) */
 async function kciSearch(keyword, page = 1, displayCount = 20) {
-  const url = `${KCI_CONFIG.BASE_URL}?apiCode=articleSearch&key=${KCI_CONFIG.API_KEY}&title=${encodeURIComponent(keyword)}&displayCount=${displayCount}&pageCount=${page}`;
-  try {
-    const res = await fetch(url);
-    const text = await res.text();
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(text, 'text/xml');
-    return xml;
-  } catch (e) {
-    console.error('KCI API 오류:', e);
-    return null;
+  const params = `apiCode=articleSearch&key=${KCI_CONFIG.API_KEY}&keyword=${encodeURIComponent(keyword)}&displayCount=${displayCount}&pageCount=${page}`;
+  // 1순위: 로컬 프록시 서버 (node server.js)
+  // 2순위: 직접 호출 (CORS 허용 환경)
+  const urls = [
+    `/api/kci?${params}`,
+    `${KCI_CONFIG.BASE_URL}?${params}`
+  ];
+  for (const url of urls) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
+      if (!res.ok) continue;
+      const text = await res.text();
+      if (!text.includes('<MetaData>') && !text.includes('<record>')) continue;
+      const parser = new DOMParser();
+      const xml = parser.parseFromString(text, 'text/xml');
+      console.log('KCI API 성공:', url.startsWith('/api') ? '로컬 프록시' : '직접 호출');
+      return xml;
+    } catch (e) {
+      console.warn('KCI 호출 실패:', url.substring(0, 30), e.message);
+      continue;
+    }
   }
+  console.error('KCI API: 모든 시도 실패. node server.js 로 프록시 서버를 실행하세요.');
+  return null;
 }
 
 function parseKCIArticles(xml) {
   if (!xml) return { articles: [], totalCount: 0 };
   const records = xml.querySelectorAll('record');
-  const totalEl = xml.querySelector('outputData > totalCount, totalCount');
+  // KCI API: <outputData><result><total>N</total></result>
+  const totalEl = xml.querySelector('total') || xml.querySelector('totalCount');
   const totalCount = totalEl ? parseInt(totalEl.textContent) : records.length;
   const articles = [];
 
@@ -6284,17 +6350,44 @@ function parseKCIArticles(xml) {
       const el = rec.querySelector(tag);
       return el ? el.textContent.trim() : '';
     };
+    // 저자: <author-group><author>이름(소속)</author></author-group>
+    const authorEls = rec.querySelectorAll('author-group > author');
+    const authorNames = [];
+    const institutions = [];
+    authorEls.forEach(a => {
+      const raw = a.textContent.trim();
+      // "박지영(원광대학교 치의학교육연구센터)" 형태 파싱
+      const match = raw.match(/^([^(]+?)(?:\(([^)]+)\))?$/);
+      if (match) {
+        authorNames.push(match[1].trim());
+        if (match[2]) institutions.push(match[2].trim());
+      } else {
+        authorNames.push(raw);
+      }
+    });
+    // 원문 제목 우선, 없으면 첫 번째 article-title
+    const origTitle = rec.querySelector('article-title[lang="original"]');
+    const anyTitle = rec.querySelector('article-title');
+    const title = (origTitle ? origTitle.textContent.trim() : '') || (anyTitle ? anyTitle.textContent.trim() : '') || '제목 없음';
+    // 원문 초록 우선
+    const origAbs = rec.querySelector('abstract[lang="original"]');
+    const anyAbs = rec.querySelector('abstract');
+    const abstractText = (origAbs ? origAbs.textContent.trim() : '') || (anyAbs ? anyAbs.textContent.trim() : '');
+    // 키워드: article-categories 활용
+    const category = getText('article-categories');
+
     articles.push({
-      title: getText('article-title') || getText('title-group > article-title') || getText('articleTitle') || '제목 없음',
-      authors: getText('author-names') || getText('authorNames') || getText('contrib-group') || '',
-      journal: getText('journal-name') || getText('journalName') || getText('journalTitle') || '',
-      year: getText('pub-year') || getText('pubYear') || getText('year') || '',
+      title: title,
+      authors: authorNames.join(', '),
+      institution: [...new Set(institutions)].join(', '),
+      journal: getText('journal-name') || getText('journalName') || '',
+      year: getText('pub-year') || getText('pubYear') || '',
       vol: getText('volume') || '',
       issue: getText('issue') || '',
-      url: getText('url') || getText('article-url') || '',
+      url: getText('url') || '',
       doi: getText('doi') || '',
-      keywords: getText('keys') || getText('keywords') || '',
-      abstractText: getText('abstract') || getText('abstractText') || ''
+      keywords: category,
+      abstractText: abstractText
     });
   });
 
@@ -6306,15 +6399,24 @@ async function executeSearch() {
   const keyword = document.getElementById('srcKeyword').value.trim();
   const field = document.getElementById('srcField').value;
   const period = document.getElementById('srcPeriod').value;
+  const countMin = parseInt(document.getElementById('srcCountMin').value) || 10;
+  const countMax = parseInt(document.getElementById('srcCountMax').value) || 100;
 
-  if (!keyword) {
-    alert('검색할 키워드를 입력해 주세요.');
+  // 키워드 없으면 학문분야 텍스트로 검색
+  const fieldSelect = document.getElementById('srcField');
+  const fieldLabel = field ? fieldSelect.options[fieldSelect.selectedIndex].text : '';
+  const searchQuery = keyword || fieldLabel;
+
+  if (!searchQuery) {
+    alert('키워드를 입력하거나 학문분야를 선택해 주세요.');
     return;
   }
 
-  searchState.keyword = keyword;
+  searchState.keyword = searchQuery;
   searchState.field = field;
   searchState.period = period;
+  searchState.countMin = countMin;
+  searchState.countMax = countMax;
   searchState.currentPage = 1;
 
   const btn = document.getElementById('searchBtn');
@@ -6324,24 +6426,31 @@ async function executeSearch() {
   document.getElementById('searchGuide').style.display = 'none';
   document.getElementById('searchResultsArea').classList.add('visible');
   document.getElementById('articleListLoading').style.display = 'flex';
-  document.getElementById('articleList').innerHTML = '';
+  document.getElementById('articleTableBody').innerHTML = '';
   document.getElementById('articlePagination').innerHTML = '';
+  const emptyMsg = document.getElementById('articleEmptyMsg');
+  if (emptyMsg) emptyMsg.style.display = 'none';
+
+  // 필터 정보 표시
+  const filterInfo = document.getElementById('articleFilterInfo');
+  if (filterInfo) filterInfo.textContent = `논문편수: ${countMin}~${countMax}편 | ${keyword ? '키워드: ' + searchQuery : '분야: ' + fieldLabel}`;
 
   try {
-    const xml = await kciSearch(keyword, 1, 20);
+    const displayCount = Math.min(countMax, 100);
+    const xml = await kciSearch(searchQuery, 1, displayCount);
     const result = parseKCIArticles(xml);
     searchState.articles = result.articles;
     searchState.totalCount = result.totalCount;
 
     renderSearchStats(result);
     renderArticleList(result.articles);
-    renderSearchCharts(result.articles, keyword);
+    renderSearchCharts(result.articles, searchQuery);
 
-    runAIAnalysis(result.articles, keyword, field, period);
+    runAIAnalysis(result.articles, searchQuery, field, period);
   } catch (e) {
     console.error('검색 오류:', e);
-    document.getElementById('articleList').innerHTML =
-      '<li class="article-item"><div class="article-title" style="color:var(--danger);">검색 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.</div></li>';
+    document.getElementById('articleTableBody').innerHTML =
+      '<tr><td colspan="7" style="text-align:center;color:var(--danger);padding:24px;">검색 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.</td></tr>';
   } finally {
     document.getElementById('articleListLoading').style.display = 'none';
     btn.disabled = false;
@@ -6371,31 +6480,51 @@ function renderSearchStats(result) {
   document.getElementById('statCitationTrend').textContent = '추정치';
 }
 
-/* 논문 목록 렌더링 */
+/* 논문 목록 렌더링 (테이블 형식) */
 function renderArticleList(articles) {
-  const list = document.getElementById('articleList');
+  const tbody = document.getElementById('articleTableBody');
   const countEl = document.getElementById('articleCount');
+  const emptyMsg = document.getElementById('articleEmptyMsg');
+  const table = document.getElementById('articleTable');
   countEl.textContent = searchState.totalCount || articles.length;
 
   if (articles.length === 0) {
-    list.innerHTML = '<li class="article-item"><div class="article-title" style="color:var(--gray-500);">검색 결과가 없습니다. 다른 키워드로 시도해 보세요.</div></li>';
+    if (tbody) tbody.innerHTML = '';
+    if (table) table.style.display = 'none';
+    if (emptyMsg) { emptyMsg.style.display = 'block'; emptyMsg.textContent = '검색 결과가 없습니다. 다른 키워드로 시도해 보세요.'; }
     return;
   }
 
-  list.innerHTML = articles.map((a, i) => {
-    const link = a.url ? `<a href="${a.url}" target="_blank" rel="noopener">${escapeHtml(a.title)}</a>` : escapeHtml(a.title);
-    return `
-      <li class="article-item">
-        <div class="article-title">${i + 1}. ${link}</div>
-        <div class="article-meta">
-          ${a.authors ? '<span>&#x1F464; ' + escapeHtml(a.authors.substring(0, 80)) + '</span>' : ''}
-          ${a.journal ? '<span>&#x1F4D6; ' + escapeHtml(a.journal) + '</span>' : ''}
-          ${a.year ? '<span>&#x1F4C5; ' + a.year + (a.vol ? ' Vol.' + a.vol : '') + '</span>' : ''}
-        </div>
-      </li>`;
+  if (table) table.style.display = 'table';
+  if (emptyMsg) emptyMsg.style.display = 'none';
+
+  tbody.innerHTML = articles.map((a, i) => {
+    const titleLink = a.url
+      ? `<a href="${a.url}" target="_blank" rel="noopener" style="color:var(--green-dark);text-decoration:none;font-weight:600;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${escapeHtml(a.title)}</a>`
+      : `<span style="font-weight:600;color:var(--gray-800);">${escapeHtml(a.title)}</span>`;
+    const authorArr = a.authors ? a.authors.split(/,\s*/) : [];
+    const authorsShort = authorArr.length > 0 ? escapeHtml(authorArr[0]) + (authorArr.length > 1 ? ` 외 ${authorArr.length - 1}명` : '') : '-';
+    const affiliation = a.institution || '-';
+    const kws = a.keywords ? escapeHtml(a.keywords.substring(0, 60)) + (a.keywords.length > 60 ? '...' : '') : '-';
+    return `<tr>
+      <td style="text-align:center;color:var(--gray-400);font-size:0.8rem;">${i + 1}</td>
+      <td style="font-size:0.82rem;color:var(--gray-700);white-space:nowrap;">${authorsShort}</td>
+      <td style="font-size:0.82rem;color:var(--gray-500);white-space:nowrap;">${escapeHtml(affiliation)}</td>
+      <td style="font-size:0.84rem;line-height:1.4;">${titleLink}</td>
+      <td style="text-align:center;font-size:0.82rem;color:var(--gray-600);">${a.year || '-'}</td>
+      <td style="font-size:0.8rem;color:var(--gray-500);">${a.journal ? escapeHtml(a.journal) : '-'}</td>
+      <td style="font-size:0.78rem;color:var(--gray-400);">${kws}</td>
+    </tr>`;
   }).join('');
 
   renderPagination();
+}
+
+/* 저자 문자열에서 소속 추출 시도 */
+function extractAffiliation(authorStr) {
+  if (!authorStr) return '';
+  const match = authorStr.match(/\(([^)]+)\)/);
+  return match ? match[1] : '';
 }
 
 function escapeHtml(str) {
@@ -6423,10 +6552,11 @@ function renderPagination() {
 async function goPage(page) {
   searchState.currentPage = page;
   document.getElementById('articleListLoading').style.display = 'flex';
-  document.getElementById('articleList').innerHTML = '';
+  document.getElementById('articleTableBody').innerHTML = '';
 
   try {
-    const xml = await kciSearch(searchState.keyword, page, 20);
+    const displayCount = Math.min(searchState.countMax || 100, 100);
+    const xml = await kciSearch(searchState.keyword, page, displayCount);
     const result = parseKCIArticles(xml);
     searchState.articles = result.articles;
     renderArticleList(result.articles);
