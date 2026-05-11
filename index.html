@@ -3309,34 +3309,24 @@ input, select, textarea { font-family: inherit; }
         </div>
 
         <!-- 공동연구 네트워크 -->
-        <div class="card" style="margin-bottom:24px;">
-          <div class="card-header">
-            <h3>&#x1F465; 연구자 공동연구 네트워크</h3>
-            <span class="card-badge" style="background:rgba(0,200,100,0.15);color:#00684a;">Co-Author</span>
+        <div class="card" style="margin-bottom:24px;overflow:hidden;">
+          <div class="card-header" style="background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(59,130,246,0.04));border-bottom:1px solid rgba(16,185,129,0.1);">
+            <h3 style="display:flex;align-items:center;gap:8px;">&#x1F465; 연구자 공동연구 네트워크</h3>
+            <span class="card-badge" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:600;letter-spacing:0.5px;">Co-Author</span>
           </div>
-          <div class="card-body" style="position:relative;">
-            <canvas id="coAuthorCanvas" width="800" height="500" style="width:100%;cursor:pointer;"></canvas>
-            <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;justify-content:center;">
-              <span style="font-size:0.78rem;color:var(--gray-500);">&#x25CF; 노드 크기 = 논문 수</span>
-              <span style="font-size:0.78rem;color:var(--gray-500);">&#x2500; 연결선 굵기 = 공저 횟수</span>
-              <span style="font-size:0.78rem;color:var(--gray-500);">&#x1F449; 노드 클릭 = 상세정보</span>
-            </div>
+          <div class="card-body" style="position:relative;padding:0;">
+            <canvas id="coAuthorCanvas" width="800" height="520" style="width:100%;display:block;"></canvas>
           </div>
         </div>
 
         <!-- 인용 네트워크 -->
-        <div class="card" style="margin-bottom:24px;">
-          <div class="card-header">
-            <h3>&#x1F4C8; 연구자 인용 네트워크</h3>
-            <span class="card-badge" style="background:rgba(231,76,60,0.15);color:#e74c3c;">Citation</span>
+        <div class="card" style="margin-bottom:24px;overflow:hidden;">
+          <div class="card-header" style="background:linear-gradient(135deg,rgba(239,68,68,0.06),rgba(249,115,22,0.04));border-bottom:1px solid rgba(239,68,68,0.1);">
+            <h3 style="display:flex;align-items:center;gap:8px;">&#x1F4C8; 연구자 인용 네트워크</h3>
+            <span class="card-badge" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-weight:600;letter-spacing:0.5px;">Citation</span>
           </div>
-          <div class="card-body" style="position:relative;">
-            <canvas id="citNetCanvas" width="800" height="500" style="width:100%;cursor:pointer;"></canvas>
-            <div style="display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;justify-content:center;">
-              <span style="font-size:0.78rem;color:var(--gray-500);">&#x25CF; 노드 크기 = 총 인용수</span>
-              <span style="font-size:0.78rem;color:var(--gray-500);">&#x27A1; 화살표 = 공통 키워드/학술지 연결</span>
-              <span style="font-size:0.78rem;color:var(--gray-500);">&#x1F449; 노드 클릭 = 상세정보</span>
-            </div>
+          <div class="card-body" style="position:relative;padding:0;">
+            <canvas id="citNetCanvas" width="800" height="520" style="width:100%;display:block;"></canvas>
           </div>
         </div>
 
@@ -6852,7 +6842,7 @@ function _buildCoAuthorNet(articles, maxNodes) {
   const nameSet = new Set(sorted.map(n => n.name));
 
   // 노드 배치 (그래프 유형에 따라)
-  const colors = ['#00684a','#0098a1','#00303d','#00ed64','#06b6d4','#10b981','#8b5cf6','#f59e0b','#ec4899','#14b8a6','#e74c3c','#3498db','#2ecc71','#9b59b6','#6366f1'];
+  const colors = ['#10b981','#3b82f6','#8b5cf6','#f59e0b','#06b6d4','#ec4899','#14b8a6','#6366f1','#f97316','#0ea5e9','#84cc16','#a855f7','#22c55e','#e11d48','#0891b2'];
   const gType = _netState.graphType || 'circular';
   const nodes = sorted.map((a, i) => {
     let x, y;
@@ -6938,7 +6928,7 @@ function _buildCitationNet(articles, maxNodes) {
     .sort((a, b) => b.totalCite - a.totalCite || b.papers - a.papers)
     .slice(0, maxNodes);
 
-  const colors = ['#e74c3c','#3498db','#2ecc71','#9b59b6','#f59e0b','#00684a','#0098a1','#ec4899','#06b6d4','#14b8a6','#00303d','#6366f1','#10b981','#8b5cf6','#00ed64'];
+  const colors = ['#ef4444','#f97316','#eab308','#22c55e','#3b82f6','#8b5cf6','#ec4899','#06b6d4','#14b8a6','#6366f1','#0ea5e9','#a855f7','#10b981','#f59e0b','#e11d48'];
   const gType = _netState.graphType || 'circular';
   const nodes = sorted.map((a, i) => {
     let x, y;
@@ -7008,130 +6998,214 @@ function _drawNetCanvas(canvas, data, type) {
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
-  const w = rect.width, h = rect.height || 400;
+  const w = rect.width, h = rect.height || 500;
   canvas.width = w * dpr;
   canvas.height = h * dpr;
   ctx.scale(dpr, dpr);
-  ctx.clearRect(0, 0, w, h);
 
   const { nodes, edges } = data;
   if (!nodes.length) { _canvasMsg(canvas, '데이터 없음'); return; }
 
-  // 배경 그라데이션
-  const bg = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w*0.6);
-  bg.addColorStop(0, 'rgba(0,104,74,0.03)');
-  bg.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, w, h);
+  // 호버 노드 상태
+  let _hoverNode = null, _dragNode = null, _dragStartX = 0, _dragStartY = 0, _dragged = false;
 
-  // 엣지 그리기
-  edges.forEach(e => {
-    const n1 = nodes[e.from], n2 = nodes[e.to];
-    const x1 = n1.x * w, y1 = n1.y * h;
-    const x2 = n2.x * w, y2 = n2.y * h;
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-    ctx.lineWidth = Math.max(0.5, Math.min(e.weight, 4));
-    ctx.stroke();
+  // 색상 팔레트 (type별 다른 색조)
+  const edgeColors = type === 'citation'
+    ? ['rgba(239,68,68,','rgba(249,115,22,','rgba(234,179,8,']
+    : ['rgba(16,185,129,','rgba(59,130,246,','rgba(139,92,246,'];
 
-    // 인용 네트워크: 화살표
-    if (type === 'citation') {
-      const dx = x2 - x1, dy = y2 - y1;
-      const dist = Math.sqrt(dx*dx + dy*dy);
+  function _drawAll() {
+    ctx.clearRect(0, 0, w, h);
+
+    // 배경: 미묘한 도트 패턴
+    ctx.fillStyle = '#fafbfc';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(0,0,0,0.018)';
+    for (let gx = 0; gx < w; gx += 20) for (let gy = 0; gy < h; gy += 20) ctx.fillRect(gx, gy, 1, 1);
+
+    // 중심 방사형 그라데이션
+    const bg = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w*0.55);
+    bg.addColorStop(0, type === 'citation' ? 'rgba(239,68,68,0.03)' : 'rgba(16,185,129,0.04)');
+    bg.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, w, h);
+
+    // 엣지 — 곡선 + 그라데이션
+    edges.forEach(e => {
+      const n1 = nodes[e.from], n2 = nodes[e.to];
+      const x1 = n1.x * w, y1 = n1.y * h, x2 = n2.x * w, y2 = n2.y * h;
+      const dx = x2 - x1, dy = y2 - y1, dist = Math.sqrt(dx*dx + dy*dy);
       if (dist < 1) return;
+      const isHighlight = (_hoverNode && (n1 === _hoverNode || n2 === _hoverNode));
+      const alpha = isHighlight ? 0.5 : 0.12 + Math.min(e.weight, 5) * 0.04;
+      const lw = isHighlight ? Math.max(1.5, e.weight * 0.8) : Math.max(0.5, Math.min(e.weight * 0.7, 3));
+
+      // 베지어 곡선
       const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-      const angle = Math.atan2(dy, dx);
-      ctx.save();
-      ctx.translate(mx, my);
-      ctx.rotate(angle);
+      const curveOff = Math.min(dist * 0.08, 25) * (e.from % 2 === 0 ? 1 : -1);
+      const cpx = mx - dy / dist * curveOff, cpy = my + dx / dist * curveOff;
+
+      const edgeGrad = ctx.createLinearGradient(x1, y1, x2, y2);
+      const ec = edgeColors[e.from % edgeColors.length];
+      edgeGrad.addColorStop(0, ec + (alpha * 0.6) + ')');
+      edgeGrad.addColorStop(0.5, ec + alpha + ')');
+      edgeGrad.addColorStop(1, ec + (alpha * 0.6) + ')');
+
       ctx.beginPath();
-      ctx.moveTo(5, 0);
-      ctx.lineTo(-3, -3);
-      ctx.lineTo(-3, 3);
-      ctx.closePath();
-      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.moveTo(x1, y1);
+      ctx.quadraticCurveTo(cpx, cpy, x2, y2);
+      ctx.strokeStyle = isHighlight ? ec + '0.55)' : edgeGrad;
+      ctx.lineWidth = lw;
+      ctx.stroke();
+
+      // 인용 네트워크: 개선된 화살표
+      if (type === 'citation') {
+        const t = 0.65;
+        const ax = (1-t)*(1-t)*x1 + 2*(1-t)*t*cpx + t*t*x2;
+        const ay = (1-t)*(1-t)*y1 + 2*(1-t)*t*cpy + t*t*y2;
+        const tdx = 2*(1-t)*(cpx-x1) + 2*t*(x2-cpx);
+        const tdy = 2*(1-t)*(cpy-y1) + 2*t*(y2-cpy);
+        const angle = Math.atan2(tdy, tdx);
+        const arrowSize = isHighlight ? 7 : 5;
+        ctx.save();
+        ctx.translate(ax, ay);
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(arrowSize, 0);
+        ctx.lineTo(-arrowSize * 0.6, -arrowSize * 0.5);
+        ctx.lineTo(-arrowSize * 0.3, 0);
+        ctx.lineTo(-arrowSize * 0.6, arrowSize * 0.5);
+        ctx.closePath();
+        ctx.fillStyle = ec + (isHighlight ? '0.7)' : '0.35)');
+        ctx.fill();
+        ctx.restore();
+      }
+    });
+
+    // 비하이라이트 노드 먼저 (호버 시 뒤로)
+    const sortedNodes = _hoverNode ? [...nodes].sort((a, b) => (a === _hoverNode ? 1 : b === _hoverNode ? -1 : 0)) : nodes;
+
+    sortedNodes.forEach(n => {
+      const cx = n.x * w, cy = n.y * h, r = n.size / 2;
+      const isHover = n === _hoverNode;
+      const isDrag = n === _dragNode;
+      const dimmed = _hoverNode && !isHover && !edges.some(e => (nodes[e.from] === _hoverNode && nodes[e.to] === n) || (nodes[e.to] === _hoverNode && nodes[e.from] === n));
+
+      // 외곽 글로우 (호버 시 강화)
+      if (isHover || isDrag) {
+        const glow = ctx.createRadialGradient(cx, cy, r * 0.5, cx, cy, r + 18);
+        glow.addColorStop(0, n.color + '44');
+        glow.addColorStop(0.6, n.color + '18');
+        glow.addColorStop(1, n.color + '00');
+        ctx.beginPath(); ctx.arc(cx, cy, r + 18, 0, Math.PI * 2);
+        ctx.fillStyle = glow; ctx.fill();
+      }
+
+      // 그림자
+      ctx.save();
+      ctx.shadowColor = dimmed ? 'rgba(0,0,0,0.05)' : 'rgba(0,0,0,0.12)';
+      ctx.shadowBlur = isHover ? 16 : 8;
+      ctx.shadowOffsetY = isHover ? 4 : 2;
+
+      // 메인 노드 원
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      const nodeAlpha = dimmed ? 0.35 : 1;
+      if (isDrag) {
+        ctx.fillStyle = '#ff6600';
+      } else {
+        const ng = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.3, 0, cx, cy, r);
+        ng.addColorStop(0, _lightenColor(n.color, 30));
+        ng.addColorStop(1, n.color);
+        ctx.fillStyle = ng;
+      }
+      ctx.globalAlpha = nodeAlpha;
       ctx.fill();
       ctx.restore();
-    }
-  });
 
-  // 노드 그리기
-  nodes.forEach((n, i) => {
-    const cx = n.x * w, cy = n.y * h, r = n.size / 2;
-    // 글로우
-    ctx.beginPath();
-    ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
-    ctx.fillStyle = n.color + '22';
-    ctx.fill();
-    // 원
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = n.color;
-    ctx.fill();
-    ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    // 이름
-    ctx.fillStyle = '#fff';
-    ctx.font = 'bold ' + Math.max(8, Math.min(11, r * 0.55)) + 'px Pretendard, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    const nameParts = n.name.length > 5 ? [n.name] : [n.name];
-    ctx.fillText(n.name, cx, cy - 4);
-    // 소속 (축약)
-    if (n.inst) {
-      ctx.font = Math.max(7, Math.min(9, r * 0.4)) + 'px Pretendard, sans-serif';
-      ctx.fillStyle = 'rgba(255,255,255,0.8)';
-      const shortInst = n.inst.length > 6 ? n.inst.substring(0, 6) + '..' : n.inst;
-      ctx.fillText(shortInst, cx, cy + 8);
-    }
-    // 수치 라벨 (바깥)
-    ctx.font = '10px Pretendard, sans-serif';
-    ctx.fillStyle = n.color;
-    const label = type === 'citation' ? (n.totalCite + '회') : (n.papers + '편');
-    ctx.fillText(label, cx, cy + r + 12);
-  });
+      // 테두리
+      ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = isHover ? '#fff' : 'rgba(255,255,255,0.8)';
+      ctx.lineWidth = isHover ? 3 : 2;
+      ctx.globalAlpha = nodeAlpha;
+      ctx.stroke();
+      ctx.globalAlpha = 1;
 
-  // 드래그 & 클릭 이벤트
-  let _dragNode = null, _dragStartX = 0, _dragStartY = 0, _dragged = false;
-  canvas.style.cursor = 'grab';
+      // 하이라이트 링
+      if (isHover) {
+        ctx.beginPath(); ctx.arc(cx, cy, r + 4, 0, Math.PI * 2);
+        ctx.strokeStyle = n.color + '55';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
 
+      // 이름 텍스트 — 그림자 효과
+      const fontSize = Math.max(9, Math.min(13, r * 0.55));
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.globalAlpha = dimmed ? 0.4 : 1;
+
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.font = 'bold ' + fontSize + 'px Pretendard, sans-serif';
+      ctx.fillText(n.name, cx + 0.5, cy - 3 + 0.5);
+      ctx.fillStyle = '#fff';
+      ctx.fillText(n.name, cx, cy - 3);
+
+      // 소속
+      if (n.inst && r > 14) {
+        const instFont = Math.max(7, Math.min(10, r * 0.4));
+        ctx.font = instFont + 'px Pretendard, sans-serif';
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        const shortInst = n.inst.length > 7 ? n.inst.substring(0, 7) + '..' : n.inst;
+        ctx.fillText(shortInst, cx, cy + fontSize * 0.55);
+      }
+
+      // 수치 라벨 배지 (바깥 아래)
+      const label = type === 'citation' ? (n.totalCite + '회') : (n.papers + '편');
+      const lblW = ctx.measureText(label).width + 10;
+      const lblH = 16, lblY = cy + r + 8;
+      ctx.fillStyle = dimmed ? 'rgba(255,255,255,0.5)' : '#fff';
+      _roundRect(ctx, cx - lblW / 2, lblY - lblH / 2, lblW, lblH, 8);
+      ctx.fill();
+      ctx.strokeStyle = dimmed ? 'rgba(0,0,0,0.05)' : n.color + '44';
+      ctx.lineWidth = 1;
+      _roundRect(ctx, cx - lblW / 2, lblY - lblH / 2, lblW, lblH, 8);
+      ctx.stroke();
+      ctx.fillStyle = dimmed ? 'rgba(0,0,0,0.2)' : n.color;
+      ctx.font = 'bold 10px Pretendard, sans-serif';
+      ctx.fillText(label, cx, lblY);
+
+      ctx.globalAlpha = 1;
+    });
+
+    // 범례 오버레이
+    const legendY = h - 22;
+    ctx.font = '11px Pretendard, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    const legendItems = type === 'citation'
+      ? ['노드 크기 = 인용수', '화살표 = 관련성', '드래그로 이동']
+      : ['노드 크기 = 논문수', '연결선 = 공저관계', '드래그로 이동'];
+    let lx = 12;
+    legendItems.forEach((txt, i) => {
+      if (i === 0) { ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath(); ctx.arc(lx + 4, legendY, 4, 0, Math.PI*2); ctx.fill(); lx += 12; }
+      else if (i === 1) { ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(lx, legendY); ctx.lineTo(lx + 14, legendY); ctx.stroke(); lx += 18; }
+      else { ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.font = '11px Pretendard'; ctx.fillText('✋', lx, legendY + 1); lx += 16; }
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.font = '10px Pretendard, sans-serif';
+      ctx.fillText(txt, lx, legendY + 3);
+      lx += ctx.measureText(txt).width + 16;
+    });
+  }
+
+  _drawAll();
+
+  // --- 상호작용 이벤트 ---
   function _findNode(mx, my) {
     for (let i = nodes.length - 1; i >= 0; i--) {
-      const n = nodes[i];
-      const cx = n.x * w, cy = n.y * h, r = n.size / 2 + 5;
+      const n = nodes[i], cx = n.x * w, cy = n.y * h, r = n.size / 2 + 5;
       if ((mx - cx) ** 2 + (my - cy) ** 2 <= r * r) return n;
     }
     return null;
-  }
-
-  function _redraw() {
-    ctx.clearRect(0, 0, w, h);
-    // 배경
-    const bg2 = ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w*0.6);
-    bg2.addColorStop(0,'rgba(0,104,74,0.03)');bg2.addColorStop(1,'rgba(255,255,255,0)');
-    ctx.fillStyle = bg2; ctx.fillRect(0,0,w,h);
-    // 엣지
-    edges.forEach(e => {
-      const n1=nodes[e.from],n2=nodes[e.to];
-      const x1=n1.x*w,y1=n1.y*h,x2=n2.x*w,y2=n2.y*h;
-      ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
-      ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=Math.max(0.5,Math.min(e.weight,4));ctx.stroke();
-      if(type==='citation'){const dx=x2-x1,dy=y2-y1,dist=Math.sqrt(dx*dx+dy*dy);if(dist<1)return;const mx2=(x1+x2)/2,my2=(y1+y2)/2,angle=Math.atan2(dy,dx);ctx.save();ctx.translate(mx2,my2);ctx.rotate(angle);ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-3,-3);ctx.lineTo(-3,3);ctx.closePath();ctx.fillStyle='rgba(0,0,0,0.2)';ctx.fill();ctx.restore();}
-    });
-    // 노드
-    nodes.forEach(n => {
-      const cx=n.x*w,cy=n.y*h,r=n.size/2;
-      ctx.beginPath();ctx.arc(cx,cy,r+4,0,Math.PI*2);ctx.fillStyle=n.color+'22';ctx.fill();
-      ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle = (n === _dragNode) ? '#ff6600' : n.color;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
-      ctx.fillStyle='#fff';ctx.font='bold '+Math.max(8,Math.min(11,r*0.55))+'px Pretendard,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
-      ctx.fillText(n.name,cx,cy-4);
-      if(n.inst){ctx.font=Math.max(7,Math.min(9,r*0.4))+'px Pretendard,sans-serif';ctx.fillStyle='rgba(255,255,255,0.8)';const si=n.inst.length>6?n.inst.substring(0,6)+'..':n.inst;ctx.fillText(si,cx,cy+8);}
-      ctx.font='10px Pretendard,sans-serif';ctx.fillStyle=n.color;
-      const label=type==='citation'?(n.totalCite+'회'):(n.papers+'편');ctx.fillText(label,cx,cy+r+12);
-    });
   }
 
   canvas.onmousedown = function(evt) {
@@ -7141,57 +7215,75 @@ function _drawNetCanvas(canvas, data, type) {
     if (_dragNode) {
       _dragStartX = mx; _dragStartY = my; _dragged = false;
       canvas.style.cursor = 'grabbing';
-      _redraw();
+      _drawAll();
     }
   };
   canvas.onmousemove = function(evt) {
     const cRect = canvas.getBoundingClientRect();
     const mx = evt.clientX - cRect.left, my = evt.clientY - cRect.top;
     if (_dragNode) {
-      const dx = mx - _dragStartX, dy = my - _dragStartY;
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) _dragged = true;
+      if (Math.abs(mx - _dragStartX) > 3 || Math.abs(my - _dragStartY) > 3) _dragged = true;
       _dragNode.x = Math.max(0.05, Math.min(0.95, mx / w));
       _dragNode.y = Math.max(0.05, Math.min(0.95, my / h));
-      _redraw();
+      _drawAll();
     } else {
-      const hover = _findNode(mx, my);
-      canvas.style.cursor = hover ? 'grab' : 'default';
+      const prev = _hoverNode;
+      _hoverNode = _findNode(mx, my);
+      canvas.style.cursor = _hoverNode ? 'grab' : 'default';
+      if (prev !== _hoverNode) _drawAll();
     }
   };
-  canvas.onmouseup = function(evt) {
-    if (_dragNode && !_dragged) {
-      _showNodeDetail(_dragNode, type);
-    }
-    _dragNode = null;
-    canvas.style.cursor = 'grab';
-    _redraw();
+  canvas.onmouseup = function() {
+    if (_dragNode && !_dragged) _showNodeDetail(_dragNode, type);
+    _dragNode = null; canvas.style.cursor = _hoverNode ? 'grab' : 'default';
+    _drawAll();
   };
   canvas.onmouseleave = function() {
-    if (_dragNode) { _dragNode = null; canvas.style.cursor = 'grab'; _redraw(); }
+    _hoverNode = null; if (_dragNode) { _dragNode = null; }
+    canvas.style.cursor = 'default';
+    _drawAll();
   };
 
-  // 터치 지원 (모바일)
+  // 터치
   canvas.ontouchstart = function(evt) {
     evt.preventDefault();
     const t = evt.touches[0], cRect = canvas.getBoundingClientRect();
-    const mx = t.clientX - cRect.left, my = t.clientY - cRect.top;
-    _dragNode = _findNode(mx, my);
-    if (_dragNode) { _dragStartX = mx; _dragStartY = my; _dragged = false; _redraw(); }
+    _dragNode = _findNode(t.clientX - cRect.left, t.clientY - cRect.top);
+    if (_dragNode) { _dragStartX = t.clientX - cRect.left; _dragStartY = t.clientY - cRect.top; _dragged = false; _hoverNode = _dragNode; _drawAll(); }
   };
   canvas.ontouchmove = function(evt) {
-    evt.preventDefault();
-    if (!_dragNode) return;
+    evt.preventDefault(); if (!_dragNode) return;
     const t = evt.touches[0], cRect = canvas.getBoundingClientRect();
-    const mx = t.clientX - cRect.left, my = t.clientY - cRect.top;
     _dragged = true;
-    _dragNode.x = Math.max(0.05, Math.min(0.95, mx / w));
-    _dragNode.y = Math.max(0.05, Math.min(0.95, my / h));
-    _redraw();
+    _dragNode.x = Math.max(0.05, Math.min(0.95, (t.clientX - cRect.left) / w));
+    _dragNode.y = Math.max(0.05, Math.min(0.95, (t.clientY - cRect.top) / h));
+    _drawAll();
   };
-  canvas.ontouchend = function(evt) {
+  canvas.ontouchend = function() {
     if (_dragNode && !_dragged) _showNodeDetail(_dragNode, type);
-    _dragNode = null; _redraw();
+    _dragNode = null; _hoverNode = null; _drawAll();
   };
+}
+
+// 유틸: 둥근 사각형
+function _roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+// 유틸: 색상 밝게
+function _lightenColor(hex, pct) {
+  let c = hex.replace('#', '');
+  if (c.length === 3) c = c[0]+c[0]+c[1]+c[1]+c[2]+c[2];
+  const r = Math.min(255, parseInt(c.substr(0,2),16) + pct);
+  const g = Math.min(255, parseInt(c.substr(2,2),16) + pct);
+  const b = Math.min(255, parseInt(c.substr(4,2),16) + pct);
+  return '#' + [r,g,b].map(v => v.toString(16).padStart(2,'0')).join('');
 }
 
 /* --- 노드 상세정보 팝업 --- */
