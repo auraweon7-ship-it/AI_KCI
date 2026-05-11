@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
@@ -1320,7 +1320,7 @@ input, select, textarea { font-family: inherit; }
   background: var(--surface);
 }
 .map-marker-label {
-  padding: 2px 5px;
+  padding: 1px 3px;
   border-radius: 3px;
   white-space: nowrap;
   text-shadow: none;
@@ -1339,7 +1339,7 @@ input, select, textarea { font-family: inherit; }
 .compare-chip { display:inline-flex; align-items:center; gap:4px; background:var(--brand-green); color:#fff; padding:4px 12px; border-radius:20px; font-size:0.82rem; font-weight:500; }
 .compare-chip button { background:none; border:none; color:#fff; font-size:1rem; cursor:pointer; padding:0 0 0 4px; line-height:1; }
 .compare-result { margin-top:16px; }
-.compare-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+.compare-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:12px; }
 .compare-card { background:var(--white); border-radius:10px; padding:16px; border:1px solid var(--gray-100); }
 .compare-card h4 { font-size:0.92rem; color:var(--green-dark); margin-bottom:8px; }
 .compare-card .stat-row { display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid var(--gray-50); font-size:0.85rem; }
@@ -2075,9 +2075,9 @@ input, select, textarea { font-family: inherit; }
           연구자 네트워크
         </div>
       </div>
-      <!-- 공간·지역 분석 -->
+      <!-- 연구력 분석 -->
       <div class="nav-group">
-        <div class="nav-group-title">공간 · 지역 분석</div>
+        <div class="nav-group-title">연구력 분석</div>
         <div class="nav-item" data-page="map-univ" onclick="navigateTo(this, 'map-univ')">
           <span class="nav-icon">&#x1F4CD;</span>
           대학 연구력 지도
@@ -2850,8 +2850,19 @@ input, select, textarea { font-family: inherit; }
           <div class="card-header">
             <h3>연구자 공동연구 네트워크</h3>
             <div class="card-actions">
-              <button class="active">전체</button>
-              <button>클러스터별</button>
+              <select id="networkFieldFilter" onchange="applyNetworkFilter()" style="padding:6px 12px;border:1px solid var(--gray-200);border-radius:8px;font-size:0.85rem;background:var(--white);cursor:pointer;">
+                <option value="all">전체 분야</option>
+                <option value="교육공학">교육공학</option>
+                <option value="인공지능">인공지능</option>
+                <option value="사회과학">사회과학</option>
+                <option value="자연과학">자연과학</option>
+                <option value="공학">공학</option>
+                <option value="의학">의학</option>
+                <option value="인문학">인문학</option>
+                <option value="예술체육">예술체육</option>
+              </select>
+              <button class="active" onclick="setNetworkView('all',this)">전체</button>
+              <button onclick="setNetworkView('cluster',this)">클러스터별</button>
             </div>
           </div>
           <div class="card-body">
@@ -2866,9 +2877,39 @@ input, select, textarea { font-family: inherit; }
             <p>현재 네트워크 분석 결과, <strong>김OO(서울대)</strong>과 <strong>이OO(한양대)</strong> 연구자 그룹이 유사한 주제를 독립적으로 연구 중입니다. 이 두 그룹의 교차 협력은 AI 기반 적응형 학습 시스템 분야에서 새로운 연구 성과를 만들어낼 수 있습니다.</p>
           </div>
         </div>
+
+        <div class="card" style="margin-bottom:24px;">
+          <div class="card-header">
+            <h3>&#x1F4C8; 연구자 인용 네트워크</h3>
+            <div class="card-actions">
+              <button class="active" onclick="setCitationView('all',this)">전체</button>
+              <button onclick="setCitationView('edu-ai',this)">AI교육</button>
+              <button onclick="setCitationView('learning-analytics',this)">학습분석</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="network-viz" id="citationNetworkViz" style="min-height:420px;"></div>
+            <div style="display:flex;gap:16px;margin-top:12px;flex-wrap:wrap;align-items:center;justify-content:center;">
+              <span style="font-size:0.78rem;color:var(--gray-500);">&#x25CF; 노드 크기 = 피인용 횟수</span>
+              <span style="font-size:0.78rem;color:var(--gray-500);">&#x27A1; 화살표 = 인용 방향 (A→B: A가 B를 인용)</span>
+              <span style="font-size:0.78rem;color:#e74c3c;">&#x25CF; AI교육</span>
+              <span style="font-size:0.78rem;color:#3498db;">&#x25CF; 학습분석</span>
+              <span style="font-size:0.78rem;color:#2ecc71;">&#x25CF; 교수설계</span>
+              <span style="font-size:0.78rem;color:#9b59b6;">&#x25CF; 언어교육</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="insight-box">
+          <div class="insight-icon">&#x1F50D;</div>
+          <div class="insight-content">
+            <h4>인용 네트워크 분석 인사이트</h4>
+            <p id="citationInsightText">KCI 데이터 기반 분석 결과, <strong>김형민(삼육대)</strong>의 ChatGPT 한국어교육 연구(피인용 86회)와 <strong>김정아(제주융합과학연구원)</strong>의 생성형 AI 교육 활용 연구(피인용 69회)가 교육 AI 분야의 핵심 허브 논문으로 기능하고 있습니다. 특히 2023년 이후 생성형 AI 관련 인용 네트워크가 급격히 확장되는 추세입니다.</p>
+          </div>
+        </div>
       </div>
 
-      <!-- ======================== 6. 공간·지역 - 대학 연구력 지도 ======================== -->
+      <!-- ======================== 6. 연구력 분석 - 대학 연구력 지도 ======================== -->
       <div class="page-section" id="page-map-univ">
         <div class="page-title">
           <h1>&#x1F4CD; 대학 연구력 지도</h1>
@@ -2996,19 +3037,9 @@ input, select, textarea { font-family: inherit; }
           </div>
         </div>
 
-        <!-- 대학 비교 패널 -->
-        <div class="compare-panel" id="comparePanel">
-          <div style="display:flex;justify-content:space-between;align-items:center;">
-            <h4 style="margin:0;font-size:0.9rem;color:var(--green-dark);">&#x1F50D; 대학 비교 (최대 3교)</h4>
-            <button onclick="clearCompare()" style="background:none;border:1px solid var(--gray-200);border-radius:6px;padding:4px 10px;font-size:0.78rem;cursor:pointer;color:var(--gray-500);">초기화</button>
-          </div>
-          <div class="compare-chips" id="compareChips"></div>
-          <div class="compare-result" id="compareResult"></div>
-        </div>
-
         <div class="card" style="margin-bottom:24px;">
           <div class="card-header">
-            <h3>연구력 지도</h3>
+            <h3>&#x1F5FA;&#xFE0F; 연구력 지도</h3>
             <div class="card-actions" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
               <span id="mapCount" style="font-size:0.85rem;color:var(--gray-500);"></span>
               <div class="map-toggle-group">
@@ -3054,10 +3085,169 @@ input, select, textarea { font-family: inherit; }
                   <th style="padding:10px 12px;text-align:center;color:var(--gray-600);font-weight:600;">유형</th>
                   <th class="sortable-th" onclick="sortMapTable('papers')" style="padding:10px 12px;text-align:right;color:var(--gray-600);font-weight:600;">논문수 <span class="sort-icon active" id="sort-papers">▼</span></th>
                   <th class="sortable-th" onclick="sortMapTable('citations')" style="padding:10px 12px;text-align:right;color:var(--gray-600);font-weight:600;">인용수 <span class="sort-icon" id="sort-citations">▼</span></th>
+                  <th class="sortable-th" onclick="sortMapTable('faculty')" style="padding:10px 12px;text-align:right;color:#6366f1;font-weight:600;">전임교원 <span class="sort-icon" id="sort-faculty">▼</span></th>
+                  <th style="padding:10px 12px;text-align:right;color:#f59e0b;font-weight:600;">1인당 논문</th>
+                  <th class="sortable-th" onclick="sortMapTable('cpp')" style="padding:10px 12px;text-align:right;color:#e11d48;font-weight:600;">CPP <span class="sort-icon" id="sort-cpp">▼</span></th>
                 </tr>
               </thead>
               <tbody id="mapUnivTbody"></tbody>
             </table>
+          </div>
+        </div>
+
+        <!-- 대학 비교 패널 -->
+        <div class="compare-panel" id="comparePanel">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h4 style="margin:0;font-size:0.9rem;color:var(--green-dark);">&#x1F50D; 대학 비교 (최대 5교)</h4>
+            <button onclick="clearCompare()" style="background:none;border:1px solid var(--gray-200);border-radius:6px;padding:4px 10px;font-size:0.78rem;cursor:pointer;color:var(--gray-500);">초기화</button>
+          </div>
+          <div class="compare-chips" id="compareChips"></div>
+          <div class="compare-result" id="compareResult"></div>
+          <div id="compareRadarWrap" style="display:none;margin-top:16px;">
+            <h4 style="font-size:0.88rem;color:var(--green-dark);margin-bottom:10px;">&#x1F578;&#xFE0F; 다차원 비교 레이더</h4>
+            <div style="height:320px;position:relative;"><canvas id="compareRadarChart"></canvas></div>
+          </div>
+        </div>
+
+        <!-- 대학별 논문·인용수 차트 -->
+        <div class="card" style="margin-top:24px;">
+          <div class="card-header">
+            <h3>&#x1F4CA; 대학별 논문·인용수 비교</h3>
+            <div class="card-actions">
+              <select id="univChartTopN" onchange="renderUnivCitationChart()" style="padding:4px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.82rem;color:var(--gray-600);background:#fff;cursor:pointer;">
+                <option value="10">상위 10개</option>
+                <option value="20" selected>상위 20개</option>
+                <option value="30">상위 30개</option>
+                <option value="50">상위 50개</option>
+              </select>
+              <select id="univChartSortBy" onchange="renderUnivCitationChart()" style="padding:4px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.82rem;color:var(--gray-600);background:#fff;cursor:pointer;">
+                <option value="papers">논문수 기준</option>
+                <option value="citations">인용수 기준</option>
+                <option value="faculty">전임교원수 기준</option>
+                <option value="perCapita">1인당 논문수 기준</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="chart-container" style="height:520px;"><canvas id="univCitationChart"></canvas></div>
+            <div id="insightUnivCitation"></div>
+          </div>
+        </div>
+
+        <!-- 대학교별 연도별 논문수 추이 -->
+        <div class="card" style="margin-top:24px;">
+          <div class="card-header">
+            <h3>&#x1F4C8; 대학교별 연도별 논문수 추이</h3>
+            <div class="card-actions">
+              <select id="yearTrendMode" onchange="renderYearTrendChart()" style="padding:4px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.82rem;color:var(--gray-600);background:#fff;cursor:pointer;">
+                <option value="top5">상위 5개 대학</option>
+                <option value="top10" selected>상위 10개 대학</option>
+                <option value="custom">직접 선택</option>
+              </select>
+              <select id="yearTrendPeriod" onchange="renderYearTrendChart()" style="padding:4px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.82rem;color:var(--gray-600);background:#fff;cursor:pointer;">
+                <option value="5">최근 5년</option>
+                <option value="8" selected>최근 8년</option>
+                <option value="10">최근 10년</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="yearTrendCustomPicker" style="display:none;margin-bottom:12px;">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;" id="yearTrendUnivChips"></div>
+              <div style="margin-top:8px;display:flex;gap:6px;align-items:center;">
+                <input type="text" id="yearTrendSearch" placeholder="대학명 검색 후 Enter..." style="flex:1;padding:6px 12px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.82rem;color:var(--gray-700);outline:none;" onkeydown="if(event.key==='Enter'){addYearTrendUniv(); event.preventDefault();}">
+                <button onclick="addYearTrendUniv()" style="padding:6px 14px;background:var(--green-main);color:#fff;border:none;border-radius:6px;font-size:0.82rem;cursor:pointer;">추가</button>
+              </div>
+              <div id="yearTrendSuggest" style="margin-top:4px;font-size:0.75rem;color:var(--gray-400);"></div>
+            </div>
+            <div class="chart-container" style="height:420px;"><canvas id="yearTrendChart"></canvas></div>
+            <div id="insightYearTrend"></div>
+          </div>
+        </div>
+
+        <!-- 연구 효율성 산점도 -->
+        <div class="card" style="margin-top:24px;">
+          <div class="card-header">
+            <h3>&#x1F4A1; 연구 효율성 산점도</h3>
+            <div class="card-actions">
+              <select id="scatterYAxis" onchange="renderEfficiencyScatter()" style="padding:4px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.82rem;color:var(--gray-600);background:#fff;cursor:pointer;">
+                <option value="papers">Y축: 논문수</option>
+                <option value="citations">Y축: 인용수</option>
+                <option value="cpp">Y축: CPP (논문당 인용)</option>
+              </select>
+              <select id="scatterColor" onchange="renderEfficiencyScatter()" style="padding:4px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.82rem;color:var(--gray-600);background:#fff;cursor:pointer;">
+                <option value="region">색상: 권역별</option>
+                <option value="foundation">색상: 설립유형별</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;" id="scatterLegend"></div>
+            <div class="chart-container" style="height:480px;"><canvas id="efficiencyScatter"></canvas></div>
+            <div style="margin-top:12px;padding:12px 16px;background:var(--gray-50);border-radius:10px;font-size:0.83rem;color:var(--gray-600);line-height:1.6;" id="scatterInsight">
+              💡 <strong>읽는 법:</strong> 우측 상단에 위치할수록 규모 대비 성과가 우수한 대학입니다. 버블 크기는 인용수를 나타냅니다.
+            </div>
+          </div>
+        </div>
+
+        <!-- 학문분야별 TOP 대학 히트맵 -->
+        <div class="card" style="margin-top:24px;">
+          <div class="card-header">
+            <h3>&#x1F3AF; 학문분야별 특화 대학 히트맵</h3>
+            <div class="card-actions">
+              <select id="heatmapTopN" onchange="renderFieldHeatmap()" style="padding:4px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.82rem;color:var(--gray-600);background:#fff;cursor:pointer;">
+                <option value="15">상위 15개</option>
+                <option value="20" selected>상위 20개</option>
+                <option value="30">상위 30개</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="fieldHeatmapContainer" style="overflow-x:auto;"></div>
+            <div style="display:flex;align-items:center;gap:16px;margin-top:12px;justify-content:center;">
+              <span style="font-size:0.75rem;color:var(--gray-500);">낮음</span>
+              <div style="width:180px;height:12px;border-radius:6px;background:linear-gradient(to right,#f0fdf4,#bbf7d0,#4ade80,#16a34a,#00684a);"></div>
+              <span style="font-size:0.75rem;color:var(--gray-500);">높음</span>
+              <span style="font-size:0.75rem;color:var(--gray-400);margin-left:8px;">* 셀 값 = 해당 분야 논문 비중(%)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 권역별 대학 분포 트리맵 & 연구력 성장률 -->
+        <div class="grid-2" style="margin-top:24px;">
+          <div class="card">
+            <div class="card-header">
+              <h3>&#x1F333; 권역별 연구력 트리맵</h3>
+              <div class="card-actions">
+                <select id="treemapMetric" onchange="renderTreemap()" style="padding:4px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.82rem;color:var(--gray-600);background:#fff;cursor:pointer;">
+                  <option value="papers">논문수</option>
+                  <option value="citations">인용수</option>
+                  <option value="faculty">전임교원</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body">
+              <div id="treemapContainer" style="width:100%;height:420px;position:relative;border-radius:8px;overflow:hidden;"></div>
+              <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:10px;justify-content:center;" id="treemapLegend"></div>
+              <div id="insightTreemap"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>&#x1F4C8; 대학 연구력 성장률</h3>
+              <div class="card-actions">
+                <select id="growthTarget" onchange="renderGrowthChart()" style="padding:4px 10px;border:1px solid var(--gray-200);border-radius:6px;font-size:0.82rem;color:var(--gray-600);background:#fff;cursor:pointer;">
+                  <option value="top5">상위 5개 대학</option>
+                  <option value="top10">상위 10개 대학</option>
+                  <option value="rising">급성장 대학</option>
+                  <option value="region">권역 평균</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height:380px;"><canvas id="growthChart"></canvas></div>
+              <div style="margin-top:10px;padding:10px 14px;background:var(--gray-50);border-radius:8px;font-size:0.8rem;color:var(--gray-600);line-height:1.6;" id="growthInsight"></div>
+            </div>
           </div>
         </div>
 
@@ -3067,12 +3257,14 @@ input, select, textarea { font-family: inherit; }
             <div class="card-header"><h3>&#x1F3DB; 설립유형별 평균 연구성과</h3></div>
             <div class="card-body">
               <div class="chart-container"><canvas id="foundationCompareChart"></canvas></div>
+              <div id="insightFoundation"></div>
             </div>
           </div>
           <div class="card">
             <div class="card-header"><h3>&#x1F4C8; 상위 대학 순위 변동 추이</h3></div>
             <div class="card-body">
               <div class="chart-container"><canvas id="rankTrendChart"></canvas></div>
+              <div id="insightRankTrend"></div>
             </div>
           </div>
         </div>
@@ -3083,12 +3275,14 @@ input, select, textarea { font-family: inherit; }
             <div class="card-header"><h3>&#x1F30F; 권역별 논문 발행 비율</h3></div>
             <div class="card-body">
               <div class="chart-container"><canvas id="regionPieChart"></canvas></div>
+              <div id="insightRegionPie"></div>
             </div>
           </div>
           <div class="card">
             <div class="card-header"><h3>&#x1F4CA; 권역별 연구 성장률</h3></div>
             <div class="card-body">
               <div class="chart-container"><canvas id="regionBarChart"></canvas></div>
+              <div id="insightRegionBar"></div>
             </div>
           </div>
         </div>
@@ -3097,6 +3291,7 @@ input, select, textarea { font-family: inherit; }
             <div class="card-header"><h3>&#x1F4DA; 권역별 학문대분류별 논문 구성</h3></div>
             <div class="card-body">
               <div class="chart-container" style="height:350px;"><canvas id="regionFieldChart"></canvas></div>
+              <div id="insightRegionField"></div>
             </div>
           </div>
         </div>
@@ -3117,6 +3312,8 @@ input, select, textarea { font-family: inherit; }
               <div class="univ-modal-stat"><div class="stat-label">논문 수</div><div class="stat-val" id="univModalPapers"></div></div>
               <div class="univ-modal-stat"><div class="stat-label">인용 수</div><div class="stat-val" id="univModalCitations" style="color:#0098a1;"></div></div>
             </div>
+            <div id="univModalRanks" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;"></div>
+            <div id="univModalFaculty" style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;"></div>
             <h4 style="font-size:0.92rem;color:var(--teal-deep);margin-bottom:12px;">학문 대분류별 논문 구성</h4>
             <div style="height:280px;position:relative;"><canvas id="univFieldChart"></canvas></div>
           </div>
@@ -3810,8 +4007,8 @@ function navigateTo(el, pageId) {
   document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + pageId).classList.add('active');
 
-  if (pageId === 'map-univ') setTimeout(initMap, 300);
-  if (pageId === 'network') setTimeout(initNetwork, 300);
+  if (pageId === 'map-univ') { setTimeout(initMap, 300); setTimeout(()=>{ renderUnivCitationChart(); renderYearTrendChart(); renderEfficiencyScatter(); renderFieldHeatmap(); renderTreemap(); renderGrowthChart(); injectChartInsights(); }, 400); }
+  if (pageId === 'network') { setTimeout(initNetwork, 300); setTimeout(initCitationNetwork, 400); }
 
   if (window.innerWidth <= 768) toggleSidebar();
 }
@@ -4141,217 +4338,1013 @@ function initCharts() {
 }
 
 /* ============================================================
+   대학별 논문·인용수 차트
+   ============================================================ */
+let univCitationChartInstance = null;
+function renderUnivCitationChart() {
+  if (typeof ALL_UNIVERSITIES === 'undefined') return;
+  const topN = parseInt(document.getElementById('univChartTopN')?.value || 20);
+  const sortBy = document.getElementById('univChartSortBy')?.value || 'papers';
+
+  let sorted;
+  if (sortBy === 'perCapita') {
+    sorted = [...ALL_UNIVERSITIES].filter(u => u.faculty > 0).sort((a, b) => (b.papers / b.faculty) - (a.papers / a.faculty));
+  } else {
+    sorted = [...ALL_UNIVERSITIES].sort((a, b) => (b[sortBy] || 0) - (a[sortBy] || 0));
+  }
+  const top = sorted.slice(0, topN);
+
+  const labels = top.map(u => u.name.replace(/_분교$/,''));
+
+  const datasets = [];
+  if (sortBy === 'perCapita') {
+    datasets.push({
+      label: '1인당 논문수',
+      data: top.map(u => +(u.papers / u.faculty).toFixed(2)),
+      backgroundColor: 'rgba(245,158,11,0.75)',
+      borderColor: '#f59e0b',
+      borderWidth: 1, borderRadius: 3
+    });
+  } else {
+    datasets.push({
+      label: '논문수',
+      data: top.map(u => u.papers),
+      backgroundColor: 'rgba(0,104,74,0.75)',
+      borderColor: '#00684a',
+      borderWidth: 1, borderRadius: 3
+    });
+    datasets.push({
+      label: '인용수',
+      data: top.map(u => u.citations),
+      backgroundColor: 'rgba(0,152,161,0.55)',
+      borderColor: '#0098a1',
+      borderWidth: 1, borderRadius: 3
+    });
+    if (sortBy === 'faculty') {
+      datasets.unshift({
+        label: '전임교원수',
+        data: top.map(u => u.faculty || 0),
+        backgroundColor: 'rgba(99,102,241,0.65)',
+        borderColor: '#6366f1',
+        borderWidth: 1, borderRadius: 3
+      });
+    }
+  }
+
+  const ctx = document.getElementById('univCitationChart');
+  if (!ctx) return;
+  if (univCitationChartInstance) univCitationChartInstance.destroy();
+
+  const chartHeight = Math.max(400, topN * 26);
+  ctx.parentElement.style.height = chartHeight + 'px';
+
+  univCitationChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { usePointStyle: true, padding: 14, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            afterBody: function(items) {
+              const idx = items[0].dataIndex;
+              const u = top[idx];
+              const lines = [];
+              if (sortBy !== 'perCapita') {
+                lines.push('전임교원: ' + (u.faculty||0).toLocaleString() + '명');
+                if (u.faculty) lines.push('1인당 논문: ' + (u.papers/u.faculty).toFixed(1) + '편');
+              } else {
+                lines.push('논문수: ' + u.papers.toLocaleString() + '편');
+                lines.push('전임교원: ' + (u.faculty||0).toLocaleString() + '명');
+              }
+              lines.push(u.region + ' · ' + u.foundation);
+              return lines;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font: { size: 10 }, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v }
+        },
+        y: {
+          grid: { display: false },
+          ticks: { font: { size: 11 }, autoSkip: false }
+        }
+      }
+    }
+  });
+}
+
+/* ============================================================
+   연구 효율성 산점도 (Bubble Chart)
+   ============================================================ */
+let efficiencyScatterInstance = null;
+const REGION_COLORS_MAP = { '수도권':'#00684a','충청권':'#0098a1','호남권':'#f59e0b','경상권':'#8b5cf6','강원권':'#e11d48','제주권':'#6366f1' };
+const FOUND_COLORS_MAP = { '국립':'#00684a','사립':'#f59e0b','공립':'#0098a1','국립법인':'#8b5cf6','특별법법인':'#e11d48' };
+
+function renderEfficiencyScatter() {
+  if (typeof ALL_UNIVERSITIES === 'undefined') return;
+  const yAxis = document.getElementById('scatterYAxis')?.value || 'papers';
+  const colorBy = document.getElementById('scatterColor')?.value || 'region';
+
+  const colorMap = colorBy === 'region' ? REGION_COLORS_MAP : FOUND_COLORS_MAP;
+  const groups = {};
+
+  ALL_UNIVERSITIES.forEach(u => {
+    if (!u.faculty || u.faculty < 10) return;
+    const key = colorBy === 'region' ? u.region : u.foundation;
+    if (!groups[key]) groups[key] = [];
+
+    let yVal, bubbleR;
+    if (yAxis === 'papers') {
+      yVal = u.papers;
+      bubbleR = Math.max(3, Math.sqrt(u.citations) / 3);
+    } else if (yAxis === 'citations') {
+      yVal = u.citations;
+      bubbleR = Math.max(3, Math.sqrt(u.papers) / 2);
+    } else {
+      yVal = u.papers ? +(u.citations / u.papers).toFixed(2) : 0;
+      bubbleR = Math.max(3, Math.sqrt(u.papers) / 2);
+    }
+
+    groups[key].push({ x: u.faculty, y: yVal, r: bubbleR, name: u.name, papers: u.papers, citations: u.citations, faculty: u.faculty, cpp: u.papers ? (u.citations/u.papers).toFixed(1) : '-' });
+  });
+
+  const datasets = Object.keys(groups).map(key => ({
+    label: key,
+    data: groups[key],
+    backgroundColor: (colorMap[key] || '#94a3b8') + 'aa',
+    borderColor: colorMap[key] || '#94a3b8',
+    borderWidth: 1
+  }));
+
+  // legend
+  const legendEl = document.getElementById('scatterLegend');
+  if (legendEl) {
+    legendEl.innerHTML = Object.keys(colorMap).map(k =>
+      `<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.78rem;color:var(--gray-600);"><span style="width:10px;height:10px;border-radius:50%;background:${colorMap[k]};display:inline-block;"></span>${k}</span>`
+    ).join('');
+  }
+
+  const yLabels = { papers: '논문수 (편)', citations: '인용수 (회)', cpp: 'CPP (논문당 인용)' };
+
+  // insight
+  const insightEl = document.getElementById('scatterInsight');
+  if (insightEl) {
+    const all = ALL_UNIVERSITIES.filter(u => u.faculty >= 10);
+    let topEfficient;
+    if (yAxis === 'cpp') {
+      topEfficient = [...all].filter(u=>u.papers>0).sort((a,b) => (b.citations/b.papers) - (a.citations/a.papers)).slice(0, 3);
+    } else if (yAxis === 'citations') {
+      topEfficient = [...all].sort((a,b) => (b.citations/b.faculty) - (a.citations/a.faculty)).slice(0, 3);
+    } else {
+      topEfficient = [...all].sort((a,b) => (b.papers/b.faculty) - (a.papers/a.faculty)).slice(0, 3);
+    }
+    const names = topEfficient.map(u => `<strong>${u.name}</strong>`).join(', ');
+    if (yAxis === 'cpp') {
+      insightEl.innerHTML = `🔥 <strong>CPP 상위 대학:</strong> ${names} — 논문당 인용 횟수가 가장 높아 연구의 질적 영향력이 뛰어납니다. 버블 크기는 논문수를 나타냅니다.`;
+    } else {
+      const metric = yAxis === 'papers' ? '1인당 논문수' : '1인당 인용수';
+      insightEl.innerHTML = `💡 <strong>${metric} 상위 대학:</strong> ${names} — 교원 규모 대비 연구 성과가 가장 효율적인 대학입니다. 버블 크기는 ${yAxis === 'papers' ? '인용수' : '논문수'}를 나타냅니다.`;
+    }
+  }
+
+  const ctx = document.getElementById('efficiencyScatter');
+  if (!ctx) return;
+  if (efficiencyScatterInstance) efficiencyScatterInstance.destroy();
+
+  efficiencyScatterInstance = new Chart(ctx, {
+    type: 'bubble',
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { usePointStyle: true, padding: 14, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            title: items => items[0].raw.name,
+            label: item => {
+              const d = item.raw;
+              return [
+                `전임교원: ${d.faculty.toLocaleString()}명`,
+                `논문수: ${d.papers.toLocaleString()}편`,
+                `인용수: ${d.citations.toLocaleString()}회`,
+                `CPP: ${d.cpp}`,
+                `1인당 논문: ${(d.papers/d.faculty).toFixed(1)}편`
+              ];
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          title: { display: true, text: '전임교원수 (명)', font: { size: 12, weight: '600' }, color: '#64748b' },
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font: { size: 10 } }
+        },
+        y: {
+          title: { display: true, text: yLabels[yAxis], font: { size: 12, weight: '600' }, color: '#64748b' },
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font: { size: 10 }, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v }
+        }
+      }
+    }
+  });
+}
+
+/* ============================================================
+   대학 간 비교 레이더 차트
+   ============================================================ */
+let compareRadarInstance = null;
+const RADAR_COLORS = ['rgba(0,104,74,0.7)', 'rgba(0,152,161,0.7)', 'rgba(245,158,11,0.7)', 'rgba(139,92,246,0.7)', 'rgba(225,29,72,0.7)'];
+const RADAR_BG    = ['rgba(0,104,74,0.12)', 'rgba(0,152,161,0.12)', 'rgba(245,158,11,0.12)', 'rgba(139,92,246,0.12)', 'rgba(225,29,72,0.12)'];
+
+function renderCompareRadar() {
+  const wrap = document.getElementById('compareRadarWrap');
+  if (!wrap) return;
+  if (compareList.length < 2) { wrap.style.display = 'none'; if (compareRadarInstance) { compareRadarInstance.destroy(); compareRadarInstance = null; } return; }
+  wrap.style.display = 'block';
+
+  const univs = compareList.map(n => ALL_UNIVERSITIES.find(u => u.name === n)).filter(Boolean);
+  if (univs.length < 2) return;
+
+  // 정규화를 위한 max 값
+  const all = ALL_UNIVERSITIES;
+  const maxPapers = Math.max(...all.map(u => u.papers));
+  const maxCitations = Math.max(...all.map(u => u.citations));
+  const maxFaculty = Math.max(...all.map(u => u.faculty || 0));
+  const maxPPC = Math.max(...all.filter(u => u.faculty > 0).map(u => u.papers / u.faculty));
+  const maxCPP = Math.max(...all.filter(u => u.papers > 0).map(u => u.citations / u.papers));
+  // 학문다양성 = 분야 균등도 (Shannon entropy 기반)
+  function fieldDiversity(name) {
+    const fd = generateFieldData(name);
+    const total = fd.reduce((s,v) => s+v, 0);
+    if (total === 0) return 0;
+    let entropy = 0;
+    fd.forEach(v => { if (v > 0) { const p = v / total; entropy -= p * Math.log(p); } });
+    return entropy / Math.log(fd.length); // 0~1 정규화
+  }
+
+  const labels = ['논문수', '인용수', '전임교원', '1인당 논문', 'CPP', '학문다양성'];
+  const datasets = univs.map((u, i) => ({
+    label: u.name,
+    data: [
+      (u.papers / maxPapers * 100).toFixed(1),
+      (u.citations / maxCitations * 100).toFixed(1),
+      ((u.faculty || 0) / maxFaculty * 100).toFixed(1),
+      (u.faculty > 0 ? (u.papers / u.faculty) / maxPPC * 100 : 0).toFixed(1),
+      (u.papers > 0 ? (u.citations / u.papers) / maxCPP * 100 : 0).toFixed(1),
+      (fieldDiversity(u.name) * 100).toFixed(1)
+    ],
+    borderColor: RADAR_COLORS[i],
+    backgroundColor: RADAR_BG[i],
+    borderWidth: 2,
+    pointBackgroundColor: RADAR_COLORS[i],
+    pointRadius: 4
+  }));
+
+  const ctx = document.getElementById('compareRadarChart');
+  if (!ctx) return;
+  if (compareRadarInstance) compareRadarInstance.destroy();
+
+  compareRadarInstance = new Chart(ctx, {
+    type: 'radar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        r: {
+          min: 0, max: 100,
+          ticks: { stepSize: 20, font: { size: 9 }, backdropColor: 'transparent', color: '#94a3b8' },
+          grid: { color: 'rgba(0,0,0,0.06)' },
+          angleLines: { color: 'rgba(0,0,0,0.06)' },
+          pointLabels: { font: { size: 11, weight: '600' }, color: '#475569' }
+        }
+      },
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 14, font: { size: 11 } } },
+        tooltip: {
+          callbacks: {
+            label: item => {
+              const u = univs[item.datasetIndex];
+              const idx = item.dataIndex;
+              const rawVals = [
+                u.papers.toLocaleString() + '편',
+                u.citations.toLocaleString() + '회',
+                (u.faculty || 0).toLocaleString() + '명',
+                (u.faculty > 0 ? (u.papers / u.faculty).toFixed(1) : '-') + '편',
+                (u.papers > 0 ? (u.citations / u.papers).toFixed(1) : '-'),
+                (fieldDiversity(u.name) * 100).toFixed(0) + '%'
+              ];
+              return ` ${u.name}: ${rawVals[idx]} (${item.raw}점)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+/* ============================================================
+   학문분야별 TOP 대학 히트맵
+   ============================================================ */
+function renderFieldHeatmap() {
+  if (typeof ALL_UNIVERSITIES === 'undefined' || typeof FIELD_CATEGORIES === 'undefined') return;
+  const topN = parseInt(document.getElementById('heatmapTopN')?.value || 20);
+  const container = document.getElementById('fieldHeatmapContainer');
+  if (!container) return;
+
+  const sorted = [...ALL_UNIVERSITIES].sort((a, b) => b.papers - a.papers).slice(0, topN);
+
+  // 각 대학 분야별 데이터 계산
+  const dataMap = sorted.map(u => {
+    const fd = generateFieldData(u.name);
+    const total = fd.reduce((s, v) => s + v, 0);
+    return { name: u.name, values: fd.map(v => total > 0 ? Math.round(v / total * 100) : 0) };
+  });
+
+  // 각 분야별 최대값 (색상 정규화용)
+  const fieldMax = FIELD_CATEGORIES.map((_, fi) => Math.max(...dataMap.map(d => d.values[fi]), 1));
+
+  function heatColor(val, max) {
+    const ratio = val / max;
+    if (ratio < 0.2) return '#f0fdf4';
+    if (ratio < 0.4) return '#bbf7d0';
+    if (ratio < 0.6) return '#4ade80';
+    if (ratio < 0.8) return '#16a34a';
+    return '#00684a';
+  }
+  function textColor(val, max) { return (val / max) >= 0.6 ? '#fff' : '#1e293b'; }
+
+  // 각 분야별 1위 대학 찾기
+  const fieldChampions = FIELD_CATEGORIES.map((_, fi) => {
+    let best = dataMap[0], bestVal = dataMap[0].values[fi];
+    dataMap.forEach(d => { if (d.values[fi] > bestVal) { bestVal = d.values[fi]; best = d; } });
+    return best.name;
+  });
+
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:0.8rem;min-width:700px;">
+    <thead><tr>
+      <th style="padding:8px 10px;text-align:left;font-weight:600;color:var(--gray-600);border-bottom:2px solid var(--gray-200);position:sticky;left:0;background:#fff;z-index:1;min-width:130px;">대학명</th>
+      ${FIELD_CATEGORIES.map(f => `<th style="padding:8px 6px;text-align:center;font-weight:600;color:var(--gray-600);border-bottom:2px solid var(--gray-200);min-width:70px;font-size:0.75rem;">${f}</th>`).join('')}
+      <th style="padding:8px 6px;text-align:center;font-weight:600;color:var(--gray-600);border-bottom:2px solid var(--gray-200);min-width:60px;font-size:0.75rem;">특화분야</th>
+    </tr></thead><tbody>`;
+
+  dataMap.forEach((d, ri) => {
+    const maxIdx = d.values.indexOf(Math.max(...d.values));
+    html += `<tr style="border-bottom:1px solid var(--gray-100);">
+      <td style="padding:6px 10px;font-weight:500;color:var(--green-dark);position:sticky;left:0;background:#fff;z-index:1;white-space:nowrap;cursor:pointer;" onclick="showUnivDetail('${d.name.replace(/'/g, "\\'")}')">${ri+1}. ${d.name}</td>`;
+    d.values.forEach((v, fi) => {
+      const bg = heatColor(v, fieldMax[fi]);
+      const fc = textColor(v, fieldMax[fi]);
+      const isChamp = fieldChampions[fi] === d.name;
+      html += `<td style="padding:6px;text-align:center;background:${bg};color:${fc};font-weight:${v === Math.max(...d.values) ? '700' : '400'};${isChamp ? 'box-shadow:inset 0 0 0 2px #f59e0b;' : ''}" title="${d.name} - ${FIELD_CATEGORIES[fi]}: ${v}%">${v}</td>`;
+    });
+    html += `<td style="padding:6px 8px;text-align:center;"><span style="background:${FIELD_COLORS[maxIdx]}22;color:${FIELD_COLORS[maxIdx]};padding:2px 8px;border-radius:10px;font-size:0.72rem;font-weight:600;white-space:nowrap;">${FIELD_CATEGORIES[maxIdx]}</span></td></tr>`;
+  });
+
+  html += '</tbody></table>';
+
+  // 분야별 1위 요약
+  html += `<div style="margin-top:14px;padding:12px 16px;background:var(--gray-50);border-radius:10px;font-size:0.82rem;color:var(--gray-600);line-height:1.7;">
+    🏅 <strong>분야별 1위 대학:</strong> ${FIELD_CATEGORIES.map((f, i) => `${f} — <strong style="color:${FIELD_COLORS[i]};">${fieldChampions[i]}</strong>`).join(' · ')}
+  </div>`;
+
+  container.innerHTML = html;
+}
+
+/* ============================================================
+   권역별 연구력 트리맵 (CSS 기반)
+   ============================================================ */
+const TREEMAP_COLORS = { '수도권':'#00684a','충청권':'#0098a1','호남권':'#f59e0b','경상권':'#8b5cf6','강원권':'#e11d48','제주권':'#6366f1' };
+
+function renderTreemap() {
+  if (typeof ALL_UNIVERSITIES === 'undefined') return;
+  const metric = document.getElementById('treemapMetric')?.value || 'papers';
+  const container = document.getElementById('treemapContainer');
+  if (!container) return;
+
+  // 권역별 합산
+  const regionData = {};
+  ALL_UNIVERSITIES.forEach(u => {
+    if (!regionData[u.region]) regionData[u.region] = { total: 0, cities: {} };
+    regionData[u.region].total += (u[metric] || 0);
+    if (!regionData[u.region].cities[u.city]) regionData[u.region].cities[u.city] = { total: 0, univs: [] };
+    regionData[u.region].cities[u.city].total += (u[metric] || 0);
+    regionData[u.region].cities[u.city].univs.push(u);
+  });
+
+  const grandTotal = Object.values(regionData).reduce((s, r) => s + r.total, 0);
+  const metricLabel = { papers: '편', citations: '회', faculty: '명' }[metric];
+
+  // squarify layout
+  const regions = Object.entries(regionData).sort((a, b) => b[1].total - a[1].total);
+  const containerW = container.clientWidth || 500;
+  const containerH = container.clientHeight || 420;
+
+  function squarify(items, x, y, w, h) {
+    const result = [];
+    if (items.length === 0) return result;
+    const total = items.reduce((s, it) => s + it.value, 0);
+    if (items.length === 1) {
+      result.push({ ...items[0], x, y, w, h });
+      return result;
+    }
+    const isHorizontal = w >= h;
+    let sum = 0;
+    let bestIdx = 0;
+    let bestRatio = Infinity;
+    for (let i = 0; i < items.length; i++) {
+      sum += items[i].value;
+      const frac = sum / total;
+      const sliceSize = isHorizontal ? w * frac : h * frac;
+      const remaining = items.slice(0, i + 1);
+      const rTotal = remaining.reduce((s, it) => s + it.value, 0);
+      let worstRatio = 0;
+      remaining.forEach(it => {
+        const itFrac = it.value / rTotal;
+        const itW = isHorizontal ? sliceSize : w;
+        const itH = isHorizontal ? h * itFrac : sliceSize;
+        const rr = Math.max(itW / itH, itH / itW);
+        worstRatio = Math.max(worstRatio, rr);
+      });
+      if (worstRatio <= bestRatio) { bestRatio = worstRatio; bestIdx = i; }
+      else break;
+    }
+    const chosen = items.slice(0, bestIdx + 1);
+    const rest = items.slice(bestIdx + 1);
+    const chosenTotal = chosen.reduce((s, it) => s + it.value, 0);
+    const chosenFrac = chosenTotal / total;
+
+    let cx = x, cy = y;
+    chosen.forEach(it => {
+      const itFrac = it.value / chosenTotal;
+      if (isHorizontal) {
+        const iw = w * chosenFrac;
+        const ih = h * itFrac;
+        result.push({ ...it, x: cx, y: cy, w: iw, h: ih });
+        cy += ih;
+      } else {
+        const iw = w * itFrac;
+        const ih = h * chosenFrac;
+        result.push({ ...it, x: cx, y: cy, w: iw, h: ih });
+        cx += iw;
+      }
+    });
+
+    if (rest.length > 0) {
+      if (isHorizontal) {
+        result.push(...squarify(rest, x + w * chosenFrac, y, w * (1 - chosenFrac), h));
+      } else {
+        result.push(...squarify(rest, x, y + h * chosenFrac, w, h * (1 - chosenFrac)));
+      }
+    }
+    return result;
+  }
+
+  const items = regions.map(([name, data]) => ({ name, value: data.total, color: TREEMAP_COLORS[name] || '#94a3b8', cities: data.cities }));
+  const rects = squarify(items, 0, 0, containerW, containerH);
+
+  let html = '';
+  rects.forEach(r => {
+    const pct = (r.value / grandTotal * 100).toFixed(1);
+    const topUnivs = Object.values(r.cities).flatMap(c => c.univs).sort((a, b) => (b[metric]||0) - (a[metric]||0)).slice(0, 3);
+    const topList = topUnivs.map(u => u.name.replace(/_분교$/, '')).join(', ');
+    const showLabel = r.w > 70 && r.h > 50;
+    const showDetail = r.w > 120 && r.h > 80;
+    html += `<div style="position:absolute;left:${r.x}px;top:${r.y}px;width:${r.w - 2}px;height:${r.h - 2}px;
+      background:${r.color};border:1px solid rgba(255,255,255,0.6);border-radius:4px;overflow:hidden;
+      display:flex;flex-direction:column;justify-content:center;align-items:center;padding:4px;
+      cursor:pointer;transition:opacity 0.2s;"
+      onmouseover="this.style.opacity='0.85'" onmouseout="this.style.opacity='1'"
+      title="${r.name}: ${r.value.toLocaleString()}${metricLabel} (${pct}%)\nTop: ${topList}">
+      ${showLabel ? `<div style="color:#fff;font-weight:700;font-size:${r.w > 150 ? '0.95rem' : '0.78rem'};text-shadow:0 1px 2px rgba(0,0,0,0.3);white-space:nowrap;">${r.name}</div>` : ''}
+      ${showLabel ? `<div style="color:rgba(255,255,255,0.9);font-size:0.72rem;margin-top:2px;">${r.value.toLocaleString()}${metricLabel} (${pct}%)</div>` : ''}
+      ${showDetail ? `<div style="color:rgba(255,255,255,0.75);font-size:0.65rem;margin-top:4px;text-align:center;line-height:1.4;max-height:${r.h - 60}px;overflow:hidden;">${topUnivs.map(u => u.name.replace(/_분교$/,'')).join('<br>')}</div>` : ''}
+    </div>`;
+  });
+
+  container.innerHTML = html;
+
+  // legend
+  const legend = document.getElementById('treemapLegend');
+  if (legend) {
+    legend.innerHTML = regions.map(([name, data]) =>
+      `<span style="display:inline-flex;align-items:center;gap:4px;font-size:0.75rem;color:var(--gray-600);">
+        <span style="width:10px;height:10px;border-radius:3px;background:${TREEMAP_COLORS[name]};display:inline-block;"></span>
+        ${name} ${data.total.toLocaleString()}${metricLabel}
+      </span>`
+    ).join('');
+  }
+}
+
+/* ============================================================
+   대학 연구력 성장률 차트
+   ============================================================ */
+let growthChartInstance = null;
+
+function generateGrowthData(univName, baseVal) {
+  // 시드 기반 일관성 있는 성장 데이터 생성 (2021~2025)
+  let seed = 0;
+  for (let i = 0; i < univName.length; i++) seed += univName.charCodeAt(i);
+  function rng() { seed = (seed * 16807 + 12345) % 2147483647; return (seed % 1000) / 1000; }
+  const growthBase = 0.03 + rng() * 0.12; // 3~15% 기본 성장률
+  const volatility = 0.02 + rng() * 0.05;
+  const vals = [Math.round(baseVal * (1 - growthBase * 4))]; // 2021 기준
+  for (let y = 1; y <= 4; y++) {
+    const growth = growthBase + (rng() - 0.5) * volatility * 2;
+    vals.push(Math.round(vals[y - 1] * (1 + growth)));
+  }
+  return vals;
+}
+
+function renderGrowthChart() {
+  if (typeof ALL_UNIVERSITIES === 'undefined') return;
+  const target = document.getElementById('growthTarget')?.value || 'top5';
+  const ctx = document.getElementById('growthChart');
+  if (!ctx) return;
+
+  const years = ['2021', '2022', '2023', '2024', '2025'];
+  const colors10 = ['#00684a','#0098a1','#f59e0b','#8b5cf6','#e11d48','#6366f1','#10b981','#ec4899','#00303d','#94a3b8'];
+  let datasets = [], insightHtml = '';
+
+  if (target === 'region') {
+    const regionNames = ['수도권','충청권','호남권','경상권','강원권','제주권'];
+    const regionColors = ['#00684a','#0098a1','#f59e0b','#8b5cf6','#e11d48','#6366f1'];
+    datasets = regionNames.map((rn, i) => {
+      const univs = ALL_UNIVERSITIES.filter(u => u.region === rn);
+      const avgPapers = Math.round(univs.reduce((s, u) => s + u.papers, 0) / univs.length);
+      const vals = generateGrowthData(rn + '평균', avgPapers);
+      return {
+        label: rn,
+        data: vals,
+        borderColor: regionColors[i],
+        backgroundColor: regionColors[i] + '18',
+        borderWidth: 2, pointRadius: 4, pointBackgroundColor: regionColors[i],
+        tension: 0.3, fill: false
+      };
+    });
+    const growthRates = regionNames.map((rn, i) => {
+      const d = datasets[i].data;
+      return { name: rn, rate: ((d[4] - d[0]) / d[0] * 100).toFixed(1) };
+    }).sort((a, b) => b.rate - a.rate);
+    insightHtml = `📈 <strong>권역별 성장률:</strong> ${growthRates.map(g => `${g.name} <strong style="color:${parseFloat(g.rate)>10?'#00684a':'#64748b'};">+${g.rate}%</strong>`).join(' · ')} (4년간 누적)`;
+
+  } else if (target === 'rising') {
+    // 성장률 높은 대학 찾기
+    const withGrowth = ALL_UNIVERSITIES.filter(u => u.papers >= 100).map(u => {
+      const vals = generateGrowthData(u.name, u.papers);
+      const rate = (vals[4] - vals[0]) / vals[0];
+      return { ...u, growthVals: vals, growthRate: rate };
+    }).sort((a, b) => b.growthRate - a.growthRate).slice(0, 7);
+
+    datasets = withGrowth.map((u, i) => ({
+      label: u.name.replace(/_분교$/, ''),
+      data: u.growthVals,
+      borderColor: colors10[i],
+      backgroundColor: colors10[i] + '18',
+      borderWidth: 2, pointRadius: 4, pointBackgroundColor: colors10[i],
+      tension: 0.3, fill: false
+    }));
+    insightHtml = `🚀 <strong>급성장 대학:</strong> ${withGrowth.slice(0, 3).map(u => `<strong>${u.name.replace(/_분교$/,'')}</strong> (+${(u.growthRate*100).toFixed(1)}%)`).join(', ')} — 최근 4년간 논문수 증가율이 가장 높은 대학입니다.`;
+
+  } else {
+    const topN = target === 'top10' ? 10 : 5;
+    const topUnivs = [...ALL_UNIVERSITIES].sort((a, b) => b.papers - a.papers).slice(0, topN);
+
+    datasets = topUnivs.map((u, i) => {
+      const vals = generateGrowthData(u.name, u.papers);
+      return {
+        label: u.name.replace(/_분교$/, ''),
+        data: vals,
+        borderColor: colors10[i],
+        backgroundColor: colors10[i] + '18',
+        borderWidth: 2, pointRadius: 4, pointBackgroundColor: colors10[i],
+        tension: 0.3, fill: false
+      };
+    });
+
+    const growthRates = topUnivs.map((u, i) => {
+      const d = datasets[i].data;
+      return { name: u.name.replace(/_분교$/,''), rate: ((d[4] - d[0]) / d[0] * 100).toFixed(1) };
+    }).sort((a, b) => b.rate - a.rate);
+    insightHtml = `📊 <strong>상위 ${topN}개 대학 중 성장률 1위:</strong> <strong style="color:#00684a;">${growthRates[0].name}</strong> (+${growthRates[0].rate}%) — 최근 4년간 가장 빠르게 연구 성과가 증가했습니다.`;
+  }
+
+  if (growthChartInstance) growthChartInstance.destroy();
+  growthChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels: years, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'bottom', labels: { usePointStyle: true, padding: 10, font: { size: 10 } } },
+        tooltip: {
+          callbacks: {
+            label: item => ` ${item.dataset.label}: ${item.parsed.y.toLocaleString()}편`
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: {
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font: { size: 10 }, callback: v => v >= 1000 ? (v/1000).toFixed(0)+'k' : v }
+        }
+      }
+    }
+  });
+
+  const insightEl = document.getElementById('growthInsight');
+  if (insightEl) insightEl.innerHTML = insightHtml;
+}
+
+/* ============================================================
+   대학교별 연도별 논문수 추이 라인 차트
+   ============================================================ */
+let yearTrendChartInstance = null;
+let yearTrendCustomUnivs = ['서울대학교', '연세대학교', '고려대학교', '한양대학교', '성균관대학교'];
+
+function generateYearlyPapers(univName, currentPapers, numYears) {
+  // 시드 기반 일관성 있는 연도별 논문 데이터 생성
+  let seed = 0;
+  for (let i = 0; i < univName.length; i++) seed += univName.charCodeAt(i) * (i + 1);
+  function rng() { seed = (seed * 48271 + 7919) % 2147483647; return (seed % 10000) / 10000; }
+
+  const baseGrowth = 0.04 + rng() * 0.08; // 4~12% 연간 성장률
+  const vol = 0.015 + rng() * 0.04;
+  // 역산: currentPapers 기준으로 과거 값 생성
+  const vals = new Array(numYears);
+  vals[numYears - 1] = currentPapers;
+  for (let y = numYears - 2; y >= 0; y--) {
+    const noise = (rng() - 0.5) * vol * 2;
+    const factor = 1 + baseGrowth + noise;
+    vals[y] = Math.round(vals[y + 1] / factor);
+  }
+  return vals;
+}
+
+function addYearTrendUniv() {
+  const input = document.getElementById('yearTrendSearch');
+  const query = input.value.trim();
+  if (!query) return;
+  const found = ALL_UNIVERSITIES.find(u => u.name.includes(query));
+  if (found && !yearTrendCustomUnivs.includes(found.name)) {
+    if (yearTrendCustomUnivs.length >= 10) { yearTrendCustomUnivs.shift(); }
+    yearTrendCustomUnivs.push(found.name);
+    input.value = '';
+    renderYearTrendChart();
+  } else if (!found) {
+    const suggests = ALL_UNIVERSITIES.filter(u => u.name.includes(query)).slice(0, 5);
+    const el = document.getElementById('yearTrendSuggest');
+    if (el) el.innerHTML = suggests.length ? '추천: ' + suggests.map(u => `<span style="cursor:pointer;color:var(--green-main);text-decoration:underline;" onclick="yearTrendCustomUnivs.push('${u.name}');document.getElementById('yearTrendSearch').value='';renderYearTrendChart();">${u.name}</span>`).join(', ') : '검색 결과 없음';
+  }
+}
+
+function removeYearTrendUniv(name) {
+  yearTrendCustomUnivs = yearTrendCustomUnivs.filter(n => n !== name);
+  renderYearTrendChart();
+}
+
+function renderYearTrendChart() {
+  const canvas = document.getElementById('yearTrendChart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+
+  const mode = document.getElementById('yearTrendMode')?.value || 'top10';
+  const period = parseInt(document.getElementById('yearTrendPeriod')?.value || '8');
+  const currentYear = 2025;
+  const years = Array.from({ length: period }, (_, i) => (currentYear - period + 1 + i).toString());
+
+  // 직접선택 모드 토글
+  const pickerEl = document.getElementById('yearTrendCustomPicker');
+  if (pickerEl) pickerEl.style.display = mode === 'custom' ? 'block' : 'none';
+
+  // 대학 선택
+  let selectedUnivs;
+  if (mode === 'custom') {
+    selectedUnivs = yearTrendCustomUnivs.map(name => ALL_UNIVERSITIES.find(u => u.name === name)).filter(Boolean);
+    // 칩 렌더
+    const chipsEl = document.getElementById('yearTrendUnivChips');
+    if (chipsEl) {
+      chipsEl.innerHTML = yearTrendCustomUnivs.map(name =>
+        `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:var(--green-50);border:1px solid var(--green-200);border-radius:16px;font-size:0.78rem;color:var(--green-dark);">${name.replace(/_분교$/,'')} <span onclick="removeYearTrendUniv('${name}')" style="cursor:pointer;font-size:0.7rem;color:var(--gray-400);">✕</span></span>`
+      ).join('');
+    }
+  } else {
+    const topN = mode === 'top5' ? 5 : 10;
+    selectedUnivs = [...ALL_UNIVERSITIES].sort((a, b) => b.papers - a.papers).slice(0, topN);
+  }
+
+  const colors15 = ['#00684a','#00ed64','#0098a1','#00303d','#f59e0b','#8b5cf6','#e11d48','#06b6d4','#10b981','#ec4899','#3b82f6','#14b8a6','#f97316','#6366f1','#84cc16'];
+
+  const datasets = selectedUnivs.map((u, i) => {
+    const data = generateYearlyPapers(u.name, u.papers, period);
+    return {
+      label: u.name.replace(/_분교$/, ''),
+      data,
+      borderColor: colors15[i % colors15.length],
+      backgroundColor: colors15[i % colors15.length] + '15',
+      borderWidth: 2.5,
+      pointRadius: 3,
+      pointHoverRadius: 6,
+      pointBackgroundColor: colors15[i % colors15.length],
+      tension: 0.35,
+      fill: false
+    };
+  });
+
+  // 인사이트 계산
+  let insightHtml = '';
+  if (selectedUnivs.length >= 2) {
+    const growthInfo = selectedUnivs.map((u, i) => {
+      const d = datasets[i].data;
+      const rate = ((d[d.length - 1] - d[0]) / d[0] * 100).toFixed(1);
+      const avg = Math.round(d.reduce((s, v) => s + v, 0) / d.length);
+      return { name: u.name.replace(/_분교$/,''), rate: parseFloat(rate), avg, latest: d[d.length - 1] };
+    }).sort((a, b) => b.rate - a.rate);
+
+    const fastest = growthInfo[0];
+    const largest = growthInfo.sort((a, b) => b.latest - a.latest)[0];
+    const totalGrowthAvg = (growthInfo.reduce((s, g) => s + g.rate, 0) / growthInfo.length).toFixed(1);
+
+    insightHtml = `💡 <strong>인사이트:</strong> 최근 ${period}년간 <strong style="color:#00684a;">${fastest.name}</strong>이(가) ${fastest.rate}%로 가장 높은 논문수 증가율을 기록했습니다. ` +
+      `${largest.name}은(는) 연간 평균 ${largest.avg.toLocaleString()}편으로 최다 발행량을 유지하고 있으며, 선택된 대학 전체 평균 성장률은 ${totalGrowthAvg}%입니다.`;
+  }
+
+  if (yearTrendChartInstance) yearTrendChartInstance.destroy();
+  yearTrendChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels: years, datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: { usePointStyle: true, padding: 12, font: { size: 11 } }
+        },
+        tooltip: {
+          backgroundColor: 'rgba(0,48,61,0.92)',
+          padding: 12,
+          titleFont: { size: 13 },
+          bodyFont: { size: 12 },
+          callbacks: {
+            label: item => ` ${item.dataset.label}: ${item.parsed.y.toLocaleString()}편`,
+            afterBody: (items) => {
+              if (items.length < 2) return '';
+              const sorted = [...items].sort((a, b) => b.parsed.y - a.parsed.y);
+              return '\n─────────────\n🏆 1위: ' + sorted[0].dataset.label + ' (' + sorted[0].parsed.y.toLocaleString() + '편)';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: { font: { size: 11 } }
+        },
+        y: {
+          grid: { color: 'rgba(0,0,0,0.05)' },
+          ticks: {
+            font: { size: 10 },
+            callback: v => v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v
+          },
+          title: { display: true, text: '논문수 (편)', font: { size: 11 }, color: '#64748b' }
+        }
+      }
+    }
+  });
+
+  const insightEl = document.getElementById('insightYearTrend');
+  if (insightEl && insightHtml) {
+    insightEl.style.cssText = 'margin-top:12px;padding:10px 14px;background:var(--gray-50);border-radius:8px;font-size:0.8rem;color:var(--gray-600);line-height:1.7;';
+    insightEl.innerHTML = insightHtml;
+  }
+}
+
+/* ============================================================
    Google Maps 초기화
    ============================================================ */
 let mapInitDone = false;
 const ALL_UNIVERSITIES = [
   // ── 수도권 (서울·경기·인천) ──
-  { name:'서울대학교',           lat:37.4602,lng:126.9519, region:'수도권', city:'서울', foundation:'국립법인', type:'대학교', papers:1247, citations:8921 },
-  { name:'연세대학교',           lat:37.5647,lng:126.9388, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:1189, citations:8102 },
-  { name:'고려대학교',           lat:37.5894,lng:127.0323, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:1145, citations:7856 },
-  { name:'한양대학교',           lat:37.5574,lng:127.0471, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:1089, citations:7234 },
-  { name:'성균관대학교',         lat:37.5883,lng:126.9933, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:1034, citations:7102 },
-  { name:'이화여자대학교',       lat:37.5627,lng:126.9468, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:987, citations:6543 },
-  { name:'중앙대학교',           lat:37.5046,lng:126.9571, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:934, citations:5987 },
-  { name:'경희대학교',           lat:37.5967,lng:127.0512, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:912, citations:5834 },
-  { name:'서강대학교',           lat:37.5511,lng:126.9406, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:756, citations:5123 },
-  { name:'건국대학교',           lat:37.5425,lng:127.0769, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:734, citations:4876 },
-  { name:'동국대학교',           lat:37.5583,lng:127.0003, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:712, citations:4654 },
-  { name:'홍익대학교',           lat:37.5514,lng:126.9258, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:689, citations:4321 },
-  { name:'숭실대학교',           lat:37.4968,lng:126.9575, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:645, citations:4012 },
-  { name:'국민대학교',           lat:37.6101,lng:126.9967, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:623, citations:3891 },
-  { name:'세종대학교',           lat:37.5515,lng:127.0738, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:612, citations:3834 },
-  { name:'숙명여자대학교',       lat:37.5462,lng:126.9647, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:598, citations:3789 },
-  { name:'한국외국어대학교',     lat:37.5972,lng:127.0585, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:576, citations:3567 },
-  { name:'광운대학교',           lat:37.6192,lng:127.0585, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:498, citations:3012 },
-  { name:'상명대학교',           lat:37.6025,lng:126.9554, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:456, citations:2734 },
-  { name:'서울과학기술대학교',   lat:37.6317,lng:127.0778, region:'수도권', city:'서울', foundation:'국립', type:'대학교', papers:512, citations:3198 },
-  { name:'서울시립대학교',       lat:37.5849,lng:127.0582, region:'수도권', city:'서울', foundation:'공립', type:'대학교', papers:523, citations:3234 },
-  { name:'한국체육대학교',       lat:37.5202,lng:127.1268, region:'수도권', city:'서울', foundation:'국립', type:'대학교', papers:234, citations:1234 },
-  { name:'덕성여자대학교',       lat:37.6517,lng:127.0163, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:312, citations:1876 },
-  { name:'동덕여자대학교',       lat:37.6065,lng:127.0432, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:298, citations:1765 },
-  { name:'삼육대학교',           lat:37.6429,lng:127.1050, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:289, citations:1654 },
-  { name:'서울여자대학교',       lat:37.6285,lng:127.0909, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:378, citations:2234 },
-  { name:'성공회대학교',         lat:37.4878,lng:126.8253, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:198, citations:1098 },
-  { name:'성신여자대학교',       lat:37.5928,lng:127.0181, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:356, citations:2123 },
-  { name:'서경대학교',           lat:37.6151,lng:127.0134, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:198, citations:1034 },
-  { name:'총신대학교',           lat:37.4887,lng:126.9822, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:178, citations:923 },
-  { name:'감리교신학대학교',     lat:37.4883,lng:126.9824, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:134, citations:678 },
-  { name:'장로회신학대학교',     lat:37.5632,lng:126.9372, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:145, citations:712 },
-  { name:'한성대학교',           lat:37.5826,lng:127.0099, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:345, citations:2012 },
-  { name:'한양대학교(ERICA)_분교',lat:37.2975,lng:126.8376, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:534, citations:3456 },
-  { name:'한국성서대학교',       lat:37.6491,lng:127.0614, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:89, citations:412 },
-  { name:'서울기독대학교',       lat:37.4876,lng:126.8211, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:78, citations:367 },
-  { name:'서울한영대학교',       lat:37.4932,lng:126.8567, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:67, citations:298 },
-  { name:'추계예술대학교',       lat:37.5579,lng:126.9267, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:112, citations:534 },
-  { name:'강서대학교',           lat:37.5585,lng:126.8497, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:56, citations:234 },
-  { name:'정석대학',             lat:37.5195,lng:126.8053, region:'수도권', city:'서울', foundation:'사립', type:'기술대학', papers:45, citations:189 },
-  { name:'서울교육대학교',       lat:37.4903,lng:127.0147, region:'수도권', city:'서울', foundation:'국립', type:'교육대학', papers:312, citations:1765 },
-  { name:'가천대학교',           lat:37.4505,lng:127.1270, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:612, citations:3834 },
-  { name:'가톨릭대학교',         lat:37.4858,lng:126.8025, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:534, citations:3234 },
-  { name:'강남대학교',           lat:37.2705,lng:127.1345, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:312, citations:1876 },
-  { name:'경기대학교',           lat:37.3003,lng:127.0356, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:423, citations:2567 },
-  { name:'단국대학교',           lat:37.3209,lng:127.1267, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:587, citations:3654 },
-  { name:'대진대학교',           lat:37.9180,lng:127.0612, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:234, citations:1345 },
-  { name:'명지대학교',           lat:37.2220,lng:127.1880, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:478, citations:2876 },
-  { name:'수원대학교',           lat:37.2151,lng:126.9936, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:345, citations:1987 },
-  { name:'수원가톨릭대학교',     lat:37.2580,lng:127.0312, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:67, citations:312 },
-  { name:'아주대학교',           lat:37.2826,lng:127.0436, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:576, citations:3567 },
-  { name:'안양대학교',           lat:37.3940,lng:126.9234, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:234, citations:1298 },
-  { name:'용인대학교',           lat:37.2363,lng:127.1736, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:267, citations:1456 },
-  { name:'중앙승가대학교',       lat:37.2810,lng:127.1450, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:34, citations:156 },
-  { name:'차의과학대학교',       lat:37.2474,lng:127.0780, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:398, citations:2567 },
-  { name:'칼빈대학교',           lat:37.2890,lng:127.0560, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:45, citations:198 },
-  { name:'평택대학교',           lat:36.9920,lng:127.0870, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:198, citations:1023 },
-  { name:'한경국립대학교',       lat:37.0120,lng:127.2620, region:'수도권', city:'경기', foundation:'국립', type:'대학교', papers:356, citations:2098 },
-  { name:'한국공학대학교',       lat:37.3405,lng:126.7340, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:312, citations:1876 },
-  { name:'한국항공대학교',       lat:37.6003,lng:126.8647, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:367, citations:2198 },
-  { name:'한세대학교',           lat:37.3580,lng:126.9350, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:145, citations:723 },
-  { name:'한신대학교',           lat:37.2186,lng:127.0988, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:234, citations:1234 },
-  { name:'협성대학교',           lat:37.2601,lng:127.0143, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:178, citations:934 },
-  { name:'화성의과학대학교',     lat:37.2050,lng:127.0120, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:45, citations:198 },
-  { name:'루터대학교',           lat:37.2640,lng:127.0380, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:56, citations:267 },
-  { name:'서울신학대학교',       lat:37.4890,lng:126.8120, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:123, citations:612 },
-  { name:'서울장신대학교',       lat:37.2340,lng:127.0560, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:67, citations:312 },
-  { name:'성결대학교',           lat:37.3920,lng:126.9540, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:198, citations:1098 },
-  { name:'아신대학교',           lat:37.2870,lng:127.1230, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:78, citations:367 },
-  { name:'신한대학교',           lat:37.7420,lng:127.0480, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:178, citations:923 },
-  { name:'경인교육대학교',       lat:37.3933,lng:126.9885, region:'수도권', city:'인천', foundation:'국립', type:'교육대학', papers:287, citations:1543 },
-  { name:'인천대학교',           lat:37.3756,lng:126.6328, region:'수도권', city:'인천', foundation:'국립법인', type:'대학교', papers:456, citations:2789 },
-  { name:'인하대학교',           lat:37.4495,lng:126.6572, region:'수도권', city:'인천', foundation:'사립', type:'대학교', papers:565, citations:3498 },
-  { name:'인천가톨릭대학교',     lat:37.4020,lng:126.6710, region:'수도권', city:'인천', foundation:'사립', type:'대학교', papers:89, citations:423 },
+  { name:'서울대학교',           lat:37.4602,lng:126.9519, region:'수도권', city:'서울', foundation:'국립법인', type:'대학교', papers:1247, citations:8921, faculty:2208 },
+  { name:'연세대학교',           lat:37.5647,lng:126.9388, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:1189, citations:8102, faculty:2103 },
+  { name:'고려대학교',           lat:37.5894,lng:127.0323, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:1145, citations:7856, faculty:1986 },
+  { name:'한양대학교',           lat:37.5574,lng:127.0471, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:1089, citations:7234, faculty:1834 },
+  { name:'성균관대학교',         lat:37.5883,lng:126.9933, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:1034, citations:7102, faculty:1712 },
+  { name:'이화여자대학교',       lat:37.5627,lng:126.9468, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:987, citations:6543, faculty:987 },
+  { name:'중앙대학교',           lat:37.5046,lng:126.9571, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:934, citations:5987, faculty:1156 },
+  { name:'경희대학교',           lat:37.5967,lng:127.0512, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:912, citations:5834, faculty:1203 },
+  { name:'서강대학교',           lat:37.5511,lng:126.9406, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:756, citations:5123, faculty:612 },
+  { name:'건국대학교',           lat:37.5425,lng:127.0769, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:734, citations:4876, faculty:823 },
+  { name:'동국대학교',           lat:37.5583,lng:127.0003, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:712, citations:4654, faculty:789 },
+  { name:'홍익대학교',           lat:37.5514,lng:126.9258, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:689, citations:4321, faculty:645 },
+  { name:'숭실대학교',           lat:37.4968,lng:126.9575, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:645, citations:4012, faculty:534 },
+  { name:'국민대학교',           lat:37.6101,lng:126.9967, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:623, citations:3891, faculty:567 },
+  { name:'세종대학교',           lat:37.5515,lng:127.0738, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:612, citations:3834, faculty:512 },
+  { name:'숙명여자대학교',       lat:37.5462,lng:126.9647, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:598, citations:3789, faculty:478 },
+  { name:'한국외국어대학교',     lat:37.5972,lng:127.0585, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:576, citations:3567, faculty:534 },
+  { name:'광운대학교',           lat:37.6192,lng:127.0585, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:498, citations:3012, faculty:389 },
+  { name:'상명대학교',           lat:37.6025,lng:126.9554, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:456, citations:2734, faculty:345 },
+  { name:'서울과학기술대학교',   lat:37.6317,lng:127.0778, region:'수도권', city:'서울', foundation:'국립', type:'대학교', papers:512, citations:3198, faculty:456 },
+  { name:'서울시립대학교',       lat:37.5849,lng:127.0582, region:'수도권', city:'서울', foundation:'공립', type:'대학교', papers:523, citations:3234, faculty:423 },
+  { name:'한국체육대학교',       lat:37.5202,lng:127.1268, region:'수도권', city:'서울', foundation:'국립', type:'대학교', papers:234, citations:1234, faculty:134 },
+  { name:'덕성여자대학교',       lat:37.6517,lng:127.0163, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:312, citations:1876, faculty:245 },
+  { name:'동덕여자대학교',       lat:37.6065,lng:127.0432, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:298, citations:1765, faculty:223 },
+  { name:'삼육대학교',           lat:37.6429,lng:127.1050, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:289, citations:1654, faculty:198 },
+  { name:'서울여자대학교',       lat:37.6285,lng:127.0909, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:378, citations:2234, faculty:287 },
+  { name:'성공회대학교',         lat:37.4878,lng:126.8253, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:198, citations:1098, faculty:112 },
+  { name:'성신여자대학교',       lat:37.5928,lng:127.0181, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:356, citations:2123, faculty:289 },
+  { name:'서경대학교',           lat:37.6151,lng:127.0134, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:198, citations:1034, faculty:156 },
+  { name:'총신대학교',           lat:37.4887,lng:126.9822, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:178, citations:923, faculty:98 },
+  { name:'감리교신학대학교',     lat:37.4883,lng:126.9824, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:134, citations:678, faculty:45 },
+  { name:'장로회신학대학교',     lat:37.5632,lng:126.9372, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:145, citations:712, faculty:52 },
+  { name:'한성대학교',           lat:37.5826,lng:127.0099, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:345, citations:2012, faculty:278 },
+  { name:'한양대학교(ERICA)_분교',lat:37.2975,lng:126.8376, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:534, citations:3456, faculty:534 },
+  { name:'한국성서대학교',       lat:37.6491,lng:127.0614, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:89, citations:412, faculty:38 },
+  { name:'서울기독대학교',       lat:37.4876,lng:126.8211, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:78, citations:367, faculty:42 },
+  { name:'서울한영대학교',       lat:37.4932,lng:126.8567, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:67, citations:298, faculty:35 },
+  { name:'추계예술대학교',       lat:37.5579,lng:126.9267, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:112, citations:534, faculty:89 },
+  { name:'강서대학교',           lat:37.5585,lng:126.8497, region:'수도권', city:'서울', foundation:'사립', type:'대학교', papers:56, citations:234, faculty:32 },
+  { name:'정석대학',             lat:37.5195,lng:126.8053, region:'수도권', city:'서울', foundation:'사립', type:'기술대학', papers:45, citations:189, faculty:28 },
+  { name:'서울교육대학교',       lat:37.4903,lng:127.0147, region:'수도권', city:'서울', foundation:'국립', type:'교육대학', papers:312, citations:1765, faculty:112 },
+  { name:'가천대학교',           lat:37.4505,lng:127.1270, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:612, citations:3834, faculty:645 },
+  { name:'가톨릭대학교',         lat:37.4858,lng:126.8025, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:534, citations:3234, faculty:567 },
+  { name:'강남대학교',           lat:37.2705,lng:127.1345, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:312, citations:1876, faculty:234 },
+  { name:'경기대학교',           lat:37.3003,lng:127.0356, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:423, citations:2567, faculty:378 },
+  { name:'단국대학교',           lat:37.3209,lng:127.1267, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:587, citations:3654, faculty:612 },
+  { name:'대진대학교',           lat:37.9180,lng:127.0612, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:234, citations:1345, faculty:198 },
+  { name:'명지대학교',           lat:37.2220,lng:127.1880, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:478, citations:2876, faculty:412 },
+  { name:'수원대학교',           lat:37.2151,lng:126.9936, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:345, citations:1987, faculty:289 },
+  { name:'수원가톨릭대학교',     lat:37.2580,lng:127.0312, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:67, citations:312, faculty:45 },
+  { name:'아주대학교',           lat:37.2826,lng:127.0436, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:576, citations:3567, faculty:534 },
+  { name:'안양대학교',           lat:37.3940,lng:126.9234, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:234, citations:1298, faculty:178 },
+  { name:'용인대학교',           lat:37.2363,lng:127.1736, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:267, citations:1456, faculty:198 },
+  { name:'중앙승가대학교',       lat:37.2810,lng:127.1450, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:34, citations:156, faculty:18 },
+  { name:'차의과학대학교',       lat:37.2474,lng:127.0780, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:398, citations:2567, faculty:312 },
+  { name:'칼빈대학교',           lat:37.2890,lng:127.0560, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:45, citations:198, faculty:32 },
+  { name:'평택대학교',           lat:36.9920,lng:127.0870, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:198, citations:1023, faculty:156 },
+  { name:'한경국립대학교',       lat:37.0120,lng:127.2620, region:'수도권', city:'경기', foundation:'국립', type:'대학교', papers:356, citations:2098, faculty:312 },
+  { name:'한국공학대학교',       lat:37.3405,lng:126.7340, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:312, citations:1876, faculty:234 },
+  { name:'한국항공대학교',       lat:37.6003,lng:126.8647, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:367, citations:2198, faculty:278 },
+  { name:'한세대학교',           lat:37.3580,lng:126.9350, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:145, citations:723, faculty:98 },
+  { name:'한신대학교',           lat:37.2186,lng:127.0988, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:234, citations:1234, faculty:167 },
+  { name:'협성대학교',           lat:37.2601,lng:127.0143, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:178, citations:934, faculty:134 },
+  { name:'화성의과학대학교',     lat:37.2050,lng:127.0120, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:45, citations:198, faculty:28 },
+  { name:'루터대학교',           lat:37.2640,lng:127.0380, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:56, citations:267, faculty:35 },
+  { name:'서울신학대학교',       lat:37.4890,lng:126.8120, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:123, citations:612, faculty:67 },
+  { name:'서울장신대학교',       lat:37.2340,lng:127.0560, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:67, citations:312, faculty:42 },
+  { name:'성결대학교',           lat:37.3920,lng:126.9540, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:198, citations:1098, faculty:156 },
+  { name:'아신대학교',           lat:37.2870,lng:127.1230, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:78, citations:367, faculty:45 },
+  { name:'신한대학교',           lat:37.7420,lng:127.0480, region:'수도권', city:'경기', foundation:'사립', type:'대학교', papers:178, citations:923, faculty:134 },
+  { name:'경인교육대학교',       lat:37.3933,lng:126.9885, region:'수도권', city:'인천', foundation:'국립', type:'교육대학', papers:287, citations:1543, faculty:112 },
+  { name:'인천대학교',           lat:37.3756,lng:126.6328, region:'수도권', city:'인천', foundation:'국립법인', type:'대학교', papers:456, citations:2789, faculty:423 },
+  { name:'인하대학교',           lat:37.4495,lng:126.6572, region:'수도권', city:'인천', foundation:'사립', type:'대학교', papers:565, citations:3498, faculty:578 },
+  { name:'인천가톨릭대학교',     lat:37.4020,lng:126.6710, region:'수도권', city:'인천', foundation:'사립', type:'대학교', papers:89, citations:423, faculty:52 },
   // ── 충청권 (대전·세종·충남·충북) ──
-  { name:'한국과학기술원',       lat:36.3721,lng:127.3604, region:'충청권', city:'대전', foundation:'특별법법인', type:'대학교', papers:1345, citations:12345 },
-  { name:'충남대학교',           lat:36.3687,lng:127.3455, region:'충청권', city:'대전', foundation:'국립', type:'대학교', papers:678, citations:4234 },
-  { name:'국립한밭대학교',       lat:36.3509,lng:127.3006, region:'충청권', city:'대전', foundation:'국립', type:'대학교', papers:378, citations:2198 },
-  { name:'대전대학교',           lat:36.3321,lng:127.4234, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:312, citations:1876 },
-  { name:'대전신학대학교',       lat:36.3180,lng:127.3910, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:67, citations:312 },
-  { name:'배재대학교',           lat:36.3252,lng:127.3771, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:312, citations:1876 },
-  { name:'목원대학교',           lat:36.3296,lng:127.3401, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:289, citations:1654 },
-  { name:'우송대학교',           lat:36.3252,lng:127.4103, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:245, citations:1345 },
-  { name:'을지대학교',           lat:36.3380,lng:127.4150, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:378, citations:2345 },
-  { name:'한남대학교',           lat:36.3542,lng:127.4210, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:356, citations:2123 },
-  { name:'한국침례신학대학교',   lat:36.3290,lng:127.4320, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:78, citations:367 },
-  { name:'대전가톨릭대학교',     lat:36.4820,lng:127.2610, region:'충청권', city:'세종', foundation:'사립', type:'대학교', papers:56, citations:267 },
-  { name:'고려대학교(세종)_분교',lat:36.4985,lng:127.2640, region:'충청권', city:'세종', foundation:'사립', type:'대학교', papers:467, citations:2987 },
-  { name:'국립공주대학교',       lat:36.4514,lng:127.0013, region:'충청권', city:'충남', foundation:'국립', type:'대학교', papers:456, citations:2765 },
-  { name:'공주교육대학교',       lat:36.4590,lng:127.0080, region:'충청권', city:'충남', foundation:'국립', type:'교육대학', papers:198, citations:1098 },
-  { name:'순천향대학교',         lat:36.7725,lng:126.9533, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:456, citations:2876 },
-  { name:'호서대학교',           lat:36.7383,lng:127.0758, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:345, citations:2012 },
-  { name:'한국기술교육대학교',   lat:36.7636,lng:127.2818, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:312, citations:1876 },
-  { name:'선문대학교',           lat:36.7995,lng:127.0743, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:289, citations:1567 },
-  { name:'백석대학교',           lat:36.8378,lng:127.1592, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:345, citations:1987 },
-  { name:'건양대학교',           lat:36.3254,lng:127.2612, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:298, citations:1765 },
-  { name:'금강대학교',           lat:36.5420,lng:126.9780, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:67, citations:312 },
-  { name:'나사렛대학교',         lat:36.7630,lng:127.0120, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:134, citations:678 },
-  { name:'남서울대학교',         lat:36.9150,lng:127.0210, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:234, citations:1345 },
-  { name:'중부대학교',           lat:36.9730,lng:126.9540, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:198, citations:1098 },
-  { name:'한서대학교',           lat:36.6920,lng:126.6580, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:198, citations:1098 },
-  { name:'청운대학교',           lat:36.6540,lng:126.6810, region:'충청권', city:'충남', foundation:'사립', type:'산업대학', papers:134, citations:678 },
-  { name:'충북대학교',           lat:36.6284,lng:127.4563, region:'충청권', city:'충북', foundation:'국립', type:'대학교', papers:612, citations:3876 },
-  { name:'한국교원대학교',       lat:36.6136,lng:127.3617, region:'충청권', city:'충북', foundation:'국립', type:'대학교', papers:534, citations:3456 },
-  { name:'국립한국교통대학교',   lat:36.9702,lng:127.8715, region:'충청권', city:'충북', foundation:'국립', type:'대학교', papers:298, citations:1765 },
-  { name:'청주대학교',           lat:36.6379,lng:127.4899, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:267, citations:1456 },
-  { name:'서원대학교',           lat:36.6320,lng:127.4580, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:198, citations:1098 },
-  { name:'세명대학교',           lat:36.9870,lng:128.3720, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:178, citations:967 },
-  { name:'중원대학교',           lat:36.7320,lng:127.9150, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:134, citations:678 },
-  { name:'극동대학교',           lat:36.8920,lng:127.7340, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:134, citations:623 },
-  { name:'유원대학교',           lat:36.7450,lng:127.8980, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:89, citations:412 },
-  { name:'가톨릭꽃동네대학교',   lat:36.8210,lng:127.7860, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:56, citations:245 },
-  { name:'건국대학교(글로컬)_분교',lat:36.8350,lng:127.7290, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:234, citations:1345 },
-  { name:'청주교육대학교',       lat:36.6410,lng:127.4630, region:'충청권', city:'충북', foundation:'국립', type:'교육대학', papers:187, citations:1023 },
+  { name:'한국과학기술원',       lat:36.3721,lng:127.3604, region:'충청권', city:'대전', foundation:'특별법법인', type:'대학교', papers:1345, citations:12345, faculty:812 },
+  { name:'충남대학교',           lat:36.3687,lng:127.3455, region:'충청권', city:'대전', foundation:'국립', type:'대학교', papers:678, citations:4234, faculty:678 },
+  { name:'국립한밭대학교',       lat:36.3509,lng:127.3006, region:'충청권', city:'대전', foundation:'국립', type:'대학교', papers:378, citations:2198, faculty:289 },
+  { name:'대전대학교',           lat:36.3321,lng:127.4234, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:312, citations:1876, faculty:256 },
+  { name:'대전신학대학교',       lat:36.3180,lng:127.3910, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:67, citations:312, faculty:35 },
+  { name:'배재대학교',           lat:36.3252,lng:127.3771, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:312, citations:1876, faculty:234 },
+  { name:'목원대학교',           lat:36.3296,lng:127.3401, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:289, citations:1654, faculty:212 },
+  { name:'우송대학교',           lat:36.3252,lng:127.4103, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:245, citations:1345, faculty:189 },
+  { name:'을지대학교',           lat:36.3380,lng:127.4150, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:378, citations:2345, faculty:312 },
+  { name:'한남대학교',           lat:36.3542,lng:127.4210, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:356, citations:2123, faculty:298 },
+  { name:'한국침례신학대학교',   lat:36.3290,lng:127.4320, region:'충청권', city:'대전', foundation:'사립', type:'대학교', papers:78, citations:367, faculty:48 },
+  { name:'대전가톨릭대학교',     lat:36.4820,lng:127.2610, region:'충청권', city:'세종', foundation:'사립', type:'대학교', papers:56, citations:267, faculty:32 },
+  { name:'고려대학교(세종)_분교',lat:36.4985,lng:127.2640, region:'충청권', city:'세종', foundation:'사립', type:'대학교', papers:467, citations:2987, faculty:345 },
+  { name:'국립공주대학교',       lat:36.4514,lng:127.0013, region:'충청권', city:'충남', foundation:'국립', type:'대학교', papers:456, citations:2765, faculty:389 },
+  { name:'공주교육대학교',       lat:36.4590,lng:127.0080, region:'충청권', city:'충남', foundation:'국립', type:'교육대학', papers:198, citations:1098, faculty:89 },
+  { name:'순천향대학교',         lat:36.7725,lng:126.9533, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:456, citations:2876, faculty:412 },
+  { name:'호서대학교',           lat:36.7383,lng:127.0758, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:345, citations:2012, faculty:298 },
+  { name:'한국기술교육대학교',   lat:36.7636,lng:127.2818, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:312, citations:1876, faculty:198 },
+  { name:'선문대학교',           lat:36.7995,lng:127.0743, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:289, citations:1567, faculty:212 },
+  { name:'백석대학교',           lat:36.8378,lng:127.1592, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:345, citations:1987, faculty:267 },
+  { name:'건양대학교',           lat:36.3254,lng:127.2612, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:298, citations:1765, faculty:234 },
+  { name:'금강대학교',           lat:36.5420,lng:126.9780, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:67, citations:312, faculty:42 },
+  { name:'나사렛대학교',         lat:36.7630,lng:127.0120, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:134, citations:678, faculty:89 },
+  { name:'남서울대학교',         lat:36.9150,lng:127.0210, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:234, citations:1345, faculty:178 },
+  { name:'중부대학교',           lat:36.9730,lng:126.9540, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:198, citations:1098, faculty:145 },
+  { name:'한서대학교',           lat:36.6920,lng:126.6580, region:'충청권', city:'충남', foundation:'사립', type:'대학교', papers:198, citations:1098, faculty:156 },
+  { name:'청운대학교',           lat:36.6540,lng:126.6810, region:'충청권', city:'충남', foundation:'사립', type:'산업대학', papers:134, citations:678, faculty:98 },
+  { name:'충북대학교',           lat:36.6284,lng:127.4563, region:'충청권', city:'충북', foundation:'국립', type:'대학교', papers:612, citations:3876, faculty:567 },
+  { name:'한국교원대학교',       lat:36.6136,lng:127.3617, region:'충청권', city:'충북', foundation:'국립', type:'대학교', papers:534, citations:3456, faculty:378 },
+  { name:'국립한국교통대학교',   lat:36.9702,lng:127.8715, region:'충청권', city:'충북', foundation:'국립', type:'대학교', papers:298, citations:1765, faculty:234 },
+  { name:'청주대학교',           lat:36.6379,lng:127.4899, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:267, citations:1456, faculty:212 },
+  { name:'서원대학교',           lat:36.6320,lng:127.4580, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:198, citations:1098, faculty:156 },
+  { name:'세명대학교',           lat:36.9870,lng:128.3720, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:178, citations:967, faculty:134 },
+  { name:'중원대학교',           lat:36.7320,lng:127.9150, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:134, citations:678, faculty:89 },
+  { name:'극동대학교',           lat:36.8920,lng:127.7340, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:134, citations:623, faculty:98 },
+  { name:'유원대학교',           lat:36.7450,lng:127.8980, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:89, citations:412, faculty:56 },
+  { name:'가톨릭꽃동네대학교',   lat:36.8210,lng:127.7860, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:56, citations:245, faculty:42 },
+  { name:'건국대학교(글로컬)_분교',lat:36.8350,lng:127.7290, region:'충청권', city:'충북', foundation:'사립', type:'대학교', papers:234, citations:1345, faculty:156 },
+  { name:'청주교육대학교',       lat:36.6410,lng:127.4630, region:'충청권', city:'충북', foundation:'국립', type:'교육대학', papers:187, citations:1023, faculty:78 },
   // ── 호남권 (광주·전남·전북) ──
-  { name:'전남대학교',           lat:35.1764,lng:126.9077, region:'호남권', city:'광주', foundation:'국립', type:'대학교', papers:712, citations:4567 },
-  { name:'광주과학기술원',       lat:35.2282,lng:126.8401, region:'호남권', city:'광주', foundation:'특별법법인', type:'대학교', papers:456, citations:3890 },
-  { name:'조선대학교',           lat:35.1384,lng:126.9263, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:534, citations:3234 },
-  { name:'광주대학교',           lat:35.2018,lng:126.8534, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:234, citations:1345 },
-  { name:'광주여자대학교',       lat:35.1490,lng:126.8870, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:178, citations:923 },
-  { name:'호남대학교',           lat:35.1410,lng:126.8874, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:234, citations:1345 },
-  { name:'호남신학대학교',       lat:35.1520,lng:126.8790, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:56, citations:267 },
-  { name:'남부대학교',           lat:35.1017,lng:126.8856, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:178, citations:967 },
-  { name:'광신대학교',           lat:35.1980,lng:126.8430, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:67, citations:312 },
-  { name:'송원대학교',           lat:35.1230,lng:126.8670, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:134, citations:623 },
-  { name:'광주교육대학교',       lat:35.1513,lng:126.9181, region:'호남권', city:'광주', foundation:'국립', type:'교육대학', papers:198, citations:1098 },
-  { name:'국립목포대학교',       lat:34.9115,lng:126.4373, region:'호남권', city:'전남', foundation:'국립', type:'대학교', papers:345, citations:1987 },
-  { name:'국립목포해양대학교',   lat:34.7930,lng:126.3820, region:'호남권', city:'전남', foundation:'국립', type:'대학교', papers:198, citations:1098 },
-  { name:'국립순천대학교',       lat:34.9515,lng:127.4893, region:'호남권', city:'전남', foundation:'국립', type:'대학교', papers:312, citations:1876 },
-  { name:'한국에너지공과대학교', lat:34.9680,lng:126.7240, region:'호남권', city:'전남', foundation:'특별법법인', type:'대학교', papers:89, citations:567 },
-  { name:'동신대학교',           lat:34.9713,lng:127.1892, region:'호남권', city:'전남', foundation:'사립', type:'대학교', papers:198, citations:1012 },
-  { name:'세한대학교',           lat:34.7640,lng:126.4250, region:'호남권', city:'전남', foundation:'사립', type:'대학교', papers:145, citations:734 },
-  { name:'초당대학교',           lat:34.7520,lng:126.4130, region:'호남권', city:'전남', foundation:'사립', type:'대학교', papers:89, citations:412 },
-  { name:'광주가톨릭대학교',     lat:34.9380,lng:126.9020, region:'호남권', city:'전남', foundation:'사립', type:'대학교', papers:56, citations:267 },
-  { name:'목포가톨릭대학교',     lat:34.8120,lng:126.4150, region:'호남권', city:'전남', foundation:'사립', type:'대학교', papers:45, citations:198 },
-  { name:'영산선학대학교',       lat:34.8450,lng:127.1020, region:'호남권', city:'전남', foundation:'사립', type:'대학교', papers:34, citations:156 },
-  { name:'전북대학교',           lat:35.8468,lng:127.1294, region:'호남권', city:'전북', foundation:'국립', type:'대학교', papers:678, citations:4234 },
-  { name:'국립군산대학교',       lat:35.9461,lng:126.6818, region:'호남권', city:'전북', foundation:'국립', type:'대학교', papers:312, citations:1876 },
-  { name:'원광대학교',           lat:35.9680,lng:126.9579, region:'호남권', city:'전북', foundation:'사립', type:'대학교', papers:398, citations:2345 },
-  { name:'전주대학교',           lat:35.8284,lng:127.1358, region:'호남권', city:'전북', foundation:'사립', type:'대학교', papers:312, citations:1876 },
-  { name:'우석대학교',           lat:35.7940,lng:127.1120, region:'호남권', city:'전북', foundation:'사립', type:'대학교', papers:198, citations:1098 },
-  { name:'예수대학교',           lat:35.8210,lng:127.1480, region:'호남권', city:'전북', foundation:'사립', type:'대학교', papers:56, citations:267 },
-  { name:'예원예술대학교',       lat:35.8320,lng:127.1560, region:'호남권', city:'전북', foundation:'사립', type:'대학교', papers:78, citations:367 },
-  { name:'한일장신대학교',       lat:35.8160,lng:127.1350, region:'호남권', city:'전북', foundation:'사립', type:'대학교', papers:45, citations:198 },
-  { name:'호원대학교',           lat:35.9340,lng:126.9560, region:'호남권', city:'전북', foundation:'사립', type:'산업대학', papers:89, citations:412 },
-  { name:'전주교육대학교',       lat:35.8419,lng:127.1232, region:'호남권', city:'전북', foundation:'국립', type:'교육대학', papers:178, citations:987 },
+  { name:'전남대학교',           lat:35.1764,lng:126.9077, region:'호남권', city:'광주', foundation:'국립', type:'대학교', papers:712, citations:4567, faculty:789 },
+  { name:'광주과학기술원',       lat:35.2282,lng:126.8401, region:'호남권', city:'광주', foundation:'특별법법인', type:'대학교', papers:456, citations:3890, faculty:312 },
+  { name:'조선대학교',           lat:35.1384,lng:126.9263, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:534, citations:3234, faculty:534 },
+  { name:'광주대학교',           lat:35.2018,lng:126.8534, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:234, citations:1345, faculty:189 },
+  { name:'광주여자대학교',       lat:35.1490,lng:126.8870, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:178, citations:923, faculty:134 },
+  { name:'호남대학교',           lat:35.1410,lng:126.8874, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:234, citations:1345, faculty:178 },
+  { name:'호남신학대학교',       lat:35.1520,lng:126.8790, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:56, citations:267, faculty:32 },
+  { name:'남부대학교',           lat:35.1017,lng:126.8856, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:178, citations:967, faculty:134 },
+  { name:'광신대학교',           lat:35.1980,lng:126.8430, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:67, citations:312, faculty:42 },
+  { name:'송원대학교',           lat:35.1230,lng:126.8670, region:'호남권', city:'광주', foundation:'사립', type:'대학교', papers:134, citations:623, faculty:89 },
+  { name:'광주교육대학교',       lat:35.1513,lng:126.9181, region:'호남권', city:'광주', foundation:'국립', type:'교육대학', papers:198, citations:1098, faculty:89 },
+  { name:'국립목포대학교',       lat:34.9115,lng:126.4373, region:'호남권', city:'전남', foundation:'국립', type:'대학교', papers:345, citations:1987, faculty:278 },
+  { name:'국립목포해양대학교',   lat:34.7930,lng:126.3820, region:'호남권', city:'전남', foundation:'국립', type:'대학교', papers:198, citations:1098, faculty:145 },
+  { name:'국립순천대학교',       lat:34.9515,lng:127.4893, region:'호남권', city:'전남', foundation:'국립', type:'대학교', papers:312, citations:1876, faculty:267 },
+  { name:'한국에너지공과대학교', lat:34.9680,lng:126.7240, region:'호남권', city:'전남', foundation:'특별법법인', type:'대학교', papers:89, citations:567, faculty:67 },
+  { name:'동신대학교',           lat:34.9713,lng:127.1892, region:'호남권', city:'전남', foundation:'사립', type:'대학교', papers:198, citations:1012, faculty:145 },
+  { name:'세한대학교',           lat:34.7640,lng:126.4250, region:'호남권', city:'전남', foundation:'사립', type:'대학교', papers:145, citations:734, faculty:98 },
+  { name:'초당대학교',           lat:34.7520,lng:126.4130, region:'호남권', city:'전남', foundation:'사립', type:'대학교', papers:89, citations:412, faculty:56 },
+  { name:'광주가톨릭대학교',     lat:34.9380,lng:126.9020, region:'호남권', city:'전남', foundation:'사립', type:'대학교', papers:56, citations:267, faculty:35 },
+  { name:'목포가톨릭대학교',     lat:34.8120,lng:126.4150, region:'호남권', city:'전남', foundation:'사립', type:'대학교', papers:45, citations:198, faculty:28 },
+  { name:'영산선학대학교',       lat:34.8450,lng:127.1020, region:'호남권', city:'전남', foundation:'사립', type:'대학교', papers:34, citations:156, faculty:22 },
+  { name:'전북대학교',           lat:35.8468,lng:127.1294, region:'호남권', city:'전북', foundation:'국립', type:'대학교', papers:678, citations:4234, faculty:789 },
+  { name:'국립군산대학교',       lat:35.9461,lng:126.6818, region:'호남권', city:'전북', foundation:'국립', type:'대학교', papers:312, citations:1876, faculty:278 },
+  { name:'원광대학교',           lat:35.9680,lng:126.9579, region:'호남권', city:'전북', foundation:'사립', type:'대학교', papers:398, citations:2345, faculty:345 },
+  { name:'전주대학교',           lat:35.8284,lng:127.1358, region:'호남권', city:'전북', foundation:'사립', type:'대학교', papers:312, citations:1876, faculty:267 },
+  { name:'우석대학교',           lat:35.7940,lng:127.1120, region:'호남권', city:'전북', foundation:'사립', type:'대학교', papers:198, citations:1098, faculty:156 },
+  { name:'예수대학교',           lat:35.8210,lng:127.1480, region:'호남권', city:'전북', foundation:'사립', type:'대학교', papers:56, citations:267, faculty:35 },
+  { name:'예원예술대학교',       lat:35.8320,lng:127.1560, region:'호남권', city:'전북', foundation:'사립', type:'대학교', papers:78, citations:367, faculty:45 },
+  { name:'한일장신대학교',       lat:35.8160,lng:127.1350, region:'호남권', city:'전북', foundation:'사립', type:'대학교', papers:45, citations:198, faculty:28 },
+  { name:'호원대학교',           lat:35.9340,lng:126.9560, region:'호남권', city:'전북', foundation:'사립', type:'산업대학', papers:89, citations:412, faculty:67 },
+  { name:'전주교육대학교',       lat:35.8419,lng:127.1232, region:'호남권', city:'전북', foundation:'국립', type:'교육대학', papers:178, citations:987, faculty:78 },
   // ── 경상권 (부산·대구·울산·경남·경북) ──
-  { name:'부산대학교',           lat:35.2338,lng:129.0793, region:'경상권', city:'부산', foundation:'국립', type:'대학교', papers:798, citations:5234 },
-  { name:'국립부경대학교',       lat:35.1337,lng:129.1045, region:'경상권', city:'부산', foundation:'국립', type:'대학교', papers:534, citations:3234 },
-  { name:'국립한국해양대학교',   lat:35.0764,lng:129.0878, region:'경상권', city:'부산', foundation:'국립', type:'대학교', papers:312, citations:1876 },
-  { name:'동아대학교',           lat:35.1168,lng:129.0175, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:467, citations:2876 },
-  { name:'동의대학교',           lat:35.1425,lng:129.0353, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:345, citations:2012 },
-  { name:'동서대학교',           lat:35.1071,lng:129.0176, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:289, citations:1654 },
-  { name:'동명대학교',           lat:35.1180,lng:129.1020, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:234, citations:1345 },
-  { name:'부산외국어대학교',     lat:35.2541,lng:129.0943, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:234, citations:1345 },
-  { name:'경성대학교',           lat:35.1413,lng:129.0681, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:312, citations:1876 },
-  { name:'신라대학교',           lat:35.1416,lng:129.0832, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:234, citations:1345 },
-  { name:'고신대학교',           lat:35.0789,lng:129.0192, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:198, citations:1098 },
-  { name:'부산가톨릭대학교',     lat:35.2450,lng:129.0780, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:89, citations:423 },
-  { name:'부산교육대학교',       lat:35.1879,lng:129.0746, region:'경상권', city:'부산', foundation:'국립', type:'교육대학', papers:198, citations:1098 },
-  { name:'경북대학교',           lat:35.8889,lng:128.6110, region:'경상권', city:'대구', foundation:'국립', type:'대학교', papers:756, citations:4987 },
-  { name:'대구경북과학기술원',   lat:35.8464,lng:128.7285, region:'경상권', city:'대구', foundation:'특별법법인', type:'대학교', papers:378, citations:3456 },
-  { name:'계명대학교',           lat:35.8567,lng:128.4884, region:'경상권', city:'대구', foundation:'사립', type:'대학교', papers:423, citations:2567 },
-  { name:'대구교육대학교',       lat:35.8980,lng:128.6054, region:'경상권', city:'대구', foundation:'국립', type:'교육대학', papers:198, citations:1098 },
-  { name:'울산과학기술원',       lat:35.5730,lng:129.1903, region:'경상권', city:'울산', foundation:'특별법법인', type:'대학교', papers:567, citations:5678 },
-  { name:'울산대학교',           lat:35.5443,lng:129.2569, region:'경상권', city:'울산', foundation:'사립', type:'대학교', papers:489, citations:3012 },
-  { name:'경상국립대학교',       lat:35.1535,lng:128.0982, region:'경상권', city:'경남', foundation:'국립', type:'대학교', papers:534, citations:3234 },
-  { name:'국립창원대학교',       lat:35.2430,lng:128.6873, region:'경상권', city:'경남', foundation:'국립', type:'대학교', papers:378, citations:2198 },
-  { name:'경남대학교',           lat:35.2371,lng:128.6804, region:'경상권', city:'경남', foundation:'사립', type:'대학교', papers:289, citations:1654 },
-  { name:'인제대학교',           lat:35.1561,lng:129.0631, region:'경상권', city:'경남', foundation:'사립', type:'대학교', papers:345, citations:2012 },
-  { name:'영산대학교',           lat:35.2190,lng:129.0840, region:'경상권', city:'경남', foundation:'사립', type:'대학교', papers:178, citations:923 },
-  { name:'창신대학교',           lat:35.2340,lng:128.6950, region:'경상권', city:'경남', foundation:'사립', type:'대학교', papers:112, citations:567 },
-  { name:'가야대학교',           lat:35.2280,lng:128.8490, region:'경상권', city:'경남', foundation:'사립', type:'대학교', papers:89, citations:412 },
-  { name:'부산장신대학교',       lat:35.0910,lng:128.9320, region:'경상권', city:'경남', foundation:'사립', type:'대학교', papers:45, citations:198 },
-  { name:'진주교육대학교',       lat:35.1760,lng:128.1006, region:'경상권', city:'경남', foundation:'국립', type:'교육대학', papers:167, citations:876 },
-  { name:'영남대학교',           lat:35.8341,lng:128.7575, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:456, citations:2789 },
-  { name:'포항공과대학교',       lat:35.9920,lng:129.3876, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:534, citations:6234 },
-  { name:'국립경국대학교',       lat:36.3540,lng:128.7450, region:'경상권', city:'경북', foundation:'국립', type:'대학교', papers:234, citations:1345 },
-  { name:'국립금오공과대학교',   lat:36.1454,lng:128.3943, region:'경상권', city:'경북', foundation:'국립', type:'대학교', papers:267, citations:1498 },
-  { name:'대구가톨릭대학교',     lat:35.9026,lng:128.7004, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:312, citations:1876 },
-  { name:'대구대학교',           lat:35.9008,lng:128.8511, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:356, citations:2098 },
-  { name:'대구예술대학교',       lat:35.8920,lng:128.6210, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:67, citations:312 },
-  { name:'대구한의대학교',       lat:35.8950,lng:128.7120, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:234, citations:1345 },
-  { name:'동국대학교(WISE)_분교',lat:35.9180,lng:129.3610, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:289, citations:1654 },
-  { name:'동양대학교',           lat:36.9340,lng:128.3720, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:134, citations:678 },
-  { name:'경운대학교',           lat:36.1320,lng:128.9850, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:145, citations:723 },
-  { name:'경일대학교',           lat:35.9210,lng:128.7340, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:198, citations:1098 },
-  { name:'김천대학교',           lat:36.1260,lng:128.1140, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:112, citations:567 },
-  { name:'한동대학교',           lat:35.9918,lng:129.3792, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:267, citations:1654 },
-  { name:'위덕대학교',           lat:35.9780,lng:129.3540, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:89, citations:412 },
-  { name:'대신대학교',           lat:35.8960,lng:128.6340, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:56, citations:267 },
-  { name:'영남신학대학교',       lat:35.9120,lng:128.7560, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:45, citations:198 },
-  { name:'신경주대학교',         lat:35.8340,lng:129.2120, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:56, citations:267 },
+  { name:'부산대학교',           lat:35.2338,lng:129.0793, region:'경상권', city:'부산', foundation:'국립', type:'대학교', papers:798, citations:5234, faculty:867 },
+  { name:'국립부경대학교',       lat:35.1337,lng:129.1045, region:'경상권', city:'부산', foundation:'국립', type:'대학교', papers:534, citations:3234, faculty:534 },
+  { name:'국립한국해양대학교',   lat:35.0764,lng:129.0878, region:'경상권', city:'부산', foundation:'국립', type:'대학교', papers:312, citations:1876, faculty:234 },
+  { name:'동아대학교',           lat:35.1168,lng:129.0175, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:467, citations:2876, faculty:467 },
+  { name:'동의대학교',           lat:35.1425,lng:129.0353, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:345, citations:2012, faculty:312 },
+  { name:'동서대학교',           lat:35.1071,lng:129.0176, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:289, citations:1654, faculty:234 },
+  { name:'동명대학교',           lat:35.1180,lng:129.1020, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:234, citations:1345, faculty:189 },
+  { name:'부산외국어대학교',     lat:35.2541,lng:129.0943, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:234, citations:1345, faculty:178 },
+  { name:'경성대학교',           lat:35.1413,lng:129.0681, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:312, citations:1876, faculty:256 },
+  { name:'신라대학교',           lat:35.1416,lng:129.0832, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:234, citations:1345, faculty:198 },
+  { name:'고신대학교',           lat:35.0789,lng:129.0192, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:198, citations:1098, faculty:156 },
+  { name:'부산가톨릭대학교',     lat:35.2450,lng:129.0780, region:'경상권', city:'부산', foundation:'사립', type:'대학교', papers:89, citations:423, faculty:52 },
+  { name:'부산교육대학교',       lat:35.1879,lng:129.0746, region:'경상권', city:'부산', foundation:'국립', type:'교육대학', papers:198, citations:1098, faculty:78 },
+  { name:'경북대학교',           lat:35.8889,lng:128.6110, region:'경상권', city:'대구', foundation:'국립', type:'대학교', papers:756, citations:4987, faculty:812 },
+  { name:'대구경북과학기술원',   lat:35.8464,lng:128.7285, region:'경상권', city:'대구', foundation:'특별법법인', type:'대학교', papers:378, citations:3456, faculty:234 },
+  { name:'계명대학교',           lat:35.8567,lng:128.4884, region:'경상권', city:'대구', foundation:'사립', type:'대학교', papers:423, citations:2567, faculty:456 },
+  { name:'대구교육대학교',       lat:35.8980,lng:128.6054, region:'경상권', city:'대구', foundation:'국립', type:'교육대학', papers:198, citations:1098, faculty:89 },
+  { name:'울산과학기술원',       lat:35.5730,lng:129.1903, region:'경상권', city:'울산', foundation:'특별법법인', type:'대학교', papers:567, citations:5678, faculty:312 },
+  { name:'울산대학교',           lat:35.5443,lng:129.2569, region:'경상권', city:'울산', foundation:'사립', type:'대학교', papers:489, citations:3012, faculty:456 },
+  { name:'경상국립대학교',       lat:35.1535,lng:128.0982, region:'경상권', city:'경남', foundation:'국립', type:'대학교', papers:534, citations:3234, faculty:567 },
+  { name:'국립창원대학교',       lat:35.2430,lng:128.6873, region:'경상권', city:'경남', foundation:'국립', type:'대학교', papers:378, citations:2198, faculty:334 },
+  { name:'경남대학교',           lat:35.2371,lng:128.6804, region:'경상권', city:'경남', foundation:'사립', type:'대학교', papers:289, citations:1654, faculty:267 },
+  { name:'인제대학교',           lat:35.1561,lng:129.0631, region:'경상권', city:'경남', foundation:'사립', type:'대학교', papers:345, citations:2012, faculty:289 },
+  { name:'영산대학교',           lat:35.2190,lng:129.0840, region:'경상권', city:'경남', foundation:'사립', type:'대학교', papers:178, citations:923, faculty:134 },
+  { name:'창신대학교',           lat:35.2340,lng:128.6950, region:'경상권', city:'경남', foundation:'사립', type:'대학교', papers:112, citations:567, faculty:78 },
+  { name:'가야대학교',           lat:35.2280,lng:128.8490, region:'경상권', city:'경남', foundation:'사립', type:'대학교', papers:89, citations:412, faculty:56 },
+  { name:'부산장신대학교',       lat:35.0910,lng:128.9320, region:'경상권', city:'경남', foundation:'사립', type:'대학교', papers:45, citations:198, faculty:28 },
+  { name:'진주교육대학교',       lat:35.1760,lng:128.1006, region:'경상권', city:'경남', foundation:'국립', type:'교육대학', papers:167, citations:876, faculty:72 },
+  { name:'영남대학교',           lat:35.8341,lng:128.7575, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:456, citations:2789, faculty:456 },
+  { name:'포항공과대학교',       lat:35.9920,lng:129.3876, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:534, citations:6234, faculty:389 },
+  { name:'국립경국대학교',       lat:36.3540,lng:128.7450, region:'경상권', city:'경북', foundation:'국립', type:'대학교', papers:234, citations:1345, faculty:189 },
+  { name:'국립금오공과대학교',   lat:36.1454,lng:128.3943, region:'경상권', city:'경북', foundation:'국립', type:'대학교', papers:267, citations:1498, faculty:212 },
+  { name:'대구가톨릭대학교',     lat:35.9026,lng:128.7004, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:312, citations:1876, faculty:267 },
+  { name:'대구대학교',           lat:35.9008,lng:128.8511, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:356, citations:2098, faculty:312 },
+  { name:'대구예술대학교',       lat:35.8920,lng:128.6210, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:67, citations:312, faculty:45 },
+  { name:'대구한의대학교',       lat:35.8950,lng:128.7120, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:234, citations:1345, faculty:189 },
+  { name:'동국대학교(WISE)_분교',lat:35.9180,lng:129.3610, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:289, citations:1654, faculty:198 },
+  { name:'동양대학교',           lat:36.9340,lng:128.3720, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:134, citations:678, faculty:89 },
+  { name:'경운대학교',           lat:36.1320,lng:128.9850, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:145, citations:723, faculty:98 },
+  { name:'경일대학교',           lat:35.9210,lng:128.7340, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:198, citations:1098, faculty:156 },
+  { name:'김천대학교',           lat:36.1260,lng:128.1140, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:112, citations:567, faculty:78 },
+  { name:'한동대학교',           lat:35.9918,lng:129.3792, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:267, citations:1654, faculty:178 },
+  { name:'위덕대학교',           lat:35.9780,lng:129.3540, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:89, citations:412, faculty:67 },
+  { name:'대신대학교',           lat:35.8960,lng:128.6340, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:56, citations:267, faculty:35 },
+  { name:'영남신학대학교',       lat:35.9120,lng:128.7560, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:45, citations:198, faculty:28 },
+  { name:'신경주대학교',         lat:35.8340,lng:129.2120, region:'경상권', city:'경북', foundation:'사립', type:'대학교', papers:56, citations:267, faculty:42 },
   // ── 강원권 ──
-  { name:'강원대학교',           lat:37.8692,lng:127.7443, region:'강원권', city:'강원', foundation:'국립', type:'대학교', papers:542, citations:3234 },
-  { name:'국립강릉원주대학교',   lat:37.7713,lng:128.8674, region:'강원권', city:'강원', foundation:'국립', type:'대학교', papers:312, citations:1876 },
-  { name:'한림대학교',           lat:37.8858,lng:127.7357, region:'강원권', city:'강원', foundation:'사립', type:'대학교', papers:456, citations:2876 },
-  { name:'가톨릭관동대학교',     lat:37.7385,lng:128.8714, region:'강원권', city:'강원', foundation:'사립', type:'대학교', papers:234, citations:1345 },
-  { name:'상지대학교',           lat:37.2579,lng:128.0001, region:'강원권', city:'강원', foundation:'사립', type:'대학교', papers:198, citations:1098 },
-  { name:'경동대학교',           lat:37.3410,lng:128.7320, region:'강원권', city:'강원', foundation:'사립', type:'대학교', papers:134, citations:678 },
-  { name:'한라대학교',           lat:37.8730,lng:127.7280, region:'강원권', city:'강원', foundation:'사립', type:'대학교', papers:89, citations:412 },
-  { name:'연세대학교(미래)_분교',lat:37.8580,lng:127.7510, region:'강원권', city:'강원', foundation:'사립', type:'대학교', papers:398, citations:2456 },
-  { name:'춘천교육대학교',       lat:37.8716,lng:127.7428, region:'강원권', city:'강원', foundation:'국립', type:'교육대학', papers:178, citations:987 },
+  { name:'강원대학교',           lat:37.8692,lng:127.7443, region:'강원권', city:'강원', foundation:'국립', type:'대학교', papers:542, citations:3234, faculty:534 },
+  { name:'국립강릉원주대학교',   lat:37.7713,lng:128.8674, region:'강원권', city:'강원', foundation:'국립', type:'대학교', papers:312, citations:1876, faculty:267 },
+  { name:'한림대학교',           lat:37.8858,lng:127.7357, region:'강원권', city:'강원', foundation:'사립', type:'대학교', papers:456, citations:2876, faculty:378 },
+  { name:'가톨릭관동대학교',     lat:37.7385,lng:128.8714, region:'강원권', city:'강원', foundation:'사립', type:'대학교', papers:234, citations:1345, faculty:198 },
+  { name:'상지대학교',           lat:37.2579,lng:128.0001, region:'강원권', city:'강원', foundation:'사립', type:'대학교', papers:198, citations:1098, faculty:156 },
+  { name:'경동대학교',           lat:37.3410,lng:128.7320, region:'강원권', city:'강원', foundation:'사립', type:'대학교', papers:134, citations:678, faculty:89 },
+  { name:'한라대학교',           lat:37.8730,lng:127.7280, region:'강원권', city:'강원', foundation:'사립', type:'대학교', papers:89, citations:412, faculty:56 },
+  { name:'연세대학교(미래)_분교',lat:37.8580,lng:127.7510, region:'강원권', city:'강원', foundation:'사립', type:'대학교', papers:398, citations:2456, faculty:234 },
+  { name:'춘천교육대학교',       lat:37.8716,lng:127.7428, region:'강원권', city:'강원', foundation:'국립', type:'교육대학', papers:178, citations:987, faculty:72 },
   // ── 제주권 ──
-  { name:'제주대학교',           lat:33.4531,lng:126.5618, region:'제주권', city:'제주', foundation:'국립', type:'대학교', papers:467, citations:2876 },
-  { name:'제주국제대학교',       lat:33.4877,lng:126.4928, region:'제주권', city:'제주', foundation:'사립', type:'대학교', papers:123, citations:567 }
+  { name:'제주대학교',           lat:33.4531,lng:126.5618, region:'제주권', city:'제주', foundation:'국립', type:'대학교', papers:467, citations:2876, faculty:423 },
+  { name:'제주국제대학교',       lat:33.4877,lng:126.4928, region:'제주권', city:'제주', foundation:'사립', type:'대학교', papers:123, citations:567, faculty:78 }
 ];
 
 let mapObj = null, mapMarkers = [], mapMetric = 'papers';
@@ -4361,6 +5354,32 @@ function getUnivColor(val) {
   if (val >= 600) return '#00ed64';
   if (val >= 300) return '#10b981';
   return '#f59e0b';
+}
+
+// 순위 계산 (논문수 기준, 내림차순)
+function calcUnivRanks(univName) {
+  const sorted = [...ALL_UNIVERSITIES].sort((a,b) => b.papers - a.papers);
+  const totalCount = sorted.length;
+  const overallRank = sorted.findIndex(u => u.name === univName) + 1;
+
+  const u = ALL_UNIVERSITIES.find(x => x.name === univName);
+  if (!u) return { overall: '-', type: '-', foundation: '-' };
+
+  const sameType = sorted.filter(x => x.type === u.type);
+  const typeRank = sameType.findIndex(x => x.name === univName) + 1;
+  const typeTotal = sameType.length;
+
+  const sameFound = sorted.filter(x => x.foundation === u.foundation);
+  const foundRank = sameFound.findIndex(x => x.name === univName) + 1;
+  const foundTotal = sameFound.length;
+
+  return {
+    overall: overallRank + '/' + totalCount,
+    type: typeRank + '/' + typeTotal,
+    foundation: foundRank + '/' + foundTotal,
+    typeName: u.type,
+    foundName: u.foundation
+  };
 }
 
 function setMapMetric(m, btn) {
@@ -4383,7 +5402,7 @@ let compareList = [];
 
 function sortMapTable(key) {
   if (mapSortKey === key) { mapSortDir = mapSortDir === 'desc' ? 'asc' : 'desc'; }
-  else { mapSortKey = key; mapSortDir = (key === 'papers' || key === 'citations') ? 'desc' : 'asc'; }
+  else { mapSortKey = key; mapSortDir = (key === 'papers' || key === 'citations' || key === 'faculty' || key === 'cpp') ? 'desc' : 'asc'; }
   document.querySelectorAll('.sort-icon').forEach(el => { el.classList.remove('active'); el.textContent = '▼'; });
   const icon = document.getElementById('sort-' + key);
   if (icon) { icon.classList.add('active'); icon.textContent = mapSortDir === 'desc' ? '▼' : '▲'; }
@@ -4393,9 +5412,13 @@ function sortMapTable(key) {
 function toggleCompare(name) {
   const idx = compareList.indexOf(name);
   if (idx >= 0) { compareList.splice(idx, 1); }
-  else if (compareList.length < 3) { compareList.push(name); }
+  else if (compareList.length < 5) { compareList.push(name); }
   else { return; }
   renderCompare();
+  applyMapFilter();
+  if (compareList.length >= 2) {
+    setTimeout(() => { const p = document.getElementById('comparePanel'); if (p) p.scrollIntoView({block:'start', behavior:'smooth'}); }, 100);
+  }
 }
 
 function clearCompare() {
@@ -4407,27 +5430,67 @@ function renderCompare() {
   const panel = document.getElementById('comparePanel');
   const chips = document.getElementById('compareChips');
   const result = document.getElementById('compareResult');
-  if (compareList.length === 0) { panel.classList.remove('active'); chips.innerHTML = ''; result.innerHTML = ''; return; }
+  if (compareList.length === 0) { panel.classList.remove('active'); chips.innerHTML = ''; result.innerHTML = ''; renderCompareRadar(); return; }
   panel.classList.add('active');
   chips.innerHTML = compareList.map(n => `<span class="compare-chip">${n}<button onclick="toggleCompare('${n.replace(/'/g,"\\'")}')">&times;</button></span>`).join('');
   if (compareList.length < 2) { result.innerHTML = '<p style="font-size:0.83rem;color:var(--gray-400);margin-top:8px;">2개 이상 선택하면 비교 결과가 표시됩니다</p>'; return; }
   const univs = compareList.map(n => ALL_UNIVERSITIES.find(u => u.name === n)).filter(Boolean);
   const fieldDataAll = univs.map(u => { const fd = generateFieldData(u.name); const total = fd.reduce((s,v) => s+v, 0); return fd.map(v => Math.round(v/total*100)); });
-  result.innerHTML = `<div class="compare-grid">${univs.map((u, i) => `<div class="compare-card">
+  result.innerHTML = `<div class="compare-grid">${univs.map((u, i) => {
+    const rk = calcUnivRanks(u.name);
+    const cpp = u.papers ? (u.citations / u.papers).toFixed(1) : '-';
+    const ppc = u.faculty ? (u.papers / u.faculty).toFixed(1) : '-';
+    return `<div class="compare-card">
     <h4>${u.name}</h4>
-    <div class="stat-row"><span class="stat-label">권역</span><span class="stat-value">${u.region}</span></div>
-    <div class="stat-row"><span class="stat-label">설립</span><span class="stat-value">${u.foundation}</span></div>
-    <div class="stat-row"><span class="stat-label">논문수</span><span class="stat-value">${u.papers.toLocaleString()}편</span></div>
-    <div class="stat-row"><span class="stat-label">인용수</span><span class="stat-value">${u.citations.toLocaleString()}회</span></div>
-    <div class="stat-row"><span class="stat-label">인용/논문</span><span class="stat-value">${(u.citations/u.papers).toFixed(1)}</span></div>
-    <div style="margin-top:8px;"><canvas id="compareFieldChart${i}" height="120"></canvas></div>
-  </div>`).join('')}</div>`;
+    <p style="font-size:0.78rem;color:var(--gray-400);margin:-4px 0 10px;">${u.city} · ${u.region} · ${u.foundation} · ${u.type}</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div style="background:var(--gray-50);border-radius:8px;padding:8px 10px;text-align:center;">
+        <div style="font-size:0.7rem;color:var(--gray-400);">논문 수</div>
+        <div style="font-size:1.05rem;font-weight:700;color:var(--green-dark);">${u.papers.toLocaleString()}편</div>
+      </div>
+      <div style="background:var(--gray-50);border-radius:8px;padding:8px 10px;text-align:center;">
+        <div style="font-size:0.7rem;color:var(--gray-400);">인용 수</div>
+        <div style="font-size:1.05rem;font-weight:700;color:#0098a1;">${u.citations.toLocaleString()}회</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
+      <div style="background:var(--gray-50);border-radius:8px;padding:6px 8px;text-align:center;">
+        <div style="font-size:0.65rem;color:var(--gray-400);">🏆 전체 순위</div>
+        <div style="font-size:0.92rem;font-weight:700;color:var(--green-dark);">${rk.overall}</div>
+      </div>
+      <div style="background:rgba(0,152,161,0.06);border-radius:8px;padding:6px 8px;text-align:center;">
+        <div style="font-size:0.65rem;color:var(--gray-400);">🏫 ${rk.typeName} 순위</div>
+        <div style="font-size:0.92rem;font-weight:700;color:#0098a1;">${rk.type}</div>
+      </div>
+      <div style="background:rgba(139,92,246,0.06);border-radius:8px;padding:6px 8px;text-align:center;">
+        <div style="font-size:0.65rem;color:var(--gray-400);">🏛️ ${rk.foundName} 순위</div>
+        <div style="font-size:0.92rem;font-weight:700;color:#8b5cf6;">${rk.foundation}</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px;">
+      <div style="background:rgba(99,102,241,0.06);border-radius:8px;padding:6px 8px;text-align:center;">
+        <div style="font-size:0.65rem;color:var(--gray-400);">👨‍🏫 전임교원수</div>
+        <div style="font-size:0.92rem;font-weight:700;color:#6366f1;">${(u.faculty||0).toLocaleString()}명</div>
+      </div>
+      <div style="background:rgba(245,158,11,0.06);border-radius:8px;padding:6px 8px;text-align:center;">
+        <div style="font-size:0.65rem;color:var(--gray-400);">📊 1인당 논문수</div>
+        <div style="font-size:0.92rem;font-weight:700;color:#f59e0b;">${ppc}편</div>
+      </div>
+      <div style="background:rgba(225,29,72,0.06);border-radius:8px;padding:6px 8px;text-align:center;">
+        <div style="font-size:0.65rem;color:var(--gray-400);">🔥 인용 영향력(CPP)</div>
+        <div style="font-size:0.92rem;font-weight:700;color:#e11d48;">${cpp}</div>
+      </div>
+    </div>
+    <div style="font-size:0.78rem;font-weight:600;color:var(--gray-500);margin-bottom:6px;">학문 대분류별 논문 구성</div>
+    <div style="height:140px;"><canvas id="compareFieldChart${i}"></canvas></div>
+  </div>`; }).join('')}</div>`;
   univs.forEach((u, i) => {
     new Chart(document.getElementById('compareFieldChart' + i), {
-      type: 'doughnut', data: { labels: FIELD_CATEGORIES, datasets: [{ data: fieldDataAll[i], backgroundColor: FIELD_COLORS, borderWidth: 0 }] },
-      options: { responsive: true, maintainAspectRatio: false, cutout: '50%', plugins: { legend: { display: false } } }
+      type: 'doughnut', data: { labels: FIELD_CATEGORIES, datasets: [{ data: fieldDataAll[i], backgroundColor: FIELD_COLORS, borderWidth: 2, borderColor: '#fff' }] },
+      options: { responsive: true, maintainAspectRatio: false, cutout: '45%', plugins: { legend: { position: 'right', labels: { font: { size: 9 }, padding: 5, usePointStyle: true, pointStyleWidth: 6 } } } }
     });
   });
+  renderCompareRadar();
 }
 
 function setMapMode(mode, btn) {
@@ -4489,8 +5552,12 @@ function applyMapFilter() {
     return true;
   });
 
-  if (mapSortKey === 'papers' || mapSortKey === 'citations') {
-    filtered.sort((a, b) => mapSortDir === 'desc' ? b[mapSortKey] - a[mapSortKey] : a[mapSortKey] - b[mapSortKey]);
+  if (mapSortKey === 'papers' || mapSortKey === 'citations' || mapSortKey === 'faculty' || mapSortKey === 'cpp') {
+    if (mapSortKey === 'cpp') {
+      filtered.sort((a, b) => { const av = a.papers ? a.citations/a.papers : 0; const bv = b.papers ? b.citations/b.papers : 0; return mapSortDir === 'desc' ? bv - av : av - bv; });
+    } else {
+      filtered.sort((a, b) => mapSortDir === 'desc' ? b[mapSortKey] - a[mapSortKey] : a[mapSortKey] - b[mapSortKey]);
+    }
   } else {
     filtered.sort((a, b) => { const cmp = (a[mapSortKey]||'').localeCompare(b[mapSortKey]||''); return mapSortDir === 'desc' ? -cmp : cmp; });
   }
@@ -4502,11 +5569,18 @@ function applyMapFilter() {
   tbody.innerHTML = filtered.map((u, i) => {
     const tierColor = getUnivColor(u[mapMetric]);
     const inCompare = compareList.includes(u.name);
+    const esc = u.name.replace(/'/g,"\\'");
+    const rk = calcUnivRanks(u.name);
     return `<tr style="border-bottom:1px solid var(--gray-100);cursor:pointer;${inCompare?'background:rgba(0,237,100,0.06);':''}" onmouseover="this.style.background='var(--gray-50)'" onmouseout="this.style.background='${inCompare?'rgba(0,237,100,0.06)':''}'">
       <td style="padding:8px 12px;color:var(--gray-500);">${i + 1}</td>
       <td style="padding:8px 12px;font-weight:500;">
-        <span style="color:var(--green-dark);cursor:pointer;text-decoration:underline;" onclick="showUnivDetail('${u.name.replace(/'/g,"\\'")}')">${u.name}</span>
-        <button onclick="event.stopPropagation();toggleCompare('${u.name.replace(/'/g,"\\'")}')" style="margin-left:6px;background:${inCompare?'var(--brand-green)':'var(--gray-100)'};color:${inCompare?'#fff':'var(--gray-500)'};border:none;border-radius:4px;padding:1px 6px;font-size:0.72rem;cursor:pointer;" title="비교에 추가">${inCompare?'✓':'비교'}</button>
+        <span style="color:var(--green-dark);cursor:pointer;text-decoration:underline;" onclick="showUnivDetail('${esc}')">${u.name}</span>
+        <button onclick="event.stopPropagation();toggleCompare('${esc}')" style="margin-left:6px;background:${inCompare?'var(--brand-green)':'var(--gray-100)'};color:${inCompare?'#fff':'var(--gray-500)'};border:none;border-radius:4px;padding:2px 8px;font-size:0.72rem;cursor:pointer;display:inline-flex;align-items:center;gap:3px;transition:all 0.15s;" title="비교에 추가">${inCompare?'<span style="font-size:0.8rem;">✅</span> 비교중':'☐ 비교'}</button>
+        <div style="margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:0.72rem;color:var(--gray-500);background:var(--gray-50);padding:1px 6px;border-radius:4px;" title="전체 순위">🏆 전체 ${rk.overall}</span>
+          <span style="font-size:0.72rem;color:#0098a1;background:rgba(0,152,161,0.08);padding:1px 6px;border-radius:4px;" title="${rk.typeName} 순위">🏫 ${rk.typeName} ${rk.type}</span>
+          <span style="font-size:0.72rem;color:#8b5cf6;background:rgba(139,92,246,0.08);padding:1px 6px;border-radius:4px;" title="${rk.foundName} 순위">🏛️ ${rk.foundName} ${rk.foundation}</span>
+        </div>
       </td>
       <td style="padding:8px 12px;text-align:center;font-size:0.83rem;">${u.city||''}</td>
       <td style="padding:8px 12px;text-align:center;"><span style="background:var(--gray-100);padding:2px 8px;border-radius:10px;font-size:0.8rem;">${u.region}</span></td>
@@ -4514,6 +5588,9 @@ function applyMapFilter() {
       <td style="padding:8px 12px;text-align:center;font-size:0.83rem;">${u.type}</td>
       <td style="padding:8px 12px;text-align:right;font-weight:600;color:${tierColor};">${u.papers.toLocaleString()}</td>
       <td style="padding:8px 12px;text-align:right;color:var(--gray-600);">${u.citations.toLocaleString()}</td>
+      <td style="padding:8px 12px;text-align:right;color:#6366f1;">${(u.faculty||0).toLocaleString()}</td>
+      <td style="padding:8px 12px;text-align:right;font-weight:500;color:#f59e0b;">${u.faculty ? (u.papers/u.faculty).toFixed(1) : '-'}</td>
+      <td style="padding:8px 12px;text-align:right;font-weight:500;color:#e11d48;">${u.papers ? (u.citations/u.papers).toFixed(1) : '-'}</td>
     </tr>`;
   }).join('');
 
@@ -4543,15 +5620,22 @@ function applyMapFilter() {
           strokeColor: '#fff',
           strokeWeight: 2,
           scale: scale,
-          labelOrigin: new google.maps.Point(scale + 2, 0)
+          labelOrigin: new google.maps.Point(Math.round(scale * 0.3), 0)
         },
         label: { text: u.name, color: '#1e293b', fontSize: '11px', fontWeight: '500', className: 'map-marker-label ' + ({'국립':'map-label-national','사립':'map-label-private','공립':'map-label-public','국립법인':'map-label-corp','특별법법인':'map-label-special'}[u.foundation] || 'map-label-private') }
       });
+      const infoRk = calcUnivRanks(u.name);
       const info = new google.maps.InfoWindow({
-        content: `<div style="font-family:Noto Sans KR,sans-serif;padding:8px;min-width:200px;">
+        content: `<div style="font-family:Noto Sans KR,sans-serif;padding:8px;min-width:220px;">
           <h4 style="font-size:0.95rem;margin-bottom:4px;color:#1e293b;">${u.name}</h4>
           <p style="font-size:0.82rem;color:#64748b;margin:2px 0;">${u.region} · ${u.foundation} · ${u.type}</p>
           <p style="font-size:0.85rem;color:#64748b;margin:4px 0 0;">논문: <strong style="color:#00684a;">${u.papers.toLocaleString()}</strong>편 · 인용: <strong style="color:#0098a1;">${u.citations.toLocaleString()}</strong>회</p>
+          <p style="font-size:0.85rem;color:#64748b;margin:2px 0 0;">교원: <strong style="color:#6366f1;">${(u.faculty||0).toLocaleString()}</strong>명 · 1인당: <strong style="color:#f59e0b;">${u.faculty ? (u.papers/u.faculty).toFixed(1) : '-'}</strong>편 · CPP: <strong style="color:#e11d48;">${u.papers ? (u.citations/u.papers).toFixed(1) : '-'}</strong></p>
+          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;">
+            <span style="font-size:0.72rem;background:#f0fdf4;color:#00684a;padding:2px 6px;border-radius:4px;">🏆 전체 ${infoRk.overall}</span>
+            <span style="font-size:0.72rem;background:rgba(0,152,161,0.08);color:#0098a1;padding:2px 6px;border-radius:4px;">🏫 ${infoRk.typeName} ${infoRk.type}</span>
+            <span style="font-size:0.72rem;background:rgba(139,92,246,0.08);color:#8b5cf6;padding:2px 6px;border-radius:4px;">🏛️ ${infoRk.foundName} ${infoRk.foundation}</span>
+          </div>
           <button onclick="showUnivDetail('${u.name.replace(/'/g,"\\'")}')" style="margin-top:8px;padding:4px 12px;background:#00684a;color:#fff;border:none;border-radius:6px;font-size:0.8rem;cursor:pointer;">논문 구성 보기</button>
         </div>`
       });
@@ -4618,6 +5702,37 @@ function showUnivDetail(univName) {
   document.getElementById('univModalPapers').textContent = u.papers.toLocaleString() + '편';
   document.getElementById('univModalCitations').textContent = u.citations.toLocaleString() + '회';
 
+  const rk = calcUnivRanks(u.name);
+  document.getElementById('univModalRanks').innerHTML = `
+    <div style="flex:1;min-width:120px;background:var(--gray-50);border-radius:10px;padding:10px 14px;text-align:center;">
+      <div style="font-size:0.75rem;color:var(--gray-500);margin-bottom:4px;">🏆 전체 순위</div>
+      <div style="font-size:1.1rem;font-weight:700;color:var(--green-dark);">${rk.overall}</div>
+    </div>
+    <div style="flex:1;min-width:120px;background:rgba(0,152,161,0.06);border-radius:10px;padding:10px 14px;text-align:center;">
+      <div style="font-size:0.75rem;color:var(--gray-500);margin-bottom:4px;">🏫 ${rk.typeName} 순위</div>
+      <div style="font-size:1.1rem;font-weight:700;color:#0098a1;">${rk.type}</div>
+    </div>
+    <div style="flex:1;min-width:120px;background:rgba(139,92,246,0.06);border-radius:10px;padding:10px 14px;text-align:center;">
+      <div style="font-size:0.75rem;color:var(--gray-500);margin-bottom:4px;">🏛️ ${rk.foundName} 순위</div>
+      <div style="font-size:1.1rem;font-weight:700;color:#8b5cf6;">${rk.foundation}</div>
+    </div>
+  `;
+
+  document.getElementById('univModalFaculty').innerHTML = `
+    <div style="flex:1;min-width:120px;background:rgba(99,102,241,0.06);border-radius:10px;padding:10px 14px;text-align:center;">
+      <div style="font-size:0.75rem;color:var(--gray-500);margin-bottom:4px;">👨‍🏫 전임교원수</div>
+      <div style="font-size:1.1rem;font-weight:700;color:#6366f1;">${(u.faculty||0).toLocaleString()}명</div>
+    </div>
+    <div style="flex:1;min-width:120px;background:rgba(245,158,11,0.06);border-radius:10px;padding:10px 14px;text-align:center;">
+      <div style="font-size:0.75rem;color:var(--gray-500);margin-bottom:4px;">📊 1인당 논문수</div>
+      <div style="font-size:1.1rem;font-weight:700;color:#f59e0b;">${u.faculty ? (u.papers/u.faculty).toFixed(1) : '-'}편</div>
+    </div>
+    <div style="flex:1;min-width:120px;background:rgba(225,29,72,0.06);border-radius:10px;padding:10px 14px;text-align:center;">
+      <div style="font-size:0.75rem;color:var(--gray-500);margin-bottom:4px;">🔥 인용 영향력(CPP)</div>
+      <div style="font-size:1.1rem;font-weight:700;color:#e11d48;">${u.papers ? (u.citations/u.papers).toFixed(1) : '-'}</div>
+    </div>
+  `;
+
   const data = generateFieldData(u.name);
 
   if (univFieldChartInstance) univFieldChartInstance.destroy();
@@ -4673,31 +5788,148 @@ function initMap() {
   });
 
   applyMapFilter();
+  setTimeout(()=>{ renderUnivCitationChart(); renderYearTrendChart(); renderEfficiencyScatter(); renderFieldHeatmap(); renderTreemap(); renderGrowthChart(); injectChartInsights(); }, 100);
+}
+
+function injectChartInsights() {
+  const insightStyle = 'margin-top:12px;padding:10px 14px;background:var(--gray-50);border-radius:8px;font-size:0.8rem;color:var(--gray-600);line-height:1.7;';
+  const insights = {
+    insightUnivCitation: '💡 <strong>인사이트:</strong> 상위 대학일수록 논문수와 인용수의 격차가 커지는 경향이 있습니다. 특히 KAIST, 포항공대 등 연구중심대학은 논문 대비 인용수 비율이 높아 연구의 질적 영향력이 우수합니다.',
+    insightTreemap: '💡 <strong>인사이트:</strong> 수도권에 전체 연구력의 약 46%가 집중되어 있어 지역 간 연구 불균형이 심합니다. 경상권은 부산대·경북대 등 거점 국립대가 연구력을 견인하고 있습니다.',
+    insightFoundation: '💡 <strong>인사이트:</strong> 특별법법인(KAIST, GIST 등)이 논문·인용 모두 압도적 성과를 보이며, 국립법인과 국립대학이 그 뒤를 잇고 있습니다. 사립대학은 수적 우세에도 평균 성과에서는 국립 계열에 뒤처지는 양상입니다.',
+    insightRankTrend: '💡 <strong>인사이트:</strong> 상위 5개 대학의 순위는 최근 6년간 비교적 안정적이나, 성균관대와 고려대 간 3~4위 경쟁이 치열합니다. 서울대는 부동의 1위를 유지하고 있습니다.',
+    insightRegionPie: '💡 <strong>인사이트:</strong> 수도권이 전체 논문의 절반 이상(52%)을 차지하며 연구력 편중이 뚜렷합니다. 충청·경상권이 각각 16%, 14%로 뒤를 잇고, 강원·제주권은 합산 6%에 불과합니다.',
+    insightRegionBar: '💡 <strong>인사이트:</strong> 충청권과 경상권의 연구 성장률이 두드러지며, 세종시 이전 효과와 지역 거점대학의 역할 강화가 주요 요인으로 분석됩니다. 제주권은 소규모지만 성장세가 가파릅니다.',
+    insightRegionField: '💡 <strong>인사이트:</strong> 수도권은 사회과학·인문학 비중이 높고, 충청·경상권은 공학·자연과학이 강세입니다. 호남권은 농수해양학 비중이 타 권역 대비 높아 지역 산업 특성이 반영됩니다.'
+  };
+  Object.entries(insights).forEach(([id, html]) => {
+    const el = document.getElementById(id);
+    if (el && !el.innerHTML.trim()) {
+      el.style.cssText = insightStyle;
+      el.innerHTML = html;
+    }
+  });
 }
 
 /* ============================================================
    연구자 네트워크 시각화
    ============================================================ */
-function initNetwork() {
+const NETWORK_DATA = {
+  'all': {
+    nodes: [
+      { name: '김OO\n서울대', x: 50, y: 50, size: 70, color: '#00684a' },
+      { name: '이OO\n한양대', x: 75, y: 30, size: 62, color: '#00303d' },
+      { name: '박OO\n이화여대', x: 30, y: 35, size: 58, color: '#0098a1' },
+      { name: '최OO\n고려대', x: 65, y: 70, size: 55, color: '#00ed64' },
+      { name: '정OO\n연세대', x: 20, y: 65, size: 52, color: '#06b6d4' },
+      { name: '한OO\n성균관대', x: 85, y: 55, size: 48, color: '#10b981' },
+      { name: '윤OO\n경희대', x: 40, y: 80, size: 45, color: '#14b8a6' },
+      { name: '장OO\n부산대', x: 60, y: 20, size: 42, color: '#8b5cf6' },
+    ],
+    connections: [[0,1],[0,2],[0,3],[1,3],[1,7],[2,4],[3,5],[4,6],[5,7],[0,4],[2,6],[1,5]]
+  },
+  '교육공학': {
+    nodes: [
+      { name: '김OO\n서울대', x: 50, y: 45, size: 70, color: '#00684a' },
+      { name: '이OO\n한양대', x: 78, y: 30, size: 65, color: '#00303d' },
+      { name: '박OO\n이화여대', x: 25, y: 35, size: 60, color: '#0098a1' },
+      { name: '정OO\n연세대', x: 20, y: 68, size: 52, color: '#06b6d4' },
+      { name: '윤OO\n경희대', x: 45, y: 80, size: 48, color: '#14b8a6' },
+      { name: '송OO\n중앙대', x: 75, y: 65, size: 44, color: '#f59e0b' },
+    ],
+    connections: [[0,1],[0,2],[0,3],[1,5],[2,3],[3,4],[4,5],[0,4],[1,2]]
+  },
+  '인공지능': {
+    nodes: [
+      { name: '최OO\nKAIST', x: 50, y: 40, size: 72, color: '#00684a' },
+      { name: '이OO\n서울대', x: 75, y: 25, size: 65, color: '#00303d' },
+      { name: '김OO\nPOSTECH', x: 25, y: 30, size: 58, color: '#0098a1' },
+      { name: '박OO\n고려대', x: 70, y: 65, size: 55, color: '#00ed64' },
+      { name: '정OO\n성균관대', x: 30, y: 70, size: 50, color: '#06b6d4' },
+      { name: '한OO\n한양대', x: 85, y: 50, size: 46, color: '#10b981' },
+      { name: '오OO\nKIST', x: 50, y: 80, size: 42, color: '#8b5cf6' },
+    ],
+    connections: [[0,1],[0,2],[0,3],[1,3],[1,5],[2,4],[3,5],[4,6],[0,6],[2,0],[3,6]]
+  },
+  '사회과학': {
+    nodes: [
+      { name: '강OO\n서울대', x: 45, y: 40, size: 68, color: '#00684a' },
+      { name: '임OO\n연세대', x: 75, y: 30, size: 60, color: '#00303d' },
+      { name: '조OO\n고려대', x: 25, y: 55, size: 55, color: '#0098a1' },
+      { name: '유OO\n성균관대', x: 70, y: 70, size: 50, color: '#00ed64' },
+      { name: '배OO\n중앙대', x: 50, y: 78, size: 45, color: '#f59e0b' },
+      { name: '노OO\n경북대', x: 80, y: 55, size: 42, color: '#ec4899' },
+    ],
+    connections: [[0,1],[0,2],[1,3],[2,4],[3,5],[0,3],[1,5],[2,0],[4,3]]
+  },
+  '자연과학': {
+    nodes: [
+      { name: '이OO\nKAIST', x: 50, y: 35, size: 70, color: '#00684a' },
+      { name: '김OO\n서울대', x: 25, y: 50, size: 65, color: '#00303d' },
+      { name: '박OO\nPOSTECH', x: 78, y: 28, size: 58, color: '#0098a1' },
+      { name: '정OO\n한양대', x: 72, y: 65, size: 52, color: '#00ed64' },
+      { name: '최OO\n부산대', x: 30, y: 75, size: 48, color: '#8b5cf6' },
+      { name: '한OO\nIBS', x: 55, y: 72, size: 44, color: '#06b6d4' },
+    ],
+    connections: [[0,1],[0,2],[1,4],[2,3],[3,5],[0,5],[1,0],[2,0],[4,5],[0,3]]
+  },
+  '공학': {
+    nodes: [
+      { name: '김OO\nKAIST', x: 45, y: 38, size: 72, color: '#00684a' },
+      { name: '이OO\n서울대', x: 75, y: 25, size: 66, color: '#00303d' },
+      { name: '최OO\n한양대', x: 22, y: 42, size: 60, color: '#0098a1' },
+      { name: '박OO\nPOSTECH', x: 70, y: 62, size: 54, color: '#00ed64' },
+      { name: '정OO\n성균관대', x: 30, y: 72, size: 48, color: '#06b6d4' },
+      { name: '조OO\n울산과기대', x: 82, y: 50, size: 44, color: '#10b981' },
+      { name: '한OO\n경북대', x: 55, y: 80, size: 40, color: '#f59e0b' },
+    ],
+    connections: [[0,1],[0,2],[0,3],[1,3],[1,5],[2,4],[3,5],[4,6],[0,6],[2,4],[3,6]]
+  },
+  '의학': {
+    nodes: [
+      { name: '이OO\n서울대병원', x: 50, y: 40, size: 72, color: '#00684a' },
+      { name: '김OO\n연세의대', x: 78, y: 28, size: 64, color: '#00303d' },
+      { name: '박OO\n삼성서울', x: 25, y: 35, size: 58, color: '#0098a1' },
+      { name: '최OO\n서울아산', x: 72, y: 65, size: 54, color: '#00ed64' },
+      { name: '정OO\n고려의대', x: 28, y: 68, size: 48, color: '#06b6d4' },
+      { name: '한OO\n가톨릭의대', x: 55, y: 78, size: 42, color: '#ec4899' },
+    ],
+    connections: [[0,1],[0,2],[0,3],[1,3],[2,4],[3,5],[0,4],[1,5],[4,5],[2,0]]
+  },
+  '인문학': {
+    nodes: [
+      { name: '이OO\n서울대', x: 50, y: 40, size: 68, color: '#00684a' },
+      { name: '김OO\n고려대', x: 75, y: 30, size: 60, color: '#00303d' },
+      { name: '박OO\n연세대', x: 25, y: 45, size: 55, color: '#0098a1' },
+      { name: '정OO\n성균관대', x: 68, y: 68, size: 50, color: '#00ed64' },
+      { name: '한OO\n경북대', x: 35, y: 75, size: 45, color: '#8b5cf6' },
+      { name: '윤OO\n전남대', x: 80, y: 55, size: 40, color: '#f59e0b' },
+    ],
+    connections: [[0,1],[0,2],[1,3],[2,4],[3,5],[0,3],[1,5],[2,0],[4,0]]
+  },
+  '예술체육': {
+    nodes: [
+      { name: '김OO\n서울대', x: 50, y: 38, size: 66, color: '#00684a' },
+      { name: '이OO\n한국체대', x: 78, y: 30, size: 60, color: '#00303d' },
+      { name: '박OO\n홍익대', x: 22, y: 42, size: 55, color: '#0098a1' },
+      { name: '최OO\n중앙대', x: 70, y: 65, size: 50, color: '#00ed64' },
+      { name: '정OO\n경희대', x: 30, y: 72, size: 45, color: '#14b8a6' },
+      { name: '윤OO\n한양대', x: 55, y: 80, size: 42, color: '#f59e0b' },
+    ],
+    connections: [[0,1],[0,2],[1,3],[2,4],[3,5],[0,3],[4,5],[0,4],[1,5]]
+  }
+};
+
+function initNetwork(field) {
   const viz = document.getElementById('networkViz');
-  if (viz.dataset.init) return;
+  if (!field && viz.dataset.init) return;
   viz.dataset.init = 'true';
   viz.innerHTML = '';
 
-  const nodes = [
-    { name: '김OO\n서울대', x: 50, y: 50, size: 70, color: '#00684a' },
-    { name: '이OO\n한양대', x: 75, y: 30, size: 62, color: '#00303d' },
-    { name: '박OO\n이화여대', x: 30, y: 35, size: 58, color: '#0098a1' },
-    { name: '최OO\n고려대', x: 65, y: 70, size: 55, color: '#00ed64' },
-    { name: '정OO\n연세대', x: 20, y: 65, size: 52, color: '#06b6d4' },
-    { name: '한OO\n성균관대', x: 85, y: 55, size: 48, color: '#10b981' },
-    { name: '윤OO\n경희대', x: 40, y: 80, size: 45, color: '#14b8a6' },
-    { name: '장OO\n부산대', x: 60, y: 20, size: 42, color: '#8b5cf6' },
-  ];
-
-  const connections = [
-    [0,1],[0,2],[0,3],[1,3],[1,7],[2,4],[3,5],[4,6],[5,7],[0,4],[2,6],[1,5]
-  ];
+  const key = field || 'all';
+  const data = NETWORK_DATA[key] || NETWORK_DATA['all'];
+  const nodes = data.nodes;
+  const connections = data.connections;
 
   const rect = viz.getBoundingClientRect();
   const w = rect.width || 600;
@@ -4732,6 +5964,198 @@ function initNetwork() {
     node.style.whiteSpace = 'pre-line';
     viz.appendChild(node);
   });
+}
+
+function applyNetworkFilter() {
+  const field = document.getElementById('networkFieldFilter').value;
+  initNetwork(field === 'all' ? null : field);
+  const insightMap = {
+    '교육공학': '교육공학 분야의 핵심 연구 네트워크는 서울대-한양대-이화여대를 중심으로 형성되어 있습니다. AI 교육 응용과 학습분석 두 클러스터 간 교차 연구가 새로운 기회를 제공합니다.',
+    '인공지능': 'AI 분야는 KAIST-서울대-POSTECH 삼각 축을 중심으로 긴밀한 공동연구 네트워크가 형성되어 있습니다. 최근 KIST와의 산학연 협력이 빠르게 확대되고 있습니다.',
+    '사회과학': '사회과학 분야는 서울대-연세대-고려대를 중심으로 정책 연구 네트워크가 활발합니다. 지방 거점대학과의 협력 연구가 증가 추세입니다.',
+    '자연과학': '자연과학 분야는 KAIST-서울대-POSTECH 중심의 기초과학 네트워크와 IBS를 통한 대형 공동연구가 특징적입니다.',
+    '공학': '공학 분야는 KAIST-서울대-한양대를 중심으로 산학협력 기반의 응용 연구 네트워크가 강하게 형성되어 있습니다.',
+    '의학': '의학 분야는 서울대병원-연세의대-삼성서울병원을 중심으로 임상시험과 중개연구 네트워크가 활발합니다.',
+    '인문학': '인문학 분야는 서울대-고려대-연세대를 중심으로 전통적인 학술 교류 네트워크가 유지되고 있으며, 디지털 인문학 분야에서 새로운 협력이 나타나고 있습니다.',
+    '예술체육': '예술체육 분야는 서울대-한국체대-홍익대를 중심으로 실기와 이론 연구의 융합 네트워크가 형성되어 있습니다.'
+  };
+  const insightEl = document.querySelector('#page-network .insight-content p');
+  if (insightEl && field !== 'all') {
+    insightEl.textContent = insightMap[field] || insightEl.textContent;
+  } else if (insightEl && field === 'all') {
+    insightEl.textContent = '교육공학 분야의 핵심 연구 네트워크는 서울대-한양대-이화여대를 중심으로 형성되어 있습니다. 공동연구 가능성이 높은 연구자 그룹으로는 AI 교육 응용 클러스터와 학습분석 클러스터가 있으며, 두 그룹 간 교차 연구가 새로운 연구 기회를 제공합니다.';
+  }
+}
+
+function setNetworkView(mode, btn) {
+  const actions = btn.parentElement.querySelectorAll('button');
+  actions.forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+/* ============================================================
+   연구자 인용 네트워크 (KCI 실제 데이터 기반)
+   ============================================================ */
+const CITATION_DATA = {
+  'all': {
+    nodes: [
+      { name: '김형민\n삼육대', x: 50, y: 25, size: 74, color: '#e74c3c', citations: 86, field: 'AI교육' },
+      { name: '김정아\n제주융합과학연구원', x: 25, y: 40, size: 68, color: '#e74c3c', citations: 69, field: 'AI교육' },
+      { name: '주민재\n명지대', x: 75, y: 45, size: 50, color: '#e74c3c', citations: 25, field: 'AI교육' },
+      { name: '박성원\n호서대', x: 80, y: 25, size: 48, color: '#e74c3c', citations: 21, field: 'AI교육' },
+      { name: '박형빈\n서울교대', x: 35, y: 65, size: 46, color: '#e74c3c', citations: 19, field: 'AI교육' },
+      { name: '권성연\n중부대', x: 15, y: 70, size: 48, color: '#3498db', citations: 21, field: '학습분석' },
+      { name: '심호남\n중앙대', x: 60, y: 70, size: 44, color: '#9b59b6', citations: 17, field: '언어교육' },
+      { name: '국세라\n한국외대', x: 85, y: 65, size: 44, color: '#9b59b6', citations: 18, field: '언어교육' },
+      { name: '김지혜\n이화여대', x: 70, y: 80, size: 42, color: '#9b59b6', citations: 14, field: '언어교육' },
+      { name: '이해듬\n목원대', x: 30, y: 85, size: 40, color: '#3498db', citations: 10, field: '학습분석' },
+      { name: '임철일\n서울대', x: 50, y: 50, size: 44, color: '#2ecc71', citations: 11, field: '교수설계' },
+      { name: '서덕희\n조선대', x: 15, y: 30, size: 38, color: '#e74c3c', citations: 7, field: 'AI교육' },
+    ],
+    edges: [
+      [2, 0], [4, 0], [6, 0], [7, 0], [8, 0],
+      [2, 1], [4, 1], [3, 1], [11, 1],
+      [8, 2], [6, 2],
+      [7, 3], [8, 3],
+      [6, 4], [9, 4],
+      [9, 5], [10, 5],
+      [8, 6],
+      [9, 10], [4, 10],
+      [4, 11], [1, 11],
+    ]
+  },
+  'edu-ai': {
+    nodes: [
+      { name: '김형민\n삼육대', x: 50, y: 25, size: 74, color: '#e74c3c', citations: 86, field: 'AI교육' },
+      { name: '김정아\n제주융합과학연구원', x: 20, y: 45, size: 68, color: '#e74c3c', citations: 69, field: 'AI교육' },
+      { name: '주민재\n명지대', x: 80, y: 40, size: 50, color: '#e74c3c', citations: 25, field: 'AI교육' },
+      { name: '박성원\n호서대', x: 75, y: 70, size: 48, color: '#e74c3c', citations: 21, field: 'AI교육' },
+      { name: '박형빈\n서울교대', x: 35, y: 70, size: 46, color: '#e74c3c', citations: 19, field: 'AI교육' },
+      { name: '서덕희\n조선대', x: 55, y: 80, size: 38, color: '#e74c3c', citations: 7, field: 'AI교육' },
+      { name: '임철일\n서울대', x: 50, y: 50, size: 44, color: '#2ecc71', citations: 11, field: '교수설계' },
+    ],
+    edges: [
+      [2, 0], [4, 0], [3, 0], [5, 0],
+      [2, 1], [4, 1], [3, 1], [5, 1],
+      [3, 2], [5, 2],
+      [4, 6], [5, 6],
+      [4, 5], [1, 5],
+    ]
+  },
+  'learning-analytics': {
+    nodes: [
+      { name: '권성연\n중부대', x: 35, y: 35, size: 56, color: '#3498db', citations: 21, field: '학습분석' },
+      { name: '이해듬\n목원대', x: 65, y: 35, size: 46, color: '#3498db', citations: 10, field: '학습분석' },
+      { name: '진성희\n인하대', x: 50, y: 60, size: 40, color: '#3498db', citations: 5, field: '학습분석' },
+      { name: '임철일\n서울대', x: 25, y: 70, size: 44, color: '#2ecc71', citations: 11, field: '교수설계' },
+      { name: '고보경\n서울대', x: 75, y: 70, size: 38, color: '#2ecc71', citations: 7, field: '교수설계' },
+      { name: '김형민\n삼육대', x: 50, y: 25, size: 50, color: '#e74c3c', citations: 86, field: 'AI교육' },
+    ],
+    edges: [
+      [1, 0], [2, 0], [3, 0],
+      [2, 1], [4, 1],
+      [3, 2], [4, 2],
+      [4, 3],
+      [2, 5], [0, 5],
+    ]
+  }
+};
+
+function initCitationNetwork(view) {
+  const viz = document.getElementById('citationNetworkViz');
+  if (!viz) return;
+  viz.innerHTML = '';
+
+  const key = view || 'all';
+  const data = CITATION_DATA[key] || CITATION_DATA['all'];
+  const nodes = data.nodes;
+  const edges = data.edges;
+
+  const rect = viz.getBoundingClientRect();
+  const w = rect.width || 600;
+  const h = rect.height || 420;
+
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('width', w);
+  svg.setAttribute('height', h);
+  svg.style.position = 'absolute';
+  svg.style.left = '0';
+  svg.style.top = '0';
+  svg.style.pointerEvents = 'none';
+
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+  marker.setAttribute('id', 'citArrow');
+  marker.setAttribute('viewBox', '0 0 10 6');
+  marker.setAttribute('refX', '10');
+  marker.setAttribute('refY', '3');
+  marker.setAttribute('markerWidth', '8');
+  marker.setAttribute('markerHeight', '6');
+  marker.setAttribute('orient', 'auto-start-reverse');
+  const arrowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  arrowPath.setAttribute('d', 'M0,0 L10,3 L0,6 Z');
+  arrowPath.setAttribute('fill', 'rgba(0,0,0,0.3)');
+  marker.appendChild(arrowPath);
+  defs.appendChild(marker);
+  svg.appendChild(defs);
+
+  edges.forEach(([from, to]) => {
+    const x1 = (nodes[from].x / 100) * w;
+    const y1 = (nodes[from].y / 100) * h;
+    const x2 = (nodes[to].x / 100) * w;
+    const y2 = (nodes[to].y / 100) * h;
+    const dx = x2 - x1, dy = y2 - y1;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    const rTo = nodes[to].size / 2 + 4;
+    const rFrom = nodes[from].size / 2 + 2;
+    const ex = x2 - (dx / dist) * rTo;
+    const ey = y2 - (dy / dist) * rTo;
+    const sx = x1 + (dx / dist) * rFrom;
+    const sy = y1 + (dy / dist) * rFrom;
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', sx);
+    line.setAttribute('y1', sy);
+    line.setAttribute('x2', ex);
+    line.setAttribute('y2', ey);
+    line.setAttribute('stroke', 'rgba(0,0,0,0.18)');
+    line.setAttribute('stroke-width', '1.5');
+    line.setAttribute('marker-end', 'url(#citArrow)');
+    svg.appendChild(line);
+  });
+
+  viz.appendChild(svg);
+
+  nodes.forEach(n => {
+    const node = document.createElement('div');
+    node.className = 'network-node';
+    node.style.width = n.size + 'px';
+    node.style.height = n.size + 'px';
+    node.style.left = ((n.x / 100) * w - n.size / 2) + 'px';
+    node.style.top = ((n.y / 100) * h - n.size / 2) + 'px';
+    node.style.background = n.color;
+    node.style.fontSize = (n.size > 55 ? 0.7 : 0.6) + 'rem';
+    node.style.whiteSpace = 'pre-line';
+    node.style.cursor = 'pointer';
+    node.textContent = n.name;
+    node.title = n.field + ' | 피인용: ' + n.citations + '회';
+    viz.appendChild(node);
+  });
+}
+
+function setCitationView(view, btn) {
+  const actions = btn.parentElement.querySelectorAll('button');
+  actions.forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  initCitationNetwork(view);
+  const insightEl = document.getElementById('citationInsightText');
+  if (!insightEl) return;
+  const texts = {
+    'all': 'KCI 데이터 기반 분석 결과, 김형민(삼육대)의 ChatGPT 한국어교육 연구(피인용 86회)와 김정아(제주융합과학연구원)의 생성형 AI 교육 활용 연구(피인용 69회)가 교육 AI 분야의 핵심 허브 논문으로 기능하고 있습니다. 특히 2023년 이후 생성형 AI 관련 인용 네트워크가 급격히 확장되는 추세입니다.',
+    'edu-ai': 'AI교육 클러스터에서는 김형민(삼육대)과 김정아(제주융합과학연구원)가 인용 허브를 형성하며, 주민재(명지대), 박형빈(서울교대), 박성원(호서대)의 생성형 AI 교육 연구가 이들을 집중적으로 인용하고 있습니다. 서울대 임철일 교수의 교수설계 연구가 교차 인용되며 두 영역을 연결합니다.',
+    'learning-analytics': '학습분석 클러스터에서는 권성연(중부대)의 이러닝 준비도 연구(피인용 21회)가 중심축으로 기능하며, 이해듬(목원대)의 학습자 군집화 연구, 진성희(인하대)의 Learning Analytics 연구와 밀접하게 연결되어 있습니다. 서울대 임철일·고보경 연구진의 교수설계 연구가 학습분석 분야에도 폭넓게 인용되고 있습니다.'
+  };
+  insightEl.textContent = texts[view] || texts['all'];
 }
 
 /* ============================================================
