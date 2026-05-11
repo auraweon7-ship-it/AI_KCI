@@ -2645,8 +2645,8 @@ input, select, textarea { font-family: inherit; }
           <div class="insight-icon">&#x1F4A1;</div>
           <div class="insight-content">
             <h4>AI 연구 동향 인사이트</h4>
-            <p>최근 5년간 교육공학 분야에서는 <strong>AI 기반 학습분석 연구</strong>가 꾸준히 증가하고 있습니다. 특히 2023년 이후 '생성형 AI'와 '맞춤형 학습' 키워드가 급부상하며, 학위논문 주제로의 확장 가능성이 높습니다.</p>
-            <div class="insight-tags">
+            <p id="trendInsightText">최근 5년간 교육공학 분야에서는 <strong>AI 기반 학습분석 연구</strong>가 꾸준히 증가하고 있습니다. 특히 2023년 이후 '생성형 AI'와 '맞춤형 학습' 키워드가 급부상하며, 학위논문 주제로의 확장 가능성이 높습니다.</p>
+            <div class="insight-tags" id="trendInsightTags">
               <span class="insight-tag">#인공지능</span>
               <span class="insight-tag">#학습분석</span>
               <span class="insight-tag">#생성형AI</span>
@@ -4270,20 +4270,77 @@ async function applyFilter() {
     articles.forEach(a => { if(a.year) yearCounts[a.year] = (yearCounts[a.year]||0) + 1; });
     const years = Object.keys(yearCounts).sort();
 
+    // 연도별 추이 메인 차트 동적 업데이트
+    destroyChart('mainTrend');
+    const trendCanvas = document.getElementById('trendChart');
+    if (trendCanvas) {
+      const cumData = [];
+      let cum = 0;
+      years.forEach(y => { cum += (yearCounts[y] || 0); cumData.push(cum); });
+      _trendCharts.mainTrend = new Chart(trendCanvas, {
+        type: 'line',
+        data: {
+          labels: years,
+          datasets: [{
+            label: '전체 논문 수',
+            data: years.map(y => Math.round((yearCounts[y]||0) * (total / Math.max(articles.length,1)))),
+            borderColor: '#00684a', backgroundColor: 'rgba(0,104,74,0.08)',
+            fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#00684a'
+          }, {
+            label: `${escapeHtml(searchQuery)} 관련 논문`,
+            data: years.map(y => yearCounts[y] || 0),
+            borderColor: '#00ed64', backgroundColor: 'rgba(0,237,100,0.08)',
+            fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#00ed64'
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 20 } } },
+          scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }
+        }
+      });
+    }
+
     // 분야별 비율 차트 업데이트
     const catCounts = {};
-    articles.forEach(a => { const c = a.keywords || '기타'; catCounts[c] = (catCounts[c]||0) + 1; });
+    articles.forEach(a => {
+      const cats = a.category || a.journalCategory || a.keywords || '기타';
+      const mainCat = cats.split(/[,;]/)[0].trim() || '기타';
+      catCounts[mainCat] = (catCounts[mainCat]||0) + 1;
+    });
 
-    // 인사이트 업데이트
-    const insightEl = document.querySelector('.insight-content p');
+    // 분야별 비율 메인 도넛 차트 동적 업데이트
+    destroyChart('mainField');
+    const fieldCanvas = document.getElementById('fieldChart');
+    if (fieldCanvas) {
+      const sortedCats = Object.entries(catCounts).sort((a,b) => b[1] - a[1]);
+      const topCatsChart = sortedCats.slice(0, 6);
+      const etcCount = sortedCats.slice(6).reduce((s, [,c]) => s + c, 0);
+      if (etcCount > 0) topCatsChart.push(['기타', etcCount]);
+      const fieldColors = ['#00684a','#00ed64','#0098a1','#f59e0b','#ef4444','#8b5cf6','#b8c4c2'];
+      _trendCharts.mainField = new Chart(fieldCanvas, {
+        type: 'doughnut',
+        data: {
+          labels: topCatsChart.map(([l]) => l),
+          datasets: [{ data: topCatsChart.map(([,c]) => c), backgroundColor: fieldColors.slice(0, topCatsChart.length), borderWidth: 0, hoverOffset: 8 }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '60%',
+          plugins: { legend: { position: 'right', labels: { usePointStyle: true, padding: 12, font: { size: 11 } } } }
+        }
+      });
+    }
+
+    // 인사이트 업데이트 (ID 기반 정확한 셀렉터)
+    const insightEl = document.getElementById('trendInsightText');
     if (insightEl) {
       insightEl.innerHTML = `"<strong>${escapeHtml(searchQuery)}</strong>" 주제로 총 <strong>${total.toLocaleString()}건</strong>의 논문이 검색되었습니다. ` +
         (articles.length > 0 ? `최근 논문으로는 "${escapeHtml(articles[0].title)}" 등이 있으며, ` +
         `주요 학술지는 ${[...new Set(articles.slice(0,5).map(a=>a.journal).filter(Boolean))].join(', ')} 등입니다.` : '');
     }
 
-    // 인사이트 태그 업데이트
-    const tagsEl = document.querySelector('.insight-tags');
+    // 인사이트 태그 업데이트 (ID 기반 정확한 셀렉터)
+    const tagsEl = document.getElementById('trendInsightTags');
     if (tagsEl) {
       const topCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,4);
       tagsEl.innerHTML = topCats.map(([c]) => `<span class="tag">#${escapeHtml(c)}</span>`).join('');
@@ -4655,8 +4712,8 @@ function initCharts() {
   Chart.defaults.font.size = 12;
   Chart.defaults.color = '#64748b';
 
-  // 1. 연도별 논문 발행 추이
-  new Chart(document.getElementById('trendChart'), {
+  // 1. 연도별 논문 발행 추이 (초기 샘플 데이터 - 분석 시 동적 업데이트됨)
+  _trendCharts.mainTrend = new Chart(document.getElementById('trendChart'), {
     type: 'line',
     data: {
       labels: ['2019', '2020', '2021', '2022', '2023', '2024', '2025'],
@@ -4695,8 +4752,8 @@ function initCharts() {
     }
   });
 
-  // 2. 분야별 연구 비율
-  new Chart(document.getElementById('fieldChart'), {
+  // 2. 분야별 연구 비율 (초기 샘플 데이터 - 분석 시 동적 업데이트됨)
+  _trendCharts.mainField = new Chart(document.getElementById('fieldChart'), {
     type: 'doughnut',
     data: {
       labels: ['교육공학', '교육학', '컴퓨터공학', '심리학', '사회학', '경영학', '기타'],
