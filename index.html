@@ -3172,26 +3172,74 @@ input, select, textarea { font-family: inherit; }
 
         <!-- 검색 바 -->
         <div class="card" style="margin-bottom:20px;padding:20px 24px;">
-          <div class="kw-search-bar">
-            <input type="text" id="netSearchInput" class="kw-search-input" placeholder="분석할 키워드 입력 (예: 인공지능, 교육)">
-            <button onclick="runNetworkAnalysis()" style="background:var(--brand-green);color:#fff;border:none;padding:10px 24px;border-radius:10px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;">
+          <!-- 1행: 학문분야 + 키워드 + 버튼 -->
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;">
+            <select id="netFieldSelect" style="padding:9px 14px;border:1px solid var(--gray-200);border-radius:10px;font-size:0.88rem;background:var(--white);min-width:140px;cursor:pointer;">
+              <option value="">학문분야 선택</option>
+              <optgroup label="인문학">
+                <option value="history">역사학</option><option value="philosophy">철학</option>
+                <option value="korean-lit">국어국문학</option><option value="english-lit">영어영문학</option>
+                <option value="linguistics">언어학</option>
+              </optgroup>
+              <optgroup label="사회과학">
+                <option value="education">교육학</option><option value="psychology">심리학</option>
+                <option value="law">법학</option><option value="economics">경제학</option>
+                <option value="business">경영학</option><option value="sociology">사회학</option>
+                <option value="media-comm">언론홍보학</option><option value="public-admin">행정학</option>
+              </optgroup>
+              <optgroup label="자연과학">
+                <option value="mathematics">수학</option><option value="physics">물리학</option>
+                <option value="chemistry">화학</option><option value="biology">생물학</option>
+              </optgroup>
+              <optgroup label="공학">
+                <option value="computer-eng">컴퓨터공학</option><option value="electrical-eng">전기전자공학</option>
+                <option value="mechanical-eng">기계공학</option><option value="chemical-eng">화학공학</option>
+                <option value="industrial-eng">산업공학</option>
+              </optgroup>
+              <optgroup label="의약학">
+                <option value="medicine">의학</option><option value="nursing">간호학</option>
+                <option value="pharmacy">약학</option><option value="public-health">보건학</option>
+              </optgroup>
+              <optgroup label="예술체육">
+                <option value="fine-arts">미술</option><option value="music">음악</option>
+                <option value="physical-edu">체육학</option><option value="design">디자인</option>
+              </optgroup>
+              <optgroup label="융합">
+                <option value="ai-convergence">인공지능</option><option value="data-science">데이터사이언스</option>
+                <option value="convergence-edu">융합교육</option>
+              </optgroup>
+            </select>
+            <input type="text" id="netSearchInput" class="kw-search-input" placeholder="키워드 입력 (미입력 시 학문분야 전체 분석)" style="flex:1;min-width:180px;">
+            <button onclick="runNetworkAnalysis()" id="netAnalyzeBtn" style="background:var(--brand-green);color:#fff;border:none;padding:10px 24px;border-radius:10px;font-weight:600;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:6px;">
               &#x1F50D; 네트워크 분석
             </button>
           </div>
-          <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;align-items:center;">
+          <!-- 2행: 옵션들 -->
+          <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center;">
             <span class="kw-quick-tag" onclick="quickNetwork('인공지능')">인공지능</span>
             <span class="kw-quick-tag" onclick="quickNetwork('교육')">교육</span>
             <span class="kw-quick-tag" onclick="quickNetwork('빅데이터')">빅데이터</span>
-            <span class="kw-quick-tag" onclick="quickNetwork('심리학')">심리학</span>
+            <span class="kw-quick-tag" onclick="quickNetwork('딥러닝')">딥러닝</span>
             <span class="kw-quick-tag" onclick="quickNetwork('경영학')">경영학</span>
-            <span style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-              <label style="font-size:0.82rem;color:var(--gray-500);">노드 수:</label>
-              <select id="netNodeCount" style="padding:5px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:0.82rem;">
-                <option value="10">10개</option>
-                <option value="15" selected>15개</option>
-                <option value="20">20개</option>
-                <option value="30">30개</option>
-              </select>
+            <span style="margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <span style="display:flex;align-items:center;gap:4px;">
+                <label style="font-size:0.82rem;color:var(--gray-500);">그래프:</label>
+                <select id="netGraphType" style="padding:5px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:0.82rem;">
+                  <option value="circular">원형 배치</option>
+                  <option value="force">힘-방향</option>
+                  <option value="radial">방사형</option>
+                  <option value="grid">격자형</option>
+                </select>
+              </span>
+              <span style="display:flex;align-items:center;gap:4px;">
+                <label style="font-size:0.82rem;color:var(--gray-500);">노드:</label>
+                <select id="netNodeCount" style="padding:5px 10px;border:1px solid var(--gray-200);border-radius:8px;font-size:0.82rem;">
+                  <option value="10">10개</option>
+                  <option value="15" selected>15개</option>
+                  <option value="20">20개</option>
+                  <option value="30">30개</option>
+                </select>
+              </span>
             </span>
           </div>
         </div>
@@ -6622,6 +6670,7 @@ let _netState = { coNodes: [], coEdges: [], citNodes: [], citEdges: [], articles
 
 function quickNetwork(kw) {
   document.getElementById('netSearchInput').value = kw;
+  document.getElementById('netFieldSelect').value = '';
   runNetworkAnalysis();
 }
 
@@ -6640,25 +6689,54 @@ function _canvasMsg(canvas, msg) {
 }
 
 async function runNetworkAnalysis() {
-  const keyword = document.getElementById('netSearchInput').value.trim();
-  if (!keyword) { alert('키워드를 입력해주세요.'); return; }
+  const fieldVal = document.getElementById('netFieldSelect').value;
+  const kwVal = document.getElementById('netSearchInput').value.trim();
+  // 학문분야 선택 시 해당 분야 키워드 사용, 키워드 입력 시 키워드 우선
+  const searchQuery = kwVal || (fieldVal ? (FIELD_KEYWORD_MAP[fieldVal] || fieldVal) : '');
+  if (!searchQuery) { alert('학문분야를 선택하거나 키워드를 입력해주세요.'); return; }
+
+  const fieldLabel = fieldVal ? document.getElementById('netFieldSelect').options[document.getElementById('netFieldSelect').selectedIndex].text : '';
+  const displayLabel = kwVal || fieldLabel || searchQuery;
+
   const maxNodes = parseInt(document.getElementById('netNodeCount').value) || 15;
+  const graphType = document.getElementById('netGraphType').value || 'circular';
   const coCanvas = document.getElementById('coAuthorCanvas');
   const citCanvas = document.getElementById('citNetCanvas');
-  _canvasMsg(coCanvas, '🔄 "' + keyword + '" 공동연구 네트워크 분석 중...');
-  _canvasMsg(citCanvas, '🔄 "' + keyword + '" 인용 네트워크 분석 중...');
+  const btn = document.getElementById('netAnalyzeBtn');
+  btn.disabled = true; btn.textContent = '분석 중...';
+  _canvasMsg(coCanvas, '🔄 "' + displayLabel + '" 공동연구 네트워크 분석 중... (인용 상위 100편+)');
+  _canvasMsg(citCanvas, '🔄 "' + displayLabel + '" 인용 네트워크 분석 중...');
 
   try {
-    const xmlText = await kciSearch({ apiCode: 'articleSearch', title: keyword, displayCount: 100 });
-    const { articles } = parseKCIArticles(xmlText);
-    if (!articles.length) {
+    // 100편 이상 검색 (2페이지 병렬)
+    const [xml1, xml2] = await Promise.all([
+      kciSearch(searchQuery, 1, 100),
+      kciSearch(searchQuery, 2, 100)
+    ]);
+    const r1 = parseKCIArticles(xml1);
+    const r2 = parseKCIArticles(xml2);
+    let allArticles = [...r1.articles, ...r2.articles];
+    // 중복 제거 (제목 기준)
+    const seen = new Set();
+    allArticles = allArticles.filter(a => {
+      const k = a.title + a.authors;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    if (!allArticles.length) {
       _canvasMsg(coCanvas, '검색 결과가 없습니다. 다른 키워드를 시도하세요.');
       _canvasMsg(citCanvas, '검색 결과가 없습니다.');
+      btn.disabled = false; btn.innerHTML = '&#x1F50D; 네트워크 분석';
       return;
     }
-    // 인용수 추정
-    articles.forEach(a => { if (a.citedCount < 0) a.citedCount = estimateCitation(a); });
+    // 인용수 추정 후 인용 상위 논문 우선 정렬
+    allArticles.forEach(a => { if (a.citedCount < 0) a.citedCount = estimateCitation(a); });
+    allArticles.sort((a, b) => b.citedCount - a.citedCount);
+    // 최소 100편 보장 (가능한 경우)
+    const articles = allArticles;
     _netState.articles = articles;
+    _netState.graphType = graphType;
 
     // 공동연구 네트워크 구축
     const coData = _buildCoAuthorNet(articles, maxNodes);
@@ -6671,11 +6749,13 @@ async function runNetworkAnalysis() {
     _drawCitationNet(citCanvas, citData);
 
     // 인사이트·통계·추천 업데이트
-    _updateNetInsights(keyword, articles, coData, citData);
-    _updateNetStats(keyword, articles, coData, citData);
+    _updateNetInsights(displayLabel, articles, coData, citData);
+    _updateNetStats(displayLabel, articles, coData, citData);
   } catch (e) {
     _canvasMsg(coCanvas, '분석 중 오류: ' + e.message);
     _canvasMsg(citCanvas, '분석 중 오류: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.innerHTML = '&#x1F50D; 네트워크 분석';
   }
 }
 
@@ -6716,17 +6796,53 @@ function _buildCoAuthorNet(articles, maxNodes) {
     .slice(0, maxNodes);
   const nameSet = new Set(sorted.map(n => n.name));
 
-  // 노드 배치 (원형 + 중심 중요도 보정)
+  // 노드 배치 (그래프 유형에 따라)
   const colors = ['#00684a','#0098a1','#00303d','#00ed64','#06b6d4','#10b981','#8b5cf6','#f59e0b','#ec4899','#14b8a6','#e74c3c','#3498db','#2ecc71','#9b59b6','#6366f1'];
+  const gType = _netState.graphType || 'circular';
   const nodes = sorted.map((a, i) => {
-    const angle = (2 * Math.PI * i) / sorted.length - Math.PI / 2;
-    const r = 0.32 + (i / sorted.length) * 0.08;
+    let x, y;
+    const n = sorted.length;
+    if (gType === 'force') {
+      // 힘-방향 시뮬레이션 (간이): 중요도 높을수록 중심에
+      const importance = 1 - (i / n);
+      const angle = (2 * Math.PI * i) / n + (i % 2 ? 0.3 : -0.3);
+      const r = 0.1 + (1 - importance) * 0.35;
+      x = 0.5 + r * Math.cos(angle);
+      y = 0.5 + r * Math.sin(angle);
+    } else if (gType === 'radial') {
+      // 방사형: 상위 3개 중심, 나머지 주변
+      if (i < 3) {
+        const ca = (2 * Math.PI * i) / 3 - Math.PI / 2;
+        x = 0.5 + 0.12 * Math.cos(ca);
+        y = 0.5 + 0.12 * Math.sin(ca);
+      } else {
+        const ring = Math.floor((i - 3) / 8);
+        const ri = (i - 3) % 8;
+        const ra = (2 * Math.PI * ri) / 8 + ring * 0.4;
+        const rr = 0.25 + ring * 0.12;
+        x = 0.5 + rr * Math.cos(ra);
+        y = 0.5 + rr * Math.sin(ra);
+      }
+    } else if (gType === 'grid') {
+      // 격자형
+      const cols = Math.ceil(Math.sqrt(n));
+      const col = i % cols, row = Math.floor(i / cols);
+      const totalRows = Math.ceil(n / cols);
+      x = 0.1 + (col / Math.max(cols - 1, 1)) * 0.8;
+      y = 0.1 + (row / Math.max(totalRows - 1, 1)) * 0.8;
+    } else {
+      // 원형 (기본)
+      const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+      const r = 0.32 + (i / n) * 0.08;
+      x = 0.5 + r * Math.cos(angle);
+      y = 0.5 + r * Math.sin(angle);
+    }
     return {
       name: a.name, inst: a.inst, papers: a.papers, citations: a.citations,
       coauthors: [...a.coauthors].filter(c => nameSet.has(c)),
       journals: [...a.journals], keywords: a.keywords.slice(0, 10), titles: a.titles.slice(0, 5),
-      x: 0.5 + r * Math.cos(angle), y: 0.5 + r * Math.sin(angle),
-      size: Math.max(20, Math.min(60, 18 + a.papers * 6)),
+      x: x, y: y,
+      size: Math.max(20, Math.min(60, 18 + a.papers * 4)),
       color: colors[i % colors.length]
     };
   });
@@ -6768,14 +6884,40 @@ function _buildCitationNet(articles, maxNodes) {
     .slice(0, maxNodes);
 
   const colors = ['#e74c3c','#3498db','#2ecc71','#9b59b6','#f59e0b','#00684a','#0098a1','#ec4899','#06b6d4','#14b8a6','#00303d','#6366f1','#10b981','#8b5cf6','#00ed64'];
+  const gType = _netState.graphType || 'circular';
   const nodes = sorted.map((a, i) => {
-    const angle = (2 * Math.PI * i) / sorted.length - Math.PI / 2;
-    const r = 0.3 + (1 - Math.min(a.totalCite / (sorted[0]?.totalCite || 1), 1)) * 0.12;
+    let x, y;
+    const n = sorted.length;
+    if (gType === 'force') {
+      const importance = 1 - (i / n);
+      const angle = (2 * Math.PI * i) / n + (i % 2 ? 0.25 : -0.25);
+      const r = 0.08 + (1 - importance) * 0.38;
+      x = 0.5 + r * Math.cos(angle); y = 0.5 + r * Math.sin(angle);
+    } else if (gType === 'radial') {
+      if (i < 3) {
+        const ca = (2 * Math.PI * i) / 3 - Math.PI / 2;
+        x = 0.5 + 0.1 * Math.cos(ca); y = 0.5 + 0.1 * Math.sin(ca);
+      } else {
+        const ring = Math.floor((i - 3) / 8), ri = (i - 3) % 8;
+        const ra = (2 * Math.PI * ri) / 8 + ring * 0.35;
+        const rr = 0.25 + ring * 0.13;
+        x = 0.5 + rr * Math.cos(ra); y = 0.5 + rr * Math.sin(ra);
+      }
+    } else if (gType === 'grid') {
+      const cols = Math.ceil(Math.sqrt(n));
+      const col = i % cols, row = Math.floor(i / cols);
+      x = 0.1 + (col / Math.max(cols - 1, 1)) * 0.8;
+      y = 0.1 + (row / Math.max(Math.ceil(n / cols) - 1, 1)) * 0.8;
+    } else {
+      const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+      const r = 0.3 + (1 - Math.min(a.totalCite / (sorted[0]?.totalCite || 1), 1)) * 0.12;
+      x = 0.5 + r * Math.cos(angle); y = 0.5 + r * Math.sin(angle);
+    }
     return {
       name: a.name, inst: a.inst, totalCite: a.totalCite, papers: a.papers,
       journals: [...a.journals], keywords: a.keywords.slice(0, 10), titles: a.titles.slice(0, 5),
       years: a.years,
-      x: 0.5 + r * Math.cos(angle), y: 0.5 + r * Math.sin(angle),
+      x: x, y: y,
       size: Math.max(20, Math.min(65, 18 + a.totalCite * 3)),
       color: colors[i % colors.length]
     };
