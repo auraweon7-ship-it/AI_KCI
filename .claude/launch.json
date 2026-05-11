@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "ai-kci",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["http-server", ".", "-p", "8080", "-c-1"],
-      "port": 8080
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["server.js"],
+      "autoPort": true
     }
   ]
 }

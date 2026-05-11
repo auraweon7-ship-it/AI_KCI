@@ -3177,36 +3177,91 @@ input, select, textarea { font-family: inherit; }
             <select id="netFieldSelect" style="padding:9px 14px;border:1px solid var(--gray-200);border-radius:10px;font-size:0.88rem;background:var(--white);min-width:140px;cursor:pointer;">
               <option value="">학문분야 선택</option>
               <optgroup label="인문학">
-                <option value="history">역사학</option><option value="philosophy">철학</option>
-                <option value="korean-lit">국어국문학</option><option value="english-lit">영어영문학</option>
+                <option value="history">역사학</option>
+                <option value="philosophy">철학</option>
+                <option value="korean-lit">국어국문학</option>
+                <option value="english-lit">영어영문학</option>
+                <option value="german-lit">독어독문학</option>
+                <option value="french-lit">불어불문학</option>
+                <option value="chinese-lit">중어중문학</option>
+                <option value="japanese-lit">일어일문학</option>
+                <option value="classical-chinese">한문학</option>
                 <option value="linguistics">언어학</option>
+                <option value="religious-studies">종교학</option>
               </optgroup>
               <optgroup label="사회과학">
-                <option value="education">교육학</option><option value="psychology">심리학</option>
-                <option value="law">법학</option><option value="economics">경제학</option>
-                <option value="business">경영학</option><option value="sociology">사회학</option>
-                <option value="media-comm">언론홍보학</option><option value="public-admin">행정학</option>
+                <option value="education">교육학</option>
+                <option value="psychology">심리학</option>
+                <option value="law">법학</option>
+                <option value="political-science">정치외교학</option>
+                <option value="public-admin">행정학</option>
+                <option value="economics">경제학</option>
+                <option value="business">경영학</option>
+                <option value="sociology">사회학</option>
+                <option value="geography">지리학</option>
+                <option value="media-comm">언론홍보학</option>
+                <option value="library-science">문헌정보학</option>
               </optgroup>
               <optgroup label="자연과학">
-                <option value="mathematics">수학</option><option value="physics">물리학</option>
-                <option value="chemistry">화학</option><option value="biology">생물학</option>
+                <option value="mathematics">수학</option>
+                <option value="statistics">통계학</option>
+                <option value="physics">물리학</option>
+                <option value="chemistry">화학</option>
+                <option value="biology">생물학</option>
+                <option value="earth-science">지구과학</option>
+                <option value="astronomy">천문학</option>
+                <option value="atmospheric-science">대기과학</option>
+                <option value="ocean-science">해양과학</option>
               </optgroup>
               <optgroup label="공학">
-                <option value="computer-eng">컴퓨터공학</option><option value="electrical-eng">전기전자공학</option>
-                <option value="mechanical-eng">기계공학</option><option value="chemical-eng">화학공학</option>
+                <option value="mechanical-eng">기계공학</option>
+                <option value="electrical-eng">전기전자공학</option>
+                <option value="computer-eng">컴퓨터공학</option>
+                <option value="chemical-eng">화학공학</option>
+                <option value="materials-eng">신소재공학</option>
+                <option value="civil-eng">토목공학</option>
+                <option value="architecture-eng">건축공학</option>
                 <option value="industrial-eng">산업공학</option>
+                <option value="environmental-eng">환경공학</option>
+                <option value="energy-eng">에너지공학</option>
               </optgroup>
               <optgroup label="의약학">
-                <option value="medicine">의학</option><option value="nursing">간호학</option>
-                <option value="pharmacy">약학</option><option value="public-health">보건학</option>
+                <option value="medicine">의학</option>
+                <option value="nursing">간호학</option>
+                <option value="pharmacy">약학</option>
+                <option value="dentistry">치의학</option>
+                <option value="public-health">보건학</option>
+                <option value="rehabilitation">재활의학</option>
+                <option value="basic-medicine">기초의과학</option>
               </optgroup>
-              <optgroup label="예술체육">
-                <option value="fine-arts">미술</option><option value="music">음악</option>
-                <option value="physical-edu">체육학</option><option value="design">디자인</option>
+              <optgroup label="농수해양학">
+                <option value="agriculture">농학</option>
+                <option value="horticulture">원예학</option>
+                <option value="forestry">산림학</option>
+                <option value="animal-science">축산학</option>
+                <option value="food-science">식품과학</option>
+                <option value="fisheries">수산학</option>
+                <option value="marine-production">해양생산학</option>
+                <option value="marine-resource">해양자원학</option>
               </optgroup>
-              <optgroup label="융합">
-                <option value="ai-convergence">인공지능</option><option value="data-science">데이터사이언스</option>
+              <optgroup label="예술체육학">
+                <option value="fine-arts">미술</option>
+                <option value="design">디자인</option>
+                <option value="music">음악</option>
+                <option value="theater">연극</option>
+                <option value="film">영화</option>
+                <option value="dance">무용</option>
+                <option value="physical-edu">체육학</option>
+                <option value="sports-science">스포츠과학</option>
+              </optgroup>
+              <optgroup label="복합학">
                 <option value="convergence-edu">융합교육</option>
+                <option value="sts">과학기술학</option>
+                <option value="cognitive-science">인지과학</option>
+                <option value="data-science">데이터사이언스</option>
+                <option value="ai-convergence">AI융합</option>
+                <option value="regional-convergence">지역융합연구</option>
+                <option value="interdisciplinary">학제간 연구</option>
               </optgroup>
             </select>
             <input type="text" id="netSearchInput" class="kw-search-input" placeholder="키워드 입력 (미입력 시 학문분야 전체 분석)" style="flex:1;min-width:180px;">
@@ -7039,18 +7094,103 @@ function _drawNetCanvas(canvas, data, type) {
     ctx.fillText(label, cx, cy + r + 12);
   });
 
-  // 클릭 이벤트
-  canvas.onclick = function(evt) {
-    const cRect = canvas.getBoundingClientRect();
-    const mx = evt.clientX - cRect.left, my = evt.clientY - cRect.top;
+  // 드래그 & 클릭 이벤트
+  let _dragNode = null, _dragStartX = 0, _dragStartY = 0, _dragged = false;
+  canvas.style.cursor = 'grab';
+
+  function _findNode(mx, my) {
     for (let i = nodes.length - 1; i >= 0; i--) {
       const n = nodes[i];
       const cx = n.x * w, cy = n.y * h, r = n.size / 2 + 5;
-      if ((mx - cx) ** 2 + (my - cy) ** 2 <= r * r) {
-        _showNodeDetail(n, type);
-        break;
-      }
+      if ((mx - cx) ** 2 + (my - cy) ** 2 <= r * r) return n;
     }
+    return null;
+  }
+
+  function _redraw() {
+    ctx.clearRect(0, 0, w, h);
+    // 배경
+    const bg2 = ctx.createRadialGradient(w/2,h/2,0,w/2,h/2,w*0.6);
+    bg2.addColorStop(0,'rgba(0,104,74,0.03)');bg2.addColorStop(1,'rgba(255,255,255,0)');
+    ctx.fillStyle = bg2; ctx.fillRect(0,0,w,h);
+    // 엣지
+    edges.forEach(e => {
+      const n1=nodes[e.from],n2=nodes[e.to];
+      const x1=n1.x*w,y1=n1.y*h,x2=n2.x*w,y2=n2.y*h;
+      ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+      ctx.strokeStyle='rgba(0,0,0,0.1)';ctx.lineWidth=Math.max(0.5,Math.min(e.weight,4));ctx.stroke();
+      if(type==='citation'){const dx=x2-x1,dy=y2-y1,dist=Math.sqrt(dx*dx+dy*dy);if(dist<1)return;const mx2=(x1+x2)/2,my2=(y1+y2)/2,angle=Math.atan2(dy,dx);ctx.save();ctx.translate(mx2,my2);ctx.rotate(angle);ctx.beginPath();ctx.moveTo(5,0);ctx.lineTo(-3,-3);ctx.lineTo(-3,3);ctx.closePath();ctx.fillStyle='rgba(0,0,0,0.2)';ctx.fill();ctx.restore();}
+    });
+    // 노드
+    nodes.forEach(n => {
+      const cx=n.x*w,cy=n.y*h,r=n.size/2;
+      ctx.beginPath();ctx.arc(cx,cy,r+4,0,Math.PI*2);ctx.fillStyle=n.color+'22';ctx.fill();
+      ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fillStyle = (n === _dragNode) ? '#ff6600' : n.color;ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=2;ctx.stroke();
+      ctx.fillStyle='#fff';ctx.font='bold '+Math.max(8,Math.min(11,r*0.55))+'px Pretendard,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText(n.name,cx,cy-4);
+      if(n.inst){ctx.font=Math.max(7,Math.min(9,r*0.4))+'px Pretendard,sans-serif';ctx.fillStyle='rgba(255,255,255,0.8)';const si=n.inst.length>6?n.inst.substring(0,6)+'..':n.inst;ctx.fillText(si,cx,cy+8);}
+      ctx.font='10px Pretendard,sans-serif';ctx.fillStyle=n.color;
+      const label=type==='citation'?(n.totalCite+'회'):(n.papers+'편');ctx.fillText(label,cx,cy+r+12);
+    });
+  }
+
+  canvas.onmousedown = function(evt) {
+    const cRect = canvas.getBoundingClientRect();
+    const mx = evt.clientX - cRect.left, my = evt.clientY - cRect.top;
+    _dragNode = _findNode(mx, my);
+    if (_dragNode) {
+      _dragStartX = mx; _dragStartY = my; _dragged = false;
+      canvas.style.cursor = 'grabbing';
+      _redraw();
+    }
+  };
+  canvas.onmousemove = function(evt) {
+    const cRect = canvas.getBoundingClientRect();
+    const mx = evt.clientX - cRect.left, my = evt.clientY - cRect.top;
+    if (_dragNode) {
+      const dx = mx - _dragStartX, dy = my - _dragStartY;
+      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) _dragged = true;
+      _dragNode.x = Math.max(0.05, Math.min(0.95, mx / w));
+      _dragNode.y = Math.max(0.05, Math.min(0.95, my / h));
+      _redraw();
+    } else {
+      const hover = _findNode(mx, my);
+      canvas.style.cursor = hover ? 'grab' : 'default';
+    }
+  };
+  canvas.onmouseup = function(evt) {
+    if (_dragNode && !_dragged) {
+      _showNodeDetail(_dragNode, type);
+    }
+    _dragNode = null;
+    canvas.style.cursor = 'grab';
+    _redraw();
+  };
+  canvas.onmouseleave = function() {
+    if (_dragNode) { _dragNode = null; canvas.style.cursor = 'grab'; _redraw(); }
+  };
+
+  // 터치 지원 (모바일)
+  canvas.ontouchstart = function(evt) {
+    evt.preventDefault();
+    const t = evt.touches[0], cRect = canvas.getBoundingClientRect();
+    const mx = t.clientX - cRect.left, my = t.clientY - cRect.top;
+    _dragNode = _findNode(mx, my);
+    if (_dragNode) { _dragStartX = mx; _dragStartY = my; _dragged = false; _redraw(); }
+  };
+  canvas.ontouchmove = function(evt) {
+    evt.preventDefault();
+    if (!_dragNode) return;
+    const t = evt.touches[0], cRect = canvas.getBoundingClientRect();
+    const mx = t.clientX - cRect.left, my = t.clientY - cRect.top;
+    _dragged = true;
+    _dragNode.x = Math.max(0.05, Math.min(0.95, mx / w));
+    _dragNode.y = Math.max(0.05, Math.min(0.95, my / h));
+    _redraw();
+  };
+  canvas.ontouchend = function(evt) {
+    if (_dragNode && !_dragged) _showNodeDetail(_dragNode, type);
+    _dragNode = null; _redraw();
   };
 }
 

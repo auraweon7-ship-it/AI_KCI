@@ -12,7 +12,7 @@ const fs = require('fs');
 const path = require('path');
 const url = require('url');
 
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 const KCI_BASE = 'https://open.kci.go.kr';
 
 const MIME_TYPES = {
