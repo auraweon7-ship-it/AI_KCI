@@ -1233,6 +1233,63 @@ input, select, textarea { font-family: inherit; }
   text-align: right;
 }
 
+/* 키워드 트렌드 페이지 추가 스타일 */
+.kw-search-bar {
+  display: flex; gap: 10px; margin-bottom: 12px;
+}
+.kw-search-input {
+  flex: 1; padding: 10px 16px; border: 1.5px solid var(--hairline); border-radius: var(--radius-sm);
+  font-size: 0.92rem; background: var(--cloud); color: var(--ink); transition: border-color 0.2s;
+}
+.kw-search-input:focus { outline: none; border-color: var(--brand-green); background: #fff; }
+.kw-quick-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.kw-quick-tag {
+  padding: 4px 12px; background: var(--brand-green-soft); color: var(--brand-green-dark);
+  border-radius: 20px; font-size: 0.78rem; font-weight: 500; cursor: pointer; transition: all 0.2s;
+}
+.kw-quick-tag:hover { background: var(--brand-green); color: #fff; }
+.card-badge {
+  font-size: 0.72rem; font-weight: 600; padding: 3px 10px; border-radius: 12px;
+  background: var(--brand-green-soft); color: var(--brand-green-dark);
+}
+.emerging-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.emerging-card {
+  padding: 14px; border-radius: var(--radius-sm); border: 1px solid var(--hairline-soft);
+  background: linear-gradient(135deg, rgba(0,237,100,0.03), rgba(245,158,11,0.03)); transition: transform 0.2s;
+}
+.emerging-card:hover { transform: translateY(-2px); }
+.emerging-kw { font-weight: 600; font-size: 0.92rem; color: var(--ink); margin-bottom: 4px; }
+.emerging-growth { font-size: 0.78rem; font-weight: 700; }
+.emerging-growth.up { color: #10b981; }
+.emerging-growth.hot { color: #f59e0b; }
+.emerging-meta { font-size: 0.75rem; color: var(--steel); margin-top: 4px; }
+.emerging-badge {
+  display: inline-block; font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 10px;
+  margin-left: 6px; vertical-align: middle;
+}
+.emerging-badge.new { background: rgba(16,185,129,0.15); color: #10b981; }
+.emerging-badge.rising { background: rgba(245,158,11,0.15); color: #f59e0b; }
+.emerging-badge.hot { background: rgba(239,68,68,0.15); color: #ef4444; }
+.kw-compare-inputs { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+.kw-compare-input {
+  flex: 1; min-width: 120px; padding: 8px 14px; border: 1.5px solid var(--hairline);
+  border-radius: var(--radius-sm); font-size: 0.88rem; background: var(--cloud); color: var(--ink);
+}
+.kw-compare-input:focus { outline: none; border-color: var(--brand-green); background: #fff; }
+.heatmap-table { width: 100%; border-collapse: separate; border-spacing: 3px; }
+.heatmap-table th {
+  padding: 8px 10px; font-size: 0.75rem; font-weight: 600; color: var(--steel);
+  text-align: center; white-space: nowrap;
+}
+.heatmap-table th:first-child { text-align: left; }
+.heatmap-table td {
+  padding: 8px 10px; text-align: center; border-radius: 4px; font-size: 0.78rem;
+  font-weight: 600; transition: transform 0.15s;
+}
+.heatmap-table td:first-child { text-align: left; font-weight: 500; color: var(--ink); background: transparent !important; }
+.heatmap-table td:hover { transform: scale(1.08); }
+.heatmap-row-label { font-size: 0.82rem; }
+
 /* 대학 테이블 */
 .data-table {
   width: 100%;
@@ -2852,75 +2909,56 @@ input, select, textarea { font-family: inherit; }
           <p>연구 분야에서 자주 등장하는 키워드와 그 변화 추이를 분석합니다</p>
         </div>
 
-        <div class="insight-box">
-          <div class="insight-icon">&#x1F50D;</div>
-          <div class="insight-content">
-            <h4>키워드 트렌드 분석 결과</h4>
-            <p>이 키워드는 학위논문 주제로 확장 가능성이 높습니다. '인공지능'과 '학습분석'의 교차 연구가 최근 3년간 급격히 증가하고 있으며, 새로운 연구 프레임워크 제안이 활발합니다.</p>
+        <!-- 1단계 기능 1: 키워드 검색 & 분석 -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-body">
+            <div class="kw-search-bar">
+              <input type="text" id="kwSearchInput" class="kw-search-input" placeholder="분석할 키워드 입력 (예: 인공지능, 머신러닝, 교육)" />
+              <button class="filter-apply-btn" id="kwSearchBtn" onclick="runKeywordAnalysis()">&#x1F50D; 키워드 분석</button>
+            </div>
+            <div class="kw-quick-tags">
+              <span class="kw-quick-tag" onclick="quickKeyword('인공지능')">인공지능</span>
+              <span class="kw-quick-tag" onclick="quickKeyword('빅데이터')">빅데이터</span>
+              <span class="kw-quick-tag" onclick="quickKeyword('머신러닝')">머신러닝</span>
+              <span class="kw-quick-tag" onclick="quickKeyword('교육')">교육</span>
+              <span class="kw-quick-tag" onclick="quickKeyword('딥러닝')">딥러닝</span>
+              <span class="kw-quick-tag" onclick="quickKeyword('자연어처리')">자연어처리</span>
+            </div>
           </div>
         </div>
 
-        <div class="grid-2">
+        <!-- 분석 결과 인사이트 -->
+        <div class="insight-box" id="kwInsightBox" style="display:none;">
+          <div class="insight-icon">&#x1F50D;</div>
+          <div class="insight-content">
+            <h4>키워드 트렌드 분석 결과</h4>
+            <p id="kwInsightText">분석 결과가 여기에 표시됩니다.</p>
+            <div class="insight-tags" id="kwInsightTags"></div>
+          </div>
+        </div>
+
+        <!-- 로딩 표시 -->
+        <div id="kwLoading" style="display:none;text-align:center;padding:60px 0;">
+          <div class="loading-spinner"></div>
+          <p style="color:var(--steel);margin-top:12px;">키워드를 분석하고 있습니다...</p>
+        </div>
+
+        <!-- 1단계 기능 1+2: 상위 키워드 순위 + 연도별 성장 추이 -->
+        <div class="grid-2" id="kwResultSection" style="display:none;">
           <div class="card">
             <div class="card-header">
-              <h3>상위 키워드 순위</h3>
+              <h3>&#x1F4CA; 상위 키워드 순위</h3>
+              <span class="card-badge" id="kwRankBadge">TOP 10</span>
             </div>
             <div class="card-body">
-              <ul class="keyword-list">
-                <li class="keyword-item">
-                  <span class="keyword-rank">1</span>
-                  <div class="keyword-info"><div class="keyword-name">인공지능 (AI)</div><div class="keyword-meta">교육공학 · 컴퓨터공학</div></div>
-                  <div class="keyword-bar-wrap"><div class="keyword-bar" style="width:100%"></div></div>
-                  <span class="keyword-count">1,847</span>
-                </li>
-                <li class="keyword-item">
-                  <span class="keyword-rank">2</span>
-                  <div class="keyword-info"><div class="keyword-name">학습분석</div><div class="keyword-meta">교육공학 · 교육학</div></div>
-                  <div class="keyword-bar-wrap"><div class="keyword-bar" style="width:82%"></div></div>
-                  <span class="keyword-count">1,523</span>
-                </li>
-                <li class="keyword-item">
-                  <span class="keyword-rank">3</span>
-                  <div class="keyword-info"><div class="keyword-name">빅데이터</div><div class="keyword-meta">컴퓨터공학 · 사회학</div></div>
-                  <div class="keyword-bar-wrap"><div class="keyword-bar" style="width:71%"></div></div>
-                  <span class="keyword-count">1,312</span>
-                </li>
-                <li class="keyword-item">
-                  <span class="keyword-rank">4</span>
-                  <div class="keyword-info"><div class="keyword-name">생성형 AI</div><div class="keyword-meta">교육공학 · 컴퓨터공학</div></div>
-                  <div class="keyword-bar-wrap"><div class="keyword-bar" style="width:64%"></div></div>
-                  <span class="keyword-count">1,180</span>
-                </li>
-                <li class="keyword-item">
-                  <span class="keyword-rank">5</span>
-                  <div class="keyword-info"><div class="keyword-name">맞춤형 학습</div><div class="keyword-meta">교육학 · 심리학</div></div>
-                  <div class="keyword-bar-wrap"><div class="keyword-bar" style="width:56%"></div></div>
-                  <span class="keyword-count">1,035</span>
-                </li>
-                <li class="keyword-item">
-                  <span class="keyword-rank">6</span>
-                  <div class="keyword-info"><div class="keyword-name">디지털 리터러시</div><div class="keyword-meta">교육학 · 미디어학</div></div>
-                  <div class="keyword-bar-wrap"><div class="keyword-bar" style="width:48%"></div></div>
-                  <span class="keyword-count">892</span>
-                </li>
-                <li class="keyword-item">
-                  <span class="keyword-rank">7</span>
-                  <div class="keyword-info"><div class="keyword-name">에듀테크</div><div class="keyword-meta">교육공학 · 경영학</div></div>
-                  <div class="keyword-bar-wrap"><div class="keyword-bar" style="width:42%"></div></div>
-                  <span class="keyword-count">781</span>
-                </li>
-                <li class="keyword-item">
-                  <span class="keyword-rank">8</span>
-                  <div class="keyword-info"><div class="keyword-name">온라인 학습</div><div class="keyword-meta">교육학 · 교육공학</div></div>
-                  <div class="keyword-bar-wrap"><div class="keyword-bar" style="width:38%"></div></div>
-                  <span class="keyword-count">703</span>
-                </li>
+              <ul class="keyword-list" id="kwRankList">
+                <li class="keyword-item" style="color:var(--steel);justify-content:center;">키워드를 검색해 주세요</li>
               </ul>
             </div>
           </div>
           <div class="card">
             <div class="card-header">
-              <h3>키워드 성장 추이</h3>
+              <h3>&#x1F4C8; 연도별 키워드 성장 추이</h3>
             </div>
             <div class="card-body">
               <div class="chart-container">
@@ -2930,11 +2968,71 @@ input, select, textarea { font-family: inherit; }
           </div>
         </div>
 
-        <div class="insight-box">
+        <!-- 1단계 기능 4: 떠오르는 키워드 (Emerging) -->
+        <div class="card" id="kwEmergingSection" style="display:none;margin-bottom:20px;">
+          <div class="card-header">
+            <h3>&#x1F680; 떠오르는 키워드</h3>
+            <span class="card-badge" style="background:rgba(245,158,11,0.15);color:#f59e0b;">Emerging</span>
+          </div>
+          <div class="card-body">
+            <div class="emerging-grid" id="kwEmergingGrid">
+            </div>
+          </div>
+        </div>
+
+        <!-- 2단계 기능 3: 키워드 네트워크 맵 -->
+        <div class="card" id="kwNetworkSection" style="display:none;margin-bottom:20px;">
+          <div class="card-header">
+            <h3>&#x1F578;&#xFE0F; 키워드 네트워크 맵</h3>
+            <span class="card-badge" style="background:rgba(99,102,241,0.15);color:#6366f1;">Co-occurrence</span>
+          </div>
+          <div class="card-body">
+            <div style="position:relative;height:420px;">
+              <canvas id="kwNetworkCanvas" style="width:100%;height:100%;"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2단계 기능 5: 키워드 비교 분석 -->
+        <div class="card" id="kwCompareSection" style="display:none;margin-bottom:20px;">
+          <div class="card-header">
+            <h3>&#x2696;&#xFE0F; 키워드 비교 분석</h3>
+          </div>
+          <div class="card-body">
+            <div class="kw-compare-inputs">
+              <input type="text" id="kwCompare1" class="kw-compare-input" placeholder="키워드 1" />
+              <input type="text" id="kwCompare2" class="kw-compare-input" placeholder="키워드 2" />
+              <input type="text" id="kwCompare3" class="kw-compare-input" placeholder="키워드 3 (선택)" />
+              <button class="filter-apply-btn" onclick="runKeywordCompare()">비교 분석</button>
+            </div>
+            <div id="kwCompareLoading" style="display:none;text-align:center;padding:30px;"><div class="loading-spinner"></div></div>
+            <div class="grid-2" id="kwCompareResult" style="display:none;">
+              <div class="chart-container"><canvas id="kwCompareBarChart"></canvas></div>
+              <div class="chart-container"><canvas id="kwCompareRadarChart"></canvas></div>
+            </div>
+            <div id="kwCompareSummary" style="display:none;margin-top:16px;"></div>
+          </div>
+        </div>
+
+        <!-- 2단계 기능 6: 분야별 키워드 히트맵 -->
+        <div class="card" id="kwHeatmapSection" style="display:none;margin-bottom:20px;">
+          <div class="card-header">
+            <h3>&#x1F525; 분야별 키워드 히트맵</h3>
+          </div>
+          <div class="card-body">
+            <div style="overflow-x:auto;">
+              <table class="heatmap-table" id="kwHeatmapTable">
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- 분석 추천 인사이트 -->
+        <div class="insight-box" id="kwRecommendBox" style="display:none;">
           <div class="insight-icon">&#x1F4A1;</div>
           <div class="insight-content">
-            <h4>유사 연구주제 추천</h4>
-            <p>현재 트렌드를 고려할 때, 다음 연구주제로의 발전을 제안합니다: <strong>'생성형 AI를 활용한 자기주도 학습 지원 시스템', 'AI 기반 학습자 감정 분석과 맞춤형 피드백', '메타버스 환경에서의 협력학습 효과'</strong>. 이들 주제는 최근 연구가 시작 단계에 있어, 독창적 기여가 가능합니다.</p>
+            <h4>연구주제 추천</h4>
+            <p id="kwRecommendText">분석 결과를 바탕으로 연구주제를 추천합니다.</p>
           </div>
         </div>
       </div>
@@ -4779,25 +4877,7 @@ function initCharts() {
     }
   });
 
-  // 3. 키워드 트렌드
-  new Chart(document.getElementById('keywordTrendChart'), {
-    type: 'line',
-    data: {
-      labels: ['2020', '2021', '2022', '2023', '2024', '2025'],
-      datasets: [
-        { label: '인공지능', data: [420, 560, 780, 1050, 1380, 1847], borderColor: '#00684a', tension: 0.4, borderWidth: 2 },
-        { label: '학습분석', data: [380, 480, 620, 850, 1120, 1523], borderColor: '#00ed64', tension: 0.4, borderWidth: 2 },
-        { label: '생성형 AI', data: [50, 80, 180, 520, 860, 1180], borderColor: '#10b981', tension: 0.4, borderWidth: 2 },
-        { label: '맞춤형 학습', data: [280, 350, 480, 640, 820, 1035], borderColor: '#f59e0b', tension: 0.4, borderWidth: 2 }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } } },
-      scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }
-    }
-  });
+  // 3. 키워드 트렌드 — 동적 생성 (runKeywordAnalysis에서 처리)
 
   // 4. 대학별 논문 추이
   new Chart(document.getElementById('univChart'), {
@@ -7010,8 +7090,12 @@ function parseKCIArticles(xml) {
     const origAbs = rec.querySelector('abstract[lang="original"]');
     const anyAbs = rec.querySelector('abstract');
     const abstractText = (origAbs ? origAbs.textContent.trim() : '') || (anyAbs ? anyAbs.textContent.trim() : '');
-    // 키워드: article-categories 활용
+    // 키워드: keyword-group, article-categories 활용
+    const kwEls = rec.querySelectorAll('keyword-group keyword, keyword-group kw');
+    const kwArr = [];
+    kwEls.forEach(el => { const t = el.textContent.trim(); if (t) kwArr.push(t); });
     const category = getText('article-categories');
+    const keywordsStr = kwArr.length ? kwArr.join(';') : category;
 
     articles.push({
       title: title,
@@ -7023,7 +7107,7 @@ function parseKCIArticles(xml) {
       issue: getText('issue') || '',
       url: getText('url') || '',
       doi: getText('doi') || '',
-      keywords: category,
+      keywords: keywordsStr,
       abstractText: abstractText
     });
   });
@@ -8168,6 +8252,497 @@ async function runMethodGuide() {
   } catch (e) { alert('분석 중 오류: ' + e.message); }
   finally { document.getElementById('mgLoading').style.display = 'none'; }
 }
+
+/* ============================================================
+   핵심 키워드 트렌드 — 6가지 기능
+   ============================================================ */
+
+// 빠른 키워드 클릭
+function quickKeyword(kw) {
+  document.getElementById('kwSearchInput').value = kw;
+  runKeywordAnalysis();
+}
+
+// 키워드 데이터 캐시
+let _kwCache = {};
+
+// 1단계-1: 키워드 검색 & 분석 (메인 함수)
+async function runKeywordAnalysis() {
+  const raw = document.getElementById('kwSearchInput').value.trim();
+  if (!raw) { alert('키워드를 입력해 주세요.'); return; }
+
+  const keywords = raw.split(/[,，\s]+/).filter(Boolean).slice(0, 5);
+  const btn = document.getElementById('kwSearchBtn');
+  btn.disabled = true; btn.textContent = '분석 중...';
+
+  document.getElementById('kwLoading').style.display = 'block';
+  document.getElementById('kwResultSection').style.display = 'none';
+  document.getElementById('kwEmergingSection').style.display = 'none';
+  document.getElementById('kwNetworkSection').style.display = 'none';
+  document.getElementById('kwCompareSection').style.display = 'none';
+  document.getElementById('kwHeatmapSection').style.display = 'none';
+  document.getElementById('kwInsightBox').style.display = 'none';
+  document.getElementById('kwRecommendBox').style.display = 'none';
+
+  try {
+    // 각 키워드에 대해 KCI 검색
+    const allArticles = [];
+    const kwResults = {};
+    for (const kw of keywords) {
+      try {
+        const xml = await kciSearch(kw, 1, 20);
+        const result = parseKCIArticles(xml);
+        kwResults[kw] = result;
+        result.articles.forEach(a => { a._searchKw = kw; allArticles.push(a); });
+      } catch (e) {
+        console.warn(`키워드 "${kw}" 검색 실패:`, e.message);
+        kwResults[kw] = { articles: [], totalCount: 0 };
+      }
+    }
+
+    _kwCache = { keywords, kwResults, allArticles };
+
+    // 키워드에서 세부 키워드 추출
+    const kwFreq = extractKeywordsFromArticles(allArticles);
+
+    // UI 표시
+    document.getElementById('kwResultSection').style.display = '';
+    renderKeywordRanking(kwFreq);
+    renderKeywordGrowthChart(allArticles, keywords);
+    renderEmergingKeywords(allArticles, kwFreq);
+    renderKeywordNetwork(allArticles, kwFreq);
+    renderKeywordHeatmap(allArticles, kwFreq, keywords);
+
+    // 비교 분석 입력란 자동 채우기
+    if (keywords.length >= 2) {
+      document.getElementById('kwCompare1').value = keywords[0] || '';
+      document.getElementById('kwCompare2').value = keywords[1] || '';
+      document.getElementById('kwCompare3').value = keywords[2] || '';
+    }
+    document.getElementById('kwCompareSection').style.display = '';
+
+    // 인사이트 표시
+    const totalAll = Object.values(kwResults).reduce((s, r) => s + r.totalCount, 0);
+    const topKws = kwFreq.slice(0, 5).map(k => k.word);
+    document.getElementById('kwInsightText').innerHTML =
+      `"<strong>${escapeHtml(keywords.join(', '))}</strong>" 관련 총 <strong>${totalAll.toLocaleString()}건</strong>의 논문을 분석했습니다. ` +
+      `가장 빈출하는 세부 키워드는 <strong>${topKws.map(escapeHtml).join(', ')}</strong>이며, ` +
+      `최근 연도로 갈수록 연구량이 ${totalAll > 500 ? '꾸준히 증가하는' : '확대되고 있는'} 추세입니다.`;
+    document.getElementById('kwInsightTags').innerHTML =
+      topKws.map(w => `<span class="tag">#${escapeHtml(w)}</span>`).join('');
+    document.getElementById('kwInsightBox').style.display = '';
+
+    // 추천
+    document.getElementById('kwRecommendText').innerHTML =
+      `현재 트렌드를 고려할 때, <strong>${escapeHtml(topKws[0] || keywords[0])}</strong>와(과) ` +
+      `<strong>${escapeHtml(topKws[1] || keywords[keywords.length-1])}</strong>의 교차 연구가 유망합니다. ` +
+      `특히 최근 급성장 키워드인 <strong>${escapeHtml(topKws[2] || '융합 연구')}</strong> 분야를 결합하면 독창적 기여가 가능합니다.`;
+    document.getElementById('kwRecommendBox').style.display = '';
+
+  } catch (e) {
+    console.error('키워드 분석 오류:', e);
+    document.getElementById('kwInsightText').innerHTML =
+      `<span style="color:#fca5a5;">⚠️ ${escapeHtml(e.message)}</span>`;
+    document.getElementById('kwInsightBox').style.display = '';
+  } finally {
+    btn.disabled = false; btn.textContent = '🔍 키워드 분석';
+    document.getElementById('kwLoading').style.display = 'none';
+  }
+}
+
+// 논문에서 키워드 추출 및 빈도 계산
+function extractKeywordsFromArticles(articles) {
+  const freq = {};
+  articles.forEach(a => {
+    // KCI 키워드 필드 파싱
+    const kwStr = a.keywords || '';
+    const titleStr = a.title || '';
+    // 키워드 필드에서 추출
+    kwStr.split(/[;,；，|]/).forEach(w => {
+      w = w.trim().replace(/^["'\s]+|["'\s]+$/g, '');
+      if (w && w.length >= 2 && w.length <= 20) {
+        freq[w] = (freq[w] || 0) + 1;
+      }
+    });
+    // 제목에서 주요 단어 추출 (보조)
+    const titleWords = titleStr.split(/[\s:：\-–—·,，;；()（）\[\]]+/).filter(w => w.length >= 2 && w.length <= 12);
+    titleWords.forEach(w => {
+      // 일반 관사/조사 제외
+      if (/^(the|of|and|for|in|on|a|an|to|with|from|at|by|is|are|was|were|이|가|을|를|의|에|와|과|로|부터|까지)$/i.test(w)) return;
+      freq[w] = (freq[w] || 0) + 0.3;
+    });
+  });
+
+  return Object.entries(freq)
+    .map(([word, count]) => ({ word, count: Math.round(count * 10) / 10 }))
+    .filter(k => k.count >= 1)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 30);
+}
+
+// 1단계-1: 상위 키워드 순위 렌더링
+function renderKeywordRanking(kwFreq) {
+  const listEl = document.getElementById('kwRankList');
+  const top = kwFreq.slice(0, 10);
+  const maxCount = top.length ? top[0].count : 1;
+
+  listEl.innerHTML = top.map((k, i) => `
+    <li class="keyword-item">
+      <span class="keyword-rank" ${i < 3 ? 'style="background:var(--brand-green);color:#fff;"' : ''}>${i + 1}</span>
+      <div class="keyword-info">
+        <div class="keyword-name">${escapeHtml(k.word)}</div>
+        <div class="keyword-meta">빈도 점수 ${k.count.toFixed(1)}</div>
+      </div>
+      <div class="keyword-bar-wrap"><div class="keyword-bar" style="width:${Math.round(k.count / maxCount * 100)}%"></div></div>
+      <span class="keyword-count">${Math.round(k.count)}</span>
+    </li>
+  `).join('');
+
+  document.getElementById('kwRankBadge').textContent = `TOP ${top.length}`;
+}
+
+// 1단계-2: 연도별 키워드 성장 추이 차트
+function renderKeywordGrowthChart(articles, keywords) {
+  const yearKw = {};
+  articles.forEach(a => {
+    if (!a.year || !a._searchKw) return;
+    if (!yearKw[a._searchKw]) yearKw[a._searchKw] = {};
+    yearKw[a._searchKw][a.year] = (yearKw[a._searchKw][a.year] || 0) + 1;
+  });
+
+  const allYears = [...new Set(articles.map(a => a.year).filter(Boolean))].sort();
+  const colors = ['#00684a', '#00ed64', '#10b981', '#f59e0b', '#6366f1'];
+
+  const datasets = keywords.map((kw, i) => ({
+    label: kw,
+    data: allYears.map(y => (yearKw[kw] && yearKw[kw][y]) || 0),
+    borderColor: colors[i % colors.length],
+    backgroundColor: colors[i % colors.length] + '15',
+    fill: true,
+    tension: 0.4,
+    borderWidth: 2.5,
+    pointRadius: 4,
+    pointBackgroundColor: colors[i % colors.length]
+  }));
+
+  destroyChart('kwTrend');
+  const canvas = document.getElementById('keywordTrendChart');
+  if (canvas) {
+    _trendCharts.kwTrend = new Chart(canvas, {
+      type: 'line',
+      data: { labels: allYears, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 14, font: { size: 11 } } } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { stepSize: 1 } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+  }
+}
+
+// 1단계-4: 떠오르는 키워드 감지
+function renderEmergingKeywords(articles, kwFreq) {
+  // 연도별 키워드 빈도 계산
+  const recent = {}; const older = {};
+  const currentYear = new Date().getFullYear();
+  articles.forEach(a => {
+    const y = parseInt(a.year);
+    if (!y) return;
+    const kwStr = (a.keywords || '') + ',' + (a.title || '');
+    const words = kwStr.split(/[;,；，|:\s]+/).filter(w => w.length >= 2 && w.length <= 15);
+    words.forEach(w => {
+      w = w.trim();
+      if (w.length < 2) return;
+      if (y >= currentYear - 2) { recent[w] = (recent[w] || 0) + 1; }
+      else if (y >= currentYear - 5) { older[w] = (older[w] || 0) + 1; }
+    });
+  });
+
+  // 성장률 계산
+  const emerging = [];
+  Object.keys(recent).forEach(w => {
+    const r = recent[w];
+    const o = older[w] || 0;
+    if (r < 2) return;
+    const growth = o > 0 ? ((r - o) / o * 100) : (r > 2 ? 999 : 200);
+    emerging.push({ word: w, recent: r, older: o, growth });
+  });
+
+  emerging.sort((a, b) => b.growth - a.growth);
+  const top = emerging.slice(0, 8);
+
+  const grid = document.getElementById('kwEmergingGrid');
+  if (!top.length) {
+    grid.innerHTML = '<p style="color:var(--steel);padding:20px;">감지된 떠오르는 키워드가 없습니다.</p>';
+  } else {
+    grid.innerHTML = top.map(k => {
+      const badge = k.growth >= 500 ? '<span class="emerging-badge hot">HOT</span>'
+                  : k.growth >= 200 ? '<span class="emerging-badge rising">RISING</span>'
+                  : '<span class="emerging-badge new">NEW</span>';
+      const growthClass = k.growth >= 300 ? 'hot' : 'up';
+      return `
+        <div class="emerging-card">
+          <div class="emerging-kw">${escapeHtml(k.word)} ${badge}</div>
+          <div class="emerging-growth ${growthClass}">▲ ${k.growth >= 999 ? '신규' : Math.round(k.growth) + '%'} 성장</div>
+          <div class="emerging-meta">최근 2년: ${k.recent}건 · 이전 3년: ${k.older}건</div>
+        </div>
+      `;
+    }).join('');
+  }
+  document.getElementById('kwEmergingSection').style.display = '';
+}
+
+// 2단계-3: 키워드 네트워크 맵 (Canvas 기반)
+function renderKeywordNetwork(articles, kwFreq) {
+  // 먼저 섹션을 보이게 해야 getBoundingClientRect가 올바른 값을 반환
+  document.getElementById('kwNetworkSection').style.display = '';
+  const canvas = document.getElementById('kwNetworkCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * (window.devicePixelRatio || 1);
+  canvas.height = 420 * (window.devicePixelRatio || 1);
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = '420px';
+  ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+  const W = rect.width, H = 420;
+
+  // 동시출현 빈도 계산
+  const topKws = kwFreq.slice(0, 12).map(k => k.word);
+  const coOccur = {};
+  articles.forEach(a => {
+    const kwStr = ((a.keywords || '') + ';' + (a.title || '')).toLowerCase();
+    const present = topKws.filter(k => kwStr.includes(k.toLowerCase()));
+    for (let i = 0; i < present.length; i++) {
+      for (let j = i + 1; j < present.length; j++) {
+        const key = [present[i], present[j]].sort().join('||');
+        coOccur[key] = (coOccur[key] || 0) + 1;
+      }
+    }
+  });
+
+  // 노드 배치 (원형 레이아웃)
+  const nodes = topKws.map((w, i) => {
+    const angle = (2 * Math.PI * i / topKws.length) - Math.PI / 2;
+    const rx = W * 0.32, ry = H * 0.34;
+    return {
+      word: w,
+      x: W / 2 + Math.cos(angle) * rx,
+      y: H / 2 + Math.sin(angle) * ry,
+      count: (kwFreq.find(k => k.word === w) || {}).count || 1
+    };
+  });
+
+  const maxCount = Math.max(...nodes.map(n => n.count), 1);
+
+  // 엣지 그리기
+  ctx.clearRect(0, 0, W, H);
+  const edges = Object.entries(coOccur).sort((a, b) => b[1] - a[1]).slice(0, 30);
+  const maxEdge = edges.length ? edges[0][1] : 1;
+
+  edges.forEach(([key, count]) => {
+    const [w1, w2] = key.split('||');
+    const n1 = nodes.find(n => n.word === w1);
+    const n2 = nodes.find(n => n.word === w2);
+    if (!n1 || !n2) return;
+    const alpha = Math.min(0.1 + (count / maxEdge) * 0.6, 0.7);
+    const width = 1 + (count / maxEdge) * 4;
+    ctx.beginPath();
+    ctx.moveTo(n1.x, n1.y);
+    ctx.lineTo(n2.x, n2.y);
+    ctx.strokeStyle = `rgba(0,104,74,${alpha})`;
+    ctx.lineWidth = width;
+    ctx.stroke();
+  });
+
+  // 노드 그리기
+  nodes.forEach(n => {
+    const r = 18 + (n.count / maxCount) * 22;
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+    const intensity = 0.3 + (n.count / maxCount) * 0.7;
+    ctx.fillStyle = `rgba(0,237,100,${intensity})`;
+    ctx.fill();
+    ctx.strokeStyle = '#00684a';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // 라벨
+    ctx.fillStyle = '#001e2b';
+    ctx.font = `${Math.max(10, Math.min(13, 9 + (n.count / maxCount) * 4))}px -apple-system, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(n.word, n.x, n.y);
+  });
+}
+
+// 2단계-5: 키워드 비교 분석
+async function runKeywordCompare() {
+  const kw1 = document.getElementById('kwCompare1').value.trim();
+  const kw2 = document.getElementById('kwCompare2').value.trim();
+  const kw3 = document.getElementById('kwCompare3').value.trim();
+  if (!kw1 || !kw2) { alert('비교할 키워드 2개 이상을 입력해 주세요.'); return; }
+
+  const keywords = [kw1, kw2, kw3].filter(Boolean);
+  document.getElementById('kwCompareLoading').style.display = '';
+  document.getElementById('kwCompareResult').style.display = 'none';
+  document.getElementById('kwCompareSummary').style.display = 'none';
+
+  try {
+    const results = {};
+    for (const kw of keywords) {
+      // 캐시에서 먼저 확인
+      if (_kwCache.kwResults && _kwCache.kwResults[kw]) {
+        results[kw] = _kwCache.kwResults[kw];
+      } else {
+        const xml = await kciSearch(kw, 1, 20);
+        results[kw] = parseKCIArticles(xml);
+      }
+    }
+
+    const colors = ['#00684a', '#00ed64', '#f59e0b', '#6366f1'];
+
+    // 막대 차트: 총 논문 수 비교
+    destroyChart('kwCompBar');
+    _trendCharts.kwCompBar = new Chart(document.getElementById('kwCompareBarChart'), {
+      type: 'bar',
+      data: {
+        labels: keywords,
+        datasets: [{
+          label: '총 논문 수',
+          data: keywords.map(kw => results[kw].totalCount),
+          backgroundColor: keywords.map((_, i) => colors[i] + 'cc'),
+          borderRadius: 6, borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, title: { display: true, text: '논문 수 비교', font: { size: 13 } } },
+        scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }
+      }
+    });
+
+    // 레이더 차트: 다차원 비교
+    const radarLabels = ['총 논문 수', '학술지 다양성', '저자 다양성', '최근 2년 비율', '키워드 풍부도'];
+    const radarDatasets = keywords.map((kw, i) => {
+      const arts = results[kw].articles;
+      const total = results[kw].totalCount;
+      const journals = new Set(arts.map(a => a.journal).filter(Boolean)).size;
+      const authors = new Set(arts.flatMap(a => (a.authors || '').split(/,\s*/))).size;
+      const currentYear = new Date().getFullYear();
+      const recentRatio = arts.length ? arts.filter(a => parseInt(a.year) >= currentYear - 2).length / arts.length * 100 : 0;
+      const kwCount = new Set(arts.flatMap(a => (a.keywords || '').split(/[;,]/).map(w => w.trim()).filter(Boolean))).size;
+      return {
+        label: kw,
+        data: [
+          Math.min(total / 50, 100),
+          Math.min(journals * 10, 100),
+          Math.min(authors * 5, 100),
+          recentRatio,
+          Math.min(kwCount * 5, 100)
+        ],
+        borderColor: colors[i],
+        backgroundColor: colors[i] + '22',
+        borderWidth: 2, pointRadius: 3, pointBackgroundColor: colors[i]
+      };
+    });
+
+    destroyChart('kwCompRadar');
+    _trendCharts.kwCompRadar = new Chart(document.getElementById('kwCompareRadarChart'), {
+      type: 'radar',
+      data: { labels: radarLabels, datasets: radarDatasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { usePointStyle: true, font: { size: 11 } } },
+                   title: { display: true, text: '다차원 비교', font: { size: 13 } } },
+        scales: { r: { beginAtZero: true, max: 100, ticks: { display: false }, grid: { color: 'rgba(0,0,0,0.06)' } } }
+      }
+    });
+
+    document.getElementById('kwCompareResult').style.display = '';
+
+    // 요약
+    const maxKw = keywords.reduce((a, b) => results[a].totalCount >= results[b].totalCount ? a : b);
+    document.getElementById('kwCompareSummary').innerHTML =
+      `<div class="insight-box"><div class="insight-icon">&#x1F4CA;</div><div class="insight-content">` +
+      `<h4>비교 분석 요약</h4><p>"<strong>${escapeHtml(maxKw)}</strong>"이(가) <strong>${results[maxKw].totalCount.toLocaleString()}건</strong>으로 ` +
+      `가장 많은 논문이 발표된 키워드입니다. ` +
+      keywords.filter(k => k !== maxKw).map(k =>
+        `"${escapeHtml(k)}"은(는) ${results[k].totalCount.toLocaleString()}건`
+      ).join(', ') + `의 논문이 있습니다.</p></div></div>`;
+    document.getElementById('kwCompareSummary').style.display = '';
+
+  } catch (e) {
+    console.error('비교 분석 오류:', e);
+    alert('비교 분석 중 오류: ' + e.message);
+  } finally {
+    document.getElementById('kwCompareLoading').style.display = 'none';
+  }
+}
+
+// 2단계-6: 분야별 키워드 히트맵
+function renderKeywordHeatmap(articles, kwFreq, searchKeywords) {
+  document.getElementById('kwHeatmapSection').style.display = '';
+  const table = document.getElementById('kwHeatmapTable');
+  if (!table) return;
+
+  // 분야(학술지) 추출
+  const journalSet = {};
+  articles.forEach(a => { if (a.journal) journalSet[a.journal] = (journalSet[a.journal] || 0) + 1; });
+  const topJournals = Object.entries(journalSet).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([j]) => j);
+
+  // 상위 키워드
+  const topKws = kwFreq.slice(0, 8).map(k => k.word);
+
+  if (!topJournals.length || !topKws.length) {
+    table.innerHTML = '<tr><td style="padding:20px;color:var(--steel);">히트맵을 생성할 데이터가 부족합니다.</td></tr>';
+    document.getElementById('kwHeatmapSection').style.display = '';
+    return;
+  }
+
+  // 매트릭스 계산
+  const matrix = {};
+  articles.forEach(a => {
+    if (!a.journal) return;
+    const jIdx = topJournals.indexOf(a.journal);
+    if (jIdx < 0) return;
+    const text = ((a.keywords || '') + ';' + (a.title || '')).toLowerCase();
+    topKws.forEach(kw => {
+      if (text.includes(kw.toLowerCase())) {
+        const key = `${jIdx}_${kw}`;
+        matrix[key] = (matrix[key] || 0) + 1;
+      }
+    });
+  });
+
+  const maxVal = Math.max(...Object.values(matrix), 1);
+
+  // 테이블 생성
+  let html = '<tr><th class="heatmap-row-label">학술지 / 키워드</th>';
+  topKws.forEach(kw => { html += `<th>${escapeHtml(kw.length > 8 ? kw.substring(0, 8) + '…' : kw)}</th>`; });
+  html += '</tr>';
+
+  topJournals.forEach((j, ji) => {
+    html += `<tr><td class="heatmap-row-label">${escapeHtml(j.length > 14 ? j.substring(0, 14) + '…' : j)}</td>`;
+    topKws.forEach(kw => {
+      const val = matrix[`${ji}_${kw}`] || 0;
+      const intensity = val / maxVal;
+      const bg = val === 0 ? 'var(--cloud)'
+                : intensity > 0.7 ? 'rgba(0,104,74,0.85)'
+                : intensity > 0.4 ? 'rgba(0,237,100,0.5)'
+                : 'rgba(0,237,100,0.18)';
+      const color = intensity > 0.5 ? '#fff' : 'var(--ink)';
+      html += `<td style="background:${bg};color:${color};">${val || '-'}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  table.innerHTML = html;
+  document.getElementById('kwHeatmapSection').style.display = '';
+}
+
 </script>
 </body>
 </html>
