@@ -3721,6 +3721,15 @@ input, select, textarea { font-family: inherit; }
                   <label>연구 관심사 (자유 기술)</label>
                   <textarea placeholder="현재 관심 있는 연구 주제나 방향을 자유롭게 기술해 주세요" id="userInterest"></textarea>
                 </div>
+                <div class="form-group" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-200);">
+                  <label>Claude API 키 <span style="font-weight:400;color:var(--gray-400);font-size:0.75rem;">(AI 분석 기능에 필요)</span></label>
+                  <div style="display:flex;gap:8px;">
+                    <input type="password" placeholder="sk-ant-..." id="claudeApiKeyInput" style="flex:1;"
+                      oninput="CLAUDE_CONFIG.API_KEY=this.value.trim()">
+                    <button type="button" style="padding:6px 12px;border:1px solid var(--gray-200);border-radius:6px;background:var(--gray-50);cursor:pointer;font-size:0.8rem;" onclick="const inp=document.getElementById('claudeApiKeyInput');inp.type=inp.type==='password'?'text':'password';this.textContent=inp.type==='password'?'보기':'숨기기';">보기</button>
+                  </div>
+                  <p style="font-size:0.72rem;color:var(--gray-400);margin-top:4px;">키는 브라우저에만 저장되며 서버로 전송되지 않습니다. <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:var(--green);">키 발급 &rarr;</a></p>
+                </div>
                 <button class="save-btn" onclick="generateInsight()">맞춤 인사이트 생성</button>
               </div>
             </div>
@@ -6213,6 +6222,12 @@ function setCitationView(view, btn) {
 /* ============================================================
    맞춤형 인사이트 생성
    ============================================================ */
+// 설정 페이지 API 키 복원
+setTimeout(() => {
+  const inp = document.getElementById('claudeApiKeyInput');
+  if (inp && CLAUDE_CONFIG.API_KEY) inp.value = CLAUDE_CONFIG.API_KEY;
+}, 500);
+
 function generateInsight() {
   const major = document.getElementById('userMajor').value;
   const keywords = document.getElementById('userKeywords').value;
@@ -6294,7 +6309,8 @@ const KCI_CONFIG = {
 
 const CLAUDE_CONFIG = {
   API_URL: 'https://api.anthropic.com/v1/messages',
-  API_KEY: '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',
+  get API_KEY() { return localStorage.getItem('claude_api_key') || ''; },
+  set API_KEY(v) { localStorage.setItem('claude_api_key', v); },
   MODEL: 'claude-sonnet-4-20250514'
 };
 
@@ -6708,6 +6724,19 @@ function renderSearchCharts(articles, keyword) {
 async function runAIAnalysis(articles, keyword, field, period) {
   const loadingEl = document.getElementById('aiAnalysisLoading');
   const resultEl = document.getElementById('aiAnalysisResult');
+
+  // API 키 없으면 안내 메시지 표시
+  if (!CLAUDE_CONFIG.API_KEY) {
+    loadingEl.style.display = 'none';
+    resultEl.style.display = 'block';
+    document.getElementById('aiAnalysisContent').innerHTML =
+      `<h4>&#x1F4CA; AI 분석을 사용하려면</h4>
+       <p><strong>설정</strong> 페이지에서 Claude API 키를 입력해 주세요.</p>
+       <p style="margin-top:8px;"><a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:var(--green);font-weight:600;">Anthropic API 키 발급 &rarr;</a></p>
+       <p style="margin-top:12px;color:var(--gray-400);font-size:0.8rem;">API 키 없이도 논문 검색과 차트 분석은 정상 이용 가능합니다.</p>`;
+    return;
+  }
+
   loadingEl.style.display = 'flex';
   resultEl.style.display = 'none';
 
