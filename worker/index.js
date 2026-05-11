@@ -5,6 +5,7 @@
 
 const ALLOWED_ORIGINS = [
   'https://auraweon7-ship-it.github.io',
+  'https://aikci-production.up.railway.app',
   'http://localhost:8080',
   'http://localhost:3000',
   'http://127.0.0.1:8080'
