@@ -2167,33 +2167,17 @@ input, select, textarea { font-family: inherit; }
       <!-- 논문 집필 지원 -->
       <div class="nav-group">
         <div class="nav-group-title">논문 집필 지원</div>
-        <div class="nav-item" data-page="prior-map" onclick="navigateTo(this, 'prior-map')">
+        <div class="nav-item" data-page="prior-explore" onclick="navigateTo(this, 'prior-explore')">
           <span class="nav-icon">&#x1F5FA;</span>
-          선행연구 매핑
+          선행연구 탐색
         </div>
-        <div class="nav-item" data-page="research-gap" onclick="navigateTo(this, 'research-gap')">
+        <div class="nav-item" data-page="research-design" onclick="navigateTo(this, 'research-design')">
           <span class="nav-icon">&#x1F9E9;</span>
-          연구 공백 탐지
+          연구 설계 도우미
         </div>
-        <div class="nav-item" data-page="abstract-helper" onclick="navigateTo(this, 'abstract-helper')">
+        <div class="nav-item" data-page="writing-tools" onclick="navigateTo(this, 'writing-tools')">
           <span class="nav-icon">&#x270D;</span>
-          초록 구조화 도우미
-        </div>
-        <div class="nav-item" data-page="ref-format" onclick="navigateTo(this, 'ref-format')">
-          <span class="nav-icon">&#x1F4CB;</span>
-          참고문헌 포맷팅
-        </div>
-        <div class="nav-item" data-page="kw-network" onclick="navigateTo(this, 'kw-network')">
-          <span class="nav-icon">&#x1F578;</span>
-          키워드 네트워크
-        </div>
-        <div class="nav-item" data-page="similar-paper" onclick="navigateTo(this, 'similar-paper')">
-          <span class="nav-icon">&#x1F50E;</span>
-          유사 논문 추천
-        </div>
-        <div class="nav-item" data-page="method-guide" onclick="navigateTo(this, 'method-guide')">
-          <span class="nav-icon">&#x1F9EA;</span>
-          연구 방법론 가이드
+          논문 작성 도구
         </div>
       </div>
       <!-- 대시보드 소개 -->
@@ -3793,218 +3777,347 @@ input, select, textarea { font-family: inherit; }
         </div>
       </div>
 
-      <!-- ======================== 10. 선행연구 자동 매핑 ======================== -->
-      <div class="page-section" id="page-prior-map">
+      <!-- ======================== 10. 선행연구 탐색 (통합) ======================== -->
+      <div class="page-section" id="page-prior-explore">
         <div class="page-title">
-          <h1>&#x1F5FA; 선행연구 자동 매핑</h1>
-          <p>키워드 기반으로 KCI 논문을 연도·주제별 클러스터로 분류하여 선행연구 흐름도를 생성합니다</p>
+          <h1>&#x1F5FA; 선행연구 탐색</h1>
+          <p>KCI 논문의 선행연구 흐름, 키워드 네트워크, 유사 논문을 통합 분석합니다</p>
         </div>
-        <div class="card">
-          <div class="card-header"><h3>&#x1F4DD; 검색 조건</h3></div>
-          <div class="card-body">
-            <div class="rh-search-row">
-              <input type="text" id="pmKeyword" placeholder="연구 키워드 입력 (예: 인공지능 교육)" onkeydown="if(event.key==='Enter')runPriorMap()">
-              <button class="rh-search-btn" onclick="runPriorMap()">매핑 시작</button>
-            </div>
-          </div>
+        <div class="result-tabs">
+          <button class="result-tab active" onclick="switchWriteTab(this, 'tab-prior-map')">&#x1F4CA; 선행연구 매핑</button>
+          <button class="result-tab" onclick="switchWriteTab(this, 'tab-kw-network')">&#x1F578; 키워드 네트워크</button>
+          <button class="result-tab" onclick="switchWriteTab(this, 'tab-similar-paper')">&#x1F50E; 유사 논문</button>
         </div>
-        <div id="pmLoading" style="display:none;"><div class="loading-spinner"><div class="spinner"></div><div class="loading-text">KCI 논문을 분석하여 선행연구 흐름도를 생성 중입니다...</div></div></div>
-        <div id="pmResult" style="display:none;">
-          <div class="card" style="margin-top:20px;">
-            <div class="card-header"><h3>&#x1F4CA; 연도별 논문 분포</h3></div>
-            <div class="card-body"><div style="height:300px;"><canvas id="pmYearChart"></canvas></div></div>
-          </div>
-          <div class="card" style="margin-top:20px;">
-            <div class="card-header"><h3>&#x1F916; AI 선행연구 흐름 분석</h3></div>
-            <div class="card-body"><div class="ai-analysis-box"><div class="ai-analysis-content" id="pmAIResult"></div></div></div>
-          </div>
-        </div>
-      </div>
 
-      <!-- ======================== 11. 연구 공백 탐지 ======================== -->
-      <div class="page-section" id="page-research-gap">
-        <div class="page-title">
-          <h1>&#x1F9E9; 연구 공백(Research Gap) 탐지</h1>
-          <p>기존 논문의 키워드·초록을 분석하여 아직 다뤄지지 않은 주제 조합을 AI가 제안합니다</p>
-        </div>
-        <div class="card">
-          <div class="card-header"><h3>&#x1F4DD; 분석 조건</h3></div>
-          <div class="card-body">
-            <div class="form-group"><label>연구 분야</label><input type="text" id="rgField" placeholder="예: 교육공학, 컴퓨터공학"></div>
-            <div class="form-group"><label>관심 키워드 (쉼표 구분)</label><input type="text" id="rgKeywords" placeholder="예: 인공지능, 학습분석, 맞춤형 교육"></div>
-            <button class="save-btn" onclick="runResearchGap()" style="margin-top:12px;">공백 탐지 시작</button>
-          </div>
-        </div>
-        <div id="rgLoading" style="display:none;"><div class="loading-spinner"><div class="spinner"></div><div class="loading-text">논문 데이터를 분석하여 연구 공백을 탐색 중입니다...</div></div></div>
-        <div id="rgResult" style="display:none;">
-          <div class="card" style="margin-top:20px;">
-            <div class="card-header"><h3>&#x1F4A1; 발견된 연구 공백</h3></div>
-            <div class="card-body"><div class="ai-analysis-box"><div class="ai-analysis-content" id="rgAIResult"></div></div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ======================== 12. 초록 구조화 도우미 ======================== -->
-      <div class="page-section" id="page-abstract-helper">
-        <div class="page-title">
-          <h1>&#x270D; 논문 초록 구조화 도우미</h1>
-          <p>연구 정보를 입력하면 AI가 연구목적·방법·결과·결론 4단 구조 초록 초안을 생성합니다</p>
-        </div>
-        <div class="grid-2">
+        <!-- Tab 1: 선행연구 매핑 -->
+        <div class="tab-content active" id="tab-prior-map">
           <div class="card">
-            <div class="card-header"><h3>&#x1F4DD; 연구 정보 입력</h3></div>
+            <div class="card-header"><h3>&#x1F4DD; 검색 조건</h3></div>
             <div class="card-body">
-              <div class="settings-form">
-                <div class="form-group"><label>논문 제목</label><input type="text" id="ahTitle" placeholder="예: AI 기반 적응형 학습 시스템의 효과"></div>
-                <div class="form-group"><label>연구 분야</label><input type="text" id="ahField" placeholder="예: 교육공학"></div>
-                <div class="form-group"><label>연구 목적</label><textarea id="ahPurpose" placeholder="이 연구의 목적을 간략히 기술하세요" rows="2"></textarea></div>
-                <div class="form-group"><label>연구 방법</label><textarea id="ahMethod" placeholder="사용한 연구 방법을 기술하세요 (예: 실험연구, 설문조사)" rows="2"></textarea></div>
-                <div class="form-group"><label>주요 결과</label><textarea id="ahResults" placeholder="핵심 연구 결과를 기술하세요" rows="2"></textarea></div>
-                <div class="form-group"><label>키워드</label><input type="text" id="ahKeywords" placeholder="예: 인공지능, 적응형 학습, 학업성취도"></div>
-                <button class="save-btn" onclick="runAbstractHelper()">초록 생성</button>
+              <div class="rh-search-row">
+                <input type="text" id="pmKeyword" placeholder="연구 키워드 입력 (예: 인공지능 교육)" onkeydown="if(event.key==='Enter')runPriorMap()">
+                <button class="rh-search-btn" onclick="runPriorMap()">매핑 시작</button>
+              </div>
+              <div class="kw-quick-tags" style="margin-top:8px;">
+                <span class="kw-quick-tag" onclick="document.getElementById('pmKeyword').value='인공지능 교육';runPriorMap()">인공지능 교육</span>
+                <span class="kw-quick-tag" onclick="document.getElementById('pmKeyword').value='빅데이터 분석';runPriorMap()">빅데이터 분석</span>
+                <span class="kw-quick-tag" onclick="document.getElementById('pmKeyword').value='기후변화';runPriorMap()">기후변화</span>
+                <span class="kw-quick-tag" onclick="document.getElementById('pmKeyword').value='자연어처리';runPriorMap()">자연어처리</span>
+                <span class="kw-quick-tag" onclick="document.getElementById('pmKeyword').value='메타버스';runPriorMap()">메타버스</span>
+                <span class="kw-quick-tag" onclick="document.getElementById('pmKeyword').value='ESG 경영';runPriorMap()">ESG 경영</span>
               </div>
             </div>
           </div>
-          <div>
-            <div id="ahLoading" style="display:none;"><div class="loading-spinner"><div class="spinner"></div><div class="loading-text">AI가 초록을 구조화하고 있습니다...</div></div></div>
-            <div class="card" id="ahResultCard" style="display:none;">
+          <div id="pmLoading" style="display:none;"><div class="loading-spinner"><div class="spinner"></div><div class="loading-text">KCI 논문을 분석하여 선행연구 흐름도를 생성 중입니다...</div></div></div>
+          <div id="pmResult" style="display:none;">
+            <div class="search-stat-cards" id="pmStatCards" style="margin-top:20px;">
+              <div class="stat-card"><div class="stat-header"><div class="stat-icon blue">&#x1F4C4;</div><span class="stat-label">총 논문수</span></div><div class="stat-value" id="pmStatTotal">0</div></div>
+              <div class="stat-card"><div class="stat-header"><div class="stat-icon green">&#x1F4C5;</div><span class="stat-label">연도 범위</span></div><div class="stat-value" id="pmStatYears" style="font-size:1.1rem;">-</div></div>
+              <div class="stat-card"><div class="stat-header"><div class="stat-icon amber">&#x1F4DA;</div><span class="stat-label">주요 저널</span></div><div class="stat-value" id="pmStatJournal" style="font-size:0.85rem;">-</div></div>
+              <div class="stat-card"><div class="stat-header"><div class="stat-icon red">&#x1F4C8;</div><span class="stat-label">평균 인용</span></div><div class="stat-value" id="pmStatCite">0</div></div>
+            </div>
+            <div class="card" style="margin-top:20px;">
+              <div class="card-header"><h3>&#x1F4CA; 연도별 논문 분포</h3></div>
+              <div class="card-body"><div style="height:300px;"><canvas id="pmYearChart"></canvas></div></div>
+            </div>
+            <div class="card" style="margin-top:20px;">
+              <div class="card-header"><h3>&#x1F4C4; 검색된 논문 목록 (<span id="pmArticleCount">0</span>건)</h3></div>
+              <div class="card-body" style="padding:0;">
+                <div style="overflow-x:auto;">
+                  <table class="data-table" id="pmArticleTable" style="width:100%;min-width:700px;">
+                    <thead><tr><th style="width:36px;text-align:center;">#</th><th style="width:90px;">저자</th><th style="min-width:240px;">논문제목</th><th style="width:55px;text-align:center;">년도</th><th style="width:140px;">저널명</th><th style="width:80px;">키워드</th></tr></thead>
+                    <tbody id="pmArticleBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:20px;">
+              <div class="card-header"><h3>&#x1F916; AI 선행연구 흐름 분석</h3></div>
+              <div class="card-body"><div class="ai-analysis-box"><div class="ai-analysis-content" id="pmAIResult"></div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: 키워드 네트워크 -->
+        <div class="tab-content" id="tab-kw-network">
+          <div class="card">
+            <div class="card-header"><h3>&#x1F4DD; 검색 조건</h3></div>
+            <div class="card-body">
+              <div class="rh-search-row">
+                <input type="text" id="knKeyword" placeholder="분석할 키워드 입력 (예: 머신러닝)" onkeydown="if(event.key==='Enter')runKwNetwork()">
+                <button class="rh-search-btn" onclick="runKwNetwork()">네트워크 생성</button>
+              </div>
+              <div class="kw-quick-tags" style="margin-top:8px;">
+                <span class="kw-quick-tag" onclick="document.getElementById('knKeyword').value='머신러닝';runKwNetwork()">머신러닝</span>
+                <span class="kw-quick-tag" onclick="document.getElementById('knKeyword').value='딥러닝';runKwNetwork()">딥러닝</span>
+                <span class="kw-quick-tag" onclick="document.getElementById('knKeyword').value='인공지능 교육';runKwNetwork()">인공지능 교육</span>
+                <span class="kw-quick-tag" onclick="document.getElementById('knKeyword').value='빅데이터';runKwNetwork()">빅데이터</span>
+                <span class="kw-quick-tag" onclick="document.getElementById('knKeyword').value='블록체인';runKwNetwork()">블록체인</span>
+                <span class="kw-quick-tag" onclick="document.getElementById('knKeyword').value='사물인터넷';runKwNetwork()">사물인터넷</span>
+              </div>
+            </div>
+          </div>
+          <div id="knLoading" style="display:none;"><div class="loading-spinner"><div class="spinner"></div><div class="loading-text">키워드 동시출현 네트워크를 분석 중입니다...</div></div></div>
+          <div id="knResult" style="display:none;">
+            <div class="search-stat-cards" id="knStatCards" style="margin-top:20px;grid-template-columns:repeat(3,1fr);">
+              <div class="stat-card"><div class="stat-header"><div class="stat-icon blue">&#x1F4C4;</div><span class="stat-label">분석 논문수</span></div><div class="stat-value" id="knStatTotal">0</div></div>
+              <div class="stat-card"><div class="stat-header"><div class="stat-icon green">&#x1F3F7;</div><span class="stat-label">키워드 수</span></div><div class="stat-value" id="knStatKw">0</div></div>
+              <div class="stat-card"><div class="stat-header"><div class="stat-icon amber">&#x1F517;</div><span class="stat-label">주요 연결 수</span></div><div class="stat-value" id="knStatEdges">0</div></div>
+            </div>
+            <div class="card" style="margin-top:20px;">
+              <div class="card-header"><h3>&#x1F310; 키워드 네트워크 그래프</h3></div>
+              <div class="card-body"><canvas id="knCanvas" width="800" height="500" style="width:100%; max-height:500px; border:1px solid var(--hairline); border-radius:var(--radius-card); cursor:pointer;"></canvas><div id="knTooltip" style="display:none;position:absolute;background:rgba(0,30,43,0.9);color:#fff;padding:8px 12px;border-radius:8px;font-size:0.78rem;pointer-events:none;z-index:10;"></div></div>
+            </div>
+            <div class="card" style="margin-top:20px;">
+              <div class="card-header"><h3>&#x1F4CA; 상위 키워드 빈도</h3></div>
+              <div class="card-body"><div style="height:300px;"><canvas id="knFreqChart"></canvas></div></div>
+            </div>
+            <div class="card" style="margin-top:20px;">
+              <div class="card-header"><h3>&#x1F916; AI 키워드 관계 분석</h3></div>
+              <div class="card-body"><div class="ai-analysis-box"><div class="ai-analysis-content" id="knAIResult"></div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: 유사 논문 추천 -->
+        <div class="tab-content" id="tab-similar-paper">
+          <div class="card">
+            <div class="card-header"><h3>&#x1F4DD; 내 연구 정보</h3></div>
+            <div class="card-body">
+              <div class="form-group"><label>초록 또는 연구 내용</label><textarea id="spAbstract" placeholder="작성 중인 논문의 초록이나 연구 내용을 붙여넣으세요" rows="5"></textarea></div>
+              <div class="form-group"><label>키워드 (쉼표 구분)</label><input type="text" id="spKeywords" placeholder="예: 자연어처리, 감성분석, 교육평가"></div>
+              <button class="save-btn" onclick="runSimilarPaper()">유사 논문 찾기</button>
+            </div>
+          </div>
+          <div id="spLoading" style="display:none;"><div class="loading-spinner"><div class="spinner"></div><div class="loading-text">KCI 논문을 검색하고 AI가 유사도를 분석 중입니다...</div></div></div>
+          <div id="spResult" style="display:none;">
+            <div class="search-stat-cards" id="spStatCards" style="margin-top:20px;grid-template-columns:repeat(3,1fr);">
+              <div class="stat-card"><div class="stat-header"><div class="stat-icon blue">&#x1F4C4;</div><span class="stat-label">검색 논문수</span></div><div class="stat-value" id="spStatTotal">0</div></div>
+              <div class="stat-card"><div class="stat-header"><div class="stat-icon green">&#x1F4DA;</div><span class="stat-label">학술지 수</span></div><div class="stat-value" id="spStatJournals">0</div></div>
+              <div class="stat-card"><div class="stat-header"><div class="stat-icon amber">&#x1F4C5;</div><span class="stat-label">연도 범위</span></div><div class="stat-value" id="spStatYears" style="font-size:1.1rem;">-</div></div>
+            </div>
+            <div class="card" style="margin-top:20px;">
+              <div class="card-header"><h3>&#x1F4C4; KCI 검색 논문 (<span id="spArticleCount">0</span>건)</h3></div>
+              <div class="card-body" style="padding:0;">
+                <div style="overflow-x:auto;">
+                  <table class="data-table" style="width:100%;min-width:700px;">
+                    <thead><tr><th style="width:36px;text-align:center;">#</th><th style="width:90px;">저자</th><th style="min-width:240px;">논문제목</th><th style="width:55px;text-align:center;">년도</th><th style="width:120px;">저널명</th><th style="width:80px;">키워드</th></tr></thead>
+                    <tbody id="spArticleBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="margin-top:20px;">
+              <div class="card-header"><h3>&#x1F916; AI 유사도 분석</h3></div>
+              <div class="card-body"><div id="spAICards"></div><div class="ai-analysis-box" style="margin-top:16px;"><div class="ai-analysis-content" id="spAIResult"></div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======================== 11. 연구 설계 도우미 (통합) ======================== -->
+      <div class="page-section" id="page-research-design">
+        <div class="page-title">
+          <h1>&#x1F9E9; 연구 설계 도우미</h1>
+          <p>연구 공백을 발견하고, AI가 최적의 연구 방법론을 추천합니다</p>
+        </div>
+        <div class="result-tabs">
+          <button class="result-tab active" onclick="switchWriteTab(this, 'tab-research-gap')">&#x1F50D; 연구 공백 탐지</button>
+          <button class="result-tab" onclick="switchWriteTab(this, 'tab-method-guide')">&#x1F9EA; 방법론 가이드</button>
+        </div>
+
+        <!-- Tab 1: 연구 공백 탐지 -->
+        <div class="tab-content active" id="tab-research-gap">
+          <div class="card">
+            <div class="card-header"><h3>&#x1F4DD; 분석 조건</h3></div>
+            <div class="card-body">
+              <div class="form-group"><label>연구 분야</label><input type="text" id="rgField" placeholder="예: 교육공학, 컴퓨터공학"></div>
+              <div class="form-group"><label>관심 키워드 (쉼표 구분)</label><input type="text" id="rgKeywords" placeholder="예: 인공지능, 학습분석, 맞춤형 교육"></div>
+              <div class="kw-quick-tags" style="margin-top:8px;">
+                <span class="kw-quick-tag" onclick="document.getElementById('rgField').value='교육공학';document.getElementById('rgKeywords').value='인공지능, 학습분석, 맞춤형 교육';runResearchGap()">교육공학+AI</span>
+                <span class="kw-quick-tag" onclick="document.getElementById('rgField').value='경영학';document.getElementById('rgKeywords').value='ESG, 지속가능경영, 기업가치';runResearchGap()">경영학+ESG</span>
+                <span class="kw-quick-tag" onclick="document.getElementById('rgField').value='컴퓨터공학';document.getElementById('rgKeywords').value='자연어처리, 대형언어모델, 한국어';runResearchGap()">NLP+LLM</span>
+                <span class="kw-quick-tag" onclick="document.getElementById('rgField').value='심리학';document.getElementById('rgKeywords').value='디지털 중독, 청소년, 정신건강';runResearchGap()">심리학+디지털</span>
+                <span class="kw-quick-tag" onclick="document.getElementById('rgField').value='간호학';document.getElementById('rgKeywords').value='원격의료, 만성질환, 자가관리';runResearchGap()">간호학+원격의료</span>
+              </div>
+              <button class="save-btn" onclick="runResearchGap()" style="margin-top:12px;">공백 탐지 시작</button>
+            </div>
+          </div>
+          <div id="rgLoading" style="display:none;"><div class="loading-spinner"><div class="spinner"></div><div class="loading-text">논문 데이터를 분석하여 연구 공백을 탐색 중입니다...</div></div></div>
+          <div id="rgResult" style="display:none;">
+            <div class="search-stat-cards" id="rgStatCards" style="margin-top:20px;grid-template-columns:repeat(3,1fr);">
+              <div class="stat-card"><div class="stat-header"><div class="stat-icon blue">&#x1F4C4;</div><span class="stat-label">분석 논문수</span></div><div class="stat-value" id="rgStatTotal">0</div></div>
+              <div class="stat-card"><div class="stat-header"><div class="stat-icon green">&#x1F3F7;</div><span class="stat-label">키워드 수</span></div><div class="stat-value" id="rgStatKw">0</div></div>
+              <div class="stat-card"><div class="stat-header"><div class="stat-icon amber">&#x1F4C5;</div><span class="stat-label">연도 범위</span></div><div class="stat-value" id="rgStatYears" style="font-size:1.1rem;">-</div></div>
+            </div>
+            <div class="grid-2" style="margin-top:20px;">
+              <div class="card">
+                <div class="card-header"><h3>&#x1F4CA; 키워드 빈도 분석</h3></div>
+                <div class="card-body"><div style="height:300px;"><canvas id="rgKwChart"></canvas></div></div>
+              </div>
+              <div class="card">
+                <div class="card-header"><h3>&#x1F4A1; 발견된 연구 공백</h3></div>
+                <div class="card-body"><div class="ai-analysis-box"><div class="ai-analysis-content" id="rgAIResult"></div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: 연구 방법론 가이드 -->
+        <div class="tab-content" id="tab-method-guide">
+          <div class="grid-2">
+            <div class="card">
               <div class="card-header">
-                <h3>&#x1F4C4; 생성된 초록</h3>
-                <button class="report-btn outline" onclick="copyAbstract()" style="padding:6px 14px; font-size:0.8rem;">복사</button>
+                <h3>&#x1F4DD; 연구 정보</h3>
+                <span style="font-size:0.75rem;color:var(--steel);">빠른 예시:</span>
               </div>
               <div class="card-body">
-                <div id="ahOutput" style="font-size:0.92rem; line-height:1.9; color:var(--ink);"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ======================== 13. 참고문헌 자동 포맷팅 ======================== -->
-      <div class="page-section" id="page-ref-format">
-        <div class="page-title">
-          <h1>&#x1F4CB; 참고문헌 자동 포맷팅</h1>
-          <p>저장된 연구이력과 검색 논문에서 APA/Chicago/KCI 양식 참고문헌 목록을 생성합니다</p>
-        </div>
-        <div class="card">
-          <div class="card-header"><h3>&#x2699; 포맷 설정</h3></div>
-          <div class="card-body">
-            <div class="form-group">
-              <label>참고문헌 양식</label>
-              <select id="refStyle">
-                <option value="apa">APA 7th Edition</option>
-                <option value="chicago">Chicago Style</option>
-                <option value="kci">KCI 표준양식</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label>논문 검색 (추가할 논문 검색)</label>
-              <div class="rh-search-row">
-                <input type="text" id="refSearchQuery" placeholder="논문 제목이나 키워드 입력" onkeydown="if(event.key==='Enter')searchForRef()">
-                <button class="rh-search-btn" onclick="searchForRef()">검색</button>
-              </div>
-            </div>
-            <div id="refSearchResults" style="display:none;">
-              <div class="rh-results" id="refSearchList" style="max-height:200px;"></div>
-              <button class="save-btn" onclick="addSelectedRefs()" style="margin-top:8px;">선택 항목 추가</button>
-            </div>
-          </div>
-        </div>
-        <div class="card" style="margin-top:20px;">
-          <div class="card-header">
-            <h3>&#x1F4DA; 참고문헌 목록</h3>
-            <button class="report-btn outline" onclick="copyAllRefs()" style="padding:6px 14px; font-size:0.8rem;">전체 복사</button>
-          </div>
-          <div class="card-body">
-            <div id="refOutputList"><div class="rh-empty">위에서 논문을 검색하여 추가하거나, 저장된 연구이력에서 가져오세요.<br><button class="save-btn" onclick="loadHistoryToRef()" style="margin-top:12px; font-size:0.82rem; padding:8px 18px;">연구이력에서 가져오기</button></div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ======================== 14. 키워드 네트워크 시각화 ======================== -->
-      <div class="page-section" id="page-kw-network">
-        <div class="page-title">
-          <h1>&#x1F578; 키워드 네트워크 시각화</h1>
-          <p>검색된 논문의 키워드 동시출현(co-occurrence) 네트워크를 그래프로 시각화합니다</p>
-        </div>
-        <div class="card">
-          <div class="card-header"><h3>&#x1F4DD; 검색 조건</h3></div>
-          <div class="card-body">
-            <div class="rh-search-row">
-              <input type="text" id="knKeyword" placeholder="분석할 키워드 입력 (예: 머신러닝)" onkeydown="if(event.key==='Enter')runKwNetwork()">
-              <button class="rh-search-btn" onclick="runKwNetwork()">네트워크 생성</button>
-            </div>
-          </div>
-        </div>
-        <div id="knLoading" style="display:none;"><div class="loading-spinner"><div class="spinner"></div><div class="loading-text">키워드 동시출현 네트워크를 분석 중입니다...</div></div></div>
-        <div id="knResult" style="display:none;">
-          <div class="card" style="margin-top:20px;">
-            <div class="card-header"><h3>&#x1F310; 키워드 네트워크 그래프</h3></div>
-            <div class="card-body"><canvas id="knCanvas" width="800" height="500" style="width:100%; max-height:500px; border:1px solid var(--hairline); border-radius:var(--radius-card);"></canvas></div>
-          </div>
-          <div class="card" style="margin-top:20px;">
-            <div class="card-header"><h3>&#x1F916; AI 키워드 관계 분석</h3></div>
-            <div class="card-body"><div class="ai-analysis-box"><div class="ai-analysis-content" id="knAIResult"></div></div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ======================== 15. 유사 논문 추천 ======================== -->
-      <div class="page-section" id="page-similar-paper">
-        <div class="page-title">
-          <h1>&#x1F50E; 유사 논문 추천</h1>
-          <p>작성 중인 초록이나 키워드를 입력하면 KCI에서 유사도 높은 논문을 AI가 매칭합니다</p>
-        </div>
-        <div class="card">
-          <div class="card-header"><h3>&#x1F4DD; 내 연구 정보</h3></div>
-          <div class="card-body">
-            <div class="form-group"><label>초록 또는 연구 내용</label><textarea id="spAbstract" placeholder="작성 중인 논문의 초록이나 연구 내용을 붙여넣으세요" rows="5"></textarea></div>
-            <div class="form-group"><label>키워드 (쉼표 구분)</label><input type="text" id="spKeywords" placeholder="예: 자연어처리, 감성분석, 교육평가"></div>
-            <button class="save-btn" onclick="runSimilarPaper()">유사 논문 찾기</button>
-          </div>
-        </div>
-        <div id="spLoading" style="display:none;"><div class="loading-spinner"><div class="spinner"></div><div class="loading-text">KCI 논문을 검색하고 AI가 유사도를 분석 중입니다...</div></div></div>
-        <div id="spResult" style="display:none;">
-          <div class="card" style="margin-top:20px;">
-            <div class="card-header"><h3>&#x1F4A1; 유사 논문 분석 결과</h3></div>
-            <div class="card-body"><div class="ai-analysis-box"><div class="ai-analysis-content" id="spAIResult"></div></div></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ======================== 16. 연구 방법론 가이드 ======================== -->
-      <div class="page-section" id="page-method-guide">
-        <div class="page-title">
-          <h1>&#x1F9EA; 연구 방법론 가이드</h1>
-          <p>학문 분야와 연구 주제를 입력하면 AI가 적합한 연구 방법론과 분석 도구를 추천합니다</p>
-        </div>
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-header"><h3>&#x1F4DD; 연구 정보</h3></div>
-            <div class="card-body">
-              <div class="settings-form">
-                <div class="form-group"><label>학문 분야</label><input type="text" id="mgField" placeholder="예: 교육공학"></div>
-                <div class="form-group"><label>연구 주제</label><input type="text" id="mgTopic" placeholder="예: AI 기반 맞춤형 학습의 효과"></div>
-                <div class="form-group"><label>연구 질문</label><textarea id="mgQuestion" placeholder="예: AI 기반 학습 시스템이 학습자의 성취도에 미치는 영향은?" rows="2"></textarea></div>
-                <div class="form-group">
-                  <label>연구 유형 (선택)</label>
-                  <select id="mgType">
-                    <option value="">자동 추천</option>
-                    <option value="quantitative">양적 연구</option>
-                    <option value="qualitative">질적 연구</option>
-                    <option value="mixed">혼합 연구</option>
-                    <option value="review">문헌연구</option>
-                  </select>
+                <div class="kw-quick-tags" style="margin-bottom:14px;">
+                  <span class="kw-quick-tag" onclick="mgQuickFill('교육공학','AI 기반 맞춤형 학습의 효과','AI 학습 시스템이 학습자 성취도에 미치는 영향은?','quantitative')">교육공학-양적</span>
+                  <span class="kw-quick-tag" onclick="mgQuickFill('간호학','환자 경험 기반 돌봄 모형','간호사의 공감 역량이 환자 만족도에 미치는 영향?','mixed')">간호학-혼합</span>
+                  <span class="kw-quick-tag" onclick="mgQuickFill('사회학','청년 1인 가구의 사회적 고립','청년 1인 가구의 사회적 관계 변화 양상은?','qualitative')">사회학-질적</span>
+                  <span class="kw-quick-tag" onclick="mgQuickFill('경영학','ESG 경영이 기업가치에 미치는 영향','ESG 등급이 주가수익률에 유의한 영향을 미치는가?','quantitative')">경영학-양적</span>
                 </div>
-                <button class="save-btn" onclick="runMethodGuide()">방법론 추천받기</button>
+                <div class="settings-form">
+                  <div class="form-group"><label>학문 분야</label><input type="text" id="mgField" placeholder="예: 교육공학"></div>
+                  <div class="form-group"><label>연구 주제</label><input type="text" id="mgTopic" placeholder="예: AI 기반 맞춤형 학습의 효과"></div>
+                  <div class="form-group"><label>연구 질문</label><textarea id="mgQuestion" placeholder="예: AI 기반 학습 시스템이 학습자의 성취도에 미치는 영향은?" rows="2"></textarea></div>
+                  <div class="form-group">
+                    <label>연구 유형 (선택)</label>
+                    <select id="mgType">
+                      <option value="">자동 추천</option>
+                      <option value="quantitative">양적 연구</option>
+                      <option value="qualitative">질적 연구</option>
+                      <option value="mixed">혼합 연구</option>
+                      <option value="review">문헌연구</option>
+                    </select>
+                  </div>
+                  <button class="save-btn" onclick="runMethodGuide()">방법론 추천받기</button>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div id="mgLoading" style="display:none;"><div class="loading-spinner"><div class="spinner"></div><div class="loading-text">AI가 최적의 연구 방법론을 분석 중입니다...</div></div></div>
+              <div class="card" id="mgResultCard" style="display:none;">
+                <div class="card-header"><h3>&#x1F916; 추천 연구 방법론</h3></div>
+                <div class="card-body"><div class="ai-analysis-box"><div class="ai-analysis-content" id="mgAIResult"></div></div></div>
+              </div>
+              <div class="card" id="mgRefPapersCard" style="display:none;margin-top:20px;">
+                <div class="card-header"><h3>&#x1F4DA; 관련 논문 참고 (방법론 활용 사례)</h3></div>
+                <div class="card-body" style="padding:0;">
+                  <div style="overflow-x:auto;">
+                    <table class="data-table" style="width:100%;min-width:500px;">
+                      <thead><tr><th style="width:36px;text-align:center;">#</th><th style="min-width:220px;">논문제목</th><th style="width:80px;">저자</th><th style="width:120px;">저널</th><th style="width:50px;">년도</th></tr></thead>
+                      <tbody id="mgRefPapersBody"></tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-          <div>
-            <div id="mgLoading" style="display:none;"><div class="loading-spinner"><div class="spinner"></div><div class="loading-text">AI가 최적의 연구 방법론을 분석 중입니다...</div></div></div>
-            <div class="card" id="mgResultCard" style="display:none;">
-              <div class="card-header"><h3>&#x1F916; 추천 연구 방법론</h3></div>
-              <div class="card-body"><div class="ai-analysis-box"><div class="ai-analysis-content" id="mgAIResult"></div></div></div>
+        </div>
+      </div>
+
+      <!-- ======================== 12. 논문 작성 도구 (통합) ======================== -->
+      <div class="page-section" id="page-writing-tools">
+        <div class="page-title">
+          <h1>&#x270D; 논문 작성 도구</h1>
+          <p>AI 초록 생성과 참고문헌 자동 포맷팅으로 논문 작성을 지원합니다</p>
+        </div>
+        <div class="result-tabs">
+          <button class="result-tab active" onclick="switchWriteTab(this, 'tab-abstract-helper')">&#x1F4DD; 초록 구조화</button>
+          <button class="result-tab" onclick="switchWriteTab(this, 'tab-ref-format')">&#x1F4CB; 참고문헌 포맷팅</button>
+        </div>
+
+        <!-- Tab 1: 초록 구조화 도우미 -->
+        <div class="tab-content active" id="tab-abstract-helper">
+          <div class="grid-2">
+            <div class="card">
+              <div class="card-header"><h3>&#x1F4DD; 연구 정보 입력</h3></div>
+              <div class="card-body">
+                <div class="settings-form">
+                  <div class="form-group"><label>논문 제목</label><input type="text" id="ahTitle" placeholder="예: AI 기반 적응형 학습 시스템의 효과"></div>
+                  <div class="form-group"><label>연구 분야</label><input type="text" id="ahField" placeholder="예: 교육공학"></div>
+                  <div class="form-group"><label>연구 목적</label><textarea id="ahPurpose" placeholder="이 연구의 목적을 간략히 기술하세요" rows="2"></textarea></div>
+                  <div class="form-group"><label>연구 방법</label><textarea id="ahMethod" placeholder="사용한 연구 방법을 기술하세요 (예: 실험연구, 설문조사)" rows="2"></textarea></div>
+                  <div class="form-group"><label>주요 결과</label><textarea id="ahResults" placeholder="핵심 연구 결과를 기술하세요" rows="2"></textarea></div>
+                  <div class="form-group"><label>키워드</label><input type="text" id="ahKeywords" placeholder="예: 인공지능, 적응형 학습, 학업성취도"></div>
+                  <button class="save-btn" onclick="runAbstractHelper()">초록 생성</button>
+                </div>
+              </div>
+            </div>
+            <div>
+              <div id="ahLoading" style="display:none;"><div class="loading-spinner"><div class="spinner"></div><div class="loading-text">AI가 초록을 구조화하고 있습니다...</div></div></div>
+              <div class="card" id="ahResultCard" style="display:none;">
+                <div class="card-header">
+                  <h3>&#x1F4C4; 생성된 초록</h3>
+                  <div style="display:flex;gap:8px;align-items:center;">
+                    <span id="ahWordCount" style="font-size:0.78rem;color:var(--steel);padding:4px 10px;background:var(--cloud);border-radius:12px;"></span>
+                    <button class="report-btn outline" onclick="toggleAbstractLang()" style="padding:6px 14px; font-size:0.8rem;" id="ahLangBtn">한/영 전환</button>
+                    <button class="report-btn outline" onclick="copyAbstract()" style="padding:6px 14px; font-size:0.8rem;">복사</button>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div id="ahOutput" style="font-size:0.92rem; line-height:1.9; color:var(--ink);"></div>
+                </div>
+              </div>
+              <div class="card" id="ahSimilarCard" style="display:none;margin-top:20px;">
+                <div class="card-header"><h3>&#x1F50E; 유사 초록 참고 논문</h3></div>
+                <div class="card-body" style="padding:0;">
+                  <div style="overflow-x:auto;">
+                    <table class="data-table" style="width:100%;min-width:500px;">
+                      <thead><tr><th style="width:36px;text-align:center;">#</th><th style="min-width:220px;">논문제목</th><th style="width:80px;">저자</th><th style="width:120px;">저널</th><th style="width:50px;">년도</th></tr></thead>
+                      <tbody id="ahSimilarBody"></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: 참고문헌 포맷팅 -->
+        <div class="tab-content" id="tab-ref-format">
+          <div class="card">
+            <div class="card-header"><h3>&#x2699; 포맷 설정</h3></div>
+            <div class="card-body">
+              <div class="form-group">
+                <label>참고문헌 양식</label>
+                <select id="refStyle" onchange="renderRefOutput()">
+                  <option value="apa">APA 7th Edition</option>
+                  <option value="chicago">Chicago Style</option>
+                  <option value="mla">MLA 9th Edition</option>
+                  <option value="kci">KCI 표준양식</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>논문 검색 (추가할 논문 검색)</label>
+                <div class="rh-search-row">
+                  <input type="text" id="refSearchQuery" placeholder="논문 제목이나 키워드 입력" onkeydown="if(event.key==='Enter')searchForRef()">
+                  <button class="rh-search-btn" onclick="searchForRef()">검색</button>
+                </div>
+                <div class="kw-quick-tags" style="margin-top:8px;">
+                  <span class="kw-quick-tag" onclick="document.getElementById('refSearchQuery').value='인공지능';searchForRef()">인공지능</span>
+                  <span class="kw-quick-tag" onclick="document.getElementById('refSearchQuery').value='교육';searchForRef()">교육</span>
+                  <span class="kw-quick-tag" onclick="document.getElementById('refSearchQuery').value='빅데이터';searchForRef()">빅데이터</span>
+                  <span class="kw-quick-tag" onclick="document.getElementById('refSearchQuery').value='경영';searchForRef()">경영</span>
+                  <span class="kw-quick-tag" onclick="document.getElementById('refSearchQuery').value='심리학';searchForRef()">심리학</span>
+                </div>
+              </div>
+              <div id="refSearchResults" style="display:none;">
+                <div style="font-size:0.82rem;color:var(--steel);margin-bottom:6px;" id="refSearchCount"></div>
+                <div class="rh-results" id="refSearchList" style="max-height:200px;"></div>
+                <button class="save-btn" onclick="addSelectedRefs()" style="margin-top:8px;">선택 항목 추가</button>
+              </div>
+            </div>
+          </div>
+          <div class="card" style="margin-top:20px;">
+            <div class="card-header">
+              <h3>&#x1F4DA; 참고문헌 목록 (<span id="refItemCount">0</span>건)</h3>
+              <button class="report-btn outline" onclick="copyAllRefs()" style="padding:6px 14px; font-size:0.8rem;">전체 복사</button>
+            </div>
+            <div class="card-body">
+              <div id="refOutputList"><div class="rh-empty">위에서 논문을 검색하여 추가하거나, 저장된 연구이력에서 가져오세요.<br><button class="save-btn" onclick="loadHistoryToRef()" style="margin-top:12px; font-size:0.82rem; padding:8px 18px;">연구이력에서 가져오기</button></div></div>
             </div>
           </div>
         </div>
@@ -8220,13 +8333,15 @@ function sortArticlesBy(key) {
   }
 }
 
-/* 탭 전환 */
+/* 탭 전환 (페이지 스코프) */
 function switchTab(el, tabId) {
-  document.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
+  const container = el.closest('.search-results-area') || el.closest('.page-section') || document;
+  container.querySelectorAll('.result-tab').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
+  container.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  (container.querySelector('#' + tabId) || document.getElementById(tabId)).classList.add('active');
 }
+function switchWriteTab(el, tabId) { switchTab(el, tabId); }
 
 /* ============================================================
    차트 생성 (검색 결과 기반)
@@ -8899,25 +9014,45 @@ async function runPriorMap() {
   document.getElementById('pmResult').style.display = 'none';
   document.getElementById('pmLoading').style.display = 'block';
   try {
-    const xml = await kciSearch(keyword, 1, 50);
+    const xml = await kciSearch(keyword, 1, 100);
     const parsed = parseKCIArticles(xml);
     const articles = parsed.articles;
     const yearMap = {};
-    articles.forEach(a => { const y = a.year || '기타'; yearMap[y] = (yearMap[y] || 0) + 1; });
+    const journalMap = {};
+    let citeSum = 0, citeN = 0;
+    articles.forEach(a => {
+      const y = a.year || '기타'; yearMap[y] = (yearMap[y] || 0) + 1;
+      if (a.journal) journalMap[a.journal] = (journalMap[a.journal] || 0) + 1;
+      if (a.citedCount >= 0) { citeSum += a.citedCount; citeN++; }
+    });
     const sortedYears = Object.keys(yearMap).sort();
     const yearVals = sortedYears.map(y => yearMap[y]);
+
+    // Stat cards
+    document.getElementById('pmStatTotal').textContent = articles.length;
+    document.getElementById('pmStatYears').textContent = sortedYears.length > 1 ? `${sortedYears[0]}~${sortedYears[sortedYears.length-1]}` : (sortedYears[0] || '-');
+    const topJournal = Object.entries(journalMap).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById('pmStatJournal').textContent = topJournal ? topJournal[0].substring(0,12) : '-';
+    document.getElementById('pmStatCite').textContent = citeN > 0 ? (citeSum / citeN).toFixed(1) : '-';
 
     if (pmChart) pmChart.destroy();
     pmChart = new Chart(document.getElementById('pmYearChart'), {
       type: 'bar',
-      data: { labels: sortedYears, datasets: [{ label: '논문 수', data: yearVals, backgroundColor: '#00ed64', borderRadius: 6 }] },
+      data: { labels: sortedYears, datasets: [{ label: '논문 수', data: yearVals, backgroundColor: 'rgba(0,237,100,0.7)', borderColor: '#00ed64', borderWidth: 1, borderRadius: 6 }] },
       options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } } }
     });
 
-    const abstractSample = articles.slice(0, 15).map((a, i) => `${i+1}. "${a.title}" (${a.year}) - ${a.journal} [키워드: ${a.keywords || '없음'}]`).join('\n');
+    // Article table
+    document.getElementById('pmArticleCount').textContent = articles.length;
+    document.getElementById('pmArticleBody').innerHTML = articles.slice(0, 50).map((a, i) => {
+      const link = a.url ? `<a href="${escapeHtml(a.url)}" target="_blank" style="color:var(--brand-green-dark);text-decoration:none;">${escapeHtml(a.title)}</a>` : escapeHtml(a.title);
+      return `<tr><td style="text-align:center;">${i+1}</td><td>${escapeHtml(a.authors).substring(0,20)}</td><td>${link}</td><td style="text-align:center;">${a.year}</td><td>${escapeHtml(a.journal).substring(0,20)}</td><td style="font-size:0.75rem;">${escapeHtml((a.keywords||'').substring(0,30))}</td></tr>`;
+    }).join('');
+
+    const abstractSample = articles.slice(0, 20).map((a, i) => `${i+1}. "${a.title}" (${a.year}) - ${a.journal} [키워드: ${a.keywords || '없음'}]`).join('\n');
     const aiText = await callClaude(
       '당신은 학술연구 전문가입니다. 한국어로 답변하세요. HTML 형식으로 제목은 <h4>, 목록은 <ul><li>, 강조는 <strong>을 사용하세요.',
-      `다음은 "${keyword}" 키워드로 검색된 KCI 논문 목록입니다:\n\n${abstractSample}\n\n이 논문들을 바탕으로:\n1. 선행연구의 시기별 흐름(초기-성장기-현재)을 분석\n2. 주요 연구 주제 클러스터 3-5개 도출\n3. 각 클러스터의 핵심 연구 방향과 변화 추이 설명\n4. 향후 연구가 나아갈 방향 제안`
+      `다음은 "${keyword}" 키워드로 검색된 KCI 논문 ${articles.length}편 중 상위 목록입니다:\n\n${abstractSample}\n\n이 논문들을 바탕으로:\n1. 선행연구의 시기별 흐름(초기-성장기-현재)을 분석\n2. 주요 연구 주제 클러스터 3-5개 도출\n3. 각 클러스터의 핵심 연구 방향과 변화 추이 설명\n4. 향후 연구가 나아갈 방향 제안`
     );
     document.getElementById('pmAIResult').innerHTML = aiText;
     document.getElementById('pmResult').style.display = 'block';
@@ -8928,6 +9063,7 @@ async function runPriorMap() {
 /* ============================================================
    2. 연구 공백 탐지
    ============================================================ */
+let rgKwChart = null;
 async function runResearchGap() {
   const field = document.getElementById('rgField').value.trim();
   const keywords = document.getElementById('rgKeywords').value.trim();
@@ -8936,13 +9072,42 @@ async function runResearchGap() {
   document.getElementById('rgLoading').style.display = 'block';
   try {
     const kwList = keywords.split(',').map(k => k.trim()).filter(k => k);
-    const xml = await kciSearch(kwList[0], 1, 30);
+    const xml = await kciSearch(kwList[0], 1, 80);
     const parsed = parseKCIArticles(xml);
-    const sample = parsed.articles.slice(0, 12).map((a, i) => `${i+1}. "${a.title}" (${a.year}) [키워드: ${a.keywords || '없음'}]`).join('\n');
+    const articles = parsed.articles;
 
+    // Keyword frequency analysis
+    const kwFreq = {};
+    const years = [];
+    articles.forEach(a => {
+      if (a.year) years.push(a.year);
+      const kws = (a.keywords || '').split(/[,;·]/).map(k => k.trim()).filter(k => k && k.length > 1);
+      kws.forEach(k => { kwFreq[k] = (kwFreq[k] || 0) + 1; });
+    });
+    const topKws = Object.entries(kwFreq).sort((a,b) => b[1] - a[1]).slice(0, 15);
+    const sortedYears = years.sort();
+
+    // Stat cards
+    document.getElementById('rgStatTotal').textContent = articles.length;
+    document.getElementById('rgStatKw').textContent = Object.keys(kwFreq).length;
+    document.getElementById('rgStatYears').textContent = sortedYears.length > 1 ? `${sortedYears[0]}~${sortedYears[sortedYears.length-1]}` : '-';
+
+    // Keyword frequency chart
+    if (rgKwChart) rgKwChart.destroy();
+    rgKwChart = new Chart(document.getElementById('rgKwChart'), {
+      type: 'bar',
+      data: {
+        labels: topKws.map(k => k[0].length > 8 ? k[0].substring(0,8)+'...' : k[0]),
+        datasets: [{ label: '빈도', data: topKws.map(k => k[1]), backgroundColor: 'rgba(0,152,161,0.7)', borderColor: '#0098a1', borderWidth: 1, borderRadius: 4 }]
+      },
+      options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, y: { grid: { display: false } } } }
+    });
+
+    const sample = articles.slice(0, 15).map((a, i) => `${i+1}. "${a.title}" (${a.year}) [키워드: ${a.keywords || '없음'}]`).join('\n');
+    const kwSummary = topKws.map(([k,c]) => `${k}(${c}회)`).join(', ');
     const aiText = await callClaude(
       '당신은 학술연구 분석 전문가입니다. 한국어로 답변하세요. HTML 형식(<h4>, <ul><li>, <strong>)을 사용하세요.',
-      `분야: ${field}\n관심 키워드: ${keywords}\n\n다음은 관련 KCI 논문 목록입니다:\n${sample}\n\n위 정보를 바탕으로 연구 공백(Research Gap)을 분석해주세요:\n1. 기존 연구에서 충분히 다뤄진 주제 영역\n2. 아직 탐구되지 않은 주제 조합 3-5개 (구체적으로)\n3. 각 연구 공백의 학문적·실용적 가치 설명\n4. 연구 공백을 메울 수 있는 구체적 연구 질문 제안`
+      `분야: ${field}\n관심 키워드: ${keywords}\n분석 논문 수: ${articles.length}편\n상위 키워드 빈도: ${kwSummary}\n\n다음은 관련 KCI 논문 목록입니다:\n${sample}\n\n위 정보를 바탕으로 연구 공백(Research Gap)을 분석해주세요:\n1. 기존 연구에서 충분히 다뤄진 주제 영역\n2. 아직 탐구되지 않은 주제 조합 3-5개 (구체적으로)\n3. 각 연구 공백의 학문적·실용적 가치 설명\n4. 연구 공백을 메울 수 있는 구체적 연구 질문 제안`
     );
     document.getElementById('rgAIResult').innerHTML = aiText;
     document.getElementById('rgResult').style.display = 'block';
@@ -8953,6 +9118,7 @@ async function runResearchGap() {
 /* ============================================================
    3. 초록 구조화 도우미
    ============================================================ */
+let ahKoreanText = '', ahEnglishText = '', ahCurrentLang = 'ko';
 async function runAbstractHelper() {
   const title = document.getElementById('ahTitle').value.trim();
   const field = document.getElementById('ahField').value.trim();
@@ -8962,16 +9128,67 @@ async function runAbstractHelper() {
   const keywords = document.getElementById('ahKeywords').value.trim();
   if (!title || !purpose) { alert('논문 제목과 연구 목적은 필수입니다.'); return; }
   document.getElementById('ahResultCard').style.display = 'none';
+  document.getElementById('ahSimilarCard').style.display = 'none';
   document.getElementById('ahLoading').style.display = 'block';
+  ahCurrentLang = 'ko'; ahKoreanText = ''; ahEnglishText = '';
+  document.getElementById('ahLangBtn').textContent = '한/영 전환';
   try {
+    // Search for similar abstracts in KCI
+    let similarContext = '';
+    const searchTerm = keywords ? keywords.split(',')[0].trim() : title.substring(0, 15);
+    try {
+      const xml = await kciSearch(searchTerm, 1, 20);
+      const parsed = parseKCIArticles(xml);
+      if (parsed.articles.length > 0) {
+        const simArticles = parsed.articles.filter(a => a.abstractText).slice(0, 5);
+        similarContext = simArticles.map((a, i) => `참고 초록 ${i+1}: "${a.title}" - ${(a.abstractText || '').substring(0, 150)}`).join('\n');
+        // Show similar papers table
+        document.getElementById('ahSimilarBody').innerHTML = parsed.articles.slice(0, 8).map((a, i) => {
+          const link = a.url ? `<a href="${escapeHtml(a.url)}" target="_blank" style="color:var(--brand-green-dark);text-decoration:none;">${escapeHtml(a.title).substring(0,40)}</a>` : escapeHtml(a.title).substring(0,40);
+          return `<tr><td style="text-align:center;">${i+1}</td><td>${link}</td><td>${escapeHtml(a.authors).substring(0,15)}</td><td>${escapeHtml(a.journal).substring(0,15)}</td><td>${a.year}</td></tr>`;
+        }).join('');
+        document.getElementById('ahSimilarCard').style.display = 'block';
+      }
+    } catch(e) { /* KCI search optional */ }
+
     const aiText = await callClaude(
       '당신은 학술 논문 작성 전문가입니다. 한국어로 답변하세요. 학술적이고 객관적인 어투를 사용하세요.',
-      `다음 정보를 바탕으로 학술 논문 초록을 연구목적·연구방법·연구결과·결론 4단 구조로 작성해주세요.\n\n논문 제목: ${title}\n연구 분야: ${field || '미지정'}\n연구 목적: ${purpose}\n연구 방법: ${method || '미지정'}\n주요 결과: ${results || '미지정'}\n키워드: ${keywords || '미지정'}\n\n요구사항:\n- 각 섹션을 <strong>연구목적:</strong>, <strong>연구방법:</strong>, <strong>연구결과:</strong>, <strong>결론:</strong>으로 구분\n- 전체 200-300자 내외\n- 학술적이고 객관적인 문체\n- 마지막에 <br><br><strong>키워드:</strong>로 추천 키워드 5개 제시`
+      `다음 정보를 바탕으로 학술 논문 초록을 연구목적·연구방법·연구결과·결론 4단 구조로 작성해주세요.\n\n논문 제목: ${title}\n연구 분야: ${field || '미지정'}\n연구 목적: ${purpose}\n연구 방법: ${method || '미지정'}\n주요 결과: ${results || '미지정'}\n키워드: ${keywords || '미지정'}\n${similarContext ? '\n동일 분야 유사 논문 초록 참고:\n' + similarContext : ''}\n\n요구사항:\n- 각 섹션을 <strong>연구목적:</strong>, <strong>연구방법:</strong>, <strong>연구결과:</strong>, <strong>결론:</strong>으로 구분\n- 전체 200-300자 내외\n- 학술적이고 객관적인 문체\n- 마지막에 <br><br><strong>키워드:</strong>로 추천 키워드 5개 제시`
     );
+    ahKoreanText = aiText;
     document.getElementById('ahOutput').innerHTML = aiText;
+    // Word count
+    const plainText = document.getElementById('ahOutput').innerText;
+    const charCount = plainText.replace(/\s/g, '').length;
+    const wordCount = plainText.split(/\s+/).filter(w => w).length;
+    document.getElementById('ahWordCount').textContent = `${charCount}자 / ${wordCount}단어`;
     document.getElementById('ahResultCard').style.display = 'block';
   } catch (e) { alert('초록 생성 중 오류: ' + e.message); }
   finally { document.getElementById('ahLoading').style.display = 'none'; }
+}
+async function toggleAbstractLang() {
+  if (ahCurrentLang === 'ko') {
+    if (!ahEnglishText) {
+      document.getElementById('ahLangBtn').textContent = '번역 중...';
+      try {
+        ahEnglishText = await callClaude(
+          'You are an academic translation expert. Translate the following Korean academic abstract into English. Keep HTML formatting intact. Use formal academic English.',
+          `Translate this Korean abstract to English:\n\n${ahKoreanText}`
+        );
+      } catch(e) { alert('번역 오류: ' + e.message); return; }
+    }
+    document.getElementById('ahOutput').innerHTML = ahEnglishText;
+    document.getElementById('ahLangBtn').textContent = 'English → 한국어';
+    ahCurrentLang = 'en';
+  } else {
+    document.getElementById('ahOutput').innerHTML = ahKoreanText;
+    document.getElementById('ahLangBtn').textContent = '한/영 전환';
+    ahCurrentLang = 'ko';
+  }
+  const plainText = document.getElementById('ahOutput').innerText;
+  const charCount = plainText.replace(/\s/g, '').length;
+  const wordCount = plainText.split(/\s+/).filter(w => w).length;
+  document.getElementById('ahWordCount').textContent = `${charCount}자 / ${wordCount}단어`;
 }
 function copyAbstract() {
   const text = document.getElementById('ahOutput').innerText;
@@ -8985,12 +9202,13 @@ let refItems = [];
 async function searchForRef() {
   const q = document.getElementById('refSearchQuery').value.trim();
   if (!q) return;
-  const xml = await kciSearch(q, 1, 10);
+  const xml = await kciSearch(q, 1, 20);
   const parsed = parseKCIArticles(xml);
   const list = document.getElementById('refSearchList');
+  document.getElementById('refSearchCount').textContent = `검색 결과: ${parsed.articles.length}건`;
   if (parsed.articles.length === 0) { list.innerHTML = '<div class="rh-empty">검색 결과 없음</div>'; }
   else {
-    list.innerHTML = parsed.articles.map((a, i) => `<label class="rh-result-item"><input type="checkbox" data-ref-idx="${i}"><div class="rh-result-info"><div class="title">${escapeHtml(a.title)}</div><div class="meta">${escapeHtml(a.authors)} · ${escapeHtml(a.journal)} · ${a.year}</div></div></label>`).join('');
+    list.innerHTML = parsed.articles.map((a, i) => `<label class="rh-result-item"><input type="checkbox" data-ref-idx="${i}"><div class="rh-result-info"><div class="title">${escapeHtml(a.title)}</div><div class="meta">${escapeHtml(a.authors)} · ${escapeHtml(a.journal)} · ${a.year}${a.doi ? ' · DOI: '+escapeHtml(a.doi) : ''}</div></div></label>`).join('');
     window._refSearchArticles = parsed.articles;
   }
   document.getElementById('refSearchResults').style.display = 'block';
@@ -9019,6 +9237,7 @@ function loadHistoryToRef() {
 function renderRefOutput() {
   const style = document.getElementById('refStyle').value;
   const el = document.getElementById('refOutputList');
+  document.getElementById('refItemCount').textContent = refItems.length;
   if (refItems.length === 0) { el.innerHTML = '<div class="rh-empty">추가된 참고문헌이 없습니다.</div>'; return; }
   const formatted = refItems.map((a, i) => {
     let ref = '';
@@ -9028,10 +9247,12 @@ function renderRefOutput() {
     const journal = a.journal || '';
     const vol = a.vol ? `, ${a.vol}` : '';
     const issue = a.issue ? `(${a.issue})` : '';
+    const doiLink = a.doi ? ` <a href="https://doi.org/${escapeHtml(a.doi)}" target="_blank" style="color:var(--brand-green-dark);font-size:0.78rem;">DOI</a>` : '';
     if (style === 'apa') ref = `${author} (${year}). ${title}. <em>${journal}</em>${vol}${issue}.`;
     else if (style === 'chicago') ref = `${author}. "${title}." <em>${journal}</em>${vol}${issue} (${year}).`;
+    else if (style === 'mla') ref = `${author}. "${title}." <em>${journal}</em>${vol}${issue}, ${year}.`;
     else ref = `${author} (${year}). ${title}. ${journal}${vol}${issue}.`;
-    return `<div class="saved-history-item"><div class="info"><div class="title" style="font-size:0.84rem;">${i+1}. ${ref}</div></div><button class="remove-btn" onclick="refItems.splice(${i},1);renderRefOutput();">삭제</button></div>`;
+    return `<div class="saved-history-item" style="padding:12px 16px;border-left:3px solid var(--brand-green);margin-bottom:8px;background:var(--cloud);border-radius:0 var(--radius-sm) var(--radius-sm) 0;"><div class="info"><div class="title" style="font-size:0.84rem;line-height:1.6;">${i+1}. ${ref}${doiLink}</div></div><button class="remove-btn" onclick="refItems.splice(${i},1);renderRefOutput();">삭제</button></div>`;
   }).join('');
   el.innerHTML = '<div class="saved-history-list">' + formatted + '</div>';
 }
@@ -9044,18 +9265,34 @@ function copyAllRefs() {
 /* ============================================================
    5. 키워드 네트워크 시각화
    ============================================================ */
+let knFreqChart = null;
+let knNodeMapGlobal = null;
 async function runKwNetwork() {
   const keyword = document.getElementById('knKeyword').value.trim();
   if (!keyword) { alert('키워드를 입력해주세요.'); return; }
   document.getElementById('knResult').style.display = 'none';
   document.getElementById('knLoading').style.display = 'block';
   try {
-    const xml = await kciSearch(keyword, 1, 50);
+    const xml = await kciSearch(keyword, 1, 80);
     const parsed = parseKCIArticles(xml);
     const kwPairs = {};
     const kwCount = {};
+    // 불용어 목록
+    const stopwords = new Set(['의','에','를','을','이','가','은','는','와','과','로','에서','및','위한','대한','관한','통한','연구','분석','기반','중심으로','방안','효과','영향','개발','활용','대해','따른','관련','제안','특성','방법','비교','고찰','대하여','있는','없는','하는','되는','것의','using','based','for','the','and','study','analysis','research','of','in','on','a','an','to','with']);
     parsed.articles.forEach(a => {
-      const kws = (a.keywords || '').split(/[,;·]/).map(k => k.trim()).filter(k => k && k.length > 1);
+      // 키워드 + 제목에서 핵심 용어 추출
+      let kws = (a.keywords || '').split(/[,;·]/).map(k => k.trim()).filter(k => k && k.length > 1);
+      // 키워드가 1개 이하이면 제목에서 추가 추출
+      if (kws.length <= 1 && a.title) {
+        const titleTerms = a.title
+          .replace(/[()[\]{}:·,.\-–—"'""''?!]/g, ' ')
+          .split(/\s+/)
+          .map(t => t.trim())
+          .filter(t => t.length >= 2 && !stopwords.has(t.toLowerCase()));
+        // 2~6글자 한글 명사 또는 영문 단어 필터
+        const validTerms = titleTerms.filter(t => /^[가-힣]{2,6}$/.test(t) || /^[A-Za-z]{3,}$/.test(t));
+        kws = [...new Set([...kws, ...validTerms])];
+      }
       kws.forEach(k => { kwCount[k] = (kwCount[k] || 0) + 1; });
       for (let i = 0; i < kws.length; i++) {
         for (let j = i + 1; j < kws.length; j++) {
@@ -9072,13 +9309,34 @@ async function runKwNetwork() {
       return topKwSet.has(a) && topKwSet.has(b);
     }).sort((a, b) => b[1] - a[1]).slice(0, 40);
 
+    // Stat cards
+    document.getElementById('knStatTotal').textContent = parsed.articles.length;
+    document.getElementById('knStatKw').textContent = Object.keys(kwCount).length;
+    document.getElementById('knStatEdges').textContent = edges.length;
+
     drawKwNetwork(topKw, edges);
+
+    // Frequency bar chart
+    if (knFreqChart) knFreqChart.destroy();
+    const top12 = topKw.slice(0, 12);
+    const gradientColors = top12.map((_, i) => {
+      const hue = 160 + (i * 15);
+      return `hsla(${hue}, 70%, 45%, 0.8)`;
+    });
+    knFreqChart = new Chart(document.getElementById('knFreqChart'), {
+      type: 'bar',
+      data: {
+        labels: top12.map(k => k[0].length > 10 ? k[0].substring(0,10)+'...' : k[0]),
+        datasets: [{ label: '출현 빈도', data: top12.map(k => k[1]), backgroundColor: gradientColors, borderRadius: 6 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } } }
+    });
 
     const kwSummary = topKw.map(([k, c]) => `${k}(${c}회)`).join(', ');
     const edgeSummary = edges.slice(0, 10).map(([p, c]) => `${p.replace('||', ' ↔ ')}(${c})`).join(', ');
     const aiText = await callClaude(
       '당신은 학술 키워드 분석 전문가입니다. 한국어로 답변하세요. HTML 형식(<h4>, <ul><li>, <strong>)을 사용하세요.',
-      `"${keyword}" 관련 논문의 키워드 동시출현 분석 결과:\n\n상위 키워드: ${kwSummary}\n주요 연결: ${edgeSummary}\n\n분석해주세요:\n1. 핵심 키워드 클러스터 식별\n2. 키워드 간 관계의 의미 해석\n3. 중심성이 높은 키워드의 연구적 의의\n4. 이 네트워크에서 발견되는 연구 트렌드`
+      `"${keyword}" 관련 논문 ${parsed.articles.length}편의 키워드 동시출현 분석 결과:\n\n상위 키워드: ${kwSummary}\n주요 연결: ${edgeSummary}\n\n분석해주세요:\n1. 핵심 키워드 클러스터 식별\n2. 키워드 간 관계의 의미 해석\n3. 중심성이 높은 키워드의 연구적 의의\n4. 이 네트워크에서 발견되는 연구 트렌드`
     );
     document.getElementById('knAIResult').innerHTML = aiText;
     document.getElementById('knResult').style.display = 'block';
@@ -9089,50 +9347,120 @@ async function runKwNetwork() {
 function drawKwNetwork(nodes, edges) {
   const canvas = document.getElementById('knCanvas');
   const ctx = canvas.getContext('2d');
-  const W = canvas.width, H = canvas.height;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = canvas.clientWidth * dpr;
+  canvas.height = 500 * dpr;
+  ctx.scale(dpr, dpr);
+  const W = canvas.clientWidth, H = 500;
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#f8faf9';
+
+  // Background gradient
+  const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+  bgGrad.addColorStop(0, '#f0fdf4');
+  bgGrad.addColorStop(1, '#f0f9ff');
+  ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
   const nodeMap = {};
   const cx = W / 2, cy = H / 2;
+  const maxCount = Math.max(...nodes.map(n => n[1]));
   nodes.forEach(([name, count], i) => {
-    const angle = (2 * Math.PI * i) / nodes.length;
-    const radius = Math.min(W, H) * 0.35;
+    const angle = (2 * Math.PI * i) / nodes.length - Math.PI / 2;
+    const radiusScale = 0.30 + (1 - count / maxCount) * 0.1;
+    const radius = Math.min(W, H) * radiusScale;
     nodeMap[name] = {
-      x: cx + radius * Math.cos(angle) + (Math.random() - 0.5) * 30,
-      y: cy + radius * Math.sin(angle) + (Math.random() - 0.5) * 30,
-      r: Math.max(8, Math.min(28, count * 3)),
+      x: cx + radius * Math.cos(angle),
+      y: cy + radius * Math.sin(angle),
+      r: Math.max(10, Math.min(32, 8 + count * 2.5)),
       count
     };
   });
+  knNodeMapGlobal = { nodeMap, nodes };
 
+  // Draw edges with gradients
   edges.forEach(([pair, weight]) => {
     const [a, b] = pair.split('||');
     if (!nodeMap[a] || !nodeMap[b]) return;
+    const grad = ctx.createLinearGradient(nodeMap[a].x, nodeMap[a].y, nodeMap[b].x, nodeMap[b].y);
+    grad.addColorStop(0, `rgba(0,104,74,${Math.min(0.5, weight * 0.12)})`);
+    grad.addColorStop(1, `rgba(0,152,161,${Math.min(0.5, weight * 0.12)})`);
     ctx.beginPath();
     ctx.moveTo(nodeMap[a].x, nodeMap[a].y);
     ctx.lineTo(nodeMap[b].x, nodeMap[b].y);
-    ctx.strokeStyle = `rgba(0,104,74,${Math.min(0.6, weight * 0.15)})`;
-    ctx.lineWidth = Math.max(1, Math.min(4, weight));
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = Math.max(1, Math.min(5, weight * 1.2));
     ctx.stroke();
   });
 
-  const colors = ['#00684a', '#00ed64', '#0098a1', '#f59e0b', '#8b5cf6', '#ef4444'];
+  // Draw nodes with gradients and shadows
+  const colorPalette = [
+    ['#00684a','#00ed64'], ['#0098a1','#67e8f9'], ['#7c3aed','#c084fc'],
+    ['#ea580c','#fdba74'], ['#2563eb','#93c5fd'], ['#dc2626','#fca5a5']
+  ];
   nodes.forEach(([name, count], i) => {
     const n = nodeMap[name];
+    const [c1, c2] = colorPalette[i % colorPalette.length];
+
+    // Shadow
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.15)';
+    ctx.shadowBlur = 8;
+    ctx.shadowOffsetX = 2;
+    ctx.shadowOffsetY = 2;
+
+    // Gradient fill
+    const nodeGrad = ctx.createRadialGradient(n.x - n.r*0.3, n.y - n.r*0.3, 0, n.x, n.y, n.r);
+    nodeGrad.addColorStop(0, c2);
+    nodeGrad.addColorStop(1, c1);
     ctx.beginPath();
     ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-    ctx.fillStyle = colors[i % colors.length];
+    ctx.fillStyle = nodeGrad;
     ctx.fill();
+    ctx.restore();
+
+    // White border
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
     ctx.strokeStyle = '#fff';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.stroke();
+
+    // Count inside node
+    ctx.fillStyle = '#fff';
+    ctx.font = `bold ${Math.max(9, n.r * 0.65)}px "Noto Sans KR", sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(count, n.x, n.y);
+
+    // Label below
     ctx.fillStyle = '#001e2b';
     ctx.font = '11px "Noto Sans KR", sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText(name, n.x, n.y + n.r + 14);
+    ctx.textBaseline = 'top';
+    ctx.fillText(name.length > 10 ? name.substring(0,9)+'...' : name, n.x, n.y + n.r + 6);
   });
+
+  // Hover tooltip
+  canvas.onmousemove = function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const tooltip = document.getElementById('knTooltip');
+    let found = false;
+    for (const [name, n] of Object.entries(nodeMap)) {
+      const dx = mx - n.x, dy = my - n.y;
+      if (dx*dx + dy*dy <= n.r*n.r) {
+        tooltip.innerHTML = `<strong>${name}</strong><br>출현: ${n.count}회`;
+        tooltip.style.display = 'block';
+        tooltip.style.left = (e.clientX + 12) + 'px';
+        tooltip.style.top = (e.clientY - 30) + 'px';
+        canvas.style.cursor = 'pointer';
+        found = true;
+        break;
+      }
+    }
+    if (!found) { tooltip.style.display = 'none'; canvas.style.cursor = 'default'; }
+  };
+  canvas.onmouseleave = function() { document.getElementById('knTooltip').style.display = 'none'; };
 }
 
 /* ============================================================
@@ -9146,15 +9474,31 @@ async function runSimilarPaper() {
   document.getElementById('spLoading').style.display = 'block';
   try {
     const searchTerm = keywords ? keywords.split(',')[0].trim() : abstract.substring(0, 20);
-    const xml = await kciSearch(searchTerm, 1, 30);
+    const xml = await kciSearch(searchTerm, 1, 50);
     const parsed = parseKCIArticles(xml);
-    const sample = parsed.articles.slice(0, 15).map((a, i) =>
+    const articles = parsed.articles;
+
+    // Stat cards
+    const journals = new Set(articles.map(a => a.journal).filter(j => j));
+    const years = articles.map(a => a.year).filter(y => y).sort();
+    document.getElementById('spStatTotal').textContent = articles.length;
+    document.getElementById('spStatJournals').textContent = journals.size;
+    document.getElementById('spStatYears').textContent = years.length > 1 ? `${years[0]}~${years[years.length-1]}` : (years[0] || '-');
+
+    // Article table
+    document.getElementById('spArticleCount').textContent = articles.length;
+    document.getElementById('spArticleBody').innerHTML = articles.slice(0, 30).map((a, i) => {
+      const link = a.url ? `<a href="${escapeHtml(a.url)}" target="_blank" style="color:var(--brand-green-dark);text-decoration:none;">${escapeHtml(a.title).substring(0,50)}</a>` : escapeHtml(a.title).substring(0,50);
+      return `<tr><td style="text-align:center;">${i+1}</td><td>${escapeHtml(a.authors).substring(0,20)}</td><td>${link}</td><td style="text-align:center;">${a.year}</td><td>${escapeHtml(a.journal).substring(0,18)}</td><td style="font-size:0.75rem;">${escapeHtml((a.keywords||'').substring(0,25))}</td></tr>`;
+    }).join('');
+
+    const sample = articles.slice(0, 15).map((a, i) =>
       `${i+1}. "${a.title}" (${a.year}) - ${a.journal}\n   키워드: ${a.keywords || '없음'}\n   초록: ${(a.abstractText || '').substring(0, 100)}`
     ).join('\n\n');
 
     const aiText = await callClaude(
       '당신은 학술 논문 유사도 분석 전문가입니다. 한국어로 답변하세요. HTML 형식(<h4>, <ul><li>, <strong>)을 사용하세요.',
-      `사용자의 연구:\n초록: ${abstract || '미입력'}\n키워드: ${keywords || '미입력'}\n\nKCI 검색 논문 목록:\n${sample}\n\n위 논문들 중 사용자 연구와 유사도가 높은 논문을 분석해주세요:\n1. 가장 유사한 논문 Top 5를 선정하고 유사도(높음/중간/낮음)와 이유 설명\n2. 각 논문과의 공통점과 차이점\n3. 이 논문들을 선행연구로 활용할 때 인용 전략\n4. 사용자 연구의 차별화 포인트 제안`
+      `사용자의 연구:\n초록: ${abstract || '미입력'}\n키워드: ${keywords || '미입력'}\n\nKCI 검색 논문 ${articles.length}편 중 상위 목록:\n${sample}\n\n위 논문들 중 사용자 연구와 유사도가 높은 논문을 분석해주세요:\n1. 가장 유사한 논문 Top 5를 선정하고 유사도(높음/중간/낮음)와 이유 설명\n2. 각 논문과의 공통점과 차이점\n3. 이 논문들을 선행연구로 활용할 때 인용 전략\n4. 사용자 연구의 차별화 포인트 제안`
     );
     document.getElementById('spAIResult').innerHTML = aiText;
     document.getElementById('spResult').style.display = 'block';
@@ -9165,6 +9509,12 @@ async function runSimilarPaper() {
 /* ============================================================
    7. 연구 방법론 가이드
    ============================================================ */
+function mgQuickFill(field, topic, question, type) {
+  document.getElementById('mgField').value = field;
+  document.getElementById('mgTopic').value = topic;
+  document.getElementById('mgQuestion').value = question;
+  document.getElementById('mgType').value = type;
+}
 async function runMethodGuide() {
   const field = document.getElementById('mgField').value.trim();
   const topic = document.getElementById('mgTopic').value.trim();
@@ -9172,11 +9522,30 @@ async function runMethodGuide() {
   const type = document.getElementById('mgType').value;
   if (!field || !topic) { alert('학문 분야와 연구 주제를 입력해주세요.'); return; }
   document.getElementById('mgResultCard').style.display = 'none';
+  document.getElementById('mgRefPapersCard').style.display = 'none';
   document.getElementById('mgLoading').style.display = 'block';
   try {
+    // Search KCI for methodology examples
+    let methodContext = '';
+    try {
+      const methodTerm = topic.substring(0, 15);
+      const xml = await kciSearch(methodTerm, 1, 30);
+      const parsed = parseKCIArticles(xml);
+      if (parsed.articles.length > 0) {
+        const refArticles = parsed.articles.slice(0, 10);
+        methodContext = refArticles.map((a, i) => `${i+1}. "${a.title}" (${a.year}) - ${a.journal} [초록: ${(a.abstractText || '').substring(0, 80)}]`).join('\n');
+        // Show reference papers table
+        document.getElementById('mgRefPapersBody').innerHTML = refArticles.map((a, i) => {
+          const link = a.url ? `<a href="${escapeHtml(a.url)}" target="_blank" style="color:var(--brand-green-dark);text-decoration:none;">${escapeHtml(a.title).substring(0,45)}</a>` : escapeHtml(a.title).substring(0,45);
+          return `<tr><td style="text-align:center;">${i+1}</td><td>${link}</td><td>${escapeHtml(a.authors).substring(0,15)}</td><td>${escapeHtml(a.journal).substring(0,15)}</td><td>${a.year}</td></tr>`;
+        }).join('');
+        document.getElementById('mgRefPapersCard').style.display = 'block';
+      }
+    } catch(e) { /* KCI search optional */ }
+
     const aiText = await callClaude(
       '당신은 연구방법론 전문가입니다. 한국어로 답변하세요. HTML 형식(<h4>, <ul><li>, <strong>, <em>)을 사용하세요.',
-      `학문 분야: ${field}\n연구 주제: ${topic}\n연구 질문: ${question || '미입력'}\n선호 연구유형: ${type || '자동 추천'}\n\n위 정보를 바탕으로 최적의 연구 방법론을 추천해주세요:\n1. <h4>추천 연구 설계</h4>: 양적/질적/혼합 중 적합한 방법과 구체적 설계(예: 준실험설계, 사례연구 등)\n2. <h4>데이터 수집 방법</h4>: 적합한 도구(설문, 인터뷰, 관찰 등)와 표본 설계\n3. <h4>분석 방법 및 도구</h4>: 통계 분석법(t-test, ANOVA, 회귀분석 등) 또는 질적 분석법, 추천 소프트웨어(SPSS, R, NVivo 등)\n4. <h4>연구 윤리 고려사항</h4>: IRB, 동의서 등\n5. <h4>예상 한계점 및 대응</h4>: 타당도·신뢰도 확보 전략`
+      `학문 분야: ${field}\n연구 주제: ${topic}\n연구 질문: ${question || '미입력'}\n선호 연구유형: ${type || '자동 추천'}\n${methodContext ? '\n동일 분야 KCI 논문 방법론 참고:\n' + methodContext : ''}\n\n위 정보를 바탕으로 최적의 연구 방법론을 추천해주세요:\n1. <h4>추천 연구 설계</h4>: 양적/질적/혼합 중 적합한 방법과 구체적 설계(예: 준실험설계, 사례연구 등)\n2. <h4>데이터 수집 방법</h4>: 적합한 도구(설문, 인터뷰, 관찰 등)와 표본 설계\n3. <h4>분석 방법 및 도구</h4>: 통계 분석법(t-test, ANOVA, 회귀분석 등) 또는 질적 분석법, 추천 소프트웨어(SPSS, R, NVivo 등)\n4. <h4>연구 윤리 고려사항</h4>: IRB, 동의서 등\n5. <h4>예상 한계점 및 대응</h4>: 타당도·신뢰도 확보 전략`
     );
     document.getElementById('mgAIResult').innerHTML = aiText;
     document.getElementById('mgResultCard').style.display = 'block';
