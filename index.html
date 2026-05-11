@@ -6798,7 +6798,7 @@ HTML 태그(h4, p, ul, li, strong)를 사용하여 구조화된 형태로 응답
         max_tokens: 4096,
         messages: [{ role: 'user', content: prompt }]
       }),
-      signal: AbortSignal.timeout(30000)
+      signal: AbortSignal.timeout(90000)
     });
 
     if (!response.ok) {
