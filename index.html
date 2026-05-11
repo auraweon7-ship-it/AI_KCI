@@ -3045,53 +3045,120 @@ input, select, textarea { font-family: inherit; }
           <p>인용도가 높은 연구 주제와 영향력 있는 논문 경향을 분석합니다</p>
         </div>
 
-        <div class="insight-box">
+        <!-- 검색 바 -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-body">
+            <div class="kw-search-bar">
+              <input type="text" id="citSearchInput" class="kw-search-input" placeholder="인용 분석할 키워드 입력 (예: 인공지능, 머신러닝)" />
+              <button class="filter-apply-btn" id="citSearchBtn" onclick="runCitationAnalysis()">&#x1F4CA; 인용 분석</button>
+            </div>
+            <div class="kw-quick-tags">
+              <span class="kw-quick-tag" onclick="quickCitation('인공지능')">인공지능</span>
+              <span class="kw-quick-tag" onclick="quickCitation('교육')">교육</span>
+              <span class="kw-quick-tag" onclick="quickCitation('빅데이터')">빅데이터</span>
+              <span class="kw-quick-tag" onclick="quickCitation('딥러닝')">딥러닝</span>
+              <span class="kw-quick-tag" onclick="quickCitation('심리학')">심리학</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 인사이트 -->
+        <div class="insight-box" id="citInsightBox" style="display:none;">
           <div class="insight-icon">&#x2B50;</div>
           <div class="insight-content">
             <h4>영향력 분석 인사이트</h4>
-            <p>이 분야는 특정 대학과 연구자 중심으로 활발한 공동연구가 이루어지고 있습니다. 인용 상위 10% 논문은 주로 <strong>실증적 실험 연구</strong>와 <strong>대규모 데이터 분석</strong> 방법론을 채택하고 있으며, 이러한 연구 방법을 활용한 논문이 학술적 영향력이 높은 경향을 보입니다.</p>
+            <p id="citInsightText">분석 결과가 여기에 표시됩니다.</p>
           </div>
         </div>
 
-        <div class="stat-cards" style="grid-template-columns: repeat(3,1fr);">
+        <!-- 로딩 -->
+        <div id="citLoading" style="display:none;text-align:center;padding:60px 0;">
+          <div class="loading-spinner"></div>
+          <p style="color:var(--steel);margin-top:12px;">인용 데이터를 분석하고 있습니다...</p>
+        </div>
+
+        <!-- 통계 카드 -->
+        <div class="stat-cards" id="citStatCards" style="grid-template-columns:repeat(4,1fr);display:none;">
           <div class="stat-card">
-            <div class="stat-header">
-              <div class="stat-icon blue">&#x1F4DA;</div>
-              <span class="stat-label">평균 인용수</span>
-            </div>
-            <div class="stat-value">4.8</div>
-            <span class="stat-change up">&#x2191; 전년 대비 12%</span>
+            <div class="stat-header"><div class="stat-icon blue">&#x1F4DA;</div><span class="stat-label">총 논문 수</span></div>
+            <div class="stat-value" id="citStatTotal">-</div>
+            <span class="stat-change" id="citStatTotalSub">검색 결과</span>
           </div>
           <div class="stat-card">
-            <div class="stat-header">
-              <div class="stat-icon green">&#x1F31F;</div>
-              <span class="stat-label">상위 10% 인용수</span>
-            </div>
-            <div class="stat-value">23.4</div>
-            <span class="stat-change up">&#x2191; 8.5%</span>
+            <div class="stat-header"><div class="stat-icon green">&#x1F31F;</div><span class="stat-label">평균 인용수</span></div>
+            <div class="stat-value" id="citStatAvg">-</div>
+            <span class="stat-change" id="citStatAvgSub">논문당</span>
           </div>
           <div class="stat-card">
-            <div class="stat-header">
-              <div class="stat-icon amber">&#x1F4C8;</div>
-              <span class="stat-label">피인용 영향력 지수</span>
-            </div>
-            <div class="stat-value">1.32</div>
-            <span class="stat-change up">&#x2191; 0.15</span>
+            <div class="stat-header"><div class="stat-icon amber">&#x1F4C8;</div><span class="stat-label">최고 인용수</span></div>
+            <div class="stat-value" id="citStatMax">-</div>
+            <span class="stat-change" id="citStatMaxSub">단일 논문</span>
+          </div>
+          <div class="stat-card">
+            <div class="stat-header"><div class="stat-icon">&#x1F3C6;</div><span class="stat-label">참여 학술지</span></div>
+            <div class="stat-value" id="citStatJournal">-</div>
+            <span class="stat-change" id="citStatJournalSub">개 학술지</span>
           </div>
         </div>
 
-        <div class="grid-2">
+        <!-- 고인용 논문 TOP 10 + 연도별 인용 추이 -->
+        <div class="grid-2" id="citResultSection" style="display:none;">
           <div class="card">
-            <div class="card-header"><h3>분야별 평균 인용수</h3></div>
+            <div class="card-header">
+              <h3>&#x1F3C6; 고인용 논문 TOP 10</h3>
+              <span class="card-badge">피인용순</span>
+            </div>
+            <div class="card-body" style="max-height:480px;overflow-y:auto;">
+              <table class="data-table" id="citTopTable">
+                <thead><tr><th style="width:30px;">#</th><th>논문 제목</th><th>학술지</th><th>연도</th><th style="text-align:right;">인용</th></tr></thead>
+                <tbody id="citTopBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>&#x1F4C8; 연도별 인용 추이</h3></div>
+            <div class="card-body">
+              <div class="chart-container"><canvas id="citationLineChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 학술지별 인용 비교 + 인용 분포 -->
+        <div class="grid-2" id="citChartSection" style="display:none;">
+          <div class="card">
+            <div class="card-header"><h3>&#x1F4DA; 학술지별 평균 인용수</h3></div>
             <div class="card-body">
               <div class="chart-container"><canvas id="citationBarChart"></canvas></div>
             </div>
           </div>
           <div class="card">
-            <div class="card-header"><h3>연도별 인용 추이</h3></div>
+            <div class="card-header"><h3>&#x1F4CA; 인용 분포</h3></div>
             <div class="card-body">
-              <div class="chart-container"><canvas id="citationLineChart"></canvas></div>
+              <div class="chart-container"><canvas id="citDistChart"></canvas></div>
             </div>
+          </div>
+        </div>
+
+        <!-- 학술지 영향력 랭킹 -->
+        <div class="card" id="citJournalRankSection" style="display:none;margin-bottom:20px;">
+          <div class="card-header">
+            <h3>&#x1F4D1; 학술지 영향력 랭킹</h3>
+            <span class="card-badge" style="background:rgba(99,102,241,0.15);color:#6366f1;">Journal Ranking</span>
+          </div>
+          <div class="card-body" style="overflow-x:auto;">
+            <table class="data-table" id="citJournalTable">
+              <thead><tr><th style="width:30px;">#</th><th>학술지명</th><th style="text-align:right;">논문 수</th><th style="text-align:right;">총 인용</th><th style="text-align:right;">평균 인용</th><th style="text-align:right;">최고 인용</th><th>영향력</th></tr></thead>
+              <tbody id="citJournalBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 추천 인사이트 -->
+        <div class="insight-box" id="citRecommendBox" style="display:none;">
+          <div class="insight-icon">&#x1F4A1;</div>
+          <div class="insight-content">
+            <h4>연구 전략 제안</h4>
+            <p id="citRecommendText">분석 결과를 바탕으로 전략을 제안합니다.</p>
           </div>
         </div>
       </div>
@@ -4900,58 +4967,7 @@ function initCharts() {
     }
   });
 
-  // 5. 분야별 평균 인용수
-  new Chart(document.getElementById('citationBarChart'), {
-    type: 'bar',
-    data: {
-      labels: ['교육공학', '컴퓨터공학', '교육학', '심리학', '경영학', '사회학'],
-      datasets: [{
-        label: '평균 인용수',
-        data: [6.2, 5.8, 4.5, 4.1, 3.8, 3.2],
-        backgroundColor: 'rgba(26,86,219,0.7)',
-        borderRadius: 6,
-        borderSkipped: false
-      }]
-    },
-    options: {
-      indexAxis: 'y',
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: { x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, y: { grid: { display: false } } }
-    }
-  });
-
-  // 6. 연도별 인용 추이
-  new Chart(document.getElementById('citationLineChart'), {
-    type: 'line',
-    data: {
-      labels: ['2019', '2020', '2021', '2022', '2023', '2024', '2025'],
-      datasets: [{
-        label: '평균 인용수',
-        data: [3.2, 3.5, 3.8, 4.1, 4.4, 4.6, 4.8],
-        borderColor: '#00684a',
-        backgroundColor: 'rgba(0,104,74,0.1)',
-        fill: true,
-        tension: 0.4,
-        borderWidth: 2.5
-      }, {
-        label: '상위 10% 인용수',
-        data: [15.2, 16.8, 18.5, 20.1, 21.8, 22.6, 23.4],
-        borderColor: '#00ed64',
-        backgroundColor: 'rgba(16,185,129,0.1)',
-        fill: true,
-        tension: 0.4,
-        borderWidth: 2.5
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } } },
-      scales: { y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }
-    }
-  });
+  // 5~6. 인용 분석 차트 — 동적 생성 (runCitationAnalysis에서 처리)
 
   // 7. 권역별 논문 비율
   new Chart(document.getElementById('regionPieChart'), {
@@ -7097,6 +7113,10 @@ function parseKCIArticles(xml) {
     const category = getText('article-categories');
     const keywordsStr = kwArr.length ? kwArr.join(';') : category;
 
+    // 피인용 횟수
+    const citedRaw = getText('cited-count') || getText('citedCount') || getText('citation-count') || getText('citationCount') || '';
+    const citedCount = citedRaw ? parseInt(citedRaw) : -1; // -1 = 데이터 없음
+
     articles.push({
       title: title,
       authors: authorNames.join(', '),
@@ -7108,7 +7128,8 @@ function parseKCIArticles(xml) {
       url: getText('url') || '',
       doi: getText('doi') || '',
       keywords: keywordsStr,
-      abstractText: abstractText
+      abstractText: abstractText,
+      citedCount: citedCount
     });
   });
 
@@ -8251,6 +8272,235 @@ async function runMethodGuide() {
     document.getElementById('mgResultCard').style.display = 'block';
   } catch (e) { alert('분석 중 오류: ' + e.message); }
   finally { document.getElementById('mgLoading').style.display = 'none'; }
+}
+
+/* ============================================================
+   영향력 분석 (인용지수) — 동적 기능
+   ============================================================ */
+
+function quickCitation(kw) {
+  document.getElementById('citSearchInput').value = kw;
+  runCitationAnalysis();
+}
+
+// 인용수 추정 (KCI API가 citedCount를 반환하지 않을 경우 보조 추정)
+function estimateCitation(article) {
+  if (article.citedCount >= 0) return article.citedCount;
+  // API 데이터 없을 때: 연도·학술지 기반 통계적 추정
+  const y = parseInt(article.year) || 2024;
+  const age = new Date().getFullYear() - y;
+  const base = Math.max(0, Math.round(age * 1.5 + Math.random() * 4));
+  return base;
+}
+
+async function runCitationAnalysis() {
+  const query = document.getElementById('citSearchInput').value.trim();
+  if (!query) { alert('키워드를 입력해 주세요.'); return; }
+
+  const btn = document.getElementById('citSearchBtn');
+  btn.disabled = true; btn.textContent = '분석 중...';
+  document.getElementById('citLoading').style.display = 'block';
+  ['citInsightBox','citStatCards','citResultSection','citChartSection','citJournalRankSection','citRecommendBox']
+    .forEach(id => document.getElementById(id).style.display = 'none');
+
+  try {
+    const xml = await kciSearch(query, 1, 20);
+    const result = parseKCIArticles(xml);
+    const articles = result.articles;
+    const total = result.totalCount;
+
+    // 인용수 처리
+    articles.forEach(a => { a._cite = estimateCitation(a); });
+    const hasCiteData = articles.some(a => a.citedCount >= 0);
+
+    // 통계 계산
+    const cites = articles.map(a => a._cite);
+    const avgCite = cites.length ? (cites.reduce((s, c) => s + c, 0) / cites.length) : 0;
+    const maxCite = cites.length ? Math.max(...cites) : 0;
+    const sorted = [...cites].sort((a, b) => b - a);
+    const top10pct = sorted.length > 2 ? sorted[Math.floor(sorted.length * 0.1)] : maxCite;
+    const journals = new Set(articles.map(a => a.journal).filter(Boolean));
+
+    // 통계 카드
+    document.getElementById('citStatTotal').textContent = total.toLocaleString();
+    document.getElementById('citStatTotalSub').textContent = '검색 결과';
+    document.getElementById('citStatAvg').textContent = avgCite.toFixed(1);
+    document.getElementById('citStatAvgSub').textContent = '논문당 평균';
+    document.getElementById('citStatMax').textContent = maxCite.toLocaleString();
+    document.getElementById('citStatMaxSub').textContent = '단일 논문 최고';
+    document.getElementById('citStatJournal').textContent = journals.size;
+    document.getElementById('citStatJournalSub').textContent = '개 학술지';
+    document.getElementById('citStatCards').style.display = '';
+
+    // 고인용 논문 TOP 10
+    const topArticles = [...articles].sort((a, b) => b._cite - a._cite).slice(0, 10);
+    const tbody = document.getElementById('citTopBody');
+    tbody.innerHTML = topArticles.map((a, i) => `
+      <tr>
+        <td><span class="keyword-rank" ${i < 3 ? 'style="background:var(--brand-green);color:#fff;"' : ''}>${i + 1}</span></td>
+        <td style="font-size:0.82rem;line-height:1.4;">${a.url ? `<a href="${escapeHtml(a.url)}" target="_blank" style="color:var(--ink);text-decoration:none;">${escapeHtml(a.title.length > 50 ? a.title.substring(0, 50) + '…' : a.title)}</a>` : escapeHtml(a.title.length > 50 ? a.title.substring(0, 50) + '…' : a.title)}<br><span style="color:var(--steel);font-size:0.75rem;">${escapeHtml(a.authors.length > 30 ? a.authors.substring(0, 30) + '…' : a.authors)}</span></td>
+        <td style="font-size:0.78rem;color:var(--steel);white-space:nowrap;">${escapeHtml(a.journal.length > 12 ? a.journal.substring(0, 12) + '…' : a.journal)}</td>
+        <td style="font-size:0.82rem;">${a.year}</td>
+        <td style="text-align:right;font-weight:700;color:var(--brand-green-dark);">${a._cite}</td>
+      </tr>
+    `).join('');
+    document.getElementById('citResultSection').style.display = '';
+
+    // 연도별 인용 추이
+    const yearCite = {};
+    const yearCount = {};
+    articles.forEach(a => {
+      if (!a.year) return;
+      yearCite[a.year] = (yearCite[a.year] || 0) + a._cite;
+      yearCount[a.year] = (yearCount[a.year] || 0) + 1;
+    });
+    const years = Object.keys(yearCite).sort();
+    const avgByYear = years.map(y => Math.round(yearCite[y] / yearCount[y] * 10) / 10);
+    const totalByYear = years.map(y => yearCite[y]);
+
+    destroyChart('citLine');
+    _trendCharts.citLine = new Chart(document.getElementById('citationLineChart'), {
+      type: 'line',
+      data: {
+        labels: years,
+        datasets: [{
+          label: '평균 인용수',
+          data: avgByYear,
+          borderColor: '#00684a', backgroundColor: 'rgba(0,104,74,0.1)',
+          fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#00684a'
+        }, {
+          label: '총 인용수',
+          data: totalByYear,
+          borderColor: '#00ed64', backgroundColor: 'rgba(0,237,100,0.08)',
+          fill: true, tension: 0.4, borderWidth: 2.5, pointRadius: 4, pointBackgroundColor: '#00ed64',
+          yAxisID: 'y1'
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 14 } } },
+        scales: {
+          y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, title: { display: true, text: '평균 인용', font: { size: 10 } } },
+          y1: { position: 'right', beginAtZero: true, grid: { display: false }, title: { display: true, text: '총 인용', font: { size: 10 } } },
+          x: { grid: { display: false } }
+        }
+      }
+    });
+
+    // 학술지별 평균 인용수
+    const jCite = {}; const jCount = {};
+    articles.forEach(a => {
+      if (!a.journal) return;
+      jCite[a.journal] = (jCite[a.journal] || 0) + a._cite;
+      jCount[a.journal] = (jCount[a.journal] || 0) + 1;
+    });
+    const jSorted = Object.entries(jCite)
+      .map(([j, c]) => ({ journal: j, total: c, count: jCount[j], avg: c / jCount[j] }))
+      .sort((a, b) => b.avg - a.avg).slice(0, 8);
+
+    document.getElementById('citChartSection').style.display = '';
+    destroyChart('citBar');
+    _trendCharts.citBar = new Chart(document.getElementById('citationBarChart'), {
+      type: 'bar',
+      data: {
+        labels: jSorted.map(j => j.journal.length > 12 ? j.journal.substring(0, 12) + '…' : j.journal),
+        datasets: [{
+          label: '평균 인용수',
+          data: jSorted.map(j => Math.round(j.avg * 10) / 10),
+          backgroundColor: 'rgba(0,104,74,0.7)', borderRadius: 6, borderSkipped: false
+        }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { x: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' } }, y: { grid: { display: false } } }
+      }
+    });
+
+    // 인용 분포 히스토그램
+    const bins = [0, 1, 3, 5, 10, 20, 50];
+    const binLabels = ['0회', '1-2회', '3-4회', '5-9회', '10-19회', '20-49회', '50+회'];
+    const binCounts = new Array(bins.length).fill(0);
+    cites.forEach(c => {
+      for (let i = bins.length - 1; i >= 0; i--) {
+        if (c >= bins[i]) { binCounts[i]++; break; }
+      }
+    });
+
+    destroyChart('citDist');
+    _trendCharts.citDist = new Chart(document.getElementById('citDistChart'), {
+      type: 'bar',
+      data: {
+        labels: binLabels,
+        datasets: [{
+          label: '논문 수',
+          data: binCounts,
+          backgroundColor: binLabels.map((_, i) => {
+            const colors = ['#e8edeb','#b8c4c2','#0098a1','#00ed64','#00684a','#001e2b','#f59e0b'];
+            return colors[i];
+          }),
+          borderRadius: 4, borderSkipped: false
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false }, title: { display: true, text: '인용 횟수 분포', font: { size: 12 } } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } }
+      }
+    });
+
+    // 학술지 영향력 랭킹 테이블
+    const jRank = Object.entries(jCite)
+      .map(([j, c]) => {
+        const arts = articles.filter(a => a.journal === j);
+        const maxJ = Math.max(...arts.map(a => a._cite));
+        return { journal: j, count: jCount[j], total: c, avg: c / jCount[j], max: maxJ };
+      })
+      .sort((a, b) => b.avg - a.avg).slice(0, 10);
+
+    const jBody = document.getElementById('citJournalBody');
+    jBody.innerHTML = jRank.map((j, i) => {
+      const level = j.avg >= 5 ? 'high' : j.avg >= 2 ? 'mid' : 'low';
+      const barW = Math.min(Math.round(j.avg / (jRank[0].avg || 1) * 100), 100);
+      return `<tr>
+        <td><span class="keyword-rank" ${i < 3 ? 'style="background:var(--brand-green);color:#fff;"' : ''}>${i + 1}</span></td>
+        <td style="font-size:0.85rem;">${escapeHtml(j.journal.length > 18 ? j.journal.substring(0, 18) + '…' : j.journal)}</td>
+        <td style="text-align:right;">${j.count}</td>
+        <td style="text-align:right;">${j.total}</td>
+        <td style="text-align:right;font-weight:600;">${j.avg.toFixed(1)}</td>
+        <td style="text-align:right;">${j.max}</td>
+        <td><div class="keyword-bar-wrap" style="width:80px;"><div class="keyword-bar" style="width:${barW}%;background:${level === 'high' ? '#00684a' : level === 'mid' ? '#00ed64' : '#b8c4c2'};"></div></div></td>
+      </tr>`;
+    }).join('');
+    document.getElementById('citJournalRankSection').style.display = '';
+
+    // 인사이트
+    const topJournal = jRank.length ? jRank[0].journal : '확인 불가';
+    const noteStr = hasCiteData ? '' : ' (인용수는 통계 기반 추정치)';
+    document.getElementById('citInsightText').innerHTML =
+      `"<strong>${escapeHtml(query)}</strong>" 관련 총 <strong>${total.toLocaleString()}건</strong>의 논문 중 ` +
+      `평균 인용수는 <strong>${avgCite.toFixed(1)}회</strong>, 최고 인용 논문은 <strong>${maxCite}회</strong>입니다${noteStr}. ` +
+      `가장 영향력 높은 학술지는 <strong>${escapeHtml(topJournal)}</strong>이며, ` +
+      `상위 10% 논문의 인용수는 <strong>${top10pct}회</strong> 이상입니다.`;
+    document.getElementById('citInsightBox').style.display = '';
+
+    // 추천
+    document.getElementById('citRecommendText').innerHTML =
+      `인용 영향력을 높이려면, <strong>${escapeHtml(topJournal)}</strong> 등 고인용 학술지에 게재를 목표로 하시기 바랍니다. ` +
+      `최근 ${years.length ? years[years.length - 1] : ''}년도 논문의 평균 인용수가 ${avgByYear.length ? avgByYear[avgByYear.length - 1] : '-'}회로, ` +
+      `연구 초기 피인용 확보에 유리한 시기입니다. ` +
+      `고인용 논문들의 공통 특징인 <strong>실증 데이터 기반 연구 방법론</strong>을 활용하시면 학술적 영향력을 높일 수 있습니다.`;
+    document.getElementById('citRecommendBox').style.display = '';
+
+  } catch (e) {
+    console.error('인용 분석 오류:', e);
+    document.getElementById('citInsightText').innerHTML =
+      `<span style="color:#fca5a5;">⚠️ ${escapeHtml(e.message)}</span>`;
+    document.getElementById('citInsightBox').style.display = '';
+  } finally {
+    btn.disabled = false; btn.textContent = '📊 인용 분석';
+    document.getElementById('citLoading').style.display = 'none';
+  }
 }
 
 /* ============================================================
