@@ -6447,7 +6447,8 @@ async function executeSearch() {
     renderArticleList(result.articles);
     renderSearchCharts(result.articles, searchQuery);
 
-    runAIAnalysis(result.articles, searchQuery, field, period);
+    // AI 분석은 UI 블로킹 방지를 위해 별도 비동기 실행 (await 안 함)
+    runAIAnalysis(result.articles, searchQuery, field, period).catch(e => console.warn('AI 분석 실패:', e.message));
   } catch (e) {
     console.error('검색 오류:', e);
     document.getElementById('articleTableBody').innerHTML =
@@ -6767,7 +6768,8 @@ HTML 태그(h4, p, ul, li, strong)를 사용하여 구조화된 형태로 응답
         model: CLAUDE_CONFIG.MODEL,
         max_tokens: 4096,
         messages: [{ role: 'user', content: prompt }]
-      })
+      }),
+      signal: AbortSignal.timeout(30000)
     });
 
     if (!response.ok) {
