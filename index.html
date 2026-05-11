@@ -8351,6 +8351,47 @@ async function runKeywordAnalysis() {
 }
 
 // 논문에서 키워드 추출 및 빈도 계산
+// 명사 판별 필터 — 조사·부사·동사형·관사·접속사 등 비명사를 제거
+const _KW_STOPWORDS = new Set([
+  // 한국어 조사·어미·부사·접속사·대명사·동사형
+  '이','가','을','를','의','에','와','과','로','부터','까지','에서','으로','에게','한다','하는','하고',
+  '된','되는','되어','위한','통한','관한','대한','따른','통해','위해','대해','따라','있는','없는','있다','없다',
+  '중심으로','기반으로','바탕으로','활용한','활용','활용하여','연구','분석','방법','기반','중심','관련',
+  '및','또는','그리고','하지만','그러나','따라서','그래서','때문에','그것','이것','저것','것',
+  '대한','통한','위한','관한','따른','기반','중심','관련','대하여','통하여',
+  '하여','하며','하면','함으로','함으로써','있어서','대하여','관하여',
+  '등','수','중','간','상','내','외','전','후','별','적','화','형','용','성','론','법',
+  '제','개','각','총','약','매','본','당','소','대','다','더','잘','못','안','꼭',
+  '매우','아주','정말','참','좀','다시','또','바로','이미','아직','항상','자주','가장',
+  '그','이','저','어떤','모든','여러','같은','다른','새로운','주요','다양한','최근',
+  // 영어 불용어
+  'the','of','and','for','in','on','a','an','to','with','from','at','by','is','are','was','were',
+  'be','been','being','have','has','had','do','does','did','will','would','could','should','may','might',
+  'its','it','this','that','these','those','their','our','my','your','his','her','we','they','he','she',
+  'not','no','or','but','if','then','than','so','as','about','into','through','between','after','before',
+  'based','using','study','research','analysis','method','approach','case','effect','effects','new','use',
+  'can','also','one','two','three','first','second','third','however','therefore','thus','which','what','how'
+]);
+
+// 비명사 패턴: 한국어 동사·형용사 어미, 영어 동사형 등
+const _KW_NON_NOUN_RE = /^(.*[하되]는|.*[하되]고|.*[하되]며|.*[하되]여|.*으?로써?|.*에게서?|.*만큼|.*처럼|.*같이|.*보다|.*부터|.*까지|.*에서|.*하기|.*되기|.*함$|.*됨$|.*[었았였겠]다$|.*습니다$|.*ㅂ니다$)/;
+
+function isNounKeyword(w) {
+  if (!w || w.length < 2) return false;
+  const wl = w.toLowerCase();
+  // 불용어 목록 체크
+  if (_KW_STOPWORDS.has(wl)) return false;
+  // 순수 숫자·특수문자
+  if (/^[\d\s\-_.:;,!?'"()（）\[\]{}]+$/.test(w)) return false;
+  // 한 글자 한글/영문
+  if (/^[가-힣a-zA-Z]$/.test(w)) return false;
+  // 한국어 비명사 어미 패턴
+  if (_KW_NON_NOUN_RE.test(w)) return false;
+  // 영어 동사/부사형 접미사 (단, 복합 명사는 통과)
+  if (/^[a-zA-Z]+$/.test(w) && /^(using|based|related|including|according|regarding|during)$/i.test(w)) return false;
+  return true;
+}
+
 function extractKeywordsFromArticles(articles) {
   const freq = {};
   articles.forEach(a => {
@@ -8360,15 +8401,14 @@ function extractKeywordsFromArticles(articles) {
     // 키워드 필드에서 추출
     kwStr.split(/[;,；，|]/).forEach(w => {
       w = w.trim().replace(/^["'\s]+|["'\s]+$/g, '');
-      if (w && w.length >= 2 && w.length <= 20) {
+      if (w && w.length >= 2 && w.length <= 20 && isNounKeyword(w)) {
         freq[w] = (freq[w] || 0) + 1;
       }
     });
     // 제목에서 주요 단어 추출 (보조)
     const titleWords = titleStr.split(/[\s:：\-–—·,，;；()（）\[\]]+/).filter(w => w.length >= 2 && w.length <= 12);
     titleWords.forEach(w => {
-      // 일반 관사/조사 제외
-      if (/^(the|of|and|for|in|on|a|an|to|with|from|at|by|is|are|was|were|이|가|을|를|의|에|와|과|로|부터|까지)$/i.test(w)) return;
+      if (!isNounKeyword(w)) return;
       freq[w] = (freq[w] || 0) + 0.3;
     });
   });
@@ -8455,7 +8495,7 @@ function renderEmergingKeywords(articles, kwFreq) {
     const words = kwStr.split(/[;,；，|:\s]+/).filter(w => w.length >= 2 && w.length <= 15);
     words.forEach(w => {
       w = w.trim();
-      if (w.length < 2) return;
+      if (!isNounKeyword(w)) return;
       if (y >= currentYear - 2) { recent[w] = (recent[w] || 0) + 1; }
       else if (y >= currentYear - 5) { older[w] = (older[w] || 0) + 1; }
     });
