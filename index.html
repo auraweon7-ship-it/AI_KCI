@@ -4209,13 +4209,34 @@ function handleSearch() {
 /* ============================================================
    필터 적용
    ============================================================ */
+// 학문분야 value → KCI 검색에 효과적인 키워드 매핑
+const FIELD_KEYWORD_MAP = {
+  'history':'역사','philosophy':'철학','korean-lit':'국어국문','english-lit':'영어영문','german-lit':'독어독문',
+  'french-lit':'불어불문','chinese-lit':'중국어문학','japanese-lit':'일본어문학','classical-chinese':'한문','linguistics':'언어학',
+  'religious-studies':'종교','education':'교육','psychology':'심리','law':'법학','political-science':'정치외교',
+  'public-admin':'행정','economics':'경제','business':'경영','sociology':'사회학','geography':'지리',
+  'media-comm':'언론홍보','library-science':'문헌정보','mathematics':'수학','statistics':'통계','physics':'물리',
+  'chemistry':'화학','biology':'생물','earth-science':'지구과학','astronomy':'천문','atmospheric-science':'대기과학',
+  'ocean-science':'해양과학','mechanical-eng':'기계공학','electrical-eng':'전기전자','computer-eng':'컴퓨터',
+  'chemical-eng':'화학공학','materials-eng':'신소재','civil-eng':'토목','architecture-eng':'건축','industrial-eng':'산업공학',
+  'environmental-eng':'환경공학','energy-eng':'에너지','medicine':'의학','nursing':'간호','pharmacy':'약학',
+  'dentistry':'치의학','public-health':'보건','rehabilitation':'재활','basic-medicine':'기초의학',
+  'agriculture':'농학','horticulture':'원예','forestry':'산림','animal-science':'축산','food-science':'식품',
+  'fisheries':'수산','marine-production':'해양생산','marine-resource':'해양자원',
+  'fine-arts':'미술','design':'디자인','music':'음악','theater':'연극','film':'영화','dance':'무용',
+  'physical-edu':'체육','sports-science':'스포츠','convergence-edu':'융합교육','sts':'과학기술',
+  'cognitive-science':'인지과학','data-science':'데이터사이언스','ai-convergence':'인공지능','regional-convergence':'지역융합',
+  'interdisciplinary':'학제간'
+};
+
 async function applyFilter() {
   const fieldSelect = document.getElementById('filterField');
   const field = fieldSelect.value;
   const fieldLabel = fieldSelect.options[fieldSelect.selectedIndex].text;
   const period = document.getElementById('filterPeriod').value;
   const keyword = document.getElementById('filterKeyword').value.trim();
-  const searchQuery = keyword || (field !== 'all' ? fieldLabel : '');
+  // 키워드 입력 시 키워드 우선, 없으면 학문분야 매핑 사용
+  const searchQuery = keyword || (field !== 'all' ? (FIELD_KEYWORD_MAP[field] || fieldLabel) : '');
 
   if (!searchQuery) {
     alert('키워드를 입력하거나 학문분야를 선택해 주세요.');
@@ -4280,6 +4301,15 @@ async function applyFilter() {
     renderGrowthAnalysis(articles, searchQuery, total);
     renderCompareChart(searchQuery);
     renderClusters(articles);
+
+    // AI 심화 분석 자동 실행 (API 키가 설정된 경우)
+    if (CLAUDE_CONFIG.API_KEY) {
+      runTrendAIAnalysis().catch(e => console.warn('AI 심화 분석 자동 실행 실패:', e.message));
+    } else {
+      document.getElementById('aiResearchGap').innerHTML = '<span style="color:var(--gray-400);">설정에서 Claude API 키를 입력하면 자동 분석됩니다</span>';
+      document.getElementById('aiTopicSuggestions').innerHTML = '<span style="color:var(--gray-400);">설정에서 Claude API 키를 입력하면 자동 분석됩니다</span>';
+      document.getElementById('aiTrendPredict').innerHTML = '<span style="color:var(--gray-400);">설정에서 Claude API 키를 입력하면 자동 분석됩니다</span>';
+    }
 
   } catch(e) {
     console.error('분석 오류:', e);
@@ -4456,8 +4486,10 @@ function renderGrowthAnalysis(articles, keyword, total) {
 // 7. 분야 간 비교
 async function renderCompareChart(keyword1) {
   const field2Select = document.getElementById('compareField2');
+  const field2Value = field2Select.value;
   const field2Label = field2Select.options[field2Select.selectedIndex].text;
-  const xml2 = await kciSearch(field2Label, 1, 20);
+  const field2Query = FIELD_KEYWORD_MAP[field2Value] || field2Label;
+  const xml2 = await kciSearch(field2Query, 1, 20);
   const result2 = parseKCIArticles(xml2);
 
   const getYearData = (articles) => {
@@ -4535,16 +4567,28 @@ function renderClusters(articles) {
 // 10~12. AI 심화 분석 (Claude 연동)
 async function runTrendAIAnalysis() {
   if (!CLAUDE_CONFIG.API_KEY) {
-    alert('설정 페이지에서 Claude API 키를 먼저 입력해 주세요.');
+    const msg = '<span style="color:var(--gray-400);">설정 페이지에서 Claude API 키를 먼저 입력해 주세요.</span>';
+    document.getElementById('aiResearchGap').innerHTML = msg;
+    document.getElementById('aiTopicSuggestions').innerHTML = msg;
+    document.getElementById('aiTrendPredict').innerHTML = msg;
     return;
   }
   const articles = window._trendArticles || [];
   const keyword = window._trendKeyword || '';
-  if (articles.length === 0) { alert('먼저 분석하기 버튼으로 검색을 실행해 주세요.'); return; }
+  if (articles.length === 0) {
+    document.getElementById('aiResearchGap').innerHTML = '<span style="color:var(--gray-400);">먼저 분석하기 버튼으로 검색을 실행해 주세요.</span>';
+    return;
+  }
 
   const btn = document.getElementById('aiDeepBtn');
-  btn.disabled = true; btn.textContent = '분석 중...';
-  document.getElementById('aiDeepLoading').style.display = 'block';
+  if (btn) { btn.disabled = true; btn.textContent = '분석 중...'; }
+  const loadingEl = document.getElementById('aiDeepLoading');
+  if (loadingEl) loadingEl.style.display = 'block';
+
+  // 진행 상태 표시
+  document.getElementById('aiResearchGap').innerHTML = '<span style="color:var(--green);">&#x23F3; AI가 Research Gap을 분석 중...</span>';
+  document.getElementById('aiTopicSuggestions').innerHTML = '<span style="color:var(--green);">&#x23F3; 논문 주제를 생성 중...</span>';
+  document.getElementById('aiTrendPredict').innerHTML = '<span style="color:var(--green);">&#x23F3; 트렌드를 예측 중...</span>';
 
   const summaries = articles.slice(0,15).map((a,i) => `${i+1}. "${a.title}" (${a.year}, ${a.journal||'미상'}) 저자:${a.authors?.split(',')[0]||'미상'}`).join('\n');
 
@@ -4573,7 +4617,10 @@ ${summaries}
       body: JSON.stringify({ model: CLAUDE_CONFIG.MODEL, max_tokens: 3000, messages: [{ role: 'user', content: prompt }] }),
       signal: AbortSignal.timeout(90000)
     });
-    if (!response.ok) throw new Error(`API 오류 (${response.status})`);
+    if (!response.ok) {
+      const errBody = await response.text().catch(() => '');
+      throw new Error(`API ${response.status}: ${errBody.substring(0,100)}`);
+    }
     const data = await response.json();
     const text = data.content[0].text;
 
@@ -4587,10 +4634,15 @@ ${summaries}
     document.getElementById('aiTrendPredict').innerHTML = predMatch ? predMatch[1].trim() : '분석 결과를 확인해 주세요.';
   } catch(e) {
     console.error('AI 심화 분석 오류:', e);
-    document.getElementById('aiResearchGap').innerHTML = `<span style="color:#fca5a5;">오류: ${escapeHtml(e.message)}</span>`;
+    const errMsg = e.message.includes('401') ? 'API 키가 유효하지 않습니다. 설정에서 확인해 주세요.'
+      : e.message.includes('timeout') ? 'API 응답 시간 초과 (90초). 다시 시도해 주세요.'
+      : `오류: ${escapeHtml(e.message)}`;
+    document.getElementById('aiResearchGap').innerHTML = `<span style="color:#fca5a5;">${errMsg}</span>`;
+    document.getElementById('aiTopicSuggestions').innerHTML = '<span style="color:var(--gray-400);">AI 분석 실행 버튼으로 재시도하세요</span>';
+    document.getElementById('aiTrendPredict').innerHTML = '<span style="color:var(--gray-400);">AI 분석 실행 버튼으로 재시도하세요</span>';
   } finally {
-    btn.disabled = false; btn.textContent = 'AI 분석 실행';
-    document.getElementById('aiDeepLoading').style.display = 'none';
+    if (btn) { btn.disabled = false; btn.textContent = 'AI 분석 실행'; }
+    if (loadingEl) loadingEl.style.display = 'none';
   }
 }
 
