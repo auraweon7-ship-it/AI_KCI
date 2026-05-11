@@ -6309,16 +6309,17 @@ let searchState = {
   lastAIAnalysis: ''
 };
 
-/* KCI API 호출 (로컬 프록시 → 직접 호출 순서로 시도) */
+/* KCI API 호출 (로컬 프록시 → CORS 프록시 → 직접 호출 순서) */
 async function kciSearch(keyword, page = 1, displayCount = 20) {
   const params = `apiCode=articleSearch&key=${KCI_CONFIG.API_KEY}&keyword=${encodeURIComponent(keyword)}&displayCount=${displayCount}&pageCount=${page}`;
-  // 1순위: 로컬 프록시 서버 (node server.js)
-  // 2순위: 직접 호출 (CORS 허용 환경)
-  const urls = [
-    `/api/kci?${params}`,
-    `${KCI_CONFIG.BASE_URL}?${params}`
+  const directUrl = `${KCI_CONFIG.BASE_URL}?${params}`;
+  const attempts = [
+    { name: '로컬 프록시', url: `/api/kci?${params}` },
+    { name: 'CORS 프록시 1', url: `https://corsproxy.io/?url=${encodeURIComponent(directUrl)}` },
+    { name: 'CORS 프록시 2', url: `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}` },
+    { name: '직접 호출', url: directUrl }
   ];
-  for (const url of urls) {
+  for (const { name, url } of attempts) {
     try {
       const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
       if (!res.ok) continue;
@@ -6326,14 +6327,14 @@ async function kciSearch(keyword, page = 1, displayCount = 20) {
       if (!text.includes('<MetaData>') && !text.includes('<record>')) continue;
       const parser = new DOMParser();
       const xml = parser.parseFromString(text, 'text/xml');
-      console.log('KCI API 성공:', url.startsWith('/api') ? '로컬 프록시' : '직접 호출');
+      console.log('KCI API 성공:', name);
       return xml;
     } catch (e) {
-      console.warn('KCI 호출 실패:', url.substring(0, 30), e.message);
+      console.warn('KCI 호출 실패:', name, e.message);
       continue;
     }
   }
-  console.error('KCI API: 모든 시도 실패. node server.js 로 프록시 서버를 실행하세요.');
+  console.error('KCI API: 모든 시도 실패');
   return null;
 }
 

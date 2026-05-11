@@ -1,0 +1,6 @@
+name = "kci-proxy"
+main = "index.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+KCI_BASE_URL = "https://open.kci.go.kr/po/openapi/openApiSearch.kci"
