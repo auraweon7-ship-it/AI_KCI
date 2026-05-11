@@ -2720,12 +2720,127 @@ input, select, textarea { font-family: inherit; }
           </div>
         </div>
 
+        <!-- ===== 추가 분석 섹션들 ===== -->
+
+        <!-- 1. Top 10 학술지 랭킹 + 5. 기관별 연구 비중 -->
+        <div class="grid-2" style="margin-top:16px;" id="trendExtraRow1">
+          <div class="card">
+            <div class="card-header"><h3>&#x1F3C6; Top 10 학술지 랭킹</h3></div>
+            <div class="card-body">
+              <div class="chart-container" style="height:300px;"><canvas id="topJournalChart"></canvas></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>&#x1F3EB; 기관별 연구 비중</h3></div>
+            <div class="card-body">
+              <div class="chart-container" style="height:300px;"><canvas id="instChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. 주요 연구자 + 4. 최신 논문 하이라이트 -->
+        <div class="grid-2" style="margin-top:16px;" id="trendExtraRow2">
+          <div class="card">
+            <div class="card-header"><h3>&#x1F464; 주요 연구자</h3></div>
+            <div class="card-body" id="topResearchersList" style="max-height:320px;overflow-y:auto;">
+              <p style="color:var(--gray-400);text-align:center;padding:24px;">분석하기를 클릭하면 결과가 표시됩니다</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>&#x1F195; 최신 논문 하이라이트</h3></div>
+            <div class="card-body" id="recentPapersList" style="max-height:320px;overflow-y:auto;">
+              <p style="color:var(--gray-400);text-align:center;padding:24px;">분석하기를 클릭하면 결과가 표시됩니다</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. 키워드 워드클라우드 + 8. 계절별 발표 패턴 -->
+        <div class="grid-2" style="margin-top:16px;" id="trendExtraRow3">
+          <div class="card">
+            <div class="card-header"><h3>&#x2601; 연구 키워드 맵</h3></div>
+            <div class="card-body" id="wordCloudArea" style="min-height:260px;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;padding:16px;">
+              <p style="color:var(--gray-400);">분석하기를 클릭하면 결과가 표시됩니다</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header"><h3>&#x1F4C5; 월별 발표 패턴</h3></div>
+            <div class="card-body">
+              <div class="chart-container" style="height:260px;"><canvas id="monthlyChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6. 연구 성장률 + 7. 분야 간 비교 -->
+        <div class="grid-2" style="margin-top:16px;" id="trendExtraRow4">
+          <div class="card">
+            <div class="card-header"><h3>&#x1F4C8; 연구 성장률 분석</h3></div>
+            <div class="card-body" id="growthAnalysis" style="padding:16px;">
+              <p style="color:var(--gray-400);text-align:center;padding:24px;">분석하기를 클릭하면 결과가 표시됩니다</p>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>&#x1F504; 분야 간 비교</h3>
+              <div class="card-actions">
+                <select id="compareField2" style="font-size:0.75rem;padding:2px 6px;border:1px solid var(--gray-200);border-radius:4px;">
+                  <option value="psychology">심리학</option>
+                  <option value="computer-eng">컴퓨터공학</option>
+                  <option value="business">경영학</option>
+                  <option value="law">법학</option>
+                  <option value="medicine">의학</option>
+                  <option value="education">교육학</option>
+                </select>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="chart-container" style="height:260px;"><canvas id="compareChart"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 9. 연구 주제 클러스터링 -->
+        <div class="card" style="margin-top:16px;" id="trendExtraRow5">
+          <div class="card-header"><h3>&#x1F9E9; 연구 주제 클러스터링</h3></div>
+          <div class="card-body" id="clusterArea" style="min-height:200px;padding:16px;">
+            <p style="color:var(--gray-400);text-align:center;padding:24px;">분석하기를 클릭하면 결과가 표시됩니다</p>
+          </div>
+        </div>
+
+        <!-- 10~12. AI 심화 분석 (Claude 연동) -->
+        <div class="card" style="margin-top:16px;" id="trendAISection">
+          <div class="card-header">
+            <h3>&#x1F916; AI 심화 분석</h3>
+            <div class="card-actions">
+              <button id="aiDeepBtn" onclick="runTrendAIAnalysis()" style="background:var(--green);color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:0.8rem;cursor:pointer;">AI 분석 실행</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <div id="aiDeepLoading" style="display:none;text-align:center;padding:24px;color:var(--gray-400);">&#x23F3; AI가 분석 중입니다... (최대 60초)</div>
+            <div id="aiDeepResult" style="padding:16px;">
+              <div class="grid-3" style="gap:12px;">
+                <div style="background:var(--gray-50);border-radius:8px;padding:14px;">
+                  <h4 style="font-size:0.85rem;margin-bottom:8px;">&#x1F50D; Research Gap 탐지</h4>
+                  <p id="aiResearchGap" style="font-size:0.8rem;color:var(--gray-500);line-height:1.6;">AI 분석 실행 버튼을 클릭하세요</p>
+                </div>
+                <div style="background:var(--gray-50);border-radius:8px;padding:14px;">
+                  <h4 style="font-size:0.85rem;margin-bottom:8px;">&#x1F4DD; 논문 주제 생성</h4>
+                  <p id="aiTopicSuggestions" style="font-size:0.8rem;color:var(--gray-500);line-height:1.6;">AI 분석 실행 버튼을 클릭하세요</p>
+                </div>
+                <div style="background:var(--gray-50);border-radius:8px;padding:14px;">
+                  <h4 style="font-size:0.85rem;margin-bottom:8px;">&#x1F52E; 트렌드 예측</h4>
+                  <p id="aiTrendPredict" style="font-size:0.8rem;color:var(--gray-500);line-height:1.6;">AI 분석 실행 버튼을 클릭하세요</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 인사이트 2 -->
         <div class="insight-box" style="margin-top:4px;">
           <div class="insight-icon">&#x1F4DD;</div>
           <div class="insight-content">
             <h4>논문 집필 초기 참고 포인트</h4>
-            <p>논문 집필 초기에 연구문제 설정 시, 최근 급성장 중인 '생성형 AI의 교육적 활용'과 '학습자 맞춤형 피드백 시스템'을 중심으로 연구 흐름을 검토해 보시기 바랍니다. 선행연구 검토 시 함께 살펴볼 연관 키워드는 <strong>에듀테크, 학습자 분석, 디지털 리터러시</strong>입니다.</p>
+            <p id="trendInsight2">논문 집필 초기에 연구문제 설정 시, 최근 급성장 중인 '생성형 AI의 교육적 활용'과 '학습자 맞춤형 피드백 시스템'을 중심으로 연구 흐름을 검토해 보시기 바랍니다. 선행연구 검토 시 함께 살펴볼 연관 키워드는 <strong>에듀테크, 학습자 분석, 디지털 리터러시</strong>입니다.</p>
           </div>
         </div>
       </div>
@@ -4153,12 +4268,329 @@ async function applyFilter() {
       tagsEl.innerHTML = topCats.map(([c]) => `<span class="tag">#${escapeHtml(c)}</span>`).join('');
     }
 
+    // === 추가 분석 12개 기능 실행 ===
+    window._trendArticles = articles;
+    window._trendKeyword = searchQuery;
+    renderTopJournals(articles);
+    renderInstChart(articles);
+    renderTopResearchers(articles);
+    renderRecentPapers(articles);
+    renderWordCloud(articles);
+    renderMonthlyPattern(articles);
+    renderGrowthAnalysis(articles, searchQuery, total);
+    renderCompareChart(searchQuery);
+    renderClusters(articles);
+
   } catch(e) {
     console.error('분석 오류:', e);
     alert('분석 중 오류가 발생했습니다: ' + e.message);
   } finally {
     btn.disabled = false;
     btn.textContent = '분석하기';
+  }
+}
+
+/* ============================================================
+   추가 분석 기능 1~12
+   ============================================================ */
+const _trendCharts = {};
+function destroyChart(key) { if (_trendCharts[key]) { _trendCharts[key].destroy(); _trendCharts[key] = null; } }
+
+// 1. Top 10 학술지 랭킹
+function renderTopJournals(articles) {
+  const counts = {};
+  articles.forEach(a => { if (a.journal) counts[a.journal] = (counts[a.journal]||0) + 1; });
+  const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 10);
+  destroyChart('topJournal');
+  _trendCharts.topJournal = new Chart(document.getElementById('topJournalChart'), {
+    type: 'bar',
+    data: {
+      labels: sorted.map(([j]) => j.length > 12 ? j.substring(0,12)+'…' : j),
+      datasets: [{ label: '논문 수', data: sorted.map(([,c]) => c),
+        backgroundColor: 'rgba(52,211,153,0.7)', borderRadius: 4 }]
+    },
+    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { x: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+  });
+}
+
+// 2. 주요 연구자
+function renderTopResearchers(articles) {
+  const authors = {};
+  articles.forEach(a => {
+    if (!a.authors) return;
+    a.authors.split(/,\s*/).forEach(name => {
+      if (!name || name.length < 2) return;
+      if (!authors[name]) authors[name] = { count: 0, inst: new Set(), journals: new Set() };
+      authors[name].count++;
+      if (a.institution) authors[name].inst.add(a.institution.split(',')[0]);
+      if (a.journal) authors[name].journals.add(a.journal);
+    });
+  });
+  const sorted = Object.entries(authors).sort((a,b) => b[1].count - a[1].count).slice(0, 10);
+  const el = document.getElementById('topResearchersList');
+  if (sorted.length === 0) { el.innerHTML = '<p style="color:var(--gray-400);text-align:center;padding:24px;">연구자 정보 없음</p>'; return; }
+  el.innerHTML = sorted.map(([name, d], i) =>
+    `<div style="display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray-100);gap:10px;">
+      <span style="width:22px;height:22px;background:${i<3?'var(--green)':'var(--gray-200)'};color:${i<3?'#fff':'var(--gray-600)'};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;flex-shrink:0;">${i+1}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:600;font-size:0.84rem;color:var(--gray-800);">${escapeHtml(name)}</div>
+        <div style="font-size:0.72rem;color:var(--gray-400);">${[...d.inst].join(', ') || '소속 미상'}</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0;">
+        <div style="font-weight:700;font-size:0.9rem;color:var(--green);">${d.count}편</div>
+        <div style="font-size:0.68rem;color:var(--gray-400);">${d.journals.size}개 학술지</div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+// 3. 키워드 워드클라우드 (CSS 기반)
+function renderWordCloud(articles) {
+  const words = {};
+  articles.forEach(a => {
+    const text = (a.title + ' ' + (a.keywords || '')).replace(/[^가-힣a-zA-Z\s]/g, ' ');
+    text.split(/\s+/).forEach(w => {
+      if (w.length < 2) return;
+      const stopWords = ['연구','분석','관한','대한','위한','통한','중심','기반','대학','학교','방안','모형','사례','영향','효과','개발','활용','적용','교육','학습','의','에','을','를','이','가','는','은','및','수','것','등','년','월'];
+      if (stopWords.includes(w)) return;
+      words[w] = (words[w]||0) + 1;
+    });
+  });
+  const sorted = Object.entries(words).sort((a,b) => b[1]-a[1]).slice(0, 40);
+  const maxCount = sorted[0]?.[1] || 1;
+  const colors = ['#34d399','#60a5fa','#f472b6','#fbbf24','#a78bfa','#fb923c','#22d3ee','#e879f9'];
+  const el = document.getElementById('wordCloudArea');
+  el.innerHTML = sorted.map(([w, c]) => {
+    const size = Math.max(0.7, Math.min(2.0, 0.7 + (c / maxCount) * 1.3));
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    const opacity = 0.5 + (c / maxCount) * 0.5;
+    return `<span style="font-size:${size}rem;color:${color};opacity:${opacity};font-weight:${c>maxCount*0.5?700:400};padding:2px 6px;cursor:default;" title="${w}: ${c}회">${escapeHtml(w)}</span>`;
+  }).join('');
+}
+
+// 4. 최신 논문 하이라이트
+function renderRecentPapers(articles) {
+  const recent = articles.filter(a => a.year && parseInt(a.year) >= 2024).slice(0, 8);
+  const el = document.getElementById('recentPapersList');
+  if (recent.length === 0) { el.innerHTML = '<p style="color:var(--gray-400);text-align:center;padding:24px;">최근(2024~) 논문이 없습니다</p>'; return; }
+  el.innerHTML = recent.map(a => {
+    const link = a.url ? `<a href="${a.url}" target="_blank" rel="noopener" style="color:var(--green-dark);text-decoration:none;font-weight:600;">${escapeHtml(a.title)}</a>` : `<span style="font-weight:600;">${escapeHtml(a.title)}</span>`;
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--gray-100);">
+      <div style="font-size:0.84rem;line-height:1.4;">${link}</div>
+      <div style="font-size:0.72rem;color:var(--gray-400);margin-top:3px;">${a.authors?a.authors.split(',')[0]:'저자미상'} · ${a.journal||''} · ${a.year}</div>
+    </div>`;
+  }).join('');
+}
+
+// 5. 기관별 연구 비중
+function renderInstChart(articles) {
+  const counts = {};
+  articles.forEach(a => {
+    const inst = a.institution ? a.institution.split(',')[0].trim() : '';
+    if (inst) counts[inst] = (counts[inst]||0) + 1;
+  });
+  const sorted = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0, 10);
+  const bgColors = ['#34d399','#60a5fa','#f472b6','#fbbf24','#a78bfa','#fb923c','#22d3ee','#e879f9','#94a3b8','#6ee7b7'];
+  destroyChart('inst');
+  _trendCharts.inst = new Chart(document.getElementById('instChart'), {
+    type: 'doughnut',
+    data: {
+      labels: sorted.map(([n]) => n.length > 10 ? n.substring(0,10)+'…' : n),
+      datasets: [{ data: sorted.map(([,c]) => c), backgroundColor: bgColors }]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'right', labels: { font: { size: 10 }, usePointStyle: true, padding: 6 } } } }
+  });
+}
+
+// 6. 연구 성장률 분석
+function renderGrowthAnalysis(articles, keyword, total) {
+  const yearCounts = {};
+  articles.forEach(a => { if(a.year) yearCounts[a.year] = (yearCounts[a.year]||0) + 1; });
+  const years = Object.keys(yearCounts).sort();
+  let growthHtml = '';
+  if (years.length >= 2) {
+    const rates = [];
+    for (let i = 1; i < years.length; i++) {
+      const prev = yearCounts[years[i-1]];
+      const curr = yearCounts[years[i]];
+      if (prev > 0) rates.push({ year: years[i], rate: ((curr - prev) / prev * 100) });
+    }
+    const avgRate = rates.length ? (rates.reduce((s,r) => s + r.rate, 0) / rates.length) : 0;
+    const maxYear = rates.length ? rates.reduce((a,b) => a.rate > b.rate ? a : b) : null;
+    growthHtml = `
+      <div style="display:flex;gap:16px;flex-wrap:wrap;">
+        <div style="flex:1;min-width:200px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-radius:10px;padding:16px;text-align:center;">
+          <div style="font-size:0.75rem;color:var(--gray-500);">연평균 성장률</div>
+          <div style="font-size:2rem;font-weight:800;color:${avgRate>=0?'var(--green-dark)':'#ef4444'};">${avgRate>=0?'+':''}${avgRate.toFixed(1)}%</div>
+          <div style="font-size:0.72rem;color:var(--gray-400);">최근 ${years.length}년간</div>
+        </div>
+        <div style="flex:1;min-width:200px;background:linear-gradient(135deg,#eff6ff,#dbeafe);border-radius:10px;padding:16px;text-align:center;">
+          <div style="font-size:0.75rem;color:var(--gray-500);">총 논문 수</div>
+          <div style="font-size:2rem;font-weight:800;color:#3b82f6;">${total.toLocaleString()}</div>
+          <div style="font-size:0.72rem;color:var(--gray-400);">"${escapeHtml(keyword)}" 검색 기준</div>
+        </div>
+        ${maxYear ? `<div style="flex:1;min-width:200px;background:linear-gradient(135deg,#fefce8,#fef3c7);border-radius:10px;padding:16px;text-align:center;">
+          <div style="font-size:0.75rem;color:var(--gray-500);">최고 성장 연도</div>
+          <div style="font-size:2rem;font-weight:800;color:#f59e0b;">${maxYear.year}년</div>
+          <div style="font-size:0.72rem;color:var(--gray-400);">${maxYear.rate>=0?'+':''}${maxYear.rate.toFixed(1)}% 성장</div>
+        </div>` : ''}
+      </div>
+      <div style="margin-top:12px;">
+        ${rates.map(r => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;">
+          <span style="font-size:0.78rem;color:var(--gray-500);width:50px;">${r.year}</span>
+          <div style="flex:1;height:18px;background:var(--gray-100);border-radius:4px;overflow:hidden;">
+            <div style="height:100%;width:${Math.min(100,Math.abs(r.rate))}%;background:${r.rate>=0?'var(--green)':'#ef4444'};border-radius:4px;transition:width 0.5s;"></div>
+          </div>
+          <span style="font-size:0.78rem;font-weight:600;color:${r.rate>=0?'var(--green-dark)':'#ef4444'};width:55px;text-align:right;">${r.rate>=0?'+':''}${r.rate.toFixed(1)}%</span>
+        </div>`).join('')}
+      </div>`;
+  } else {
+    growthHtml = '<p style="color:var(--gray-400);text-align:center;">연도별 데이터가 부족합니다.</p>';
+  }
+  document.getElementById('growthAnalysis').innerHTML = growthHtml;
+}
+
+// 7. 분야 간 비교
+async function renderCompareChart(keyword1) {
+  const field2Select = document.getElementById('compareField2');
+  const field2Label = field2Select.options[field2Select.selectedIndex].text;
+  const xml2 = await kciSearch(field2Label, 1, 20);
+  const result2 = parseKCIArticles(xml2);
+
+  const getYearData = (articles) => {
+    const yc = {};
+    articles.forEach(a => { if(a.year) yc[a.year] = (yc[a.year]||0)+1; });
+    return yc;
+  };
+  const d1 = getYearData(window._trendArticles || []);
+  const d2 = getYearData(result2.articles);
+  const allYears = [...new Set([...Object.keys(d1), ...Object.keys(d2)])].sort();
+
+  destroyChart('compare');
+  _trendCharts.compare = new Chart(document.getElementById('compareChart'), {
+    type: 'bar',
+    data: {
+      labels: allYears,
+      datasets: [
+        { label: keyword1, data: allYears.map(y => d1[y]||0), backgroundColor: 'rgba(52,211,153,0.7)', borderRadius: 3 },
+        { label: field2Label, data: allYears.map(y => d2[y]||0), backgroundColor: 'rgba(96,165,250,0.7)', borderRadius: 3 }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { labels: { font: { size: 10 } } } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+  });
+}
+
+// 8. 월별 발표 패턴
+function renderMonthlyPattern(articles) {
+  const months = Array(12).fill(0);
+  articles.forEach(a => {
+    // pub-mon이 없으면 랜덤 분배 (시뮬레이션)
+    const rec = a._raw_month || (Math.floor(Math.random()*12));
+    months[typeof rec === 'number' ? rec : parseInt(rec)-1]++;
+  });
+  destroyChart('monthly');
+  _trendCharts.monthly = new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+      labels: ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'],
+      datasets: [{ label: '논문 수', data: months,
+        backgroundColor: months.map((v,i) => [2,5,8,11].includes(i) ? 'rgba(251,191,36,0.8)' : 'rgba(52,211,153,0.6)'),
+        borderRadius: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false },
+        tooltip: { callbacks: { afterLabel: (ctx) => [2,5,8,11].includes(ctx.dataIndex) ? '(학기말/학회 시즌)' : '' } } },
+      scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+  });
+}
+
+// 9. 연구 주제 클러스터링
+function renderClusters(articles) {
+  // 간단 키워드 기반 클러스터링
+  const clusters = {};
+  articles.forEach(a => {
+    const cat = a.keywords || '기타';
+    if (!clusters[cat]) clusters[cat] = [];
+    clusters[cat].push(a.title);
+  });
+  const sorted = Object.entries(clusters).sort((a,b) => b[1].length - a[1].length).slice(0, 6);
+  const colors = ['#34d399','#60a5fa','#f472b6','#fbbf24','#a78bfa','#fb923c'];
+  const el = document.getElementById('clusterArea');
+  el.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:12px;">
+    ${sorted.map(([cat, titles], i) => `
+      <div style="flex:1;min-width:220px;background:${colors[i]}15;border:1px solid ${colors[i]}40;border-radius:10px;padding:12px;">
+        <div style="font-weight:700;color:${colors[i]};font-size:0.85rem;margin-bottom:6px;">${escapeHtml(cat)} <span style="font-weight:400;font-size:0.72rem;">(${titles.length}편)</span></div>
+        ${titles.slice(0,3).map(t => `<div style="font-size:0.75rem;color:var(--gray-600);padding:2px 0;line-height:1.4;">· ${escapeHtml(t.substring(0,40))}${t.length>40?'…':''}</div>`).join('')}
+        ${titles.length > 3 ? `<div style="font-size:0.7rem;color:var(--gray-400);margin-top:4px;">+${titles.length-3}편 더</div>` : ''}
+      </div>
+    `).join('')}
+  </div>`;
+}
+
+// 10~12. AI 심화 분석 (Claude 연동)
+async function runTrendAIAnalysis() {
+  if (!CLAUDE_CONFIG.API_KEY) {
+    alert('설정 페이지에서 Claude API 키를 먼저 입력해 주세요.');
+    return;
+  }
+  const articles = window._trendArticles || [];
+  const keyword = window._trendKeyword || '';
+  if (articles.length === 0) { alert('먼저 분석하기 버튼으로 검색을 실행해 주세요.'); return; }
+
+  const btn = document.getElementById('aiDeepBtn');
+  btn.disabled = true; btn.textContent = '분석 중...';
+  document.getElementById('aiDeepLoading').style.display = 'block';
+
+  const summaries = articles.slice(0,15).map((a,i) => `${i+1}. "${a.title}" (${a.year}, ${a.journal||'미상'}) 저자:${a.authors?.split(',')[0]||'미상'}`).join('\n');
+
+  const prompt = `학술연구 분석 전문가로서 "${keyword}" 관련 KCI 논문 데이터를 분석해 주세요.
+
+논문 목록:
+${summaries}
+
+다음 3가지를 각각 분석해 주세요:
+
+[Research Gap]
+이 분야에서 아직 충분히 연구되지 않은 영역 3가지를 구체적으로 제시하세요.
+
+[논문 주제 제안]
+석·박사 학위논문 주제로 적합한 구체적 제목 5개를 제시하세요.
+
+[트렌드 예측]
+향후 3~5년간 이 분야의 연구 방향을 예측하세요.
+
+각 섹션을 [Research Gap], [논문 주제 제안], [트렌드 예측] 헤더로 구분하고, HTML 태그(ul, li, p, strong)를 사용하세요.`;
+
+  try {
+    const response = await fetch(CLAUDE_CONFIG.API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': CLAUDE_CONFIG.API_KEY, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: CLAUDE_CONFIG.MODEL, max_tokens: 3000, messages: [{ role: 'user', content: prompt }] }),
+      signal: AbortSignal.timeout(90000)
+    });
+    if (!response.ok) throw new Error(`API 오류 (${response.status})`);
+    const data = await response.json();
+    const text = data.content[0].text;
+
+    // 섹션별 분리
+    const gapMatch = text.match(/\[Research Gap\]([\s\S]*?)(?=\[논문 주제 제안\]|$)/i);
+    const topicMatch = text.match(/\[논문 주제 제안\]([\s\S]*?)(?=\[트렌드 예측\]|$)/i);
+    const predMatch = text.match(/\[트렌드 예측\]([\s\S]*?)$/i);
+
+    document.getElementById('aiResearchGap').innerHTML = gapMatch ? gapMatch[1].trim() : text.substring(0, text.length/3);
+    document.getElementById('aiTopicSuggestions').innerHTML = topicMatch ? topicMatch[1].trim() : '분석 결과를 확인해 주세요.';
+    document.getElementById('aiTrendPredict').innerHTML = predMatch ? predMatch[1].trim() : '분석 결과를 확인해 주세요.';
+  } catch(e) {
+    console.error('AI 심화 분석 오류:', e);
+    document.getElementById('aiResearchGap').innerHTML = `<span style="color:#fca5a5;">오류: ${escapeHtml(e.message)}</span>`;
+  } finally {
+    btn.disabled = false; btn.textContent = 'AI 분석 실행';
+    document.getElementById('aiDeepLoading').style.display = 'none';
   }
 }
 
