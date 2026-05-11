@@ -2223,7 +2223,7 @@ input, select, textarea { font-family: inherit; }
       <div class="dash-header-left">
         <button class="mobile-menu-btn" onclick="toggleSidebar()">&#x2630;</button>
         <div class="search-box">
-          <span class="search-icon">&#x1F50D;</span>
+          <span class="search-icon" onclick="handleSearch()" style="cursor:pointer;" title="검색">&#x1F50D;</span>
           <input type="text" placeholder="연구 키워드, 분야, 대학명 검색..." id="globalSearch" onkeydown="if(event.key==='Enter')handleSearch()">
         </div>
       </div>
@@ -2400,6 +2400,16 @@ input, select, textarea { font-family: inherit; }
               &#x1F50D; 검색 &amp; 분석
             </button>
           </div>
+          <div class="kw-quick-tags" style="margin-top:8px;">
+            <span class="kw-quick-tag" onclick="quickSrcSearch('인공지능')">인공지능</span>
+            <span class="kw-quick-tag" onclick="quickSrcSearch('교육')">교육</span>
+            <span class="kw-quick-tag" onclick="quickSrcSearch('빅데이터')">빅데이터</span>
+            <span class="kw-quick-tag" onclick="quickSrcSearch('딥러닝')">딥러닝</span>
+            <span class="kw-quick-tag" onclick="quickSrcSearch('경영학')">경영학</span>
+            <span class="kw-quick-tag" onclick="quickSrcSearch('환경')">환경</span>
+            <span class="kw-quick-tag" onclick="quickSrcSearch('심리학')">심리학</span>
+            <span class="kw-quick-tag" onclick="quickSrcSearch('의학')">의학</span>
+          </div>
         </div>
 
         <!-- 검색 결과 영역 -->
@@ -2463,16 +2473,17 @@ input, select, textarea { font-family: inherit; }
                   <span class="loading-text">KCI에서 논문을 검색하고 있습니다...</span>
                 </div>
                 <div style="overflow-x:auto;">
-                  <table class="data-table" id="articleTable" style="width:100%;min-width:900px;">
+                  <table class="data-table" id="articleTable" style="width:100%;min-width:960px;">
                     <thead>
                       <tr>
                         <th style="width:36px;text-align:center;">#</th>
-                        <th style="width:100px;">저자</th>
-                        <th style="width:100px;">소속</th>
-                        <th style="min-width:250px;">논문제목</th>
-                        <th style="width:60px;text-align:center;">발표년도</th>
-                        <th style="width:160px;">저널명</th>
-                        <th style="width:160px;">키워드</th>
+                        <th style="width:90px;">저자</th>
+                        <th style="width:90px;">소속</th>
+                        <th style="min-width:240px;">논문제목</th>
+                        <th style="width:55px;text-align:center;">년도</th>
+                        <th style="width:140px;">저널명</th>
+                        <th style="width:55px;text-align:center;cursor:pointer;" onclick="sortArticlesBy('citation')" title="클릭하여 정렬">인용수 &#x25BE;</th>
+                        <th style="width:140px;">키워드</th>
                       </tr>
                     </thead>
                     <tbody id="articleTableBody"></tbody>
@@ -4498,7 +4509,18 @@ function toggleSidebar() {
 function handleSearch() {
   const q = document.getElementById('globalSearch').value.trim();
   if (!q) return;
-  alert('검색어 "' + q + '"에 대한 KCI 논문 검색을 수행합니다.\n(실제 서비스에서는 KCI Open API와 연동됩니다.)');
+  // 검색 페이지로 이동
+  const navItem = document.querySelector('[data-page="ai-search"]');
+  if (navItem) navigateTo(navItem, 'ai-search');
+  // 검색어를 검색 입력란에 전달하고 실행
+  document.getElementById('srcKeyword').value = q;
+  document.getElementById('srcField').value = '';    // 전체 분야
+  setTimeout(() => executeSearch(), 200);
+}
+
+function quickSrcSearch(keyword) {
+  document.getElementById('srcKeyword').value = keyword;
+  executeSearch();
 }
 
 /* ============================================================
@@ -8058,7 +8080,7 @@ async function executeSearch() {
   } catch (e) {
     console.error('검색 오류:', e);
     document.getElementById('articleTableBody').innerHTML =
-      '<tr><td colspan="7" style="text-align:center;color:var(--danger);padding:24px;">검색 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.</td></tr>';
+      '<tr><td colspan="8" style="text-align:center;color:var(--danger);padding:24px;">검색 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.</td></tr>';
   } finally {
     document.getElementById('articleListLoading').style.display = 'none';
     btn.disabled = false;
@@ -8083,9 +8105,13 @@ function renderSearchStats(result) {
   document.getElementById('statJournals').textContent = journals.size || '-';
   document.getElementById('statJournalsTrend').textContent = '등재 학술지';
 
-  const avgCitation = (Math.random() * 5 + 1).toFixed(1);
+  // 실제 인용 데이터 기반 평균 계산
+  const citedArticles = result.articles.filter(a => a.citedCount >= 0);
+  const avgCitation = citedArticles.length > 0
+    ? (citedArticles.reduce((s, a) => s + a.citedCount, 0) / citedArticles.length).toFixed(1)
+    : '-';
   document.getElementById('statAvgCitation').textContent = avgCitation;
-  document.getElementById('statCitationTrend').textContent = '추정치';
+  document.getElementById('statCitationTrend').textContent = citedArticles.length > 0 ? `${citedArticles.length}편 기준` : '데이터 없음';
 }
 
 /* 논문 목록 렌더링 (테이블 형식) */
@@ -8114,6 +8140,9 @@ function renderArticleList(articles) {
     const authorsShort = authorArr.length > 0 ? escapeHtml(authorArr[0]) + (authorArr.length > 1 ? ` 외 ${authorArr.length - 1}명` : '') : '-';
     const affiliation = a.institution || '-';
     const kws = a.keywords ? escapeHtml(a.keywords.substring(0, 60)) + (a.keywords.length > 60 ? '...' : '') : '-';
+    const citBadge = a.citedCount > 0
+      ? `<span style="background:${a.citedCount >= 10 ? '#fee2e2' : a.citedCount >= 5 ? '#fef3c7' : '#ecfdf5'};color:${a.citedCount >= 10 ? '#dc2626' : a.citedCount >= 5 ? '#d97706' : '#059669'};padding:2px 8px;border-radius:10px;font-weight:600;font-size:0.78rem;">${a.citedCount}</span>`
+      : (a.citedCount === 0 ? '<span style="color:var(--gray-400);font-size:0.78rem;">0</span>' : '<span style="color:var(--gray-300);font-size:0.78rem;">-</span>');
     return `<tr>
       <td style="text-align:center;color:var(--gray-400);font-size:0.8rem;">${i + 1}</td>
       <td style="font-size:0.82rem;color:var(--gray-700);white-space:nowrap;">${authorsShort}</td>
@@ -8121,6 +8150,7 @@ function renderArticleList(articles) {
       <td style="font-size:0.84rem;line-height:1.4;">${titleLink}</td>
       <td style="text-align:center;font-size:0.82rem;color:var(--gray-600);">${a.year || '-'}</td>
       <td style="font-size:0.8rem;color:var(--gray-500);">${a.journal ? escapeHtml(a.journal) : '-'}</td>
+      <td style="text-align:center;">${citBadge}</td>
       <td style="font-size:0.78rem;color:var(--gray-400);">${kws}</td>
     </tr>`;
   }).join('');
@@ -8172,6 +8202,21 @@ async function goPage(page) {
     console.error('페이지 로드 오류:', e);
   } finally {
     document.getElementById('articleListLoading').style.display = 'none';
+  }
+}
+
+/* 논문 정렬 */
+let _articleSortDir = 'desc';
+function sortArticlesBy(key) {
+  if (!searchState.articles || !searchState.articles.length) return;
+  if (key === 'citation') {
+    _articleSortDir = _articleSortDir === 'desc' ? 'asc' : 'desc';
+    searchState.articles.sort((a, b) => {
+      const ca = a.citedCount >= 0 ? a.citedCount : -1;
+      const cb = b.citedCount >= 0 ? b.citedCount : -1;
+      return _articleSortDir === 'desc' ? cb - ca : ca - cb;
+    });
+    renderArticleList(searchState.articles);
   }
 }
 
