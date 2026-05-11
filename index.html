@@ -4370,7 +4370,12 @@ async function applyFilter() {
 
   } catch(e) {
     console.error('분석 오류:', e);
-    alert('분석 중 오류가 발생했습니다: ' + e.message);
+    const insightEl = document.getElementById('trendInsightText');
+    if (insightEl) {
+      insightEl.innerHTML = `<span style="color:#fca5a5;">⚠️ ${escapeHtml(e.message)}</span><br><span style="color:var(--gray-400);font-size:0.85rem;">분석하기 버튼을 다시 눌러 재시도해 주세요.</span>`;
+    }
+    const tagsEl = document.getElementById('trendInsightTags');
+    if (tagsEl) tagsEl.innerHTML = '';
   } finally {
     btn.disabled = false;
     btn.textContent = '분석하기';
@@ -6938,25 +6943,35 @@ async function kciSearch(keyword, page = 1, displayCount = 20) {
     { name: '로컬 프록시', url: `/api/kci?${params}` },
     { name: 'CORS 프록시 1', url: `https://corsproxy.io/?url=${encodeURIComponent(directUrl)}` },
     { name: 'CORS 프록시 2', url: `https://api.allorigins.win/raw?url=${encodeURIComponent(directUrl)}` },
+    { name: 'CORS 프록시 3', url: `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(directUrl)}` },
     { name: '직접 호출', url: directUrl }
   ];
+
+  function isValidKciXml(text) {
+    return text && (text.includes('<MetaData>') || text.includes('<record>') || text.includes('<total>'));
+  }
+
+  // 각 프록시에 대해 최대 2회 재시도
   for (const { name, url } of attempts) {
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(12000) });
-      if (!res.ok) continue;
-      const text = await res.text();
-      if (!text.includes('<MetaData>') && !text.includes('<record>')) continue;
-      const parser = new DOMParser();
-      const xml = parser.parseFromString(text, 'text/xml');
-      console.log('KCI API 성공:', name);
-      return xml;
-    } catch (e) {
-      console.warn('KCI 호출 실패:', name, e.message);
-      continue;
+    for (let retry = 0; retry < 2; retry++) {
+      try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(15000) });
+        if (!res.ok) break; // 이 프록시는 스킵
+        const text = await res.text();
+        if (!isValidKciXml(text)) break; // 이 프록시는 스킵
+        const parser = new DOMParser();
+        const xml = parser.parseFromString(text, 'text/xml');
+        console.log(`KCI API 성공: ${name}${retry > 0 ? ` (재시도 ${retry})` : ''}`);
+        return xml;
+      } catch (e) {
+        console.warn(`KCI 호출 실패: ${name} (시도 ${retry + 1}/2)`, e.message);
+        if (retry === 0) await new Promise(r => setTimeout(r, 1000)); // 1초 대기 후 재시도
+        continue;
+      }
     }
   }
-  console.error('KCI API: 모든 시도 실패');
-  return null;
+  console.error('KCI API: 모든 프록시 시도 실패');
+  throw new Error('KCI API 연결에 실패했습니다. 잠시 후 다시 시도해 주세요.');
 }
 
 function parseKCIArticles(xml) {
