@@ -1683,7 +1683,12 @@ input, select, textarea { font-family: inherit; }
   .sidebar-overlay.active { display: block; }
   .main-content { margin-left: 0; }
   .mobile-menu-btn { display: flex; }
-  .search-box input { width: 200px; }
+  .dash-header { padding: 0 12px; gap: 8px; }
+  .search-box input { width: 120px; font-size: 0.8rem; padding: 8px 12px 8px 34px; height: 38px; }
+  .search-box .search-icon { left: 10px; font-size: 0.8rem; }
+  .dash-header-right { gap: 4px; }
+  .dash-header-right .header-btn { width: 34px; height: 34px; }
+  .google-login-btn { font-size: 0.75rem; padding: 6px 10px; }
   .dash-content { padding: 20px 16px; }
   .stat-cards { grid-template-columns: 1fr 1fr; }
   .card-header { flex-direction: column; align-items: flex-start; gap: 8px; }
@@ -1982,9 +1987,92 @@ input, select, textarea { font-family: inherit; }
   .search-stat-cards { grid-template-columns: 1fr 1fr; }
   .result-tabs { flex-wrap: wrap; }
   .report-actions { flex-direction: column; }
+
+  /* 페이지 제목 */
+  .page-title h1 { font-size: 1.25rem; }
+  .page-title p { font-size: 0.82rem; }
+
+  /* 테이블 가로 스크롤 */
+  .table-responsive, .card-body:has(table) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  table { min-width: 600px; }
+
+  /* 필터바 */
+  .filter-bar { flex-direction: column; gap: 10px; }
+  .filter-item { width: 100%; }
+  .filter-item select, .filter-item input { width: 100%; }
+
+  /* 키워드 검색 행 */
+  .kw-search-row, [style*="display:flex"][style*="gap"] {
+    flex-wrap: wrap !important;
+  }
+
+  /* 카드 호버 끄기 (터치 디바이스) */
+  .card:hover, .stat-card:hover {
+    transform: none;
+  }
+
+  /* 연구자 네트워크 필터 */
+  #page-network .filter-bar,
+  #page-network [style*="display:flex"] {
+    flex-wrap: wrap;
+  }
+
+  /* 캔버스 반응형 */
+  canvas { max-width: 100%; height: auto !important; }
+
+  /* 인사이트 박스 */
+  .insight-box { flex-direction: column; }
+
+  /* 검색 버튼 */
+  .search-btn { width: 100%; }
+
+  /* 사용법 타임라인 */
+  .usage-timeline { padding-left: 16px; }
+  .timeline-item h4 { font-size: 0.9rem; }
+  .timeline-item p { font-size: 0.82rem; }
+
+  /* 설정 폼 */
+  .settings-form .form-group input,
+  .settings-form .form-group select,
+  .settings-form .form-group textarea { font-size: 16px; } /* iOS zoom 방지 */
+
+  /* 그리드 강제 1열 */
+  .grid-2, .grid-3 { grid-template-columns: 1fr !important; }
+
+  /* 푸터 */
+  footer { margin-top: 32px; padding: 24px 16px; }
 }
+
 @media (max-width: 480px) {
   .search-stat-cards { grid-template-columns: 1fr; }
+
+  /* 더 작은 화면 */
+  .page-title h1 { font-size: 1.1rem; }
+  .stat-card { padding: 16px 18px; }
+  .stat-card .stat-value { font-size: 1.4rem; }
+  .stat-card .stat-icon { width: 38px; height: 38px; font-size: 1rem; }
+  .card-header { padding: 14px 16px; }
+  .card-body { padding: 14px 16px; }
+  .dash-content { padding: 16px 12px; }
+
+  /* 탭 글씨 줄임 */
+  .result-tab { font-size: 0.78rem; padding: 8px 10px; }
+
+  /* 버튼 풀폭 */
+  .save-btn { width: 100%; text-align: center; }
+  .save-btn + .save-btn { margin-top: 8px; }
+
+  /* 선행연구 카드 내 플렉스 */
+  [style*="display:flex"][style*="gap:10px"] {
+    flex-direction: column !important;
+  }
+
+  /* 모바일 헤더 검색 */
+  .search-box input { width: 140px; font-size: 0.8rem; }
+  .header-actions { gap: 8px; }
 }
 </style>
 </head>
