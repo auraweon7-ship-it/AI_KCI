@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI KCI - AI 기반 학술연구 지원 대시보드</title>
+<title>연구나침반 AI - AI 기반 학술연구 지원 대시보드</title>
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <!-- Google Maps -->
@@ -1978,8 +1978,8 @@ input, select, textarea { font-family: inherit; }
   <!-- 네비게이션 -->
   <nav class="landing-nav" id="landingNav">
     <div class="landing-logo">
-      <div class="logo-icon">K</div>
-      AI KCI
+      <div class="logo-icon">🧭</div>
+      연구나침반 AI
     </div>
     <ul class="landing-nav-links">
       <li><a href="#features">주요 기능</a></li>
@@ -1996,7 +1996,7 @@ input, select, textarea { font-family: inherit; }
         제8회 교육 공공데이터 AI 활용대회
       </div>
       <h1>공공데이터와 AI로 찾는<br><span class="gradient-text">나만의 연구 인사이트</span></h1>
-      <p>논문 주제 탐색부터 선행연구 분석, 연구동향 파악, 연구자 네트워크 탐색까지. AI KCI가 대학원생과 교강사의 연구 여정을 지원합니다.</p>
+      <p>논문 주제 탐색부터 선행연구 분석, 연구동향 파악, 연구자 네트워크 탐색까지. 연구나침반 AI가 대학원생과 교강사의 연구 여정을 지원합니다.</p>
       <div class="hero-actions">
         <button class="btn-primary" onclick="startDashboard()">
           분석 시작
@@ -2122,8 +2122,8 @@ input, select, textarea { font-family: inherit; }
   <!-- 사이드바 -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header">
-      <div class="sidebar-logo">K</div>
-      <div class="sidebar-brand">AI <span>KCI</span></div>
+      <div class="sidebar-logo">🧭</div>
+      <div class="sidebar-brand">연구나침반 <span>AI</span></div>
     </div>
     <nav class="sidebar-nav">
       <!-- AI 분석 -->
@@ -4373,7 +4373,7 @@ input, select, textarea { font-family: inherit; }
       <div class="page-section" id="page-guide">
         <div class="page-title">
           <h1>&#x1F4D6; 활용 방법</h1>
-          <p>대학원생과 교강사가 AI KCI를 효과적으로 활용하는 방법을 안내합니다</p>
+          <p>대학원생과 교강사가 연구나침반 AI를 효과적으로 활용하는 방법을 안내합니다</p>
         </div>
 
         <div class="grid-2">
@@ -4430,7 +4430,7 @@ input, select, textarea { font-family: inherit; }
           <div class="insight-icon">&#x2139;</div>
           <div class="insight-content">
             <h4>데이터 출처 안내</h4>
-            <p>AI KCI는 한국학술지인용색인(KCI) Open API와 교육 공공데이터를 기반으로 분석 결과를 제공합니다. 모든 데이터는 공공데이터포털 및 KCI 공식 서비스를 통해 수집되며, 개인정보를 수집하지 않습니다.</p>
+            <p>연구나침반 AI는 한국학술지인용색인(KCI) Open API와 교육 공공데이터를 기반으로 분석 결과를 제공합니다. 모든 데이터는 공공데이터포털 및 KCI 공식 서비스를 통해 수집되며, 개인정보를 수집하지 않습니다.</p>
           </div>
         </div>
       </div>
@@ -8650,7 +8650,7 @@ function downloadHTMLReport() {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI KCI 분석 보고서 - ${escapeHtml(keyword)}</title>
+<title>연구나침반 AI 분석 보고서 - ${escapeHtml(keyword)}</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -8699,13 +8699,13 @@ function downloadHTMLReport() {
 <body>
 <div class="report">
   <div class="report-header">
-    <h1>AI KCI 분석 보고서</h1>
+    <h1>연구나침반 AI 분석 보고서</h1>
     <p>"${escapeHtml(keyword)}" 키워드 기반 학술 연구 동향 분석</p>
     <div class="report-meta">
       <span>&#x1F4C5; ${dateStr}</span>
       <span>&#x1F4DA; ${fieldName}</span>
       <span>&#x1F4C4; 총 ${searchState.totalCount.toLocaleString()}건</span>
-      <span>&#x1F916; AI KCI 자동 생성</span>
+      <span>&#x1F916; 연구나침반 AI 자동 생성</span>
     </div>
   </div>
 
@@ -8731,13 +8731,13 @@ function downloadHTMLReport() {
 
   <div class="section">
     <h2>&#x2139;&#xFE0F; 보고서 안내</h2>
-    <p>본 보고서는 AI KCI 대시보드에서 자동 생성되었습니다.</p>
+    <p>본 보고서는 연구나침반 AI 대시보드에서 자동 생성되었습니다.</p>
     <p>데이터 출처: 한국학술지인용색인(KCI) Open API / AI 분석: Claude (Anthropic)</p>
     <p>본 보고서는 연구 참고용이며, 학술적 판단의 최종 결정은 연구자에게 있습니다.</p>
   </div>
 
   <div class="footer">
-    <p>AI KCI - 공공데이터와 AI로 찾는 나만의 연구 인사이트</p>
+    <p>연구나침반 AI - 공공데이터와 AI로 찾는 나만의 연구 인사이트</p>
     <p>제8회 교육 공공데이터 AI 활용대회 출품작 | ${dateStr} 생성</p>
   </div>
 </div>
