@@ -5,7 +5,7 @@
       "name": "ai-kci",
       "runtimeExecutable": "node",
       "runtimeArgs": ["server.js"],
-      "autoPort": true
+      "port": 3000
     }
   ]
 }

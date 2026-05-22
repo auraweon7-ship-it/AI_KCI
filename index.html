@@ -2177,7 +2177,7 @@ input, select, textarea { font-family: inherit; }
         </div>
         <div class="nav-item" data-page="writing-tools" onclick="navigateTo(this, 'writing-tools')">
           <span class="nav-icon">&#x270D;</span>
-          논문 작성 도구
+          논문 작성 도우미
         </div>
       </div>
       <!-- 대시보드 소개 -->
@@ -4018,18 +4018,18 @@ input, select, textarea { font-family: inherit; }
         </div>
       </div>
 
-      <!-- ======================== 12. 논문 작성 도구 (통합) ======================== -->
+      <!-- ======================== 12. 논문 작성 도우미 (통합) ======================== -->
       <div class="page-section" id="page-writing-tools">
         <div class="page-title">
-          <h1>&#x270D; 논문 작성 도구</h1>
-          <p>AI 초록 생성과 참고문헌 자동 포맷팅으로 논문 작성을 지원합니다</p>
+          <h1>&#x270D; 논문 작성 도우미</h1>
+          <p>AI 논문 구조 생성과 참고문헌 자동 포맷팅으로 논문 작성을 지원합니다</p>
         </div>
         <div class="result-tabs">
-          <button class="result-tab active" onclick="switchWriteTab(this, 'tab-abstract-helper')">&#x1F4DD; 초록 구조화</button>
+          <button class="result-tab active" onclick="switchWriteTab(this, 'tab-abstract-helper')">&#x1F4DD; 논문 구조화</button>
           <button class="result-tab" onclick="switchWriteTab(this, 'tab-ref-format')">&#x1F4CB; 참고문헌 포맷팅</button>
         </div>
 
-        <!-- Tab 1: 초록 구조화 도우미 -->
+        <!-- Tab 1: 논문 구조화 도우미 -->
         <div class="tab-content active" id="tab-abstract-helper">
           <div class="grid-2">
             <div class="card">
@@ -4042,15 +4042,24 @@ input, select, textarea { font-family: inherit; }
                   <div class="form-group"><label>연구 방법</label><textarea id="ahMethod" placeholder="사용한 연구 방법을 기술하세요 (예: 실험연구, 설문조사)" rows="2"></textarea></div>
                   <div class="form-group"><label>주요 결과</label><textarea id="ahResults" placeholder="핵심 연구 결과를 기술하세요" rows="2"></textarea></div>
                   <div class="form-group"><label>키워드</label><input type="text" id="ahKeywords" placeholder="예: 인공지능, 적응형 학습, 학업성취도"></div>
-                  <button class="save-btn" onclick="runAbstractHelper()">초록 생성</button>
+                  <button class="save-btn" onclick="runAbstractHelper()">논문 구조 생성</button>
                 </div>
               </div>
             </div>
             <div>
-              <div id="ahLoading" style="display:none;"><div class="loading-spinner"><div class="spinner"></div><div class="loading-text">AI가 초록을 구조화하고 있습니다...</div></div></div>
-              <div class="card" id="ahResultCard" style="display:none;">
+              <div id="ahLoading" style="display:none;"><div class="loading-spinner"><div class="spinner"></div><div class="loading-text">AI가 논문 구조를 생성하고 있습니다...</div></div></div>
+              <div class="card" id="ahTocCard" style="display:none;">
                 <div class="card-header">
-                  <h3>&#x1F4C4; 생성된 초록</h3>
+                  <h3>&#x1F4D1; 논문 목차</h3>
+                  <button class="report-btn outline" onclick="navigator.clipboard.writeText(document.getElementById('ahTocOutput').innerText);this.textContent='복사됨!';setTimeout(()=>this.textContent='복사',1500)" style="padding:6px 14px; font-size:0.8rem;">복사</button>
+                </div>
+                <div class="card-body">
+                  <div id="ahTocOutput" style="font-size:0.92rem; line-height:1.9; color:var(--ink);"></div>
+                </div>
+              </div>
+              <div class="card" id="ahResultCard" style="display:none;margin-top:20px;">
+                <div class="card-header">
+                  <h3>&#x1F4C4; 논문 개요 (약 1000자)</h3>
                   <div style="display:flex;gap:8px;align-items:center;">
                     <span id="ahWordCount" style="font-size:0.78rem;color:var(--steel);padding:4px 10px;background:var(--cloud);border-radius:12px;"></span>
                     <button class="report-btn outline" onclick="toggleAbstractLang()" style="padding:6px 14px; font-size:0.8rem;" id="ahLangBtn">한/영 전환</button>
@@ -4062,7 +4071,7 @@ input, select, textarea { font-family: inherit; }
                 </div>
               </div>
               <div class="card" id="ahSimilarCard" style="display:none;margin-top:20px;">
-                <div class="card-header"><h3>&#x1F50E; 유사 초록 참고 논문</h3></div>
+                <div class="card-header"><h3>&#x1F50E; 유사 논문 참고</h3></div>
                 <div class="card-body" style="padding:0;">
                   <div style="overflow-x:auto;">
                     <table class="data-table" style="width:100%;min-width:500px;">
@@ -9116,7 +9125,7 @@ async function runResearchGap() {
 }
 
 /* ============================================================
-   3. 초록 구조화 도우미
+   3. 논문 구조화 도우미
    ============================================================ */
 let ahKoreanText = '', ahEnglishText = '', ahCurrentLang = 'ko';
 async function runAbstractHelper() {
@@ -9128,12 +9137,13 @@ async function runAbstractHelper() {
   const keywords = document.getElementById('ahKeywords').value.trim();
   if (!title || !purpose) { alert('논문 제목과 연구 목적은 필수입니다.'); return; }
   document.getElementById('ahResultCard').style.display = 'none';
+  document.getElementById('ahTocCard').style.display = 'none';
   document.getElementById('ahSimilarCard').style.display = 'none';
   document.getElementById('ahLoading').style.display = 'block';
   ahCurrentLang = 'ko'; ahKoreanText = ''; ahEnglishText = '';
   document.getElementById('ahLangBtn').textContent = '한/영 전환';
   try {
-    // Search for similar abstracts in KCI
+    // Search for similar papers in KCI
     let similarContext = '';
     const searchTerm = keywords ? keywords.split(',')[0].trim() : title.substring(0, 15);
     try {
@@ -9141,8 +9151,7 @@ async function runAbstractHelper() {
       const parsed = parseKCIArticles(xml);
       if (parsed.articles.length > 0) {
         const simArticles = parsed.articles.filter(a => a.abstractText).slice(0, 5);
-        similarContext = simArticles.map((a, i) => `참고 초록 ${i+1}: "${a.title}" - ${(a.abstractText || '').substring(0, 150)}`).join('\n');
-        // Show similar papers table
+        similarContext = simArticles.map((a, i) => `참고논문 ${i+1}: "${a.title}" - ${(a.abstractText || '').substring(0, 150)}`).join('\n');
         document.getElementById('ahSimilarBody').innerHTML = parsed.articles.slice(0, 8).map((a, i) => {
           const link = a.url ? `<a href="${escapeHtml(a.url)}" target="_blank" style="color:var(--brand-green-dark);text-decoration:none;">${escapeHtml(a.title).substring(0,40)}</a>` : escapeHtml(a.title).substring(0,40);
           return `<tr><td style="text-align:center;">${i+1}</td><td>${link}</td><td>${escapeHtml(a.authors).substring(0,15)}</td><td>${escapeHtml(a.journal).substring(0,15)}</td><td>${a.year}</td></tr>`;
@@ -9151,19 +9160,29 @@ async function runAbstractHelper() {
       }
     } catch(e) { /* KCI search optional */ }
 
+    const inputInfo = `논문 제목: ${title}\n연구 분야: ${field || '미지정'}\n연구 목적: ${purpose}\n연구 방법: ${method || '미지정'}\n주요 결과: ${results || '미지정'}\n키워드: ${keywords || '미지정'}`;
+
+    // 1) 목차 생성
+    const tocText = await callClaude(
+      '당신은 학술 논문 구조 설계 전문가입니다. 한국어로 답변하세요. HTML 형식을 사용하세요.',
+      `다음 연구 정보를 바탕으로 학술 논문의 상세 목차를 생성해주세요.\n\n${inputInfo}\n${similarContext ? '\n동일 분야 유사 논문 참고:\n' + similarContext : ''}\n\n요구사항:\n- <h4>로 대제목(I, II, III...), <strong>으로 소제목(1, 2, 3...), 일반텍스트로 세부항목(가, 나, 다...)\n- 서론, 이론적 배경, 연구 방법, 연구 결과, 결론 및 제언 구조\n- 각 장에 2~4개의 소제목, 필요시 세부항목 포함\n- 연구 주제에 맞는 구체적 소제목 작성`
+    );
+    document.getElementById('ahTocOutput').innerHTML = tocText;
+    document.getElementById('ahTocCard').style.display = 'block';
+
+    // 2) 논문 개요 (~1000자)
     const aiText = await callClaude(
       '당신은 학술 논문 작성 전문가입니다. 한국어로 답변하세요. 학술적이고 객관적인 어투를 사용하세요.',
-      `다음 정보를 바탕으로 학술 논문 초록을 연구목적·연구방법·연구결과·결론 4단 구조로 작성해주세요.\n\n논문 제목: ${title}\n연구 분야: ${field || '미지정'}\n연구 목적: ${purpose}\n연구 방법: ${method || '미지정'}\n주요 결과: ${results || '미지정'}\n키워드: ${keywords || '미지정'}\n${similarContext ? '\n동일 분야 유사 논문 초록 참고:\n' + similarContext : ''}\n\n요구사항:\n- 각 섹션을 <strong>연구목적:</strong>, <strong>연구방법:</strong>, <strong>연구결과:</strong>, <strong>결론:</strong>으로 구분\n- 전체 200-300자 내외\n- 학술적이고 객관적인 문체\n- 마지막에 <br><br><strong>키워드:</strong>로 추천 키워드 5개 제시`
+      `다음 정보를 바탕으로 학술 논문의 개요를 약 1000자 분량으로 작성해주세요.\n\n${inputInfo}\n${similarContext ? '\n동일 분야 유사 논문 참고:\n' + similarContext : ''}\n\n요구사항:\n- <strong>1. 서론:</strong> 연구 배경, 필요성, 연구 목적 (약 250자)\n- <strong>2. 연구 방법:</strong> 연구 설계, 대상, 도구, 분석 방법 (약 200자)\n- <strong>3. 연구 결과:</strong> 핵심 발견사항, 통계적 의미 (약 250자)\n- <strong>4. 결론:</strong> 요약, 시사점, 한계점, 후속 연구 제언 (약 200자)\n- <strong>5. 키워드:</strong> 추천 키워드 5~7개\n- 전체 약 1000자 내외\n- 학술적이고 객관적인 문체\n- 각 섹션 사이에 <br> 삽입`
     );
     ahKoreanText = aiText;
     document.getElementById('ahOutput').innerHTML = aiText;
-    // Word count
     const plainText = document.getElementById('ahOutput').innerText;
     const charCount = plainText.replace(/\s/g, '').length;
     const wordCount = plainText.split(/\s+/).filter(w => w).length;
     document.getElementById('ahWordCount').textContent = `${charCount}자 / ${wordCount}단어`;
     document.getElementById('ahResultCard').style.display = 'block';
-  } catch (e) { alert('초록 생성 중 오류: ' + e.message); }
+  } catch (e) { alert('논문 구조 생성 중 오류: ' + e.message); }
   finally { document.getElementById('ahLoading').style.display = 'none'; }
 }
 async function toggleAbstractLang() {
