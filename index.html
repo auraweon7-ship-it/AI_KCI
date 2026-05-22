@@ -1725,9 +1725,10 @@ input, select, textarea { font-family: inherit; }
 .compare-card .stat-value { font-weight:600; color:var(--gray-800); }
 
 /* 범위 슬라이더 */
-.range-filter { display:flex; align-items:center; gap:8px; font-size:0.82rem; color:var(--gray-600); }
-.range-filter input[type=range] { width:120px; accent-color:var(--brand-green); cursor:pointer; }
-.range-filter .range-val { min-width:40px; text-align:right; font-weight:600; color:var(--green-dark); }
+.range-filter { display:flex; align-items:center; gap:8px; font-size:0.82rem; color:var(--gray-600); flex-wrap:wrap; }
+.range-filter label { white-space:nowrap; font-weight:600; min-width:60px; }
+.range-filter input[type=range] { flex:1; min-width:60px; max-width:160px; accent-color:var(--brand-green); cursor:pointer; }
+.range-filter .range-val { min-width:36px; text-align:right; font-weight:600; color:var(--green-dark); }
 
 /* 지도 토글 버튼 */
 .map-toggle-group { display:flex; gap:6px; }
@@ -2378,9 +2379,32 @@ input, select, textarea { font-family: inherit; }
   }
 
   /* 지도 필터바 */
-  #page-map-univ .filter-bar { flex-direction: column; }
+  #page-map-univ .filter-bar { flex-direction: column; gap: 10px; }
   #page-map-univ .filter-bar select,
   #page-map-univ .filter-bar button { width: 100%; }
+  #page-map-univ .filter-item { width: 100%; }
+
+  /* 범위 슬라이더 모바일 */
+  .range-filter {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .range-filter label {
+    width: 100%;
+    margin-bottom: -2px;
+  }
+  .range-filter input[type=range] {
+    flex: 1;
+    min-width: 80px;
+    max-width: none;
+  }
+
+  /* 히트맵 테이블 스크롤 */
+  #page-map-univ .card-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  /* 지도 토글 버튼 */
+  .map-toggle-group { flex-wrap: wrap; }
+  .map-toggle-btn { font-size: 0.72rem; padding: 4px 10px; }
 
   /* 사용법 타임라인 */
   .usage-timeline { padding-left: 16px; }
