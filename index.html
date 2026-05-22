@@ -4141,7 +4141,7 @@ input, select, textarea { font-family: inherit; }
 
         <div class="grid-2">
           <div class="card">
-            <div class="card-header"><h3>연구자 프로필 설정</h3></div>
+            <div class="card-header"><h3>맞춤 인사이트 설정</h3></div>
             <div class="card-body">
               <div class="settings-form">
                 <div class="form-group">
@@ -4273,7 +4273,10 @@ input, select, textarea { font-family: inherit; }
                   </div>
                   <p style="font-size:0.72rem;color:var(--gray-400);margin-top:4px;">키는 브라우저에만 저장되며 서버로 전송되지 않습니다. <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="color:var(--green);">키 발급 &rarr;</a></p>
                 </div>
-                <button class="save-btn" onclick="generateInsight()">맞춤 인사이트 생성</button>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                  <button class="save-btn" onclick="saveUserProfile()" style="background:var(--gray-600);">프로필 저장</button>
+                  <button class="save-btn" onclick="generateInsight()">맞춤 인사이트 생성</button>
+                </div>
               </div>
             </div>
           </div>
@@ -8892,6 +8895,41 @@ function onGoogleSignIn(response) {
   };
   localStorage.setItem('aikci_user', JSON.stringify(currentUser));
   updateLoginUI();
+  loadUserProfile();
+}
+
+function saveUserProfile() {
+  if (!currentUser) { alert('프로필을 저장하려면 먼저 로그인해주세요.'); return; }
+  const profile = {
+    name: document.getElementById('userName').value.trim(),
+    univ: document.getElementById('userUniv').value.trim(),
+    major: document.getElementById('userMajor').value,
+    keywords: document.getElementById('userKeywords').value.trim(),
+    stage: document.getElementById('userStage').value,
+    interest: document.getElementById('userInterest').value.trim(),
+    apiKey: document.getElementById('claudeApiKeyInput').value.trim(),
+  };
+  localStorage.setItem('aikci_profile_' + currentUser.sub, JSON.stringify(profile));
+  alert('프로필이 저장되었습니다. 다시 로그인해도 자동으로 불러옵니다.');
+}
+
+function loadUserProfile() {
+  if (!currentUser) return;
+  const saved = localStorage.getItem('aikci_profile_' + currentUser.sub);
+  if (!saved) return;
+  try {
+    const p = JSON.parse(saved);
+    if (p.name) document.getElementById('userName').value = p.name;
+    if (p.univ) document.getElementById('userUniv').value = p.univ;
+    if (p.major) document.getElementById('userMajor').value = p.major;
+    if (p.keywords) document.getElementById('userKeywords').value = p.keywords;
+    if (p.stage) document.getElementById('userStage').value = p.stage;
+    if (p.interest) document.getElementById('userInterest').value = p.interest;
+    if (p.apiKey) {
+      document.getElementById('claudeApiKeyInput').value = p.apiKey;
+      CLAUDE_CONFIG.API_KEY = p.apiKey;
+    }
+  } catch(e) { /* ignore corrupt data */ }
 }
 
 function handleLogout() {
@@ -8952,6 +8990,7 @@ document.addEventListener('click', function(e) {
     try { currentUser = JSON.parse(saved); } catch(e) {}
   }
   updateLoginUI();
+  loadUserProfile();
 })();
 
 /* ============================================================
