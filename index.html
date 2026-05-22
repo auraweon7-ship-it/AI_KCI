@@ -4059,7 +4059,7 @@ input, select, textarea { font-family: inherit; }
               </div>
               <div class="card" id="ahResultCard" style="display:none;margin-top:20px;">
                 <div class="card-header">
-                  <h3>&#x1F4C4; 논문 개요 (약 1000자)</h3>
+                  <h3>&#x1F4C4; 논문 개요 (약 2000자)</h3>
                   <div style="display:flex;gap:8px;align-items:center;">
                     <span id="ahWordCount" style="font-size:0.78rem;color:var(--steel);padding:4px 10px;background:var(--cloud);border-radius:12px;"></span>
                     <button class="report-btn outline" onclick="toggleAbstractLang()" style="padding:6px 14px; font-size:0.8rem;" id="ahLangBtn">한/영 전환</button>
@@ -9165,15 +9165,15 @@ async function runAbstractHelper() {
     // 1) 목차 생성
     const tocText = await callClaude(
       '당신은 학술 논문 구조 설계 전문가입니다. 한국어로 답변하세요. HTML 형식을 사용하세요.',
-      `다음 연구 정보를 바탕으로 학술 논문의 상세 목차를 생성해주세요.\n\n${inputInfo}\n${similarContext ? '\n동일 분야 유사 논문 참고:\n' + similarContext : ''}\n\n요구사항:\n- <h4>로 대제목(I, II, III...), <strong>으로 소제목(1, 2, 3...), 일반텍스트로 세부항목(가, 나, 다...)\n- 서론, 이론적 배경, 연구 방법, 연구 결과, 결론 및 제언 구조\n- 각 장에 2~4개의 소제목, 필요시 세부항목 포함\n- 연구 주제에 맞는 구체적 소제목 작성`
+      `다음 연구 정보를 바탕으로 학술 논문의 목차를 생성해주세요.\n\n${inputInfo}\n${similarContext ? '\n동일 분야 유사 논문 참고:\n' + similarContext : ''}\n\n요구사항:\n- 서론, 이론적 배경, 연구 방법, 연구 결과, 결론 및 제언의 5장 구조\n- <h4>로 대제목(I, II, III...), 소제목(1, 2, 3...)은 각각 별도 줄에 표시\n- 각 장에 2~3개의 간결한 소제목만 포함 (세부항목 불필요)\n- 소제목은 핵심만 담아 짧고 명확하게 작성\n- 각 소제목 사이에 <br> 삽입하여 가독성 확보`
     );
     document.getElementById('ahTocOutput').innerHTML = tocText;
     document.getElementById('ahTocCard').style.display = 'block';
 
-    // 2) 논문 개요 (~1000자)
+    // 2) 논문 개요 (~2000자)
     const aiText = await callClaude(
       '당신은 학술 논문 작성 전문가입니다. 한국어로 답변하세요. 학술적이고 객관적인 어투를 사용하세요.',
-      `다음 정보를 바탕으로 학술 논문의 개요를 약 1000자 분량으로 작성해주세요.\n\n${inputInfo}\n${similarContext ? '\n동일 분야 유사 논문 참고:\n' + similarContext : ''}\n\n요구사항:\n- <strong>1. 서론:</strong> 연구 배경, 필요성, 연구 목적 (약 250자)\n- <strong>2. 연구 방법:</strong> 연구 설계, 대상, 도구, 분석 방법 (약 200자)\n- <strong>3. 연구 결과:</strong> 핵심 발견사항, 통계적 의미 (약 250자)\n- <strong>4. 결론:</strong> 요약, 시사점, 한계점, 후속 연구 제언 (약 200자)\n- <strong>5. 키워드:</strong> 추천 키워드 5~7개\n- 전체 약 1000자 내외\n- 학술적이고 객관적인 문체\n- 각 섹션 사이에 <br> 삽입`
+      `다음 정보를 바탕으로 학술 논문의 개요를 약 2000자 분량으로 상세하게 작성해주세요.\n\n${inputInfo}\n${similarContext ? '\n동일 분야 유사 논문 참고:\n' + similarContext : ''}\n\n요구사항:\n- <strong>1. 서론:</strong> 연구 배경, 필요성, 선행연구 동향, 연구 목적 및 연구 문제 (약 500자)\n- <strong>2. 이론적 배경:</strong> 핵심 이론, 관련 개념 정의, 선행연구 분석 (약 400자)\n- <strong>3. 연구 방법:</strong> 연구 설계, 대상, 도구, 자료 수집 및 분석 방법 (약 350자)\n- <strong>4. 연구 결과:</strong> 핵심 발견사항, 통계적 의미, 결과 해석 (약 350자)\n- <strong>5. 결론 및 제언:</strong> 요약, 시사점, 한계점, 후속 연구 제언 (약 300자)\n- <strong>6. 키워드:</strong> 추천 키워드 5~7개\n- 전체 약 2000자 내외로 충실하게 작성\n- 학술적이고 객관적인 문체\n- 각 섹션 사이에 <br><br> 삽입하여 가독성 확보`
     );
     ahKoreanText = aiText;
     document.getElementById('ahOutput').innerHTML = aiText;
