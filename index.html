@@ -2713,12 +2713,12 @@ input, select, textarea { font-family: inherit; }
       <!-- AI 분석 -->
       <div class="nav-group">
         <div class="nav-group-title">🤖 AI 분석</div>
-        <div class="nav-item" data-page="ai-search" onclick="navigateTo(this, 'ai-search')">
+        <div class="nav-item active" data-page="ai-search" onclick="navigateTo(this, 'ai-search')">
           <span class="nav-icon">&#x1F4DA;</span>
           검색
           <span class="nav-badge">NEW</span>
         </div>
-        <div class="nav-item active" data-page="ai-trend" onclick="navigateTo(this, 'ai-trend')">
+        <div class="nav-item" data-page="ai-trend" onclick="navigateTo(this, 'ai-trend')">
           <span class="nav-icon">&#x1F4C8;</span>
           최근 연구 흐름
           <span class="nav-badge">AI</span>
@@ -2839,7 +2839,7 @@ input, select, textarea { font-family: inherit; }
     <div class="dash-content">
 
       <!-- ======================== 0. AI 분석 - 검색 ======================== -->
-      <div class="page-section" id="page-ai-search">
+      <div class="page-section active" id="page-ai-search">
         <div class="page-title">
           <h1>&#x1F4DA; KCI 논문 검색 &amp; AI 분석</h1>
           <p>학문분야, 기간, 키워드로 KCI 논문을 검색하고, AI가 연구 동향을 분석합니다</p>
@@ -3160,7 +3160,7 @@ input, select, textarea { font-family: inherit; }
       </div>
 
       <!-- ======================== 1. AI 분석 - 최근 연구 흐름 ======================== -->
-      <div class="page-section active" id="page-ai-trend">
+      <div class="page-section" id="page-ai-trend">
         <div class="page-title">
           <h1>&#x1F4C8; 최근 연구 흐름</h1>
           <p>AI가 분석한 학술연구 동향과 핵심 트렌드를 확인하세요</p>
@@ -5282,6 +5282,9 @@ function startDashboard() {
     setTimeout(initCharts, 200);
     chartsInitialized = true;
   }
+  // 검색 페이지를 기본으로 표시
+  const searchNav = document.querySelector('.nav-item[data-page="ai-search"]');
+  if (searchNav) navigateTo(searchNav, 'ai-search');
 }
 
 function backToLanding() {
