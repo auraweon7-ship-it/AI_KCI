@@ -2288,7 +2288,7 @@ input, select, textarea { font-family: inherit; }
           <h3>&#x1F4CB; 검색 조건 설정</h3>
           <div class="search-form-grid">
             <div class="form-group">
-              <label>학문분야</label>
+              <label>🎓 학문분야</label>
               <select id="srcField">
                 <option value="">전체 분야</option>
                 <optgroup label="인문학">
@@ -2381,7 +2381,7 @@ input, select, textarea { font-family: inherit; }
               </select>
             </div>
             <div class="form-group">
-              <label>기간</label>
+              <label>📅 기간</label>
               <select id="srcPeriod">
                 <option value="1y">최근 1년</option>
                 <option value="3y" selected>최근 3년</option>
@@ -2391,7 +2391,7 @@ input, select, textarea { font-family: inherit; }
               </select>
             </div>
             <div class="form-group">
-              <label>논문편수</label>
+              <label>📄 논문편수</label>
               <div style="display:flex;gap:6px;align-items:center;">
                 <input type="number" id="srcCountMin" value="10" min="1" max="999" style="width:70px;padding:8px 10px;border:1px solid var(--gray-200);border-radius:var(--radius-sm);font-size:0.9rem;color:var(--gray-700);text-align:center;">
                 <span style="color:var(--gray-400);font-size:0.85rem;">~</span>
@@ -2400,7 +2400,7 @@ input, select, textarea { font-family: inherit; }
               </div>
             </div>
             <div class="form-group">
-              <label>키워드 <span style="font-size:0.75rem;color:var(--gray-400);font-weight:400;">(미입력 시 학문분야 검색)</span></label>
+              <label>🔑 키워드 <span style="font-size:0.75rem;color:var(--gray-400);font-weight:400;">(미입력 시 학문분야 검색)</span></label>
               <input type="text" placeholder="예: 인공지능, 머신러닝" id="srcKeyword" onkeydown="if(event.key==='Enter')executeSearch()">
             </div>
             <button class="search-btn" id="searchBtn" onclick="executeSearch()">
@@ -2607,7 +2607,7 @@ input, select, textarea { font-family: inherit; }
         <!-- 필터 -->
         <div class="filter-bar">
           <div class="filter-item">
-            <label>학문 분야</label>
+            <label>🎓 학문 분야</label>
             <select id="filterField">
               <option value="all">전체</option>
               <optgroup label="인문학">
@@ -2700,7 +2700,7 @@ input, select, textarea { font-family: inherit; }
             </select>
           </div>
           <div class="filter-item">
-            <label>기간</label>
+            <label>📅 기간</label>
             <select id="filterPeriod">
               <option value="1y">최근 1년</option>
               <option value="3y" selected>최근 3년</option>
@@ -2709,7 +2709,7 @@ input, select, textarea { font-family: inherit; }
             </select>
           </div>
           <div class="filter-item">
-            <label>키워드</label>
+            <label>🔑 키워드</label>
             <input type="text" placeholder="예: 인공지능, 학습분석" id="filterKeyword">
           </div>
           <button class="filter-apply-btn" onclick="applyFilter()">분석하기</button>
@@ -3450,7 +3450,7 @@ input, select, textarea { font-family: inherit; }
         <!-- 필터 바 -->
         <div class="filter-bar" style="margin-bottom:8px;">
           <div class="filter-item">
-            <label>권역</label>
+            <label>🗺️ 권역</label>
             <select id="mapRegion" onchange="applyMapFilter()">
               <option value="all">전체</option>
               <option value="수도권">수도권 (서울·경기·인천)</option>
@@ -3462,7 +3462,7 @@ input, select, textarea { font-family: inherit; }
             </select>
           </div>
           <div class="filter-item">
-            <label>설립 유형</label>
+            <label>🏛️ 설립 유형</label>
             <select id="mapFoundation" onchange="applyMapFilter()">
               <option value="all">전체</option>
               <option value="국립">국립</option>
@@ -3473,7 +3473,7 @@ input, select, textarea { font-family: inherit; }
             </select>
           </div>
           <div class="filter-item">
-            <label>학교 유형</label>
+            <label>🎒 학교 유형</label>
             <select id="mapType" onchange="applyMapFilter()">
               <option value="all">전체</option>
               <option value="대학교">대학교</option>
@@ -3483,7 +3483,7 @@ input, select, textarea { font-family: inherit; }
             </select>
           </div>
           <div class="filter-item">
-            <label>학문 분야</label>
+            <label>🎓 학문 분야</label>
             <select id="mapField" onchange="applyMapFilter()">
               <option value="all">전체</option>
               <option value="인문학">인문학</option>
@@ -3502,14 +3502,14 @@ input, select, textarea { font-family: inherit; }
         </div>
         <div class="filter-bar" style="margin-bottom:16px;">
           <div class="range-filter">
-            <label>논문수</label>
+            <label>📄 논문수</label>
             <input type="range" id="mapPapersMin" min="0" max="1400" step="50" value="0" oninput="document.getElementById('papersMinVal').textContent=this.value;applyMapFilter()">
             <span id="papersMinVal" class="range-val">0</span>~
             <input type="range" id="mapPapersMax" min="0" max="1400" step="50" value="1400" oninput="document.getElementById('papersMaxVal').textContent=this.value;applyMapFilter()">
             <span id="papersMaxVal" class="range-val">1400</span>편
           </div>
           <div class="range-filter">
-            <label>인용수</label>
+            <label>📎 인용수</label>
             <input type="range" id="mapCitesMin" min="0" max="13000" step="100" value="0" oninput="document.getElementById('citesMinVal').textContent=this.value;applyMapFilter()">
             <span id="citesMinVal" class="range-val">0</span>~
             <input type="range" id="mapCitesMax" min="0" max="13000" step="100" value="13000" oninput="document.getElementById('citesMaxVal').textContent=this.value;applyMapFilter()">
@@ -3907,8 +3907,8 @@ input, select, textarea { font-family: inherit; }
           <div class="card">
             <div class="card-header"><h3>&#x1F4DD; 내 연구 정보</h3></div>
             <div class="card-body">
-              <div class="form-group"><label>초록 또는 연구 내용</label><textarea id="spAbstract" placeholder="작성 중인 논문의 초록이나 연구 내용을 붙여넣으세요" rows="5"></textarea></div>
-              <div class="form-group"><label>키워드 (쉼표 구분)</label><input type="text" id="spKeywords" placeholder="예: 자연어처리, 감성분석, 교육평가"></div>
+              <div class="form-group"><label>📋 초록 또는 연구 내용</label><textarea id="spAbstract" placeholder="작성 중인 논문의 초록이나 연구 내용을 붙여넣으세요" rows="5"></textarea></div>
+              <div class="form-group"><label>🔑 키워드 (쉼표 구분)</label><input type="text" id="spKeywords" placeholder="예: 자연어처리, 감성분석, 교육평가"></div>
               <button class="save-btn" onclick="runSimilarPaper()">유사 논문 찾기</button>
             </div>
           </div>
@@ -3954,8 +3954,8 @@ input, select, textarea { font-family: inherit; }
           <div class="card">
             <div class="card-header"><h3>&#x1F4DD; 분석 조건</h3></div>
             <div class="card-body">
-              <div class="form-group"><label>연구 분야</label><input type="text" id="rgField" placeholder="예: 교육공학, 컴퓨터공학"></div>
-              <div class="form-group"><label>관심 키워드 (쉼표 구분)</label><input type="text" id="rgKeywords" placeholder="예: 인공지능, 학습분석, 맞춤형 교육"></div>
+              <div class="form-group"><label>🎓 연구 분야</label><input type="text" id="rgField" placeholder="예: 교육공학, 컴퓨터공학"></div>
+              <div class="form-group"><label>🔑 관심 키워드 (쉼표 구분)</label><input type="text" id="rgKeywords" placeholder="예: 인공지능, 학습분석, 맞춤형 교육"></div>
               <div class="kw-quick-tags" style="margin-top:8px;">
                 <span class="kw-quick-tag" onclick="document.getElementById('rgField').value='교육공학';document.getElementById('rgKeywords').value='인공지능, 학습분석, 맞춤형 교육';runResearchGap()">교육공학+AI</span>
                 <span class="kw-quick-tag" onclick="document.getElementById('rgField').value='경영학';document.getElementById('rgKeywords').value='ESG, 지속가능경영, 기업가치';runResearchGap()">경영학+ESG</span>
@@ -4002,11 +4002,11 @@ input, select, textarea { font-family: inherit; }
                   <span class="kw-quick-tag" onclick="mgQuickFill('경영학','ESG 경영이 기업가치에 미치는 영향','ESG 등급이 주가수익률에 유의한 영향을 미치는가?','quantitative')">경영학-양적</span>
                 </div>
                 <div class="settings-form">
-                  <div class="form-group"><label>학문 분야</label><input type="text" id="mgField" placeholder="예: 교육공학"></div>
-                  <div class="form-group"><label>연구 주제</label><input type="text" id="mgTopic" placeholder="예: AI 기반 맞춤형 학습의 효과"></div>
-                  <div class="form-group"><label>연구 질문</label><textarea id="mgQuestion" placeholder="예: AI 기반 학습 시스템이 학습자의 성취도에 미치는 영향은?" rows="2"></textarea></div>
+                  <div class="form-group"><label>🎓 학문 분야</label><input type="text" id="mgField" placeholder="예: 교육공학"></div>
+                  <div class="form-group"><label>💡 연구 주제</label><input type="text" id="mgTopic" placeholder="예: AI 기반 맞춤형 학습의 효과"></div>
+                  <div class="form-group"><label>❓ 연구 질문</label><textarea id="mgQuestion" placeholder="예: AI 기반 학습 시스템이 학습자의 성취도에 미치는 영향은?" rows="2"></textarea></div>
                   <div class="form-group">
-                    <label>연구 유형 (선택)</label>
+                    <label>🔬 연구 유형 (선택)</label>
                     <select id="mgType">
                       <option value="">자동 추천</option>
                       <option value="quantitative">양적 연구</option>
@@ -4059,12 +4059,12 @@ input, select, textarea { font-family: inherit; }
               <div class="card-header"><h3>&#x1F4DD; 연구 정보 입력</h3></div>
               <div class="card-body">
                 <div class="settings-form">
-                  <div class="form-group"><label>논문 제목</label><input type="text" id="ahTitle" placeholder="예: AI 기반 적응형 학습 시스템의 효과"></div>
-                  <div class="form-group"><label>연구 분야</label><input type="text" id="ahField" placeholder="예: 교육공학"></div>
-                  <div class="form-group"><label>연구 목적</label><textarea id="ahPurpose" placeholder="이 연구의 목적을 간략히 기술하세요" rows="2"></textarea></div>
-                  <div class="form-group"><label>연구 방법</label><textarea id="ahMethod" placeholder="사용한 연구 방법을 기술하세요 (예: 실험연구, 설문조사)" rows="2"></textarea></div>
-                  <div class="form-group"><label>주요 결과</label><textarea id="ahResults" placeholder="핵심 연구 결과를 기술하세요" rows="2"></textarea></div>
-                  <div class="form-group"><label>키워드</label><input type="text" id="ahKeywords" placeholder="예: 인공지능, 적응형 학습, 학업성취도"></div>
+                  <div class="form-group"><label>📝 논문 제목</label><input type="text" id="ahTitle" placeholder="예: AI 기반 적응형 학습 시스템의 효과"></div>
+                  <div class="form-group"><label>🎓 연구 분야</label><input type="text" id="ahField" placeholder="예: 교육공학"></div>
+                  <div class="form-group"><label>🎯 연구 목적</label><textarea id="ahPurpose" placeholder="이 연구의 목적을 간략히 기술하세요" rows="2"></textarea></div>
+                  <div class="form-group"><label>🔬 연구 방법</label><textarea id="ahMethod" placeholder="사용한 연구 방법을 기술하세요 (예: 실험연구, 설문조사)" rows="2"></textarea></div>
+                  <div class="form-group"><label>📊 주요 결과</label><textarea id="ahResults" placeholder="핵심 연구 결과를 기술하세요" rows="2"></textarea></div>
+                  <div class="form-group"><label>🔑 키워드</label><input type="text" id="ahKeywords" placeholder="예: 인공지능, 적응형 학습, 학업성취도"></div>
                   <button class="save-btn" onclick="runAbstractHelper()">논문 구조 생성</button>
                 </div>
               </div>
@@ -4114,7 +4114,7 @@ input, select, textarea { font-family: inherit; }
             <div class="card-header"><h3>&#x2699; 포맷 설정</h3></div>
             <div class="card-body">
               <div class="form-group">
-                <label>참고문헌 양식</label>
+                <label>📚 참고문헌 양식</label>
                 <select id="refStyle" onchange="renderRefOutput()">
                   <option value="apa">APA 7th Edition</option>
                   <option value="chicago">Chicago Style</option>
@@ -4123,7 +4123,7 @@ input, select, textarea { font-family: inherit; }
                 </select>
               </div>
               <div class="form-group">
-                <label>논문 검색 (추가할 논문 검색)</label>
+                <label>🔍 논문 검색 (추가할 논문 검색)</label>
                 <div class="rh-search-row">
                   <input type="text" id="refSearchQuery" placeholder="논문 제목이나 키워드 입력" onkeydown="if(event.key==='Enter')searchForRef()">
                   <button class="rh-search-btn" onclick="searchForRef()">검색</button>
@@ -4168,15 +4168,15 @@ input, select, textarea { font-family: inherit; }
             <div class="card-body">
               <div class="settings-form">
                 <div class="form-group">
-                  <label>이름</label>
+                  <label>👤 이름</label>
                   <input type="text" placeholder="예: 홍길동" id="userName">
                 </div>
                 <div class="form-group">
-                  <label>소속 대학</label>
+                  <label>🏫 소속 대학</label>
                   <input type="text" placeholder="예: 서울대학교" id="userUniv">
                 </div>
                 <div class="form-group">
-                  <label>학문 분야</label>
+                  <label>🎓 학문 분야</label>
                   <select id="userMajor">
                     <option value="">선택하세요</option>
                     <optgroup label="인문학">
@@ -4269,11 +4269,11 @@ input, select, textarea { font-family: inherit; }
                   </select>
                 </div>
                 <div class="form-group">
-                  <label>관심 연구 키워드</label>
+                  <label>🔑 관심 연구 키워드</label>
                   <input type="text" placeholder="예: 인공지능, 학습분석, 맞춤형 교육" id="userKeywords">
                 </div>
                 <div class="form-group">
-                  <label>논문 작성 단계</label>
+                  <label>📋 논문 작성 단계</label>
                   <select id="userStage">
                     <option value="">선택하세요</option>
                     <option value="topic">주제 탐색 중</option>
@@ -4284,7 +4284,7 @@ input, select, textarea { font-family: inherit; }
                   </select>
                 </div>
                 <div class="form-group">
-                  <label>연구 관심사 (자유 기술)</label>
+                  <label>💭 연구 관심사 (자유 기술)</label>
                   <textarea placeholder="현재 관심 있는 연구 주제나 방향을 자유롭게 기술해 주세요" id="userInterest"></textarea>
                 </div>
                 <div class="form-group" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-200);">
