@@ -9340,6 +9340,8 @@ async function runKwNetwork() {
     );
     document.getElementById('knAIResult').innerHTML = aiText;
     document.getElementById('knResult').style.display = 'block';
+    // 결과 영역이 보인 후 캔버스 재렌더링 (clientWidth 보장)
+    requestAnimationFrame(() => drawKwNetwork(topKw, edges));
   } catch (e) { alert('분석 중 오류: ' + e.message); }
   finally { document.getElementById('knLoading').style.display = 'none'; }
 }
@@ -9348,10 +9350,13 @@ function drawKwNetwork(nodes, edges) {
   const canvas = document.getElementById('knCanvas');
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
-  canvas.width = canvas.clientWidth * dpr;
+  const rawW = canvas.clientWidth || canvas.parentElement?.clientWidth || 700;
+  canvas.style.width = rawW + 'px';
+  canvas.style.height = '500px';
+  canvas.width = rawW * dpr;
   canvas.height = 500 * dpr;
   ctx.scale(dpr, dpr);
-  const W = canvas.clientWidth, H = 500;
+  const W = rawW, H = 500;
   ctx.clearRect(0, 0, W, H);
 
   // Background gradient
