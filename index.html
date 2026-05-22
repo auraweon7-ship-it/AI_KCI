@@ -916,8 +916,10 @@ input, select, textarea { font-family: inherit; }
 .main-content {
   margin-left: var(--sidebar-width);
   flex: 1;
+  min-width: 0;
   min-height: 100vh;
   background: var(--surface);
+  overflow-x: hidden;
 }
 
 /* 대시보드 헤더 */
@@ -1238,6 +1240,7 @@ input, select, textarea { font-family: inherit; }
 .dash-content {
   padding: 28px 32px;
   max-width: 1280px;
+  overflow-x: hidden;
 }
 
 /* 페이지 타이틀 */
@@ -1446,6 +1449,11 @@ input, select, textarea { font-family: inherit; }
   justify-content: center;
   color: var(--brand-green);
   font-size: 1rem;
+}
+.insight-box .insight-content {
+  min-width: 0;
+  overflow-wrap: break-word;
+  word-break: keep-all;
 }
 .insight-box .insight-content h4 {
   font-size: 0.88rem;
@@ -2315,7 +2323,16 @@ input, select, textarea { font-family: inherit; }
   .filter-item { width: 100%; }
   .filter-item select, .filter-item input { width: 100%; }
 
-  /* 키워드 검색 행 */
+  /* 키워드 검색바 — input + button 세로 배치 */
+  .kw-search-bar {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  .kw-search-bar .filter-apply-btn,
+  .kw-search-bar button {
+    width: 100%;
+    white-space: nowrap;
+  }
   .kw-search-row, [style*="display:flex"][style*="gap"] {
     flex-wrap: wrap !important;
   }
@@ -2334,11 +2351,36 @@ input, select, textarea { font-family: inherit; }
   /* 캔버스 반응형 */
   canvas { max-width: 100%; height: auto !important; }
 
-  /* 인사이트 박스 */
-  .insight-box { flex-direction: column; }
+  /* 인사이트 박스 — overflow 방지 */
+  .insight-box {
+    flex-direction: column;
+    overflow-wrap: break-word;
+    word-break: keep-all;
+  }
+  .insight-box p, .insight-box div {
+    max-width: 100%;
+    overflow-wrap: break-word;
+  }
 
   /* 검색 버튼 */
   .search-btn { width: 100%; }
+  .filter-apply-btn { white-space: nowrap; min-width: fit-content; }
+
+  /* 선행연구 탐색 탭 */
+  .result-tabs, [class*="tab-bar"], [style*="border-bottom"][style*="flex"] {
+    flex-wrap: wrap !important;
+    gap: 4px;
+  }
+  .result-tab, [class*="tab-btn"] {
+    flex: 0 0 auto;
+    font-size: 0.78rem;
+    padding: 8px 12px;
+  }
+
+  /* 지도 필터바 */
+  #page-map-univ .filter-bar { flex-direction: column; }
+  #page-map-univ .filter-bar select,
+  #page-map-univ .filter-bar button { width: 100%; }
 
   /* 사용법 타임라인 */
   .usage-timeline { padding-left: 16px; }
@@ -2350,8 +2392,25 @@ input, select, textarea { font-family: inherit; }
   .settings-form .form-group select,
   .settings-form .form-group textarea { font-size: 16px; } /* iOS zoom 방지 */
 
+  /* 설정 버튼 세로 배치 */
+  .settings-form [style*="display:flex"][style*="gap"] {
+    flex-direction: column !important;
+  }
+  .settings-form .save-btn { width: 100%; }
+
   /* 그리드 강제 1열 */
   .grid-2, .grid-3 { grid-template-columns: 1fr !important; }
+
+  /* 논문 작성 도우미 폼 */
+  #page-writing-tools textarea { font-size: 16px; min-height: 80px; }
+  #page-writing-tools input { font-size: 16px; }
+
+  /* 카드 내부 overflow 방지 */
+  .card, .card-body {
+    overflow-x: hidden;
+    word-break: keep-all;
+    overflow-wrap: break-word;
+  }
 
   /* 푸터 */
   footer { margin-top: 32px; padding: 24px 16px; }
@@ -2375,11 +2434,15 @@ input, select, textarea { font-family: inherit; }
   /* 버튼 풀폭 */
   .save-btn { width: 100%; text-align: center; }
   .save-btn + .save-btn { margin-top: 8px; }
+  .filter-apply-btn { width: 100%; }
 
   /* 선행연구 카드 내 플렉스 */
   [style*="display:flex"][style*="gap:10px"] {
     flex-direction: column !important;
   }
+
+  /* 모든 input/select iOS zoom 방지 */
+  input, select, textarea { font-size: 16px !important; }
 
   /* 모바일 헤더 검색 */
   .search-box input { width: 140px; font-size: 0.8rem; }
@@ -5312,7 +5375,10 @@ function navigateTo(el, pageId) {
   if (pageId === 'map-univ') { setTimeout(initMap, 300); setTimeout(()=>{ renderUnivCitationChart(); renderYearTrendChart(); renderEfficiencyScatter(); renderFieldHeatmap(); renderTreemap(); renderGrowthChart(); injectChartInsights(); }, 400); }
   if (pageId === 'network') { setTimeout(initNetwork, 300); setTimeout(initCitationNetwork, 400); }
 
-  if (window.innerWidth <= 768) toggleSidebar();
+  if (window.innerWidth <= 768) {
+    document.getElementById('sidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('active');
+  }
 }
 
 /* ============================================================
