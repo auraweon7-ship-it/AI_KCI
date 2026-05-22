@@ -4373,60 +4373,153 @@ input, select, textarea { font-family: inherit; }
       <div class="page-section" id="page-guide">
         <div class="page-title">
           <h1>&#x1F4D6; 활용 방법</h1>
-          <p>대학원생과 교강사가 연구나침반 AI를 효과적으로 활용하는 방법을 안내합니다</p>
+          <p>처음 사용하는 분도 쉽게 따라할 수 있도록, 메뉴별로 상세하게 안내합니다</p>
         </div>
 
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-header"><h3>&#x1F393; 대학원생 활용 시나리오</h3></div>
-            <div class="card-body">
-              <div class="usage-timeline">
-                <div class="timeline-item">
-                  <h4>Step 1. 연구 주제 탐색</h4>
-                  <p>'AI 분석' 메뉴에서 관심 분야의 최근 연구 트렌드와 핵심 키워드를 확인합니다. AI가 제안하는 유사 연구주제를 참고하여 논문 주제를 구체화합니다.</p>
-                </div>
-                <div class="timeline-item">
-                  <h4>Step 2. 선행연구 검토 범위 설정</h4>
-                  <p>'핵심 키워드 트렌드'에서 관련 키워드의 연도별 변화를 파악하고, 선행연구 검토 시 함께 살펴볼 연관 키워드를 확인합니다.</p>
-                </div>
-                <div class="timeline-item">
-                  <h4>Step 3. 핵심 연구기관 파악</h4>
-                  <p>'대학교별 연구력'에서 해당 분야의 주요 대학과 연구자를 확인합니다. 인용도 높은 논문의 연구 방법론을 참고합니다.</p>
-                </div>
-                <div class="timeline-item">
-                  <h4>Step 4. 연구문제 설정 및 집필</h4>
-                  <p>'맞춤형 인사이트'에서 나의 학문 분야와 관심사를 기반으로 연구문제 설정에 참고할 수 있는 구체적 방향을 확인합니다.</p>
-                </div>
+        <!-- 0. 로그인 -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header"><h3>🔐 시작하기: 구글 로그인</h3></div>
+          <div class="card-body">
+            <div class="usage-timeline">
+              <div class="timeline-item">
+                <h4>왜 로그인이 필요한가요?</h4>
+                <p>로그인하면 AI 분석 기능(연구 동향 인사이트, 맞춤형 추천, 논문 구조 생성 등)을 사용할 수 있습니다. 로그인하지 않아도 검색과 차트 조회는 가능하지만, AI 기능은 로그인 후 이용 가능합니다.</p>
               </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header"><h3>&#x1F4DA; 교강사 활용 시나리오</h3></div>
-            <div class="card-body">
-              <div class="usage-timeline">
-                <div class="timeline-item">
-                  <h4>Step 1. 연구 분야 현황 파악</h4>
-                  <p>담당 분야의 전체적인 연구 동향을 확인하고, 강의 및 연구 주제 기획에 활용합니다.</p>
-                </div>
-                <div class="timeline-item">
-                  <h4>Step 2. 학생 논문 지도 근거 확보</h4>
-                  <p>학생이 제안한 주제의 연구 적합성과 가능성을 데이터 기반으로 평가하고, 구체적 조언을 제공합니다.</p>
-                </div>
-                <div class="timeline-item">
-                  <h4>Step 3. 연구성과 비교 분석</h4>
-                  <p>'연구성과 분석' 메뉴에서 소속 기관의 연구 성과를 타 대학과 비교하고, 강점과 개선 방향을 파악합니다.</p>
-                </div>
-                <div class="timeline-item">
-                  <h4>Step 4. 공동연구 네트워크 탐색</h4>
-                  <p>'연구자 네트워크'에서 협업 가능성이 높은 연구자와 기관을 탐색하여 공동연구 기회를 모색합니다.</p>
-                </div>
+              <div class="timeline-item">
+                <h4>로그인 방법</h4>
+                <p>① 화면 오른쪽 상단의 <strong>"G 로그인"</strong> 버튼을 클릭합니다.<br>
+                   ② 구글 계정을 선택하거나 이메일/비밀번호를 입력합니다.<br>
+                   ③ 로그인 완료 시 버튼이 프로필 아이콘으로 바뀌며, AI 기능이 활성화됩니다.</p>
               </div>
             </div>
           </div>
         </div>
 
+        <!-- AI 분석 메뉴 -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header"><h3>🔍 AI 분석 메뉴</h3></div>
+          <div class="card-body">
+            <div class="usage-timeline">
+              <div class="timeline-item">
+                <h4>📌 검색</h4>
+                <p>연구 키워드, 학문 분야, 대학명 등을 입력하면 KCI에 등록된 학술논문을 검색합니다.<br>
+                   <strong>사용법:</strong> 상단 검색창 또는 '검색' 메뉴에서 키워드 입력 → "검색" 버튼 클릭 → 논문 목록, 저자, 학술지 정보를 확인합니다.</p>
+              </div>
+              <div class="timeline-item">
+                <h4>📌 최근 연구 흐름</h4>
+                <p>특정 학문 분야의 최근 5년간 연구 트렌드를 한눈에 파악합니다.<br>
+                   <strong>사용법:</strong> 학문 분야(예: 교육공학) 선택 → 기간 설정 → 키워드 입력 → "분석하기" 클릭 → 연도별 논문 수 변화, 분야별 비율, AI 동향 인사이트를 확인합니다.</p>
+              </div>
+              <div class="timeline-item">
+                <h4>📌 핵심 키워드 트렌드</h4>
+                <p>관심 키워드가 학술 연구에서 얼마나 활발하게 사용되는지 연도별 추이를 분석합니다.<br>
+                   <strong>사용법:</strong> 키워드 입력(예: 인공지능, 머신러닝) → "트렌드 분석" 클릭 → 연도별 키워드 빈도 변화 그래프와 AI 해석을 확인합니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 연구성과 분석 -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header"><h3>📊 연구성과 분석 메뉴</h3></div>
+          <div class="card-body">
+            <div class="usage-timeline">
+              <div class="timeline-item">
+                <h4>📌 영향력 분석</h4>
+                <p>특정 키워드 관련 논문의 학술적 영향력(인용 횟수, 인용 지수 등)을 분석합니다.<br>
+                   <strong>사용법:</strong> 분석할 키워드 입력 → "분석" 클릭 → 인용 분포, 피인용 상위 논문, 영향력 높은 학술지를 확인합니다.</p>
+              </div>
+              <div class="timeline-item">
+                <h4>📌 연구자 네트워크</h4>
+                <p>특정 분야에서 함께 연구하는 저자들 간의 공동연구 관계를 네트워크 그래프로 시각화합니다.<br>
+                   <strong>사용법:</strong> 키워드 입력 → "네트워크 분석" 클릭 → 공동저자 네트워크 그래프에서 핵심 연구자와 협업 관계를 파악합니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 연구력 분석 -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header"><h3>🏫 연구력 분석 메뉴</h3></div>
+          <div class="card-body">
+            <div class="usage-timeline">
+              <div class="timeline-item">
+                <h4>📌 대학 연구력 지도</h4>
+                <p>전국 대학의 연구 활동을 지도 위에 시각화하여, 지역별·대학별 연구 성과를 비교합니다.<br>
+                   <strong>사용법:</strong> 학문 분야 선택 → 지도에서 대학 마커 클릭 → 해당 대학의 논문 수, 주요 연구 분야, 대표 연구자를 확인합니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 논문 탐색 지원 -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header"><h3>🔎 논문 탐색 지원 메뉴</h3></div>
+          <div class="card-body">
+            <div class="usage-timeline">
+              <div class="timeline-item">
+                <h4>📌 선행연구 탐색</h4>
+                <p>키워드를 입력하면 관련 선행연구를 검색하고, 키워드 네트워크 그래프로 연구 주제 간의 관계를 시각화합니다.<br>
+                   <strong>사용법:</strong> 키워드 입력 → "탐색" 클릭 → 논문 목록 탭에서 관련 논문 확인, 키워드 네트워크 탭에서 주제 간 연결 관계를 파악합니다.</p>
+              </div>
+              <div class="timeline-item">
+                <h4>📌 연구 설계 도우미</h4>
+                <p>AI가 연구 주제에 맞는 연구 설계(연구 방법, 분석 도구, 표본 설정 등)를 제안합니다.<br>
+                   <strong>사용법:</strong> 연구 주제와 분야 입력 → "연구 설계 추천" 클릭 → AI가 추천하는 연구 방법론, 분석 기법, 참고할 선행연구를 확인합니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 논문 작성 도우미 -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header"><h3>✍ 논문 작성 도우미 메뉴</h3></div>
+          <div class="card-body">
+            <div class="usage-timeline">
+              <div class="timeline-item">
+                <h4>📌 논문 구조화</h4>
+                <p>논문 제목, 연구 목적, 방법 등을 입력하면 AI가 목차와 논문 개요(약 2000자)를 자동 생성합니다.<br>
+                   <strong>사용법:</strong> ① 논문 제목(필수), 연구 분야, 연구 목적(필수), 연구 방법, 주요 결과, 키워드를 입력합니다.<br>
+                   ② "논문 구조 생성" 버튼 클릭 → AI가 목차와 상세 개요를 생성합니다.<br>
+                   ③ 한/영 전환 버튼으로 영문 개요도 확인 가능합니다.</p>
+              </div>
+              <div class="timeline-item">
+                <h4>📌 참고문헌 포맷팅</h4>
+                <p>참고문헌 정보를 입력하면 APA, MLA, Chicago 등 다양한 인용 형식으로 자동 변환합니다.<br>
+                   <strong>사용법:</strong> '참고문헌 포맷팅' 탭 클릭 → 참고문헌 정보 입력 → 원하는 인용 형식 선택 → 변환된 결과를 복사하여 논문에 붙여넣습니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 대시보드 소개 -->
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-header"><h3>📋 대시보드 소개 메뉴</h3></div>
+          <div class="card-body">
+            <div class="usage-timeline">
+              <div class="timeline-item">
+                <h4>📌 설정 / 맞춤 인사이트</h4>
+                <p>나의 학문 분야와 관심 키워드를 설정하면, AI가 맞춤형 연구 인사이트를 제공합니다.<br>
+                   <strong>사용법:</strong> 학문 분야, 관심 키워드, 연구 경력 등을 입력 → "저장" → 이후 분석 시 맞춤형 결과를 받을 수 있습니다.</p>
+              </div>
+              <div class="timeline-item">
+                <h4>📌 활용 방법</h4>
+                <p>지금 보고 계신 이 페이지입니다! 각 메뉴의 기능과 사용법을 안내합니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 꿀팁 -->
         <div class="insight-box" style="margin-top:24px;">
+          <div class="insight-icon">💡</div>
+          <div class="insight-content">
+            <h4>초보자를 위한 추천 순서</h4>
+            <p><strong>① 구글 로그인</strong> → <strong>② 검색</strong>으로 관심 주제 논문 찾기 → <strong>③ 최근 연구 흐름</strong>으로 트렌드 파악 → <strong>④ 선행연구 탐색</strong>으로 키워드 관계 시각화 → <strong>⑤ 논문 구조화</strong>로 목차·개요 자동 생성. 이 순서대로 진행하면 연구 주제 선정부터 논문 구조 설계까지 한 번에 완료할 수 있습니다!</p>
+          </div>
+        </div>
+
+        <div class="insight-box" style="margin-top:12px;">
           <div class="insight-icon">&#x2139;</div>
           <div class="insight-content">
             <h4>데이터 출처 안내</h4>
