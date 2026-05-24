@@ -1348,6 +1348,7 @@ input, select, textarea { font-family: inherit; }
 .stat-icon.green { background: var(--brand-green-soft); color: var(--brand-green-dark); }
 .stat-icon.amber { background: #fef3c7; color: #b45309; }
 .stat-icon.red { background: #fce4ec; color: #c62828; }
+.stat-icon.purple { background: #f3e8ff; color: #7c3aed; }
 .stat-card .stat-label {
   font-size: 0.72rem;
   font-weight: 600;
@@ -3769,9 +3770,9 @@ input, select, textarea { font-family: inherit; }
             <span class="stat-change" id="citStatMaxSub">단일 논문</span>
           </div>
           <div class="stat-card">
-            <div class="stat-header"><div class="stat-icon">&#x1F3C6;</div><span class="stat-label">참여 학술지</span></div>
-            <div class="stat-value" id="citStatJournal">-</div>
-            <span class="stat-change" id="citStatJournalSub">개 학술지</span>
+            <div class="stat-header"><div class="stat-icon purple">&#x1F3C6;</div><span class="stat-label">H-index</span></div>
+            <div class="stat-value" id="citStatHindex">-</div>
+            <span class="stat-change" id="citStatHindexSub">검색 결과 기준</span>
           </div>
         </div>
 
@@ -4017,7 +4018,7 @@ input, select, textarea { font-family: inherit; }
             </div>
             <div class="card-body" style="overflow-x:auto;">
               <table class="data-table">
-                <thead><tr><th>#</th><th>연구자</th><th>소속</th><th>논문수</th><th>공저자수</th><th>인용수</th></tr></thead>
+                <thead><tr><th>#</th><th>연구자</th><th>소속</th><th>논문수</th><th>인용수</th><th>H-index</th></tr></thead>
                 <tbody id="netRankBody"></tbody>
               </table>
             </div>
@@ -4064,10 +4065,10 @@ input, select, textarea { font-family: inherit; }
         <div class="card" style="margin-bottom:24px;">
           <div class="card-header">
             <h3>&#x1F3C6; 대학별 연구 성과 비교</h3>
-            <div class="card-actions">
-              <button class="active">논문수</button>
-              <button>인용수</button>
-              <button>H-index</button>
+            <div class="card-actions" id="univCompareActions">
+              <button class="active" onclick="sortUnivCompare('papers',this)">논문수</button>
+              <button onclick="sortUnivCompare('citations',this)">인용수</button>
+              <button onclick="sortUnivCompare('hindex',this)">H-index</button>
             </div>
           </div>
           <div class="card-body" style="overflow-x:auto;">
@@ -4082,16 +4083,7 @@ input, select, textarea { font-family: inherit; }
                   <th>연구력 지수</th>
                 </tr>
               </thead>
-              <tbody>
-                <tr><td>1</td><td class="univ-name">서울대학교</td><td>1,247</td><td>8,934</td><td>32</td><td><div class="score-bar"><div class="score-bar-bg"><div class="score-bar-fill" style="width:98%"></div></div><span>98</span></div></td></tr>
-                <tr><td>2</td><td class="univ-name">한양대학교</td><td>1,089</td><td>7,621</td><td>28</td><td><div class="score-bar"><div class="score-bar-bg"><div class="score-bar-fill" style="width:91%"></div></div><span>91</span></div></td></tr>
-                <tr><td>3</td><td class="univ-name">이화여자대학교</td><td>987</td><td>6,843</td><td>27</td><td><div class="score-bar"><div class="score-bar-bg"><div class="score-bar-fill" style="width:87%"></div></div><span>87</span></div></td></tr>
-                <tr><td>4</td><td class="univ-name">고려대학교</td><td>945</td><td>6,512</td><td>26</td><td><div class="score-bar"><div class="score-bar-bg"><div class="score-bar-fill" style="width:84%"></div></div><span>84</span></div></td></tr>
-                <tr><td>5</td><td class="univ-name">연세대학교</td><td>912</td><td>6,234</td><td>25</td><td><div class="score-bar"><div class="score-bar-bg"><div class="score-bar-fill" style="width:81%"></div></div><span>81</span></div></td></tr>
-                <tr><td>6</td><td class="univ-name">성균관대학교</td><td>834</td><td>5,678</td><td>23</td><td><div class="score-bar"><div class="score-bar-bg"><div class="score-bar-fill" style="width:76%"></div></div><span>76</span></div></td></tr>
-                <tr><td>7</td><td class="univ-name">경희대학교</td><td>756</td><td>4,923</td><td>21</td><td><div class="score-bar"><div class="score-bar-bg"><div class="score-bar-fill" style="width:70%"></div></div><span>70</span></div></td></tr>
-                <tr><td>8</td><td class="univ-name">부산대학교</td><td>698</td><td>4,512</td><td>20</td><td><div class="score-bar"><div class="score-bar-bg"><div class="score-bar-fill" style="width:65%"></div></div><span>65</span></div></td></tr>
-              </tbody>
+              <tbody id="univCompareBody"></tbody>
             </table>
           </div>
         </div>
@@ -5396,7 +5388,7 @@ function navigateTo(el, pageId) {
   document.querySelectorAll('.page-section').forEach(p => p.classList.remove('active'));
   document.getElementById('page-' + pageId).classList.add('active');
 
-  if (pageId === 'map-univ') { setTimeout(initMap, 300); setTimeout(()=>{ renderUnivCitationChart(); renderYearTrendChart(); renderEfficiencyScatter(); renderFieldHeatmap(); renderTreemap(); renderGrowthChart(); injectChartInsights(); }, 400); }
+  if (pageId === 'map-univ') { setTimeout(initMap, 300); setTimeout(()=>{ renderUnivCompareTable('papers'); renderUnivCitationChart(); renderYearTrendChart(); renderEfficiencyScatter(); renderFieldHeatmap(); renderTreemap(); renderGrowthChart(); injectChartInsights(); }, 400); }
   if (pageId === 'network') { setTimeout(initNetwork, 300); setTimeout(initCitationNetwork, 400); }
 
   if (window.innerWidth <= 768) {
@@ -6963,6 +6955,101 @@ function renderYearTrendChart() {
 }
 
 /* ============================================================
+   H-index 계산 & 대학별 비교 테이블
+   ============================================================ */
+
+// H-index 추정: Hirsch 공식 기반 (논문수, 총인용수로부터)
+// 실제 H-index는 개별 논문 인용수 분포 필요하지만,
+// 총인용/논문수 기반 근사: H ≈ min(papers, sqrt(citations * 1.2))
+function computeHIndex(papers, citations) {
+  if (!papers || !citations) return 0;
+  const cpp = citations / papers; // 논문당 평균 인용
+  // Hirsch 근사: H ≈ sqrt(0.67 * total_citations)
+  const h1 = Math.sqrt(0.67 * citations);
+  // 상한: 논문수 자체를 넘을 수 없음
+  const h2 = Math.min(papers, h1);
+  // CPP 보정: CPP 높으면 H-index도 높음
+  const h3 = h2 * (1 + Math.log10(Math.max(cpp, 1)) * 0.1);
+  return Math.round(Math.min(h3, papers));
+}
+
+// 대학 연구력 지수: 논문수(40%) + 인용수(35%) + H-index(25%) 정규화 합산
+function computeResearchScore(u, maxPapers, maxCitations, maxH) {
+  const pScore = maxPapers > 0 ? (u.papers / maxPapers) * 40 : 0;
+  const cScore = maxCitations > 0 ? (u.citations / maxCitations) * 35 : 0;
+  const hScore = maxH > 0 ? (u._hindex / maxH) * 25 : 0;
+  return Math.round(pScore + cScore + hScore);
+}
+
+let _univCompareSortKey = 'papers';
+
+function sortUnivCompare(key, btnEl) {
+  _univCompareSortKey = key;
+  // 버튼 active 상태
+  const actions = document.getElementById('univCompareActions');
+  if (actions) {
+    actions.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+  }
+  renderUnivCompareTable(key);
+}
+
+function renderUnivCompareTable(sortBy) {
+  const tbody = document.getElementById('univCompareBody');
+  if (!tbody || typeof ALL_UNIVERSITIES === 'undefined') return;
+
+  // H-index 계산
+  const univs = ALL_UNIVERSITIES.map(u => ({
+    ...u,
+    _hindex: computeHIndex(u.papers, u.citations)
+  }));
+
+  // 정렬
+  const key = sortBy || _univCompareSortKey || 'papers';
+  if (key === 'hindex') {
+    univs.sort((a, b) => b._hindex - a._hindex || b.citations - a.citations);
+  } else if (key === 'citations') {
+    univs.sort((a, b) => b.citations - a.citations || b.papers - a.papers);
+  } else {
+    univs.sort((a, b) => b.papers - a.papers || b.citations - a.citations);
+  }
+
+  const top = univs.slice(0, 15);
+  const maxP = Math.max(...top.map(u => u.papers));
+  const maxC = Math.max(...top.map(u => u.citations));
+  const maxH = Math.max(...top.map(u => u._hindex));
+
+  // 연구력 지수 계산
+  top.forEach(u => { u._score = computeResearchScore(u, maxP, maxC, maxH); });
+  const maxScore = Math.max(...top.map(u => u._score), 1);
+
+  tbody.innerHTML = top.map((u, i) => {
+    const scoreW = Math.round(u._score / maxScore * 100);
+    const medal = i < 3 ? ['🥇','🥈','🥉'][i] : '';
+    return `<tr>
+      <td>${medal || (i + 1)}</td>
+      <td class="univ-name">${escapeHtml(u.name)}</td>
+      <td style="text-align:right;${key === 'papers' ? 'font-weight:700;color:var(--brand-green-dark);' : ''}">${u.papers.toLocaleString()}</td>
+      <td style="text-align:right;${key === 'citations' ? 'font-weight:700;color:var(--brand-green-dark);' : ''}">${u.citations.toLocaleString()}</td>
+      <td style="text-align:right;${key === 'hindex' ? 'font-weight:700;color:var(--brand-green-dark);' : ''}"><span style="display:inline-flex;align-items:center;gap:4px;">${u._hindex}<span style="display:inline-block;width:${Math.round(u._hindex / maxH * 40)}px;height:6px;background:linear-gradient(90deg,#00ed64,#00684a);border-radius:3px;"></span></span></td>
+      <td><div class="score-bar"><div class="score-bar-bg"><div class="score-bar-fill" style="width:${scoreW}%"></div></div><span>${u._score}</span></div></td>
+    </tr>`;
+  }).join('');
+}
+
+// H-index 계산 (개별 논문 인용수 배열로부터 - 정확한 방식)
+function computeHIndexFromArray(citationArray) {
+  if (!citationArray || !citationArray.length) return 0;
+  const sorted = [...citationArray].sort((a, b) => b - a);
+  let h = 0;
+  for (let i = 0; i < sorted.length; i++) {
+    if (sorted[i] >= i + 1) h = i + 1;
+    else break;
+  }
+  return h;
+}
+
+/* ============================================================
    Google Maps 초기화
    ============================================================ */
 let mapInitDone = false;
@@ -8333,14 +8420,17 @@ function _updateNetStats(keyword, articles, coData, citData) {
   });
   const rankList = Object.values(merged).sort((a, b) => b.papers - a.papers || (b.totalCite || 0) - (a.totalCite || 0)).slice(0, 10);
 
-  rankBody.innerHTML = rankList.map((r, i) => `<tr>
+  rankBody.innerHTML = rankList.map((r, i) => {
+    const rHindex = computeHIndex(r.papers, r.totalCite || 0);
+    return `<tr>
     <td><span class="keyword-rank" ${i < 3 ? 'style="background:var(--brand-green);color:#fff;"' : ''}>${i + 1}</span></td>
     <td style="font-weight:600;">${escapeHtml(r.name)}</td>
     <td style="font-size:0.82rem;color:#6b7280;">${escapeHtml((r.inst || '').length > 10 ? r.inst.substring(0, 10) + '..' : (r.inst || '-'))}</td>
     <td style="text-align:right;">${r.papers}</td>
-    <td style="text-align:right;">${r.coauthors?.length || '-'}</td>
     <td style="text-align:right;font-weight:600;color:#e74c3c;">${r.totalCite || 0}</td>
-  </tr>`).join('');
+    <td style="text-align:right;font-weight:600;color:#8b5cf6;">${rHindex}</td>
+  </tr>`;
+  }).join('');
 
   // 추천
   const recBox = document.getElementById('netRecommendBox');
@@ -9040,13 +9130,21 @@ function renderSearchStats(result) {
   document.getElementById('statJournals').textContent = journals.size || '-';
   document.getElementById('statJournalsTrend').textContent = '등재 학술지';
 
-  // 실제 인용 데이터 기반 평균 계산
+  // 실제 인용 데이터 기반 평균 & H-index 계산
   const citedArticles = result.articles.filter(a => a.citedCount >= 0);
-  const avgCitation = citedArticles.length > 0
-    ? (citedArticles.reduce((s, a) => s + a.citedCount, 0) / citedArticles.length).toFixed(1)
-    : '-';
-  document.getElementById('statAvgCitation').textContent = avgCitation;
-  document.getElementById('statCitationTrend').textContent = citedArticles.length > 0 ? `${citedArticles.length}편 기준` : '데이터 없음';
+  if (citedArticles.length > 0) {
+    const avgCitation = (citedArticles.reduce((s, a) => s + a.citedCount, 0) / citedArticles.length).toFixed(1);
+    const hIdx = computeHIndexFromArray(citedArticles.map(a => a.citedCount));
+    document.getElementById('statAvgCitation').textContent = avgCitation;
+    document.getElementById('statCitationTrend').textContent = `H-index: ${hIdx} (${citedArticles.length}편 기준)`;
+  } else {
+    // 추정 인용수 기반
+    const estimated = result.articles.map(a => estimateCitation(a));
+    const avgEst = estimated.length ? (estimated.reduce((s, c) => s + c, 0) / estimated.length).toFixed(1) : '-';
+    const hEst = computeHIndexFromArray(estimated);
+    document.getElementById('statAvgCitation').textContent = avgEst;
+    document.getElementById('statCitationTrend').textContent = hEst > 0 ? `H-index: ${hEst} (추정)` : '데이터 없음';
+  }
 }
 
 /* 논문 목록 렌더링 (테이블 형식) */
@@ -10438,10 +10536,16 @@ function quickCitation(kw) {
 // 인용수 추정 (KCI API가 citedCount를 반환하지 않을 경우 보조 추정)
 function estimateCitation(article) {
   if (article.citedCount >= 0) return article.citedCount;
-  // API 데이터 없을 때: 연도·학술지 기반 통계적 추정
+  // API 데이터 없을 때: 연도·제목 기반 결정론적 추정 (랜덤 아님)
   const y = parseInt(article.year) || 2024;
   const age = new Date().getFullYear() - y;
-  const base = Math.max(0, Math.round(age * 1.5 + Math.random() * 4));
+  // 제목에서 해시값 생성 (결정론적 시드)
+  let hash = 0;
+  const t = article.title || '';
+  for (let i = 0; i < t.length; i++) { hash = ((hash << 5) - hash + t.charCodeAt(i)) | 0; }
+  const seed = Math.abs(hash % 10); // 0~9
+  // 오래된 논문일수록 인용 많음, 시드로 분산
+  const base = Math.max(0, Math.round(age * 1.8 + seed * 0.5));
   return base;
 }
 
@@ -10473,6 +10577,9 @@ async function runCitationAnalysis() {
     const top10pct = sorted.length > 2 ? sorted[Math.floor(sorted.length * 0.1)] : maxCite;
     const journals = new Set(articles.map(a => a.journal).filter(Boolean));
 
+    // H-index 계산 (실제 개별 인용수 배열로부터)
+    const hindex = computeHIndexFromArray(cites);
+
     // 통계 카드
     document.getElementById('citStatTotal').textContent = total.toLocaleString();
     document.getElementById('citStatTotalSub').textContent = '검색 결과';
@@ -10480,8 +10587,8 @@ async function runCitationAnalysis() {
     document.getElementById('citStatAvgSub').textContent = '논문당 평균';
     document.getElementById('citStatMax').textContent = maxCite.toLocaleString();
     document.getElementById('citStatMaxSub').textContent = '단일 논문 최고';
-    document.getElementById('citStatJournal').textContent = journals.size;
-    document.getElementById('citStatJournalSub').textContent = '개 학술지';
+    document.getElementById('citStatHindex').textContent = hindex;
+    document.getElementById('citStatHindexSub').textContent = `상위 ${hindex}편 ≥ ${hindex}회 인용`;
     document.getElementById('citStatCards').style.display = '';
 
     // 고인용 논문 TOP 10
@@ -10632,6 +10739,7 @@ async function runCitationAnalysis() {
     document.getElementById('citInsightText').innerHTML =
       `"<strong>${escapeHtml(query)}</strong>" 관련 총 <strong>${total.toLocaleString()}건</strong>의 논문 중 ` +
       `평균 인용수는 <strong>${avgCite.toFixed(1)}회</strong>, 최고 인용 논문은 <strong>${maxCite}회</strong>입니다${noteStr}. ` +
+      `<strong>H-index는 ${hindex}</strong>으로, 상위 ${hindex}편의 논문이 각각 ${hindex}회 이상 인용되었습니다. ` +
       `가장 영향력 높은 학술지는 <strong>${escapeHtml(topJournal)}</strong>이며, ` +
       `상위 10% 논문의 인용수는 <strong>${top10pct}회</strong> 이상입니다.`;
     document.getElementById('citInsightBox').style.display = '';
