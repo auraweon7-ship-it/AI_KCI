@@ -12,6 +12,7 @@
     <script src="data.js"></script>
     <script src="hsk-data.js"></script>
     <script src="pinyin-data.js"></script>
+    <script src="radical-data.js"></script>
     <script src="claude-config.js"></script>
     <style>
         :root {
@@ -1824,6 +1825,155 @@
         }
         .wordlist-char:hover .wc-remove { opacity: 1; }
 
+        /* ===== THEME TOGGLE ===== */
+        .theme-toggle {
+            width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+            background: var(--surface2); cursor: pointer; font-size: 16px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s; flex-shrink: 0;
+        }
+        .theme-toggle:hover { border-color: var(--accent); transform: scale(1.1); }
+
+        body.light-theme {
+            --bg: #f0f0f5; --bg2: #e8e8f0;
+            --surface: rgba(255,255,255,0.85); --surface-solid: #ffffff;
+            --surface2: rgba(240,240,248,0.9); --surface3: rgba(230,230,242,0.7);
+            --border: rgba(160,160,200,0.25); --border-light: rgba(140,140,190,0.15);
+            --text: #1a1a2e; --text-dim: #666680;
+            --accent: #6c5ce7; --accent2: #00b894; --accent3: #e84393;
+            --accent-glow: rgba(108,92,231,0.15);
+            --success: #00b894; --danger: #e17055; --warning: #e6a817;
+            --shadow: 0 4px 16px rgba(0,0,0,0.06); --shadow-lg: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        body.light-theme::before {
+            background:
+                radial-gradient(ellipse 600px 400px at 20% 20%, rgba(108,92,231,0.04) 0%, transparent 70%),
+                radial-gradient(ellipse 500px 500px at 80% 60%, rgba(0,184,148,0.03) 0%, transparent 70%),
+                radial-gradient(ellipse 400px 300px at 50% 90%, rgba(232,67,147,0.02) 0%, transparent 70%);
+        }
+        body.light-theme::after { opacity: 0.015; }
+        body.light-theme .top-nav { background: rgba(255,255,255,0.92); }
+        body.light-theme .char-cell { background: rgba(255,255,255,0.6); }
+        body.light-theme .char-cell:hover { background: rgba(255,255,255,0.9); }
+        body.light-theme .flip-card-front, body.light-theme .flip-card-back { background: linear-gradient(160deg, #fff 0%, #f0f0f8 100%); }
+        body.light-theme .quiz-modal { background: #fff; }
+        body.light-theme .modal { background: #fff; }
+
+        /* ===== DAILY GOAL ===== */
+        .daily-goal-bar {
+            display: flex; align-items: center; gap: 12px; padding: 12px 18px;
+            background: var(--surface); backdrop-filter: var(--glass);
+            border: 1px solid var(--border); border-radius: 14px;
+            margin-bottom: 14px; position: relative; overflow: hidden;
+        }
+        .daily-goal-bar::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(94,234,212,0.4), transparent);
+        }
+        .daily-goal-icon { font-size: 20px; flex-shrink: 0; }
+        .daily-goal-info { flex: 1; min-width: 0; }
+        .daily-goal-label { font-size: 11px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+        .daily-goal-progress-wrap { margin-top: 4px; background: var(--surface2); border-radius: 6px; height: 8px; overflow: hidden; }
+        .daily-goal-progress-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width 0.5s ease; }
+        .daily-goal-count { font-size: 14px; font-weight: 700; color: var(--accent2); white-space: nowrap; }
+        .daily-goal-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 11px; color: var(--text-dim); cursor: pointer; font-family: inherit; transition: all 0.2s; }
+        .daily-goal-btn:hover { border-color: var(--accent); color: var(--text); }
+        .goal-complete { animation: goalPulse 0.6s ease; }
+        @keyframes goalPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.03)} }
+
+        /* ===== MISTAKE NOTEBOOK ===== */
+        .mistake-section {
+            background: var(--surface); backdrop-filter: var(--glass);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow);
+            position: relative; overflow: hidden;
+        }
+        .mistake-section::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(248,113,113,0.3), rgba(124,106,255,0.2), transparent);
+        }
+        .mistake-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 8px; max-height: 260px; overflow-y: auto;
+        }
+        .mistake-grid::-webkit-scrollbar { width: 4px; }
+        .mistake-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        .mistake-char {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 10px 4px; background: var(--surface2); border: 1px solid transparent;
+            border-radius: 12px; cursor: pointer; transition: all 0.2s; min-height: 80px; position: relative;
+        }
+        .mistake-char:hover { border-color: var(--danger); transform: translateY(-2px); }
+        .mistake-char .mc-hz { font-size: 28px; font-family: 'Noto Serif KR', serif; }
+        .mistake-char .mc-rd { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+        .mistake-char .mc-cnt { position: absolute; top: 4px; right: 6px; font-size: 10px; color: var(--danger); font-weight: 700; }
+        .mistake-char .mc-del {
+            position: absolute; top: 2px; left: 4px; font-size: 12px; color: var(--text-dim);
+            cursor: pointer; opacity: 0; transition: opacity 0.2s; background: none; border: none; padding: 2px;
+        }
+        .mistake-char:hover .mc-del { opacity: 1; }
+
+        /* ===== ACHIEVEMENT BADGES ===== */
+        .badge-section {
+            background: var(--surface); backdrop-filter: var(--glass);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow);
+            position: relative; overflow: hidden;
+        }
+        .badge-section::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(251,191,36,0.4), rgba(124,106,255,0.3), transparent);
+        }
+        .badge-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px;
+        }
+        .badge-item {
+            display: flex; flex-direction: column; align-items: center; text-align: center;
+            padding: 14px 8px; background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 14px; transition: all 0.3s; position: relative;
+        }
+        .badge-item.locked { opacity: 0.35; filter: grayscale(100%); }
+        .badge-item.unlocked { border-color: rgba(251,191,36,0.3); }
+        .badge-item.unlocked:hover { border-color: var(--warning); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(251,191,36,0.15); }
+        .badge-icon { font-size: 32px; margin-bottom: 6px; }
+        .badge-name { font-size: 11px; font-weight: 700; color: var(--text); }
+        .badge-desc { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+        .badge-new { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; background: var(--danger); border-radius: 50%; border: 2px solid var(--surface-solid); animation: badgePing 1s ease infinite; }
+        @keyframes badgePing { 0%,100%{transform:scale(1)} 50%{transform:scale(1.3)} }
+
+        .badge-unlock-toast {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
+            background: var(--surface-solid); border: 2px solid var(--warning);
+            border-radius: 20px; padding: 32px 40px; text-align: center; z-index: 10000;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5); opacity: 0;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .badge-unlock-toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        .badge-unlock-toast .bu-icon { font-size: 56px; }
+        .badge-unlock-toast .bu-title { font-size: 12px; color: var(--warning); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-top: 8px; }
+        .badge-unlock-toast .bu-name { font-size: 20px; font-weight: 800; margin-top: 4px; }
+        .badge-unlock-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; opacity: 0; transition: opacity 0.3s; }
+        .badge-unlock-backdrop.show { opacity: 1; }
+
+        /* ===== RADICAL TAG ===== */
+        .radical-tag {
+            display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px;
+            background: rgba(94,234,212,0.08); border: 1px solid rgba(94,234,212,0.2);
+            border-radius: 8px; font-size: 12px; color: var(--accent2); cursor: pointer;
+            transition: all 0.2s; margin-top: 6px;
+        }
+        .radical-tag:hover { background: rgba(94,234,212,0.15); border-color: var(--accent2); }
+        .radical-tag .rt-char { font-size: 18px; font-family: 'Noto Serif KR', serif; font-weight: 700; }
+        .radical-related {
+            display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;
+        }
+        .radical-related-char {
+            width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
+            background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+            font-size: 20px; font-family: 'Noto Serif KR', serif; cursor: pointer; transition: all 0.2s;
+        }
+        .radical-related-char:hover { border-color: var(--accent2); transform: scale(1.1); }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             /* Nav */
@@ -1941,6 +2091,11 @@
             .quiz-question-char { font-size: 64px; }
             .quiz-launcher { padding: 10px 12px; }
             .wordlist-section { padding: 16px; }
+            .mistake-section { padding: 16px; }
+            .badge-section { padding: 16px; }
+            .badge-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 8px; }
+            .badge-icon { font-size: 26px; }
+            .daily-goal-bar { padding: 10px 14px; }
         }
 
         @media (max-width: 580px) {
@@ -1996,6 +2151,8 @@
             .dashboard-chart-wrap canvas { max-height: 150px; }
             .quiz-launcher { flex-direction: column; }
             .quiz-launcher .btn { width: 100%; justify-content: center; }
+            .badge-grid { grid-template-columns: repeat(3, 1fr); }
+            .mistake-grid { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); }
         }
 
         @media (max-width: 360px) {
@@ -2036,6 +2193,7 @@
                     <span class="key-icon">🔑</span> API 키
                 </button>
                 <button class="nav-btn nav-admin-btn" onclick="showAdminLogin()">관리자</button>
+                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="테마 전환">🌙</button>
             </div>
         </div>
     </nav>
@@ -2148,6 +2306,17 @@
                 <button class="btn btn-success btn-sm" onclick="openQuizModal('daily')">📝 오늘의 퀴즈</button>
             </div>
 
+            <!-- Daily Goal -->
+            <div class="daily-goal-bar" id="dailyGoalBar">
+                <div class="daily-goal-icon">🎯</div>
+                <div class="daily-goal-info">
+                    <div class="daily-goal-label">오늘의 목표</div>
+                    <div class="daily-goal-progress-wrap"><div class="daily-goal-progress-fill" id="goalProgressFill" style="width:0%"></div></div>
+                </div>
+                <div class="daily-goal-count" id="goalCount">0/10</div>
+                <button class="daily-goal-btn" onclick="showGoalModal()">⚙️</button>
+            </div>
+
             <!-- Character Grid -->
             <div class="char-grid-section" id="charGridSection">
                 <div class="char-grid-header">
@@ -2191,6 +2360,8 @@
                                 <h2 id="charName"></h2>
                                 <p id="charDesc"></p>
                                 <div id="charTags" style="margin-top:8px;"></div>
+                                <div id="radicalInfo"></div>
+                                <div id="radicalRelated" class="radical-related"></div>
                             </div>
                         </div>
                         <div class="example-panel" id="examplePanel" style="display:none;">
@@ -2295,6 +2466,27 @@
                 </div>
             </div>
 
+            <!-- Mistake Notebook -->
+            <div class="mistake-section" id="mistakeSection" style="display:none;">
+                <div class="my-stats-header">
+                    <div class="my-stats-title">📝 오답 노트</div>
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn btn-outline btn-sm" style="padding:6px 12px;font-size:11px;" id="mistakeQuizBtn" onclick="quizFromMistakes()">오답 퀴즈</button>
+                        <button class="btn btn-outline btn-sm" style="padding:6px 12px;font-size:11px;" onclick="clearAllMistakes()">초기화</button>
+                    </div>
+                </div>
+                <div class="mistake-grid" id="mistakeGrid"></div>
+            </div>
+
+            <!-- Achievement Badges -->
+            <div class="badge-section" id="badgeSection">
+                <div class="my-stats-header">
+                    <div class="my-stats-title">🏆 성취 배지</div>
+                    <div style="font-size:12px;color:var(--text-dim);" id="badgeProgress">0/12</div>
+                </div>
+                <div class="badge-grid" id="badgeGrid"></div>
+            </div>
+
             <!-- Learning Dashboard (replaces My Stats) -->
             <div class="dashboard-section" id="myStatsSection" style="display:none;">
                 <div class="my-stats-header">
@@ -2378,6 +2570,30 @@
         </div>
     </div>
 
+    <!-- Goal Settings Modal -->
+    <div class="modal-overlay" id="goalModal" style="display:none;" onclick="if(event.target===this)closeGoalModal()">
+        <div class="modal" style="width:360px;">
+            <h3>🎯 일일 목표 설정</h3>
+            <div style="margin:16px 0;text-align:center;">
+                <input type="range" id="goalSlider" min="5" max="50" step="5" value="10"
+                    style="width:100%;" oninput="document.getElementById('goalSliderVal').textContent=this.value+'자'">
+                <div style="font-size:28px;font-weight:800;color:var(--accent2);margin-top:8px;" id="goalSliderVal">10자</div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-primary btn-sm" onclick="saveDailyGoal()">저장</button>
+                <button class="btn btn-outline btn-sm" onclick="closeGoalModal()">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Badge Unlock Overlay -->
+    <div class="badge-unlock-backdrop" id="badgeUnlockBg" onclick="closeBadgeUnlock()"></div>
+    <div class="badge-unlock-toast" id="badgeUnlockToast">
+        <div class="bu-icon" id="buIcon"></div>
+        <div class="bu-title">배지 획득!</div>
+        <div class="bu-name" id="buName"></div>
+    </div>
+
     <script>
         let animWriter = null;
         let quizWriter = null;
@@ -2440,6 +2656,7 @@
             // Init new features
             renderSRSSection();
             renderWordlistSection();
+            initNewFeatures();
         }
 
         function renderCategoryTabs() {
@@ -2597,6 +2814,7 @@
             createQuizWriter(char);
             loadStrokeBreakdown(char);
             updateFavBtn();
+            showRadicalInfo(char);
 
             document.getElementById('infoPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -2713,6 +2931,9 @@
                     }
                     markCharLearned(currentChar, data.totalMistakes);
                     if (srsReviewQueue.length > 0) advanceSRSReview(currentChar, data.totalMistakes);
+                    if (data.totalMistakes > 0) addMistake(currentChar, 'writing');
+                    incrementDailyGoal();
+                    checkAchievements();
                 }
             });
         }
@@ -3584,6 +3805,10 @@
             var srsData = getSRSData();
             if (srsData[ch]) { updateSRSAfterReview(ch, correct ? 0 : 3); }
             else { markCharLearned(ch, correct ? 0 : 3); }
+            // Mistake tracking
+            if (!correct) addMistake(ch, q.type);
+            // Daily goal
+            incrementDailyGoal();
             setTimeout(function() { renderQuizQuestion(quizState.currentIdx + 1); }, 1000);
         }
 
@@ -3592,6 +3817,8 @@
             var pct = Math.round(quizState.score / quizState.questions.length * 100);
             var color = pct >= 80 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)';
             var emoji = pct >= 80 ? '🎉' : pct >= 50 ? '👍' : '💪';
+            if (pct === 100) markPerfectQuiz();
+            checkAchievements();
             var body = document.getElementById('quizModalBody');
             body.innerHTML = '<div class="quiz-result">'
                 + '<div style="font-size:48px;margin-bottom:12px;">' + emoji + '</div>'
@@ -3773,6 +4000,266 @@
                 btn.classList.remove('configured');
                 btn.innerHTML = '<span class="key-icon">🔑</span> API 키';
             }
+        }
+
+        // ===== FEATURE 5: THEME TOGGLE =====
+        function toggleTheme() {
+            var isLight = document.body.classList.toggle('light-theme');
+            localStorage.setItem('hanzi_theme', isLight ? 'light' : 'dark');
+            document.getElementById('themeToggle').textContent = isLight ? '☀️' : '🌙';
+        }
+        function initTheme() {
+            var saved = localStorage.getItem('hanzi_theme');
+            if (saved === 'light') {
+                document.body.classList.add('light-theme');
+                document.getElementById('themeToggle').textContent = '☀️';
+            }
+        }
+        initTheme();
+
+        // ===== FEATURE 6: DAILY GOAL =====
+        function getDailyGoal() {
+            var d = JSON.parse(localStorage.getItem('daily_goal') || '{}');
+            if (d.date !== todayStr()) { d = { target: d.target || 10, date: todayStr(), progress: 0 }; localStorage.setItem('daily_goal', JSON.stringify(d)); }
+            return d;
+        }
+        function saveDailyGoalData(d) { localStorage.setItem('daily_goal', JSON.stringify(d)); }
+        function incrementDailyGoal() {
+            var d = getDailyGoal();
+            if (d.progress >= d.target) return;
+            d.progress++;
+            saveDailyGoalData(d);
+            renderDailyGoal();
+            if (d.progress === d.target) {
+                var bar = document.getElementById('dailyGoalBar');
+                bar.classList.add('goal-complete');
+                showToast('🎯 오늘의 목표 달성! 축하합니다!');
+                setTimeout(function() { bar.classList.remove('goal-complete'); }, 1000);
+                var gc = parseInt(localStorage.getItem('goals_completed') || '0');
+                localStorage.setItem('goals_completed', gc + 1);
+                checkAchievements();
+            }
+        }
+        function renderDailyGoal() {
+            var d = getDailyGoal();
+            var pct = Math.min(100, Math.round(d.progress / d.target * 100));
+            document.getElementById('goalProgressFill').style.width = pct + '%';
+            document.getElementById('goalCount').textContent = d.progress + '/' + d.target;
+            if (d.progress >= d.target) {
+                document.getElementById('goalCount').style.color = 'var(--success)';
+            } else {
+                document.getElementById('goalCount').style.color = 'var(--accent2)';
+            }
+        }
+        function showGoalModal() {
+            var d = getDailyGoal();
+            document.getElementById('goalSlider').value = d.target;
+            document.getElementById('goalSliderVal').textContent = d.target + '자';
+            document.getElementById('goalModal').style.display = 'flex';
+        }
+        function closeGoalModal() { document.getElementById('goalModal').style.display = 'none'; }
+        function saveDailyGoal() {
+            var target = parseInt(document.getElementById('goalSlider').value);
+            var d = getDailyGoal();
+            d.target = target;
+            saveDailyGoalData(d);
+            renderDailyGoal();
+            closeGoalModal();
+            showToast('목표: 하루 ' + target + '자');
+        }
+
+        // ===== FEATURE 7: MISTAKE NOTEBOOK =====
+        function getMistakes() { return JSON.parse(localStorage.getItem('hanzi_mistakes') || '{}'); }
+        function saveMistakes(d) { localStorage.setItem('hanzi_mistakes', JSON.stringify(d)); }
+        function addMistake(char, context) {
+            var d = getMistakes();
+            if (!d[char]) d[char] = { count: 0, lastWrong: '', contexts: [] };
+            d[char].count++;
+            d[char].lastWrong = todayStr();
+            if (d[char].contexts.indexOf(context) === -1) d[char].contexts.push(context);
+            saveMistakes(d);
+            renderMistakeSection();
+        }
+        function removeMistake(char) {
+            var d = getMistakes();
+            delete d[char];
+            saveMistakes(d);
+            renderMistakeSection();
+        }
+        function clearAllMistakes() {
+            if (!confirm('오답 노트를 초기화하시겠습니까?')) return;
+            localStorage.removeItem('hanzi_mistakes');
+            renderMistakeSection();
+            showToast('오답 노트 초기화됨');
+        }
+        function renderMistakeSection() {
+            var d = getMistakes();
+            var keys = Object.keys(d);
+            var section = document.getElementById('mistakeSection');
+            if (keys.length === 0) { section.style.display = 'none'; return; }
+            section.style.display = 'block';
+            keys.sort(function(a, b) { return d[b].count - d[a].count; });
+            var grid = document.getElementById('mistakeGrid');
+            var quizBtn = document.getElementById('mistakeQuizBtn');
+            quizBtn.style.display = keys.length >= 4 ? 'inline-block' : 'none';
+            var html = '';
+            keys.forEach(function(ch) {
+                var info = charLookup[ch];
+                html += '<div class="mistake-char" onclick="selectChar(\'' + ch + '\')">'
+                    + '<span class="mc-cnt">×' + d[ch].count + '</span>'
+                    + '<span class="mc-hz">' + ch + '</span>'
+                    + '<span class="mc-rd">' + (info ? info.reading : '') + '</span>'
+                    + '<button class="mc-del" onclick="event.stopPropagation();removeMistake(\'' + ch + '\')" title="제거">✕</button>'
+                    + '</div>';
+            });
+            grid.innerHTML = html;
+        }
+        function quizFromMistakes() {
+            var d = getMistakes();
+            var chars = Object.keys(d);
+            if (chars.length < 4) { showToast('최소 4개 오답이 필요합니다'); return; }
+            var pool = chars.map(function(ch) {
+                var info = charLookup[ch];
+                return info ? [ch, info.reading, info.meaning] : [ch, ch, ch];
+            });
+            openQuizModal('char2meaning', pool);
+        }
+
+        // ===== FEATURE 8: ACHIEVEMENT BADGES =====
+        var BADGE_DEFS = [
+            { id:'first', icon:'🌱', name:'첫 걸음', desc:'첫 한자 학습', check: function(s){return s.chars>=1;} },
+            { id:'ten', icon:'⭐', name:'열 글자', desc:'10자 학습', check: function(s){return s.chars>=10;} },
+            { id:'fifty', icon:'🌟', name:'오십 달성', desc:'50자 학습', check: function(s){return s.chars>=50;} },
+            { id:'hundred', icon:'💫', name:'백자 통달', desc:'100자 학습', check: function(s){return s.chars>=100;} },
+            { id:'fiveH', icon:'👑', name:'오백 달인', desc:'500자 학습', check: function(s){return s.chars>=500;} },
+            { id:'streak3', icon:'🔥', name:'3일 연속', desc:'3일 연속 학습', check: function(s){return s.streak>=3;} },
+            { id:'streak7', icon:'🔥', name:'7일 연속', desc:'7일 연속 학습', check: function(s){return s.streak>=7;} },
+            { id:'streak30', icon:'🏆', name:'한달 연속', desc:'30일 연속 학습', check: function(s){return s.streak>=30;} },
+            { id:'perfect', icon:'💯', name:'퀴즈 만점', desc:'퀴즈 100점 달성', check: function(s){return s.perfectQuiz;} },
+            { id:'srs10', icon:'🧠', name:'복습 마스터', desc:'SRS 10회 완료', check: function(s){return s.srsReviews>=10;} },
+            { id:'lists3', icon:'📚', name:'수집가', desc:'단어장 3개 생성', check: function(s){return s.wordlists>=3;} },
+            { id:'goalWeek', icon:'🎯', name:'목표 달성왕', desc:'목표 7회 달성', check: function(s){return s.goalsCompleted>=7;} }
+        ];
+        function getAchievements() { return JSON.parse(localStorage.getItem('hanzi_achievements') || '{}'); }
+        function saveAchievements(d) { localStorage.setItem('hanzi_achievements', JSON.stringify(d)); }
+        function getAchievementStats() {
+            var records = JSON.parse(localStorage.getItem('practice_records') || '[]');
+            var practiced = new Set();
+            records.forEach(function(r) { practiced.add(r.char); });
+            // streak
+            var days = new Set();
+            records.forEach(function(r) { if (r.timestamp) days.add(r.timestamp.slice(0, 10)); });
+            var sorted = Array.from(days).sort().reverse();
+            var streak = 0;
+            var check = new Date();
+            if (sorted[0] !== todayStr()) check.setDate(check.getDate() - 1);
+            for (var i = 0; i < 365; i++) {
+                var dd = check.toISOString().slice(0, 10);
+                if (days.has(dd)) { streak++; check.setDate(check.getDate() - 1); }
+                else break;
+            }
+            var ach = getAchievements();
+            var wordlists = Object.keys(getWordlists()).length;
+            var srsData = getSRSData();
+            var srsReviews = 0;
+            Object.keys(srsData).forEach(function(k) { srsReviews += srsData[k].repetitions || 0; });
+            return {
+                chars: practiced.size,
+                streak: streak,
+                perfectQuiz: !!ach._perfectQuiz,
+                srsReviews: srsReviews,
+                wordlists: wordlists,
+                goalsCompleted: parseInt(localStorage.getItem('goals_completed') || '0')
+            };
+        }
+        function checkAchievements() {
+            var stats = getAchievementStats();
+            var ach = getAchievements();
+            var newBadges = [];
+            BADGE_DEFS.forEach(function(b) {
+                if (!ach[b.id] && b.check(stats)) {
+                    ach[b.id] = todayStr();
+                    newBadges.push(b);
+                }
+            });
+            if (newBadges.length > 0) {
+                saveAchievements(ach);
+                renderBadgeSection();
+                // Show unlock animation for first new badge
+                showBadgeUnlock(newBadges[0]);
+            }
+        }
+        function markPerfectQuiz() {
+            var ach = getAchievements();
+            ach._perfectQuiz = true;
+            saveAchievements(ach);
+        }
+        function showBadgeUnlock(badge) {
+            document.getElementById('buIcon').textContent = badge.icon;
+            document.getElementById('buName').textContent = badge.name;
+            document.getElementById('badgeUnlockBg').classList.add('show');
+            document.getElementById('badgeUnlockToast').classList.add('show');
+            setTimeout(closeBadgeUnlock, 2500);
+        }
+        function closeBadgeUnlock() {
+            document.getElementById('badgeUnlockBg').classList.remove('show');
+            document.getElementById('badgeUnlockToast').classList.remove('show');
+        }
+        function renderBadgeSection() {
+            var ach = getAchievements();
+            var unlocked = 0;
+            var html = '';
+            BADGE_DEFS.forEach(function(b) {
+                var isUnlocked = !!ach[b.id];
+                if (isUnlocked) unlocked++;
+                var isNew = isUnlocked && ach[b.id] === todayStr() && !ach['_seen_' + b.id];
+                html += '<div class="badge-item ' + (isUnlocked ? 'unlocked' : 'locked') + '">'
+                    + (isNew ? '<div class="badge-new"></div>' : '')
+                    + '<div class="badge-icon">' + b.icon + '</div>'
+                    + '<div class="badge-name">' + b.name + '</div>'
+                    + '<div class="badge-desc">' + b.desc + '</div>'
+                    + '</div>';
+            });
+            document.getElementById('badgeGrid').innerHTML = html;
+            document.getElementById('badgeProgress').textContent = unlocked + '/' + BADGE_DEFS.length;
+        }
+
+        // ===== FEATURE 9: RADICAL DISPLAY =====
+        function showRadicalInfo(char) {
+            var infoEl = document.getElementById('radicalInfo');
+            var relatedEl = document.getElementById('radicalRelated');
+            if (!infoEl) return;
+            if (typeof getRadicalInfo !== 'function') { infoEl.innerHTML = ''; relatedEl.innerHTML = ''; return; }
+            var info = getRadicalInfo(char);
+            if (!info) { infoEl.innerHTML = ''; relatedEl.innerHTML = ''; return; }
+            infoEl.innerHTML = '<div class="radical-tag" onclick="showRadicalChars(\'' + info.key + '\')">'
+                + '<span class="rt-char">' + info.radical + '</span>'
+                + '<span>부수: ' + info.name + ' (' + info.strokes + '획)</span>'
+                + '</div>';
+            var related = getRelatedByRadical(char, 10);
+            if (related.length > 0) {
+                var rHtml = '';
+                related.forEach(function(rc) {
+                    rHtml += '<div class="radical-related-char" onclick="selectChar(\'' + rc + '\')" title="' + (charLookup[rc] ? charLookup[rc].meaning + ' ' + charLookup[rc].reading : rc) + '">' + rc + '</div>';
+                });
+                relatedEl.innerHTML = rHtml;
+            } else {
+                relatedEl.innerHTML = '';
+            }
+        }
+        function showRadicalChars(radicalKey) {
+            if (!RADICAL_MAP || !RADICAL_MAP[radicalKey]) return;
+            var chars = RADICAL_MAP[radicalKey].c;
+            var name = RADICAL_MAP[radicalKey].n;
+            showToast('부수 ' + RADICAL_MAP[radicalKey].r + '(' + name + '): ' + chars.length + '자');
+        }
+
+        // ===== INIT NEW FEATURES =====
+        function initNewFeatures() {
+            renderDailyGoal();
+            renderMistakeSection();
+            renderBadgeSection();
+            checkAchievements();
         }
 
         updateApiKeyBtn();
