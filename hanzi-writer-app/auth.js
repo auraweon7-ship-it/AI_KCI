@@ -1,67 +1,90 @@
-// auth.js - Authentication, Admin, and Learning History Module
+// auth.js - Authentication, Admin, and Learning History Module (Railway/PostgreSQL)
 (function() {
     'use strict';
 
-    var firebaseEnabled = false;
+    var API_BASE = '/api';
     var currentUser = null;
+    var authToken = null;
+    var adminToken = null;
     var isAdmin = false;
-    var db = null;
-    var authInstance = null;
+    var googleClientId = null;
 
     // ===== INIT =====
     function initAuth() {
-        if (typeof FIREBASE_CONFIG !== 'undefined' && FIREBASE_CONFIG.apiKey) {
-            try {
-                firebase.initializeApp(FIREBASE_CONFIG);
-                authInstance = firebase.auth();
-                db = firebase.firestore();
-                firebaseEnabled = true;
-                authInstance.onAuthStateChanged(handleAuthStateChange);
-            } catch(e) {
-                console.warn('Firebase init failed:', e);
-            }
+        var saved = localStorage.getItem('auth_token');
+        var savedUser = localStorage.getItem('auth_user');
+        if (saved && savedUser) {
+            authToken = saved;
+            try { currentUser = JSON.parse(savedUser); } catch(e) { currentUser = null; }
         }
+
+        fetch(API_BASE + '/config').then(function(r) { return r.json(); }).then(function(cfg) {
+            if (cfg.googleClientId) {
+                googleClientId = cfg.googleClientId;
+                loadGoogleSignIn();
+            }
+        }).catch(function() {});
+
         updateAuthUI();
+        loadMyStats();
     }
 
-    function handleAuthStateChange(user) {
-        currentUser = user;
-        if (user) {
-            saveUserProfile(user);
-            loadMyStats();
-        }
-        updateAuthUI();
+    function loadGoogleSignIn() {
+        if (document.getElementById('gsi-script')) return;
+        var script = document.createElement('script');
+        script.id = 'gsi-script';
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.onload = function() {
+            google.accounts.id.initialize({
+                client_id: googleClientId,
+                callback: handleGoogleCredential
+            });
+        };
+        document.head.appendChild(script);
+    }
+
+    function handleGoogleCredential(response) {
+        fetch(API_BASE + '/auth/google', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ credential: response.credential })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.token && data.user) {
+                authToken = data.token;
+                currentUser = data.user;
+                localStorage.setItem('auth_token', authToken);
+                localStorage.setItem('auth_user', JSON.stringify(currentUser));
+                updateAuthUI();
+                loadMyStats();
+                if (typeof showToast === 'function') showToast('로그인 성공');
+            } else {
+                if (typeof showToast === 'function') showToast('로그인 실패');
+            }
+        })
+        .catch(function() {
+            if (typeof showToast === 'function') showToast('로그인 실패');
+        });
     }
 
     // ===== GOOGLE AUTH =====
     window.googleLogin = function() {
-        if (!firebaseEnabled) {
-            if (typeof showToast === 'function') showToast('Firebase 설정이 필요합니다 (firebase-config.js)');
+        if (!googleClientId) {
+            if (typeof showToast === 'function') showToast('Google OAuth 미설정 — GOOGLE_CLIENT_ID 환경변수 필요');
             return;
         }
-        var provider = new firebase.auth.GoogleAuthProvider();
-        authInstance.signInWithPopup(provider).catch(function(error) {
-            if (typeof showToast === 'function') showToast('로그인 실패: ' + error.message);
-        });
+        google.accounts.id.prompt();
     };
 
     window.googleLogout = function() {
-        if (authInstance) authInstance.signOut();
         currentUser = null;
-        isAdmin = false;
+        authToken = null;
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
         document.getElementById('myStatsSection').style.display = 'none';
         updateAuthUI();
     };
-
-    function saveUserProfile(user) {
-        if (!db) return;
-        db.collection('users').doc(user.uid).set({
-            name: user.displayName || '',
-            email: user.email || '',
-            photoURL: user.photoURL || '',
-            lastActive: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true });
-    }
 
     // ===== PRACTICE RECORD =====
     window.savePracticeRecord = function(char, correct, mistakes) {
@@ -72,24 +95,20 @@
             timestamp: new Date().toISOString()
         };
 
-        // Always save to localStorage
         var records = JSON.parse(localStorage.getItem('practice_records') || '[]');
         records.push(record);
         if (records.length > 2000) records = records.slice(-2000);
         localStorage.setItem('practice_records', JSON.stringify(records));
 
-        // Save to Firestore if logged in
-        if (db && currentUser) {
-            db.collection('users').doc(currentUser.uid)
-                .collection('practices').add({
-                    char: record.char,
-                    correct: record.correct,
-                    mistakes: record.mistakes,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-            db.collection('users').doc(currentUser.uid).update({
-                lastActive: firebase.firestore.FieldValue.serverTimestamp()
-            });
+        if (authToken && currentUser) {
+            fetch(API_BASE + '/practices', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + authToken
+                },
+                body: JSON.stringify(record)
+            }).catch(function() {});
         }
 
         loadMyStats();
@@ -120,7 +139,6 @@
         document.getElementById('myStatSessions').textContent = totalSessions;
         document.getElementById('myStatAccuracy').textContent = accuracy + '%';
 
-        // Recent records
         var recent = records.slice(-10).reverse();
         var html = '';
         recent.forEach(function(r) {
@@ -156,17 +174,30 @@
 
     window.tryAdminLogin = function() {
         var pw = document.getElementById('adminPw').value;
-        if (pw === 'aura09#$') {
-            isAdmin = true;
-            closeAdminModal();
-            showAdminPanel();
-        } else {
-            if (typeof showToast === 'function') showToast('비밀번호가 틀립니다');
-        }
+        fetch(API_BASE + '/auth/admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pw })
+        })
+        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+        .then(function(result) {
+            if (result.ok && result.data.token) {
+                isAdmin = true;
+                adminToken = result.data.token;
+                closeAdminModal();
+                showAdminPanel();
+            } else {
+                if (typeof showToast === 'function') showToast('비밀번호가 틀립니다');
+            }
+        })
+        .catch(function() {
+            if (typeof showToast === 'function') showToast('서버 연결 실패');
+        });
     };
 
     window.exitAdmin = function() {
         isAdmin = false;
+        adminToken = null;
         document.getElementById('adminPanel').style.display = 'none';
         document.getElementById('mainContent').style.display = 'block';
         updateAuthUI();
@@ -179,59 +210,57 @@
         loadAllLearners();
     }
 
+    function getAdminHeaders() {
+        var token = adminToken || authToken;
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': token ? 'Bearer ' + token : ''
+        };
+    }
+
     function loadAllLearners() {
         var listEl = document.getElementById('learnerTableBody');
         var noticeEl = document.getElementById('adminNotice');
         var summaryEl = document.getElementById('adminSummary');
 
-        if (!firebaseEnabled || !db) {
-            noticeEl.style.display = 'block';
-            noticeEl.innerHTML = '<span style="color:var(--warning);">Firebase 미설정</span> — firebase-config.js에 Firebase 프로젝트 정보를 입력하면 모든 학습자 데이터를 확인할 수 있습니다.'
-                + '<br><br>현재 이 브라우저의 로컬 데이터만 표시됩니다.';
-            showLocalAdminData(listEl, summaryEl);
-            return;
-        }
-
-        noticeEl.style.display = 'none';
         listEl.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-dim);">로딩 중...</td></tr>';
 
-        db.collection('users').orderBy('lastActive', 'desc').get().then(function(snapshot) {
-            if (snapshot.empty) {
+        fetch(API_BASE + '/admin/learners', { headers: getAdminHeaders() })
+        .then(function(r) {
+            if (!r.ok) throw new Error('서버 응답 오류');
+            return r.json();
+        })
+        .then(function(learners) {
+            noticeEl.style.display = 'none';
+
+            if (learners.length === 0) {
                 listEl.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-dim);">등록된 학습자가 없습니다</td></tr>';
                 summaryEl.innerHTML = '총 학습자: 0명';
                 return;
             }
 
-            summaryEl.innerHTML = '총 학습자: <strong>' + snapshot.size + '</strong>명';
+            summaryEl.innerHTML = '총 학습자: <strong>' + learners.length + '</strong>명';
             var html = '';
-            var promises = [];
-
-            snapshot.forEach(function(doc) {
-                promises.push(
-                    db.collection('users').doc(doc.id).collection('practices').orderBy('timestamp','desc').limit(1).get()
-                        .then(function(pSnap) {
-                            return { user: doc, practiceCount: pSnap.size, data: doc.data(), id: doc.id };
-                        })
-                );
-            });
-
-            // Simpler: just show user data, load practice count on detail view
-            html = '';
-            snapshot.forEach(function(doc) {
-                var d = doc.data();
-                var lastActive = d.lastActive ? d.lastActive.toDate().toLocaleDateString('ko-KR') : '-';
-                var avatar = d.photoURL ? '<img class="admin-avatar" src="' + d.photoURL + '" onerror="this.style.display=\'none\'">' : '<div class="admin-avatar-placeholder">?</div>';
+            learners.forEach(function(d) {
+                var lastActive = d.last_active ? new Date(d.last_active).toLocaleDateString('ko-KR') : '-';
+                var avatar = d.photo_url
+                    ? '<img class="admin-avatar" src="' + d.photo_url + '" onerror="this.style.display=\'none\'">'
+                    : '<div class="admin-avatar-placeholder">?</div>';
                 html += '<tr>'
                     + '<td>' + avatar + '</td>'
                     + '<td>' + (d.name || '-') + '</td>'
                     + '<td>' + (d.email || '-') + '</td>'
                     + '<td>' + lastActive + '</td>'
-                    + '<td><button class="btn btn-sm btn-outline" onclick="viewLearnerDetail(\'' + doc.id + '\')">상세보기</button></td>'
+                    + '<td><button class="btn btn-sm btn-outline" onclick="viewLearnerDetail(' + d.id + ')">상세보기</button></td>'
                     + '</tr>';
             });
             listEl.innerHTML = html;
-        }).catch(function(e) {
-            listEl.innerHTML = '<tr><td colspan="5" style="color:var(--danger);padding:20px;">로딩 실패: ' + e.message + '</td></tr>';
+        })
+        .catch(function(e) {
+            noticeEl.style.display = 'block';
+            noticeEl.innerHTML = '<span style="color:var(--warning);">DB 연결 실패</span> — 서버가 실행 중인지 확인하세요.'
+                + '<br><br>현재 이 브라우저의 로컬 데이터만 표시됩니다.';
+            showLocalAdminData(listEl, summaryEl);
         });
     }
 
@@ -270,28 +299,21 @@
     }
 
     window.viewLearnerDetail = function(uid) {
-        if (!db) return;
         var panel = document.getElementById('learnerDetail');
         panel.style.display = 'block';
         panel.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim);">로딩 중...</div>';
 
-        Promise.all([
-            db.collection('users').doc(uid).get(),
-            db.collection('users').doc(uid).collection('practices').orderBy('timestamp', 'desc').limit(200).get()
-        ]).then(function(results) {
-            var userDoc = results[0];
-            var practicesSnap = results[1];
-            var ud = userDoc.data();
+        fetch(API_BASE + '/admin/learners/' + uid, { headers: getAdminHeaders() })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var ud = data.user;
+            var practiceList = data.practices || [];
 
             var totalCorrect = 0, totalMistakes = 0, charSet = new Set();
-            var practiceList = [];
-
-            practicesSnap.forEach(function(doc) {
-                var d = doc.data();
-                totalCorrect += d.correct || 0;
-                totalMistakes += d.mistakes || 0;
-                charSet.add(d.char);
-                practiceList.push(d);
+            practiceList.forEach(function(p) {
+                totalCorrect += p.correct || 0;
+                totalMistakes += p.mistakes || 0;
+                charSet.add(p.char);
             });
 
             var accuracy = totalCorrect + totalMistakes > 0
@@ -299,7 +321,7 @@
 
             var html = '<div class="detail-header">'
                 + '<div class="detail-profile">'
-                + (ud.photoURL ? '<img class="detail-avatar" src="' + ud.photoURL + '">' : '')
+                + (ud.photo_url ? '<img class="detail-avatar" src="' + ud.photo_url + '">' : '')
                 + '<div>'
                 + '<h3 style="font-size:18px;font-weight:700;">' + (ud.name || '이름 없음') + '</h3>'
                 + '<p style="color:var(--text-dim);font-size:13px;">' + (ud.email || '') + '</p>'
@@ -321,7 +343,7 @@
                 html += '<div style="color:var(--text-dim);padding:20px;text-align:center;">학습 기록이 없습니다</div>';
             } else {
                 practiceList.forEach(function(p) {
-                    var timeStr = p.timestamp ? p.timestamp.toDate().toLocaleString('ko-KR') : '-';
+                    var timeStr = p.created_at ? new Date(p.created_at).toLocaleString('ko-KR') : '-';
                     html += '<div class="detail-record">'
                         + '<span class="detail-r-char">' + p.char + '</span>'
                         + '<span class="detail-r-info">정답 ' + (p.correct||0) + ' / 오답 ' + (p.mistakes||0) + '</span>'
@@ -330,10 +352,11 @@
                 });
             }
             html += '</div>';
-
             panel.innerHTML = html;
-        }).catch(function(e) {
-            panel.innerHTML = '<div style="color:var(--danger);padding:20px;">로딩 실패: ' + e.message + '<br><button class="btn btn-sm btn-outline" style="margin-top:10px;" onclick="document.getElementById(\'learnerDetail\').style.display=\'none\'">닫기</button></div>';
+        })
+        .catch(function(e) {
+            panel.innerHTML = '<div style="color:var(--danger);padding:20px;">로딩 실패: ' + e.message
+                + '<br><button class="btn btn-sm btn-outline" style="margin-top:10px;" onclick="document.getElementById(\'learnerDetail\').style.display=\'none\'">닫기</button></div>';
         });
     };
 
@@ -351,7 +374,7 @@
             var avatar = document.getElementById('navUserAvatar');
             var name = document.getElementById('navUserName');
             if (avatar) avatar.src = currentUser.photoURL || '';
-            if (name) name.textContent = currentUser.displayName || currentUser.email || '';
+            if (name) name.textContent = currentUser.name || currentUser.email || '';
         } else {
             loginBtn.style.display = 'inline-flex';
             userInfo.style.display = 'none';
