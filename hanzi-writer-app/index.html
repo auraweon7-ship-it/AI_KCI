@@ -2732,21 +2732,133 @@
             var char = document.getElementById('flipCard').dataset.char;
             var info = charLookup[char];
             var pinyin = (typeof PINYIN_DATA !== 'undefined' && PINYIN_DATA[char]) || '';
-            var text = char;
-            if (info) text += ' ' + info.meaning + ' ' + info.reading;
-            if (pinyin) text += ' [' + pinyin + ']';
+            var reading = info ? info.meaning + ' ' + info.reading : char;
+            var hskLevel = (typeof HSK_DATA !== 'undefined' && HSK_DATA[char]) || 0;
+            var emoji = getCharEmoji(char);
             var url = window.location.origin + window.location.pathname + '?char=' + encodeURIComponent(char);
-            text += '\n' + url;
 
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(function() {
-                    showToast('공유 링크가 복사되었습니다');
-                });
-            } else if (navigator.share) {
-                navigator.share({ title: char + ' - 한자 학습', text: text, url: url });
-            } else {
-                showToast('복사 실패');
+            // Draw card image on canvas
+            var W = 520, H = 760, R = 40;
+            var canvas = document.createElement('canvas');
+            canvas.width = W; canvas.height = H;
+            var ctx = canvas.getContext('2d');
+
+            // Background
+            var bg = ctx.createLinearGradient(0, 0, W * 0.6, H);
+            bg.addColorStop(0, '#121223');
+            bg.addColorStop(1, '#1e1440');
+            ctx.beginPath();
+            ctx.moveTo(R, 0); ctx.lineTo(W - R, 0); ctx.quadraticCurveTo(W, 0, W, R);
+            ctx.lineTo(W, H - R); ctx.quadraticCurveTo(W, H, W - R, H);
+            ctx.lineTo(R, H); ctx.quadraticCurveTo(0, H, 0, H - R);
+            ctx.lineTo(0, R); ctx.quadraticCurveTo(0, 0, R, 0);
+            ctx.closePath();
+            ctx.fillStyle = bg;
+            ctx.fill();
+
+            // Border
+            ctx.strokeStyle = 'rgba(80,80,140,0.3)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Top gradient line
+            var topLine = ctx.createLinearGradient(0, 0, W, 0);
+            topLine.addColorStop(0, '#7c6aff');
+            topLine.addColorStop(0.5, '#5eead4');
+            topLine.addColorStop(1, '#f472b6');
+            ctx.fillStyle = topLine;
+            ctx.fillRect(R, 0, W - R * 2, 3);
+
+            // Emoji background (large, faint)
+            ctx.save();
+            ctx.globalAlpha = 0.07;
+            ctx.font = '200px serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#fff';
+            ctx.fillText(emoji, W / 2, H * 0.4);
+            ctx.restore();
+
+            // Character
+            ctx.save();
+            var charGrad = ctx.createLinearGradient(W * 0.3, H * 0.15, W * 0.7, H * 0.45);
+            charGrad.addColorStop(0, '#7c6aff');
+            charGrad.addColorStop(1, '#5eead4');
+            ctx.font = '900 180px "Noto Serif KR", serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillStyle = charGrad;
+            ctx.fillText(char, W / 2, H * 0.33);
+            ctx.restore();
+
+            // Reading
+            ctx.font = '700 32px "Noto Sans KR", "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#eaeaf4';
+            ctx.fillText(reading, W / 2, H * 0.55);
+
+            // Pinyin
+            if (pinyin) {
+                ctx.font = 'italic 600 26px "Inter", sans-serif';
+                ctx.fillStyle = '#5eead4';
+                ctx.fillText('[' + pinyin + ']', W / 2, H * 0.62);
             }
+
+            // HSK badge
+            if (hskLevel > 0) {
+                var hskText = 'HSK ' + (hskLevel >= 7 ? '7-9' : hskLevel) + '급';
+                var hskColors = { 1: '#22c55e', 2: '#3b82f6', 3: '#8b5cf6', 4: '#f59e0b', 5: '#ef4444', 6: '#ec4899', 7: '#6366f1' };
+                var hskColor = hskColors[hskLevel >= 7 ? 7 : hskLevel] || '#64748b';
+                ctx.font = '700 20px "Inter", sans-serif';
+                var tw = ctx.measureText(hskText).width;
+                var bx = (W - tw - 24) / 2, by = H * 0.66, bw = tw + 24, bh = 32, br = 8;
+                ctx.fillStyle = hskColor;
+                ctx.beginPath();
+                if (ctx.roundRect) {
+                    ctx.roundRect(bx, by, bw, bh, br);
+                } else {
+                    ctx.moveTo(bx + br, by);
+                    ctx.lineTo(bx + bw - br, by); ctx.quadraticCurveTo(bx + bw, by, bx + bw, by + br);
+                    ctx.lineTo(bx + bw, by + bh - br); ctx.quadraticCurveTo(bx + bw, by + bh, bx + bw - br, by + bh);
+                    ctx.lineTo(bx + br, by + bh); ctx.quadraticCurveTo(bx, by + bh, bx, by + bh - br);
+                    ctx.lineTo(bx, by + br); ctx.quadraticCurveTo(bx, by, bx + br, by);
+                    ctx.closePath();
+                }
+                ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(hskText, W / 2, by + 16);
+            }
+
+            // URL at bottom
+            ctx.font = '500 16px "Inter", sans-serif';
+            ctx.fillStyle = 'rgba(120,120,160,0.5)';
+            ctx.textAlign = 'center';
+            ctx.fillText('hanzi.up.railway.app', W / 2, H - 30);
+
+            // Export and share
+            canvas.toBlob(function(blob) {
+                if (!blob) { showToast('이미지 생성 실패'); return; }
+                var file = new File([blob], char + '_card.png', { type: 'image/png' });
+
+                // Try Web Share API with file
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    navigator.share({
+                        title: char + ' - 한자 학습',
+                        text: reading + (pinyin ? ' [' + pinyin + ']' : '') + '\n' + url,
+                        files: [file]
+                    }).catch(function() {});
+                } else {
+                    // Fallback: download image
+                    var a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = char + '_card.png';
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                    showToast('카드 이미지가 저장되었습니다');
+                }
+            }, 'image/png');
         }
 
         // ===== API Key Modal =====
