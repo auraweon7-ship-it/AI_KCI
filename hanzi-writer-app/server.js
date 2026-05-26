@@ -10,7 +10,7 @@ const port = process.env.PORT || 3001;
 
 const JWT_SECRET = process.env.JWT_SECRET || 'hanzi-writer-default-secret';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'aura09#$';
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '494247553294-68p0b7mtfqo7ub1lvgrb4ollbmcqks1h.apps.googleusercontent.com';
 
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
