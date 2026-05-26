@@ -13,6 +13,7 @@
     <script src="hsk-data.js"></script>
     <script src="pinyin-data.js"></script>
     <script src="radical-data.js"></script>
+    <script src="idiom-data.js"></script>
     <script src="claude-config.js"></script>
     <style>
         :root {
@@ -1974,6 +1975,104 @@
         }
         .radical-related-char:hover { border-color: var(--accent2); transform: scale(1.1); }
 
+        /* ===== IDIOM SECTION ===== */
+        .idiom-section {
+            padding: 24px; border-radius: 20px;
+            background: var(--surface); border: 1px solid var(--border);
+            backdrop-filter: blur(20px); position: relative; overflow: hidden;
+        }
+        .idiom-section::before {
+            content: ''; position: absolute; top: -1px; left: 20%; right: 20%; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent2), transparent);
+        }
+        .idiom-cat-tabs {
+            display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px;
+            scrollbar-width: none; -ms-overflow-style: none;
+        }
+        .idiom-cat-tabs::-webkit-scrollbar { display: none; }
+        .idiom-cat-tab {
+            padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600;
+            background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+            cursor: pointer; white-space: nowrap; transition: all 0.2s;
+        }
+        .idiom-cat-tab:hover { border-color: var(--accent); color: var(--text); }
+        .idiom-cat-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .idiom-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px;
+        }
+        .idiom-card {
+            background: var(--surface2); border: 1px solid var(--border); border-radius: 16px;
+            padding: 16px; cursor: pointer; transition: all 0.3s ease; position: relative; overflow: hidden;
+        }
+        .idiom-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(124,106,255,0.15); }
+        .idiom-card.expanded { border-color: var(--accent2); }
+        .idiom-card-chars {
+            font-family: 'Noto Serif KR', serif; font-size: 28px; font-weight: 700;
+            letter-spacing: 4px; color: var(--text); margin-bottom: 6px;
+            text-align: center; line-height: 1.4;
+        }
+        .idiom-card-chars span {
+            display: inline-block; transition: color 0.2s;
+        }
+        .idiom-card:hover .idiom-card-chars span { color: var(--accent); }
+        .idiom-card-reading {
+            font-size: 14px; color: var(--accent2); text-align: center; margin-bottom: 4px; font-weight: 600;
+        }
+        .idiom-card-meaning {
+            font-size: 13px; color: var(--text-dim); text-align: center; line-height: 1.5;
+        }
+        .idiom-card-origin {
+            font-size: 12px; color: var(--text-dim); line-height: 1.6; margin-top: 10px;
+            padding-top: 10px; border-top: 1px solid var(--border); display: none; opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .idiom-card.expanded .idiom-card-origin { display: block; opacity: 1; }
+        .idiom-card-cat {
+            position: absolute; top: 8px; right: 8px; font-size: 10px; padding: 2px 8px;
+            border-radius: 10px; background: var(--surface3); color: var(--text-dim); font-weight: 600;
+        }
+        .idiom-card-chars-detail {
+            display: none; margin-top: 8px; gap: 4px; flex-wrap: wrap; justify-content: center;
+        }
+        .idiom-card.expanded .idiom-card-chars-detail { display: flex; }
+        .idiom-char-tag {
+            padding: 3px 10px; border-radius: 8px; font-size: 12px;
+            background: var(--surface3); border: 1px solid var(--border); color: var(--text);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .idiom-char-tag:hover { border-color: var(--accent2); color: var(--accent2); }
+        .idiom-search-wrap {
+            display: flex; gap: 8px; margin-bottom: 12px;
+        }
+        .idiom-search-wrap input {
+            flex: 1; padding: 8px 14px; border-radius: 12px; font-size: 13px;
+            background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+            outline: none; transition: border-color 0.2s;
+        }
+        .idiom-search-wrap input:focus { border-color: var(--accent); }
+        .idiom-search-wrap input::placeholder { color: var(--text-dim); }
+        .idiom-count { font-size: 12px; color: var(--text-dim); margin-bottom: 12px; }
+        .idiom-pager {
+            display: flex; justify-content: center; gap: 8px; margin-top: 16px; align-items: center;
+        }
+        .idiom-pager button {
+            padding: 6px 14px; border-radius: 10px; font-size: 12px; font-weight: 600;
+            background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+            cursor: pointer; transition: all 0.2s;
+        }
+        .idiom-pager button:hover { border-color: var(--accent); color: var(--text); }
+        .idiom-pager button:disabled { opacity: 0.3; cursor: default; }
+        .idiom-pager span { font-size: 12px; color: var(--text-dim); }
+        /* Related idioms in info panel */
+        .related-idioms { margin-top: 10px; }
+        .related-idioms-title { font-size: 12px; color: var(--accent2); font-weight: 600; margin-bottom: 6px; }
+        .related-idiom-chip {
+            display: inline-block; padding: 4px 10px; margin: 2px; border-radius: 8px; font-size: 13px;
+            background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+            cursor: pointer; transition: all 0.2s; font-family: 'Noto Serif KR', serif;
+        }
+        .related-idiom-chip:hover { border-color: var(--accent); transform: scale(1.05); }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             /* Nav */
@@ -2096,6 +2195,9 @@
             .badge-grid { grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 8px; }
             .badge-icon { font-size: 26px; }
             .daily-goal-bar { padding: 10px 14px; }
+            .idiom-section { padding: 16px; }
+            .idiom-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+            .idiom-card-chars { font-size: 24px; }
         }
 
         @media (max-width: 580px) {
@@ -2362,6 +2464,7 @@
                                 <div id="charTags" style="margin-top:8px;"></div>
                                 <div id="radicalInfo"></div>
                                 <div id="radicalRelated" class="radical-related"></div>
+                                <div id="relatedIdioms" class="related-idioms"></div>
                             </div>
                         </div>
                         <div class="example-panel" id="examplePanel" style="display:none;">
@@ -2485,6 +2588,24 @@
                     <div style="font-size:12px;color:var(--text-dim);" id="badgeProgress">0/12</div>
                 </div>
                 <div class="badge-grid" id="badgeGrid"></div>
+            </div>
+
+            <!-- 고사성어 Idiom Cards -->
+            <div class="idiom-section" id="idiomSection">
+                <div class="my-stats-header">
+                    <div class="my-stats-title">📜 고사성어 <span style="font-size:12px;color:var(--text-dim);font-weight:400;" id="idiomTotal"></span></div>
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn btn-outline btn-sm" style="padding:6px 12px;font-size:11px;" onclick="openQuizModal('idiom')">고사성어 퀴즈</button>
+                        <button class="btn btn-outline btn-sm" style="padding:6px 12px;font-size:11px;" onclick="randomIdiom()">🎲 랜덤</button>
+                    </div>
+                </div>
+                <div class="idiom-search-wrap">
+                    <input type="text" id="idiomSearch" placeholder="고사성어, 음독, 뜻 검색..." oninput="filterIdioms()">
+                </div>
+                <div class="idiom-cat-tabs" id="idiomCatTabs"></div>
+                <div class="idiom-count" id="idiomCount"></div>
+                <div class="idiom-grid" id="idiomGrid"></div>
+                <div class="idiom-pager" id="idiomPager"></div>
             </div>
 
             <!-- Learning Dashboard (replaces My Stats) -->
@@ -2815,6 +2936,7 @@
             loadStrokeBreakdown(char);
             updateFavBtn();
             showRadicalInfo(char);
+            showRelatedIdioms(char);
 
             document.getElementById('infoPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -3668,6 +3790,18 @@
         var quizState = { type: '', questions: [], currentIdx: 0, score: 0, answered: false };
 
         function openQuizModal(type, charPool) {
+            if (type === 'idiom') {
+                if (typeof IDIOM_DATA === 'undefined' || IDIOM_DATA.length < 4) { showToast('고사성어 데이터가 부족합니다'); return; }
+                quizState.type = 'idiom';
+                quizState.currentIdx = 0;
+                quizState.score = 0;
+                quizState.answered = false;
+                quizState.questions = generateIdiomQuiz();
+                document.getElementById('quizModalTitle').textContent = getQuizTitle('idiom');
+                document.getElementById('quizModalOverlay').style.display = 'flex';
+                renderQuizQuestion(0);
+                return;
+            }
             var pool = charPool || getAllCharsArray();
             if (pool.length < 4) { showToast('퀴즈에 최소 4개 한자가 필요합니다'); return; }
             quizState.type = type;
@@ -3691,6 +3825,7 @@
                 case 'meaning2char': return '뜻 → 한자';
                 case 'pinyin2char': return '🔊 병음 → 한자';
                 case 'daily': return '📝 오늘의 퀴즈';
+                case 'idiom': return '📜 고사성어 퀴즈';
                 default: return '퀴즈';
             }
         }
@@ -3754,7 +3889,13 @@
             var body = document.getElementById('quizModalBody');
             var html = '<div style="text-align:center;font-size:12px;color:var(--text-dim);margin-bottom:12px;">' + (idx + 1) + ' / ' + quizState.questions.length + '</div>';
             html += '<div class="quiz-question">';
-            if (q.type === 'char2meaning') {
+            if (q.type === 'idiom2meaning') {
+                html += '<div class="quiz-question-label">이 고사성어의 뜻은?</div>';
+                html += '<div class="quiz-question-char" style="font-size:28px;letter-spacing:6px;">' + q.q + '</div>';
+            } else if (q.type === 'meaning2idiom') {
+                html += '<div class="quiz-question-label">이 뜻에 해당하는 고사성어는?</div>';
+                html += '<div class="quiz-question-text">' + q.q + '</div>';
+            } else if (q.type === 'char2meaning') {
                 html += '<div class="quiz-question-label">이 한자의 뜻은?</div>';
                 html += '<div class="quiz-question-char">' + q.char + '</div>';
                 if (q.pinyin) html += '<div class="quiz-question-sub" style="color:var(--accent2);font-style:italic;">[' + q.pinyin + ']</div>';
@@ -4254,12 +4395,213 @@
             showToast('부수 ' + RADICAL_MAP[radicalKey].r + '(' + name + '): ' + chars.length + '자');
         }
 
+        // ===== FEATURE 10: IDIOM CARDS (고사성어) =====
+        var IDIOM_CATS = {
+            all: { name: '전체', icon: '📜' },
+            wisdom: { name: '지혜·교훈', icon: '🧠' },
+            virtue: { name: '덕목·인성', icon: '💎' },
+            nature: { name: '자연·풍경', icon: '🏔️' },
+            effort: { name: '노력·성공', icon: '💪' },
+            warning: { name: '경계·교훈', icon: '⚠️' },
+            human: { name: '인간·세상', icon: '👥' },
+            success: { name: '성공·출세', icon: '🏆' },
+            military: { name: '전쟁·전략', icon: '⚔️' },
+            friendship: { name: '우정·관계', icon: '🤝' },
+            life: { name: '인생·처세', icon: '🌊' }
+        };
+        var currentIdiomCat = 'all';
+        var currentIdiomPage = 0;
+        var IDIOMS_PER_PAGE = 24;
+        var filteredIdioms = [];
+
+        function initIdiomSection() {
+            if (typeof IDIOM_DATA === 'undefined' || !IDIOM_DATA.length) {
+                document.getElementById('idiomSection').style.display = 'none';
+                return;
+            }
+            document.getElementById('idiomTotal').textContent = IDIOM_DATA.length + '개';
+            renderIdiomCatTabs();
+            filteredIdioms = IDIOM_DATA.slice();
+            currentIdiomPage = 0;
+            renderIdiomGrid();
+        }
+
+        function renderIdiomCatTabs() {
+            var html = '';
+            var cats = Object.keys(IDIOM_CATS);
+            cats.forEach(function(key) {
+                var cat = IDIOM_CATS[key];
+                var cnt = key === 'all' ? IDIOM_DATA.length : IDIOM_DATA.filter(function(d) { return d.category === key; }).length;
+                var active = key === currentIdiomCat ? ' active' : '';
+                html += '<div class="idiom-cat-tab' + active + '" onclick="selectIdiomCat(\'' + key + '\')">'
+                    + cat.icon + ' ' + cat.name + ' <span style="opacity:0.6">' + cnt + '</span></div>';
+            });
+            document.getElementById('idiomCatTabs').innerHTML = html;
+        }
+
+        function selectIdiomCat(cat) {
+            currentIdiomCat = cat;
+            currentIdiomPage = 0;
+            document.getElementById('idiomSearch').value = '';
+            renderIdiomCatTabs();
+            filterIdioms();
+        }
+
+        function filterIdioms() {
+            var q = (document.getElementById('idiomSearch').value || '').trim().toLowerCase();
+            filteredIdioms = IDIOM_DATA.filter(function(d) {
+                if (currentIdiomCat !== 'all' && d.category !== currentIdiomCat) return false;
+                if (!q) return true;
+                return d.chars.indexOf(q) !== -1 || d.reading.indexOf(q) !== -1
+                    || d.meaning.indexOf(q) !== -1 || d.origin.indexOf(q) !== -1;
+            });
+            currentIdiomPage = 0;
+            renderIdiomGrid();
+        }
+
+        function renderIdiomGrid() {
+            var total = filteredIdioms.length;
+            var start = currentIdiomPage * IDIOMS_PER_PAGE;
+            var page = filteredIdioms.slice(start, start + IDIOMS_PER_PAGE);
+            var totalPages = Math.ceil(total / IDIOMS_PER_PAGE) || 1;
+
+            document.getElementById('idiomCount').textContent = total + '개 고사성어' + (total !== IDIOM_DATA.length ? ' (검색 결과)' : '');
+
+            var html = '';
+            page.forEach(function(d, i) {
+                var idx = start + i;
+                var catInfo = IDIOM_CATS[d.category] || { name: d.category, icon: '' };
+                var charSpans = '';
+                for (var c = 0; c < d.chars.length; c++) {
+                    charSpans += '<span>' + d.chars[c] + '</span>';
+                }
+                var charTags = '';
+                for (var c = 0; c < d.chars.length; c++) {
+                    var ch = d.chars[c];
+                    var info = charLookup[ch];
+                    var label = info ? ch + ' ' + info.reading + ' (' + info.meaning + ')' : ch;
+                    charTags += '<span class="idiom-char-tag" onclick="event.stopPropagation();selectChar(\'' + ch + '\')" title="' + label + '">'
+                        + ch + (info ? ' ' + info.reading : '') + '</span>';
+                }
+                html += '<div class="idiom-card" id="idiomCard' + idx + '" onclick="toggleIdiomCard(' + idx + ')">'
+                    + '<div class="idiom-card-cat">' + catInfo.icon + ' ' + catInfo.name + '</div>'
+                    + '<div class="idiom-card-chars">' + charSpans + '</div>'
+                    + '<div class="idiom-card-reading">' + d.reading + '</div>'
+                    + '<div class="idiom-card-meaning">' + d.meaning + '</div>'
+                    + '<div class="idiom-card-chars-detail">' + charTags + '</div>'
+                    + '<div class="idiom-card-origin">' + d.origin + '</div>'
+                    + '</div>';
+            });
+
+            if (total === 0) {
+                html = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-dim);">검색 결과 없음</div>';
+            }
+            document.getElementById('idiomGrid').innerHTML = html;
+
+            // Pager
+            var pagerHtml = '';
+            if (totalPages > 1) {
+                pagerHtml += '<button onclick="idiomPage(-1)"' + (currentIdiomPage === 0 ? ' disabled' : '') + '>◀ 이전</button>';
+                pagerHtml += '<span>' + (currentIdiomPage + 1) + ' / ' + totalPages + '</span>';
+                pagerHtml += '<button onclick="idiomPage(1)"' + (currentIdiomPage >= totalPages - 1 ? ' disabled' : '') + '>다음 ▶</button>';
+            }
+            document.getElementById('idiomPager').innerHTML = pagerHtml;
+        }
+
+        function idiomPage(dir) {
+            var totalPages = Math.ceil(filteredIdioms.length / IDIOMS_PER_PAGE);
+            currentIdiomPage = Math.max(0, Math.min(currentIdiomPage + dir, totalPages - 1));
+            renderIdiomGrid();
+            document.getElementById('idiomSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function toggleIdiomCard(idx) {
+            var card = document.getElementById('idiomCard' + idx);
+            if (card) card.classList.toggle('expanded');
+        }
+
+        function randomIdiom() {
+            var pool = currentIdiomCat === 'all' ? IDIOM_DATA : IDIOM_DATA.filter(function(d) { return d.category === currentIdiomCat; });
+            if (!pool.length) return;
+            var d = pool[Math.floor(Math.random() * pool.length)];
+            document.getElementById('idiomSearch').value = d.chars;
+            filterIdioms();
+            showToast('🎲 ' + d.chars + ' (' + d.reading + ')');
+        }
+
+        // Show related idioms in character info panel
+        function showRelatedIdioms(char) {
+            var el = document.getElementById('relatedIdioms');
+            if (!el || typeof IDIOM_DATA === 'undefined') return;
+            var related = IDIOM_DATA.filter(function(d) { return d.chars.indexOf(char) !== -1; });
+            if (related.length === 0) { el.innerHTML = ''; return; }
+            var html = '<div class="related-idioms-title">📜 관련 고사성어 (' + related.length + ')</div>';
+            related.slice(0, 8).forEach(function(d) {
+                html += '<span class="related-idiom-chip" onclick="scrollToIdiom(\'' + d.chars + '\')" title="' + d.reading + ': ' + d.meaning + '">'
+                    + d.chars + '</span>';
+            });
+            if (related.length > 8) html += '<span style="font-size:11px;color:var(--text-dim);margin-left:4px;">+' + (related.length - 8) + '</span>';
+            el.innerHTML = html;
+        }
+
+        function scrollToIdiom(chars) {
+            document.getElementById('idiomSearch').value = chars;
+            currentIdiomCat = 'all';
+            renderIdiomCatTabs();
+            filterIdioms();
+            document.getElementById('idiomSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        // Idiom quiz mode
+        function generateIdiomQuiz() {
+            var pool = IDIOM_DATA.slice();
+            for (var i = pool.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
+            }
+            var questions = [];
+            var count = Math.min(10, pool.length);
+            for (var i = 0; i < count; i++) {
+                var d = pool[i];
+                var type = Math.random() < 0.5 ? 'idiom2meaning' : 'meaning2idiom';
+                var opts = [];
+
+                if (type === 'idiom2meaning') {
+                    opts.push(d.meaning);
+                    while (opts.length < 4) {
+                        var r = pool[Math.floor(Math.random() * pool.length)];
+                        if (opts.indexOf(r.meaning) === -1) opts.push(r.meaning);
+                    }
+                    for (var k = opts.length - 1; k > 0; k--) {
+                        var m = Math.floor(Math.random() * (k + 1));
+                        var t = opts[k]; opts[k] = opts[m]; opts[m] = t;
+                    }
+                    questions.push({ q: d.chars + ' (' + d.reading + ')', type: 'idiom2meaning', options: opts, answer: d.meaning, char: d.chars });
+                } else {
+                    var correctLabel = d.chars + ' (' + d.reading + ')';
+                    opts.push(correctLabel);
+                    while (opts.length < 4) {
+                        var r = pool[Math.floor(Math.random() * pool.length)];
+                        var label = r.chars + ' (' + r.reading + ')';
+                        if (opts.indexOf(label) === -1) opts.push(label);
+                    }
+                    for (var k = opts.length - 1; k > 0; k--) {
+                        var m = Math.floor(Math.random() * (k + 1));
+                        var t = opts[k]; opts[k] = opts[m]; opts[m] = t;
+                    }
+                    questions.push({ q: d.meaning, type: 'meaning2idiom', options: opts, answer: correctLabel, char: d.chars });
+                }
+            }
+            return questions;
+        }
+
         // ===== INIT NEW FEATURES =====
         function initNewFeatures() {
             renderDailyGoal();
             renderMistakeSection();
             renderBadgeSection();
             checkAchievements();
+            initIdiomSection();
         }
 
         updateApiKeyBtn();
