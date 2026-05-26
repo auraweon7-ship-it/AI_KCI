@@ -8,7 +8,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>
     <script src="data.js"></script>
     <script src="hsk-data.js"></script>
     <script src="pinyin-data.js"></script>
@@ -1666,55 +1665,6 @@
         .srs-progress { height: 4px; background: var(--surface2); border-radius: 2px; margin-top: 12px; overflow: hidden; }
         .srs-progress-fill { height: 100%; background: linear-gradient(90deg, var(--warning), var(--success)); border-radius: 2px; transition: width 0.3s; }
 
-        /* ===== DASHBOARD ===== */
-        .dashboard-section {
-            background: var(--surface);
-            backdrop-filter: var(--glass);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: var(--shadow);
-            position: relative;
-            overflow: hidden;
-        }
-        .dashboard-section::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(244,114,182,0.3), rgba(94,234,212,0.2), transparent);
-        }
-        .dashboard-chart-wrap { margin-top: 16px; position: relative; }
-        .dashboard-chart-wrap canvas { width: 100% !important; max-height: 200px; }
-        .dashboard-tabs {
-            display: flex; gap: 6px; margin-bottom: 10px;
-        }
-        .dashboard-tab {
-            padding: 5px 14px; border-radius: 8px; font-size: 11px; font-weight: 600;
-            cursor: pointer; border: 1px solid var(--border); background: transparent;
-            color: var(--text-dim); font-family: inherit; transition: all 0.2s;
-        }
-        .dashboard-tab:hover { border-color: var(--accent); color: var(--text); }
-        .dashboard-tab.active { background: rgba(124,106,255,0.2); border-color: var(--accent); color: #fff; }
-        .streak-badge {
-            display: inline-flex; align-items: center; gap: 4px;
-            padding: 4px 12px; background: rgba(251,191,36,0.1);
-            border: 1px solid rgba(251,191,36,0.25); border-radius: 8px;
-            font-size: 13px; font-weight: 700; color: var(--warning);
-        }
-        .hsk-progress-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .hsk-progress-item {
-            display: flex; flex-direction: column; gap: 4px;
-            padding: 10px; background: var(--surface2);
-            border: 1px solid var(--border); border-radius: 10px;
-        }
-        .hsk-progress-label { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; }
-        .hsk-progress-label span:first-child { color: var(--text); }
-        .hsk-progress-label span:last-child { color: var(--text-dim); }
-        .hsk-progress-bar { height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
-        .hsk-progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
-
         /* ===== QUIZ MODAL ===== */
         .quiz-modal-overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.8);
@@ -2182,7 +2132,6 @@
 
             /* New features */
             .srs-section { padding: 16px; }
-            .dashboard-section { padding: 16px; }
             .dashboard-chart-wrap canvas { max-height: 170px; }
             .hsk-progress-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
             .quiz-modal { padding: 20px; }
@@ -2606,38 +2555,6 @@
                 <div class="idiom-count" id="idiomCount"></div>
                 <div class="idiom-grid" id="idiomGrid"></div>
                 <div class="idiom-pager" id="idiomPager"></div>
-            </div>
-
-            <!-- Learning Dashboard (replaces My Stats) -->
-            <div class="dashboard-section" id="myStatsSection" style="display:none;">
-                <div class="my-stats-header">
-                    <div class="my-stats-title">학습 대시보드</div>
-                    <div style="display:flex;gap:8px;align-items:center;">
-                        <div class="streak-badge" id="streakBadge">🔥 <span id="streakCount">0</span>일</div>
-                        <button class="btn btn-outline btn-sm" style="padding:6px 12px;font-size:11px;" onclick="clearMyRecords()">초기화</button>
-                    </div>
-                </div>
-                <div class="my-stats-grid">
-                    <div class="my-stat-card"><div class="my-stat-val accent" id="myStatChars">0</div><div class="my-stat-lbl">학습 한자</div></div>
-                    <div class="my-stat-card"><div class="my-stat-val success" id="myStatSessions">0</div><div class="my-stat-lbl">연습 횟수</div></div>
-                    <div class="my-stat-card"><div class="my-stat-val warning" id="myStatAccuracy">0%</div><div class="my-stat-lbl">정답률</div></div>
-                </div>
-                <div class="dashboard-chart-wrap">
-                    <div class="dashboard-tabs">
-                        <button class="dashboard-tab active" onclick="switchChartView('daily',this)">일별</button>
-                        <button class="dashboard-tab" onclick="switchChartView('weekly',this)">주별</button>
-                    </div>
-                    <canvas id="learningChart"></canvas>
-                </div>
-                <div class="dashboard-chart-wrap">
-                    <div style="font-size:11px;color:var(--text-dim);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">정답률 추이</div>
-                    <canvas id="accuracyChart"></canvas>
-                </div>
-                <div style="margin-top:18px;">
-                    <div style="font-size:11px;color:var(--text-dim);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">HSK 급수별 진행률</div>
-                    <div class="hsk-progress-grid" id="hskProgressGrid"></div>
-                </div>
-                <div id="myHistoryList" style="margin-top:16px;"></div>
             </div>
 
             <!-- History -->
@@ -3631,159 +3548,6 @@
                 document.getElementById('srsProgress').style.display = 'none';
                 renderSRSSection();
             }
-        }
-
-        // ===== FEATURE 2: LEARNING DASHBOARD =====
-        var learningChartInstance = null;
-        var accuracyChartInstance = null;
-        function initDashboard() {
-            var records = JSON.parse(localStorage.getItem('practice_records') || '[]');
-            if (records.length === 0) return;
-            renderLearningChart('daily');
-            renderAccuracyChart();
-            renderHSKProgress();
-            calculateStreak();
-        }
-        function switchChartView(mode, btn) {
-            document.querySelectorAll('.dashboard-tab').forEach(function(t) { t.classList.remove('active'); });
-            if (btn) btn.classList.add('active');
-            renderLearningChart(mode);
-        }
-        function renderLearningChart(mode) {
-            if (typeof Chart === 'undefined') return;
-            var records = JSON.parse(localStorage.getItem('practice_records') || '[]');
-            var grouped = {};
-            records.forEach(function(r) {
-                var d = r.timestamp ? r.timestamp.slice(0, 10) : todayStr();
-                if (mode === 'weekly') {
-                    var dt = new Date(d);
-                    var day = dt.getDay();
-                    dt.setDate(dt.getDate() - day);
-                    d = dt.toISOString().slice(0, 10);
-                }
-                grouped[d] = (grouped[d] || 0) + 1;
-            });
-            var dates = Object.keys(grouped).sort().slice(-14);
-            var counts = dates.map(function(d) { return grouped[d]; });
-            var labels = dates.map(function(d) {
-                var dt = new Date(d);
-                return (dt.getMonth() + 1) + '/' + dt.getDate();
-            });
-            if (learningChartInstance) learningChartInstance.destroy();
-            var ctx = document.getElementById('learningChart');
-            if (!ctx) return;
-            learningChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: counts,
-                        backgroundColor: 'rgba(124,106,255,0.5)',
-                        borderColor: '#7c6aff',
-                        borderWidth: 1,
-                        borderRadius: 6,
-                        barPercentage: 0.6
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { color: 'rgba(80,80,140,0.1)' }, ticks: { color: '#7878a0', font: { size: 10 } } },
-                        y: { grid: { color: 'rgba(80,80,140,0.1)' }, ticks: { color: '#7878a0', font: { size: 10 }, stepSize: 1 }, beginAtZero: true }
-                    }
-                }
-            });
-        }
-        function renderAccuracyChart() {
-            if (typeof Chart === 'undefined') return;
-            var records = JSON.parse(localStorage.getItem('practice_records') || '[]');
-            var grouped = {};
-            records.forEach(function(r) {
-                var d = r.timestamp ? r.timestamp.slice(0, 10) : todayStr();
-                if (!grouped[d]) grouped[d] = { correct: 0, total: 0 };
-                grouped[d].correct += r.correct || 0;
-                grouped[d].total += (r.correct || 0) + (r.mistakes || 0);
-            });
-            var dates = Object.keys(grouped).sort().slice(-14);
-            var accs = dates.map(function(d) {
-                return grouped[d].total > 0 ? Math.round(grouped[d].correct / grouped[d].total * 100) : 0;
-            });
-            var labels = dates.map(function(d) {
-                var dt = new Date(d);
-                return (dt.getMonth() + 1) + '/' + dt.getDate();
-            });
-            if (accuracyChartInstance) accuracyChartInstance.destroy();
-            var ctx = document.getElementById('accuracyChart');
-            if (!ctx) return;
-            accuracyChartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: accs,
-                        borderColor: '#5eead4',
-                        backgroundColor: 'rgba(94,234,212,0.1)',
-                        fill: true,
-                        tension: 0.4,
-                        pointRadius: 3,
-                        pointBackgroundColor: '#5eead4'
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        x: { grid: { color: 'rgba(80,80,140,0.1)' }, ticks: { color: '#7878a0', font: { size: 10 } } },
-                        y: { grid: { color: 'rgba(80,80,140,0.1)' }, ticks: { color: '#7878a0', font: { size: 10 }, callback: function(v) { return v + '%'; } }, min: 0, max: 100 }
-                    }
-                }
-            });
-        }
-        function renderHSKProgress() {
-            var records = JSON.parse(localStorage.getItem('practice_records') || '[]');
-            var practiced = new Set();
-            records.forEach(function(r) { practiced.add(r.char); });
-            var hskTotals = {}, hskPracticed = {};
-            var allChars = [];
-            HANZI_CATEGORIES.forEach(function(cat) { cat.chars.forEach(function(c) { allChars.push(c[0]); }); });
-            allChars.forEach(function(ch) {
-                var lv = getHSK(ch);
-                if (lv === 0) return;
-                hskTotals[lv] = (hskTotals[lv] || 0) + 1;
-                if (practiced.has(ch)) hskPracticed[lv] = (hskPracticed[lv] || 0) + 1;
-            });
-            var grid = document.getElementById('hskProgressGrid');
-            if (!grid) return;
-            var hskColors = { 1:'#22c55e', 2:'#3b82f6', 3:'#8b5cf6', 4:'#f59e0b', 5:'#ef4444', 6:'#ec4899', 7:'#6366f1' };
-            var html = '';
-            [1,2,3,4,5,6,7].forEach(function(lv) {
-                var total = hskTotals[lv] || 0;
-                var done = hskPracticed[lv] || 0;
-                var pct = total > 0 ? Math.round(done / total * 100) : 0;
-                html += '<div class="hsk-progress-item">'
-                    + '<div class="hsk-progress-label"><span>HSK ' + (lv >= 7 ? '7-9' : lv) + '급</span><span>' + done + '/' + total + ' (' + pct + '%)</span></div>'
-                    + '<div class="hsk-progress-bar"><div class="hsk-progress-fill" style="width:' + pct + '%;background:' + (hskColors[lv] || '#64748b') + ';"></div></div>'
-                    + '</div>';
-            });
-            grid.innerHTML = html;
-        }
-        function calculateStreak() {
-            var records = JSON.parse(localStorage.getItem('practice_records') || '[]');
-            if (records.length === 0) { document.getElementById('streakCount').textContent = '0'; return; }
-            var days = new Set();
-            records.forEach(function(r) { if (r.timestamp) days.add(r.timestamp.slice(0, 10)); });
-            var sorted = Array.from(days).sort().reverse();
-            var streak = 0;
-            var check = new Date();
-            // If no practice today, start checking from yesterday
-            if (sorted[0] !== todayStr()) check.setDate(check.getDate() - 1);
-            for (var i = 0; i < 365; i++) {
-                var d = check.toISOString().slice(0, 10);
-                if (days.has(d)) { streak++; check.setDate(check.getDate() - 1); }
-                else break;
-            }
-            document.getElementById('streakCount').textContent = streak;
         }
 
         // ===== FEATURE 3: QUIZ MODES =====
