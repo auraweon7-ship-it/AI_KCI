@@ -10,6 +10,7 @@
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
     <script src="data.js"></script>
     <script src="hsk-data.js"></script>
+    <script src="pinyin-data.js"></script>
     <script src="claude-config.js"></script>
     <style>
         :root {
@@ -1215,6 +1216,16 @@
         .char-info { display: flex; align-items: center; gap: 24px; }
 
         /* Example sentence */
+        .pinyin-label {
+            display: inline-block;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--accent2);
+            font-style: italic;
+            margin-left: 6px;
+            font-family: 'Inter', sans-serif;
+        }
+
         .example-btn {
             display: inline-flex;
             align-items: center;
@@ -2110,14 +2121,15 @@
             document.getElementById('examplePanel').style.display = 'none';
             var badge = hskBadgeHTML(char);
             var exBtn = ' <button class="example-btn" id="exampleBtn" onclick="loadExample(\'' + char + '\')">예문 보기</button>';
+            var pinyin = (typeof PINYIN_DATA !== 'undefined' && PINYIN_DATA[char]) ? '<span class="pinyin-label">[' + PINYIN_DATA[char] + ']</span>' : '';
             if (info) {
-                document.getElementById('charName').innerHTML = info.meaning + ' ' + info.reading + ' ' + badge + exBtn;
+                document.getElementById('charName').innerHTML = info.meaning + ' ' + info.reading + ' ' + pinyin + ' ' + badge + exBtn;
                 document.getElementById('charDesc').textContent = info.category + ' 카테고리';
-                document.getElementById('charTags').innerHTML = '<span class="tag">' + info.reading + '</span><span class="tag">' + info.category + '</span><span class="tag">HSK ' + hskLabel(getHSK(char)) + '</span>';
+                document.getElementById('charTags').innerHTML = '<span class="tag">' + info.reading + '</span>' + (PINYIN_DATA[char] ? '<span class="tag">' + PINYIN_DATA[char] + '</span>' : '') + '<span class="tag">' + info.category + '</span><span class="tag">HSK ' + hskLabel(getHSK(char)) + '</span>';
             } else {
-                document.getElementById('charName').innerHTML = char + ' ' + badge + exBtn;
+                document.getElementById('charName').innerHTML = char + ' ' + pinyin + ' ' + badge + exBtn;
                 document.getElementById('charDesc').textContent = '사용자 입력 한자';
-                document.getElementById('charTags').innerHTML = '<span class="tag">사용자 입력</span><span class="tag">HSK ' + hskLabel(getHSK(char)) + '</span>';
+                document.getElementById('charTags').innerHTML = '<span class="tag">사용자 입력</span>' + (PINYIN_DATA[char] ? '<span class="tag">' + PINYIN_DATA[char] + '</span>' : '') + '<span class="tag">HSK ' + hskLabel(getHSK(char)) + '</span>';
             }
         }
 
