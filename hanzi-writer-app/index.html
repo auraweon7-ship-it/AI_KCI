@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>한자 필순 연습</title>
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+    <script src="data.js"></script>
     <style>
         :root {
             --bg: #0f0f13;
@@ -51,8 +52,19 @@
             margin-top: 4px;
         }
 
+        .total-count {
+            display: inline-block;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 4px 14px;
+            font-size: 12px;
+            color: var(--accent-light);
+            margin-top: 8px;
+        }
+
         .container {
-            max-width: 900px;
+            max-width: 1100px;
             margin: 0 auto;
             padding: 0 16px 40px;
         }
@@ -61,7 +73,7 @@
         .search-section {
             display: flex;
             gap: 10px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .search-input {
@@ -76,110 +88,155 @@
             transition: border-color 0.2s;
         }
 
-        .search-input:focus {
-            border-color: var(--accent);
-        }
-
-        .search-input::placeholder {
-            color: var(--text-dim);
-            font-size: 16px;
-        }
+        .search-input:focus { border-color: var(--accent); }
+        .search-input::placeholder { color: var(--text-dim); font-size: 16px; }
 
         .btn {
-            padding: 14px 24px;
+            padding: 12px 20px;
             border: none;
             border-radius: var(--radius);
-            font-size: 15px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            white-space: nowrap;
         }
 
-        .btn-primary {
-            background: var(--accent);
-            color: #fff;
-        }
+        .btn-primary { background: var(--accent); color: #fff; }
+        .btn-primary:hover { background: var(--accent-light); transform: translateY(-1px); }
+        .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text); }
+        .btn-outline:hover { border-color: var(--accent); color: var(--accent-light); }
+        .btn-success { background: var(--success); color: #111; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-sm { padding: 8px 14px; font-size: 13px; border-radius: 10px; }
 
-        .btn-primary:hover {
-            background: var(--accent-light);
-            transform: translateY(-1px);
-        }
-
-        .btn-outline {
-            background: transparent;
-            border: 2px solid var(--border);
-            color: var(--text);
-        }
-
-        .btn-outline:hover {
-            border-color: var(--accent);
-            color: var(--accent-light);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: #111;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: #fff;
-        }
-
-        .btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        /* Preset */
-        .preset-section {
-            margin-bottom: 24px;
-        }
-
-        .preset-label {
-            font-size: 13px;
-            color: var(--text-dim);
-            margin-bottom: 8px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .preset-grid {
+        /* Category tabs */
+        .category-tabs {
             display: flex;
+            gap: 6px;
             flex-wrap: wrap;
-            gap: 8px;
+            margin-bottom: 16px;
         }
 
-        .preset-btn {
-            padding: 8px 16px;
+        .cat-tab {
+            padding: 8px 14px;
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 10px;
-            color: var(--text);
-            font-size: 14px;
+            color: var(--text-dim);
+            font-size: 13px;
             cursor: pointer;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        .preset-btn:hover {
+        .cat-tab:hover { border-color: var(--accent); color: var(--text); }
+
+        .cat-tab.active {
+            background: var(--accent);
             border-color: var(--accent);
+            color: #fff;
+        }
+
+        .cat-tab .cat-count {
+            font-size: 11px;
+            opacity: 0.7;
+        }
+
+        /* Character grid */
+        .char-grid-section {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .char-grid-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .char-grid-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .char-grid-meta {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .char-search-filter {
             background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 8px 14px;
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+            width: 200px;
+            margin-bottom: 12px;
         }
 
-        .preset-btn .char {
-            font-size: 18px;
-            margin-right: 4px;
+        .char-search-filter:focus { border-color: var(--accent); }
+        .char-search-filter::placeholder { color: var(--text-dim); }
+
+        .char-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+            gap: 6px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 8px;
         }
 
-        /* Main Area */
-        .main-area {
+        .char-grid::-webkit-scrollbar { width: 6px; }
+        .char-grid::-webkit-scrollbar-track { background: var(--surface2); border-radius: 3px; }
+        .char-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .char-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 4px;
+            background: var(--surface2);
+            border: 1px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.15s;
+            min-height: 72px;
+        }
+
+        .char-cell:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 99, 255, 0.15);
+        }
+
+        .char-cell.selected {
+            border-color: var(--accent);
+            background: rgba(108, 99, 255, 0.15);
+        }
+
+        .char-cell .hz { font-size: 28px; line-height: 1.2; }
+        .char-cell .rd { font-size: 10px; color: var(--text-dim); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+        /* Layout */
+        .main-layout {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .card {
@@ -201,7 +258,6 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            position: relative;
         }
 
         .writer-container {
@@ -211,11 +267,8 @@
             overflow: hidden;
         }
 
-        .writer-container svg {
-            display: block;
-        }
+        .writer-container svg { display: block; }
 
-        /* Grid overlay */
         .grid-bg {
             position: absolute;
             top: 0; left: 0;
@@ -230,7 +283,6 @@
             stroke-dasharray: 6, 4;
         }
 
-        /* Controls */
         .controls {
             display: flex;
             flex-wrap: wrap;
@@ -243,204 +295,68 @@
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 12px;
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .stat-card {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 16px;
+            padding: 14px;
             text-align: center;
         }
 
-        .stat-value {
-            font-size: 28px;
-            font-weight: 700;
-        }
-
+        .stat-value { font-size: 26px; font-weight: 700; }
         .stat-value.accent { color: var(--accent-light); }
         .stat-value.success { color: var(--success); }
         .stat-value.danger { color: var(--danger); }
         .stat-value.warning { color: var(--warning); }
-
-        .stat-label {
-            font-size: 12px;
-            color: var(--text-dim);
-            margin-top: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
+        .stat-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
 
         /* Info panel */
         .info-panel {
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius);
-            padding: 24px;
-            margin-bottom: 24px;
+            padding: 20px;
+            margin-bottom: 20px;
         }
 
-        .char-info {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
+        .char-info { display: flex; align-items: center; gap: 20px; }
+        .char-big { font-size: 64px; line-height: 1; color: var(--accent-light); }
+        .char-details h2 { font-size: 18px; margin-bottom: 4px; }
+        .char-details p { color: var(--text-dim); font-size: 13px; line-height: 1.5; }
+        .tag { display: inline-block; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 2px 10px; font-size: 11px; color: var(--accent-light); margin-right: 4px; }
 
-        .char-big {
-            font-size: 72px;
-            line-height: 1;
-            color: var(--accent-light);
-        }
+        .quiz-feedback { text-align: center; margin-top: 10px; font-size: 13px; min-height: 18px; color: var(--text-dim); }
 
-        .char-details h2 {
-            font-size: 20px;
-            margin-bottom: 6px;
-        }
-
-        .char-details p {
-            color: var(--text-dim);
-            font-size: 14px;
-            line-height: 1.6;
-        }
-
-        .tag {
-            display: inline-block;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            padding: 2px 10px;
-            font-size: 12px;
-            color: var(--accent-light);
-            margin-right: 4px;
-        }
+        .speed-control { display: flex; align-items: center; gap: 8px; justify-content: center; margin-top: 10px; }
+        .speed-control label { font-size: 12px; color: var(--text-dim); }
+        .speed-slider { -webkit-appearance: none; width: 100px; height: 4px; background: var(--border); border-radius: 2px; outline: none; }
+        .speed-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; cursor: pointer; }
 
         /* History */
-        .history-section {
-            margin-top: 24px;
-        }
+        .history-section { margin-top: 20px; }
+        .history-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .history-item { width: 44px; height: 44px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; transition: all 0.2s; }
+        .history-item:hover { border-color: var(--accent); transform: scale(1.1); }
 
-        .history-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
-
-        .history-item {
-            width: 48px;
-            height: 48px;
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .history-item:hover {
-            border-color: var(--accent);
-            transform: scale(1.1);
-        }
+        .preset-label { font-size: 13px; color: var(--text-dim); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px; }
 
         /* Toast */
-        .toast {
-            position: fixed;
-            bottom: 24px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background: var(--success);
-            color: #111;
-            padding: 12px 24px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 14px;
-            transition: transform 0.3s ease;
-            z-index: 100;
-        }
+        .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--success); color: #111; padding: 12px 24px; border-radius: 12px; font-weight: 600; font-size: 14px; transition: transform 0.3s ease; z-index: 100; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
 
-        .toast.show {
-            transform: translateX(-50%) translateY(0);
-        }
-
-        /* Quiz feedback */
-        .quiz-feedback {
-            text-align: center;
-            margin-top: 12px;
-            font-size: 14px;
-            min-height: 20px;
-            color: var(--text-dim);
-        }
-
-        /* Speed control */
-        .speed-control {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-            margin-top: 12px;
-        }
-
-        .speed-control label {
-            font-size: 12px;
-            color: var(--text-dim);
-        }
-
-        .speed-slider {
-            -webkit-appearance: none;
-            width: 120px;
-            height: 4px;
-            background: var(--border);
-            border-radius: 2px;
-            outline: none;
-        }
-
-        .speed-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
-            background: var(--accent);
-            border-radius: 50%;
-            cursor: pointer;
-        }
-
-        /* Mode indicator */
-        .mode-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-bottom: 12px;
-        }
-
-        .mode-badge.animate {
-            background: rgba(108, 99, 255, 0.2);
-            color: var(--accent-light);
-        }
-
-        .mode-badge.quiz {
-            background: rgba(78, 205, 196, 0.2);
-            color: var(--success);
-        }
+        /* Stroke breakdown */
+        .stroke-card { margin-bottom: 20px; }
 
         /* Responsive */
-        @media (max-width: 640px) {
-            .main-area {
-                grid-template-columns: 1fr;
-            }
-
-            .stats-bar {
-                grid-template-columns: repeat(2, 1fr);
-            }
-
-            .char-info {
-                flex-direction: column;
-                text-align: center;
-            }
+        @media (max-width: 768px) {
+            .main-layout { grid-template-columns: 1fr; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+            .char-info { flex-direction: column; text-align: center; }
+            .char-grid { grid-template-columns: repeat(auto-fill, minmax(56px, 1fr)); }
+            .char-search-filter { width: 100%; }
         }
     </style>
 </head>
@@ -448,19 +364,27 @@
     <header>
         <h1>한자 필순 연습</h1>
         <p>Hanzi Writer - 획순 애니메이션 & 쓰기 퀴즈</p>
+        <div class="total-count" id="totalCount"></div>
     </header>
 
     <div class="container">
         <!-- Search -->
         <div class="search-section">
-            <input type="text" class="search-input" id="charInput" placeholder="한자 입력 (예: 愛)" maxlength="1">
-            <button class="btn btn-primary" onclick="loadCharacter()">불러오기</button>
+            <input type="text" class="search-input" id="charInput" placeholder="한자 또는 훈음 검색 (예: 愛, 사랑, 물)" maxlength="20">
+            <button class="btn btn-primary" onclick="handleSearch()">검색</button>
         </div>
 
-        <!-- Presets -->
-        <div class="preset-section">
-            <div class="preset-label">자주 쓰는 한자</div>
-            <div class="preset-grid" id="presetGrid"></div>
+        <!-- Category Tabs -->
+        <div class="category-tabs" id="categoryTabs"></div>
+
+        <!-- Character Grid -->
+        <div class="char-grid-section" id="charGridSection">
+            <div class="char-grid-header">
+                <div class="char-grid-title" id="gridTitle">전체 한자</div>
+                <div class="char-grid-meta" id="gridMeta"></div>
+            </div>
+            <input type="text" class="char-search-filter" id="gridFilter" placeholder="카테고리 내 필터..." oninput="filterGrid()">
+            <div class="char-grid" id="charGrid"></div>
         </div>
 
         <!-- Info Panel -->
@@ -470,38 +394,25 @@
                 <div class="char-details">
                     <h2 id="charName"></h2>
                     <p id="charDesc"></p>
-                    <div id="charTags" style="margin-top:8px;"></div>
+                    <div id="charTags" style="margin-top:6px;"></div>
                 </div>
             </div>
         </div>
 
         <!-- Stats -->
         <div class="stats-bar" id="statsBar" style="display:none;">
-            <div class="stat-card">
-                <div class="stat-value accent" id="statStrokes">0</div>
-                <div class="stat-label">총 획수</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value success" id="statCorrect">0</div>
-                <div class="stat-label">정답</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value danger" id="statMistakes">0</div>
-                <div class="stat-label">오답</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value warning" id="statCompleted">0</div>
-                <div class="stat-label">완료</div>
-            </div>
+            <div class="stat-card"><div class="stat-value accent" id="statStrokes">0</div><div class="stat-label">총 획수</div></div>
+            <div class="stat-card"><div class="stat-value success" id="statCorrect">0</div><div class="stat-label">정답</div></div>
+            <div class="stat-card"><div class="stat-value danger" id="statMistakes">0</div><div class="stat-label">오답</div></div>
+            <div class="stat-card"><div class="stat-value warning" id="statCompleted">0</div><div class="stat-label">완료</div></div>
         </div>
 
         <!-- Main Area -->
-        <div class="main-area" id="mainArea" style="display:none;">
-            <!-- Animation -->
+        <div class="main-layout" id="mainArea" style="display:none;">
             <div class="card">
                 <div class="card-title">획순 애니메이션</div>
                 <div class="writer-wrap">
-                    <div class="writer-container" id="animContainer" style="width:280px;height:280px;">
+                    <div class="writer-container" style="width:280px;height:280px;">
                         <svg class="grid-bg" viewBox="0 0 280 280">
                             <line x1="140" y1="0" x2="140" y2="280"/>
                             <line x1="0" y1="140" x2="280" y2="140"/>
@@ -516,18 +427,17 @@
                     <input type="range" class="speed-slider" id="speedSlider" min="0.5" max="3" step="0.5" value="1">
                     <span id="speedValue" style="font-size:12px;color:var(--text-dim);">1x</span>
                 </div>
-                <div class="controls" style="margin-top:16px;">
-                    <button class="btn btn-primary" onclick="playAnimation()">재생</button>
-                    <button class="btn btn-outline" onclick="loopAnimation()">반복</button>
-                    <button class="btn btn-outline" onclick="pauseAnim()">일시정지</button>
+                <div class="controls" style="margin-top:14px;">
+                    <button class="btn btn-primary btn-sm" onclick="playAnimation()">재생</button>
+                    <button class="btn btn-outline btn-sm" onclick="loopAnimation()">반복</button>
+                    <button class="btn btn-outline btn-sm" onclick="pauseAnim()">일시정지</button>
                 </div>
             </div>
 
-            <!-- Quiz -->
             <div class="card">
                 <div class="card-title">쓰기 연습</div>
                 <div class="writer-wrap">
-                    <div class="writer-container" id="quizContainer" style="width:280px;height:280px;">
+                    <div class="writer-container" style="width:280px;height:280px;">
                         <svg class="grid-bg" viewBox="0 0 280 280">
                             <line x1="140" y1="0" x2="140" y2="280"/>
                             <line x1="0" y1="140" x2="280" y2="140"/>
@@ -537,17 +447,17 @@
                         <div id="quizTarget"></div>
                     </div>
                 </div>
-                <div class="quiz-feedback" id="quizFeedback">한자를 불러온 후 퀴즈를 시작하세요</div>
-                <div class="controls" style="margin-top:12px;">
-                    <button class="btn btn-success" onclick="startQuiz()">퀴즈 시작</button>
-                    <button class="btn btn-outline" onclick="startQuiz(true)">윤곽 없이</button>
-                    <button class="btn btn-outline" onclick="showHint()">힌트</button>
+                <div class="quiz-feedback" id="quizFeedback">한자를 선택한 후 퀴즈를 시작하세요</div>
+                <div class="controls" style="margin-top:10px;">
+                    <button class="btn btn-success btn-sm" onclick="startQuiz()">퀴즈 시작</button>
+                    <button class="btn btn-outline btn-sm" onclick="startQuiz(true)">윤곽 없이</button>
+                    <button class="btn btn-outline btn-sm" onclick="showHint()">힌트</button>
                 </div>
             </div>
         </div>
 
         <!-- Stroke breakdown -->
-        <div class="card" id="strokeCard" style="display:none; margin-bottom:24px;">
+        <div class="card stroke-card" id="strokeCard" style="display:none;">
             <div class="card-title">획 분석</div>
             <div id="strokeBreakdown" style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div>
         </div>
@@ -562,49 +472,33 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        const PRESETS = [
-            { char: '人', name: '사람 인', desc: '사람의 모습을 본뜬 글자' },
-            { char: '山', name: '뫼 산', desc: '산봉우리 세 개를 본뜬 글자' },
-            { char: '水', name: '물 수', desc: '물이 흐르는 모양' },
-            { char: '火', name: '불 화', desc: '불꽃이 타오르는 모양' },
-            { char: '木', name: '나무 목', desc: '나무의 모양을 본뜸' },
-            { char: '金', name: '쇠 금', desc: '금속, 돈을 뜻함' },
-            { char: '土', name: '흙 토', desc: '땅 위에 흙이 쌓인 모양' },
-            { char: '日', name: '날 일', desc: '태양의 모습' },
-            { char: '月', name: '달 월', desc: '초승달의 모습' },
-            { char: '大', name: '큰 대', desc: '사람이 팔을 벌린 모양' },
-            { char: '天', name: '하늘 천', desc: '사람 위의 하늘' },
-            { char: '中', name: '가운데 중', desc: '깃발이 중앙을 가리킴' },
-            { char: '學', name: '배울 학', desc: '배움, 학문' },
-            { char: '愛', name: '사랑 애', desc: '사랑하다, 아끼다' },
-            { char: '心', name: '마음 심', desc: '심장의 모양' },
-            { char: '力', name: '힘 력', desc: '팔에 힘을 준 모양' },
-            { char: '王', name: '임금 왕', desc: '왕, 임금' },
-            { char: '生', name: '날 생', desc: '풀이 땅에서 자라남' },
-            { char: '道', name: '길 도', desc: '길, 도리' },
-            { char: '德', name: '덕 덕', desc: '덕행, 인덕' },
-            { char: '龍', name: '용 룡', desc: '용, 가장 복잡한 한자 중 하나' },
-            { char: '花', name: '꽃 화', desc: '꽃, 꽃피다' },
-            { char: '明', name: '밝을 명', desc: '해와 달이 합쳐져 밝음' },
-            { char: '國', name: '나라 국', desc: '나라, 국가' },
-        ];
-
-        const CHAR_INFO = {};
-        PRESETS.forEach(p => { CHAR_INFO[p.char] = p; });
-
         let animWriter = null;
         let quizWriter = null;
         let currentChar = '';
+        let currentCategory = 'all';
+        let currentChars = [];
         let stats = { correct: 0, mistakes: 0, completed: 0, strokes: 0 };
         let history = JSON.parse(localStorage.getItem('hanzi_history') || '[]');
         let currentStrokeNum = 0;
 
+        const charLookup = {};
+
         function init() {
-            renderPresets();
+            let total = 0;
+            HANZI_CATEGORIES.forEach(function(cat) {
+                cat.chars.forEach(function(c) {
+                    charLookup[c[0]] = { char: c[0], reading: c[1], meaning: c[2], category: cat.name };
+                    total++;
+                });
+            });
+            document.getElementById('totalCount').textContent = total + '자 수록';
+
+            renderCategoryTabs();
+            selectCategory('all');
             renderHistory();
 
             document.getElementById('charInput').addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') loadCharacter();
+                if (e.key === 'Enter') handleSearch();
             });
 
             document.getElementById('speedSlider').addEventListener('input', function() {
@@ -612,36 +506,109 @@
             });
         }
 
-        function renderPresets() {
-            const grid = document.getElementById('presetGrid');
-            grid.innerHTML = PRESETS.map(p =>
-                `<button class="preset-btn" onclick="loadChar('${p.char}')">
-                    <span class="char">${p.char}</span> ${p.name}
-                </button>`
-            ).join('');
+        function renderCategoryTabs() {
+            var tabs = document.getElementById('categoryTabs');
+            var totalChars = 0;
+            HANZI_CATEGORIES.forEach(function(c) { totalChars += c.chars.length; });
+
+            var html = '<div class="cat-tab active" data-cat="all" onclick="selectCategory(\'all\')">전체 <span class="cat-count">' + totalChars + '</span></div>';
+            HANZI_CATEGORIES.forEach(function(cat) {
+                html += '<div class="cat-tab" data-cat="' + cat.id + '" onclick="selectCategory(\'' + cat.id + '\')">'
+                    + cat.icon + ' ' + cat.name + ' <span class="cat-count">' + cat.chars.length + '</span></div>';
+            });
+            tabs.innerHTML = html;
         }
 
-        function renderHistory() {
-            if (history.length === 0) {
-                document.getElementById('historySection').style.display = 'none';
+        function selectCategory(catId) {
+            currentCategory = catId;
+            document.getElementById('gridFilter').value = '';
+
+            document.querySelectorAll('.cat-tab').forEach(function(t) {
+                t.classList.toggle('active', t.dataset.cat === catId);
+            });
+
+            if (catId === 'all') {
+                currentChars = [];
+                HANZI_CATEGORIES.forEach(function(cat) {
+                    cat.chars.forEach(function(c) {
+                        currentChars.push(c);
+                    });
+                });
+                document.getElementById('gridTitle').textContent = '전체 한자';
+            } else {
+                var cat = HANZI_CATEGORIES.find(function(c) { return c.id === catId; });
+                if (!cat) return;
+                currentChars = cat.chars;
+                document.getElementById('gridTitle').textContent = cat.icon + ' ' + cat.name;
+            }
+
+            renderCharGrid(currentChars);
+        }
+
+        function renderCharGrid(chars) {
+            var grid = document.getElementById('charGrid');
+            document.getElementById('gridMeta').textContent = chars.length + '자';
+
+            if (chars.length === 0) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-dim);">검색 결과 없음</div>';
                 return;
             }
-            document.getElementById('historySection').style.display = 'block';
-            const unique = [...new Set(history)].slice(-20);
-            document.getElementById('historyGrid').innerHTML = unique.map(c =>
-                `<div class="history-item" onclick="loadChar('${c}')">${c}</div>`
-            ).join('');
+
+            var html = '';
+            chars.forEach(function(c) {
+                var sel = c[0] === currentChar ? ' selected' : '';
+                html += '<div class="char-cell' + sel + '" onclick="selectChar(\'' + c[0] + '\')" title="' + c[1] + ' - ' + c[2] + '">'
+                    + '<span class="hz">' + c[0] + '</span>'
+                    + '<span class="rd">' + c[1] + '</span>'
+                    + '</div>';
+            });
+            grid.innerHTML = html;
         }
 
-        function loadChar(char) {
+        function filterGrid() {
+            var q = document.getElementById('gridFilter').value.trim().toLowerCase();
+            if (!q) {
+                renderCharGrid(currentChars);
+                return;
+            }
+            var filtered = currentChars.filter(function(c) {
+                return c[0].indexOf(q) !== -1 || c[1].indexOf(q) !== -1 || c[2].indexOf(q) !== -1;
+            });
+            renderCharGrid(filtered);
+        }
+
+        function handleSearch() {
+            var q = document.getElementById('charInput').value.trim();
+            if (!q) return;
+
+            if (/[一-鿿㐀-䶿]/.test(q.charAt(0))) {
+                selectChar(q.charAt(0));
+                return;
+            }
+
+            var results = [];
+            HANZI_CATEGORIES.forEach(function(cat) {
+                cat.chars.forEach(function(c) {
+                    if (c[1].indexOf(q) !== -1 || c[2].indexOf(q) !== -1) {
+                        results.push(c);
+                    }
+                });
+            });
+
+            if (results.length > 0) {
+                currentChars = results;
+                currentCategory = 'search';
+                document.querySelectorAll('.cat-tab').forEach(function(t) { t.classList.remove('active'); });
+                document.getElementById('gridTitle').textContent = '"' + q + '" 검색 결과';
+                renderCharGrid(results);
+                if (results.length === 1) selectChar(results[0][0]);
+            } else {
+                showToast('검색 결과 없음: ' + q);
+            }
+        }
+
+        function selectChar(char) {
             document.getElementById('charInput').value = char;
-            loadCharacter();
-        }
-
-        function loadCharacter() {
-            const input = document.getElementById('charInput').value.trim();
-            if (!input) return;
-            const char = input.charAt(0);
             currentChar = char;
 
             addToHistory(char);
@@ -651,100 +618,82 @@
             document.getElementById('statsBar').style.display = 'grid';
             document.getElementById('strokeCard').style.display = 'block';
 
+            document.querySelectorAll('.char-cell').forEach(function(el) {
+                el.classList.toggle('selected', el.querySelector('.hz').textContent === char);
+            });
+
             createAnimWriter(char);
             createQuizWriter(char);
             loadStrokeBreakdown(char);
+
+            document.getElementById('infoPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
         function createAnimWriter(char) {
-            const target = document.getElementById('animTarget');
-            target.innerHTML = '';
-
+            document.getElementById('animTarget').innerHTML = '';
             animWriter = HanziWriter.create('animTarget', char, {
-                width: 280,
-                height: 280,
-                padding: 20,
-                strokeColor: '#6c63ff',
-                outlineColor: '#2d2d4a',
-                radicalColor: '#4ecdc4',
+                width: 280, height: 280, padding: 20,
+                strokeColor: '#6c63ff', outlineColor: '#2d2d4a', radicalColor: '#4ecdc4',
                 strokeAnimationSpeed: parseFloat(document.getElementById('speedSlider').value),
-                delayBetweenStrokes: 300,
-                delayBetweenLoops: 1500,
+                delayBetweenStrokes: 300, delayBetweenLoops: 1500,
                 onLoadCharDataSuccess: function(data) {
                     stats.strokes = data.strokes.length;
                     document.getElementById('statStrokes').textContent = stats.strokes;
                 },
-                onLoadCharDataError: function() {
-                    showToast('한자 데이터를 찾을 수 없습니다');
-                }
+                onLoadCharDataError: function() { showToast('한자 데이터를 찾을 수 없습니다'); }
             });
         }
 
         function createQuizWriter(char) {
-            const target = document.getElementById('quizTarget');
-            target.innerHTML = '';
-
+            document.getElementById('quizTarget').innerHTML = '';
             quizWriter = HanziWriter.create('quizTarget', char, {
-                width: 280,
-                height: 280,
-                padding: 20,
+                width: 280, height: 280, padding: 20,
                 showCharacter: false,
-                strokeColor: '#4ecdc4',
-                outlineColor: '#2d2d4a',
-                highlightColor: '#6c63ff',
-                drawingColor: '#e8e8f0',
-                drawingWidth: 5,
+                strokeColor: '#4ecdc4', outlineColor: '#2d2d4a',
+                highlightColor: '#6c63ff', drawingColor: '#e8e8f0', drawingWidth: 5,
                 showHintAfterMisses: 3,
-                onLoadCharDataError: function() {
-                    showToast('한자 데이터를 찾을 수 없습니다');
-                }
+                onLoadCharDataError: function() { showToast('한자 데이터를 찾을 수 없습니다'); }
             });
-
             document.getElementById('quizFeedback').textContent = '퀴즈 시작 버튼을 누르세요';
             currentStrokeNum = 0;
         }
 
         function loadStrokeBreakdown(char) {
-            const container = document.getElementById('strokeBreakdown');
+            var container = document.getElementById('strokeBreakdown');
             container.innerHTML = '';
-
             HanziWriter.loadCharacterData(char).then(function(data) {
-                for (let i = 0; i < data.strokes.length; i++) {
-                    const wrap = document.createElement('div');
-                    wrap.style.cssText = 'background:var(--surface2);border-radius:8px;padding:4px;cursor:pointer;transition:transform 0.2s;';
-                    wrap.title = '획 ' + (i + 1);
-                    wrap.addEventListener('mouseenter', function() { this.style.transform = 'scale(1.15)'; });
-                    wrap.addEventListener('mouseleave', function() { this.style.transform = 'scale(1)'; });
+                for (var i = 0; i < data.strokes.length; i++) {
+                    (function(idx) {
+                        var wrap = document.createElement('div');
+                        wrap.style.cssText = 'background:var(--surface2);border-radius:8px;padding:4px;cursor:pointer;transition:transform 0.2s;';
+                        wrap.title = '획 ' + (idx + 1);
+                        wrap.onmouseenter = function() { this.style.transform = 'scale(1.15)'; };
+                        wrap.onmouseleave = function() { this.style.transform = 'scale(1)'; };
 
-                    const svgNS = 'http://www.w3.org/2000/svg';
-                    const svg = document.createElementNS(svgNS, 'svg');
-                    svg.setAttribute('width', '56');
-                    svg.setAttribute('height', '56');
-                    svg.setAttribute('viewBox', '0 0 1024 1024');
+                        var svgNS = 'http://www.w3.org/2000/svg';
+                        var svg = document.createElementNS(svgNS, 'svg');
+                        svg.setAttribute('width', '52');
+                        svg.setAttribute('height', '52');
+                        svg.setAttribute('viewBox', '0 0 1024 1024');
+                        var g = document.createElementNS(svgNS, 'g');
+                        g.setAttribute('transform', 'scale(1,-1) translate(0,-900)');
+                        for (var j = 0; j <= idx; j++) {
+                            var path = document.createElementNS(svgNS, 'path');
+                            path.setAttribute('d', data.strokes[j]);
+                            path.style.fill = j === idx ? '#6c63ff' : '#2d2d4a';
+                            g.appendChild(path);
+                        }
+                        svg.appendChild(g);
+                        wrap.appendChild(svg);
 
-                    const g = document.createElementNS(svgNS, 'g');
-                    g.setAttribute('transform', 'scale(1,-1) translate(0,-900)');
+                        var num = document.createElement('div');
+                        num.style.cssText = 'text-align:center;font-size:10px;color:var(--text-dim);';
+                        num.textContent = idx + 1;
+                        wrap.appendChild(num);
 
-                    for (let j = 0; j <= i; j++) {
-                        const path = document.createElementNS(svgNS, 'path');
-                        path.setAttribute('d', data.strokes[j]);
-                        path.style.fill = j === i ? '#6c63ff' : '#2d2d4a';
-                        g.appendChild(path);
-                    }
-
-                    svg.appendChild(g);
-                    wrap.appendChild(svg);
-
-                    const num = document.createElement('div');
-                    num.style.cssText = 'text-align:center;font-size:10px;color:var(--text-dim);';
-                    num.textContent = i + 1;
-                    wrap.appendChild(num);
-
-                    wrap.addEventListener('click', function() {
-                        if (animWriter) animWriter.animateStroke(i);
-                    });
-
-                    container.appendChild(wrap);
+                        wrap.onclick = function() { if (animWriter) animWriter.animateStroke(idx); };
+                        container.appendChild(wrap);
+                    })(i);
                 }
             });
         }
@@ -753,70 +702,45 @@
             if (!animWriter) return;
             animWriter.hideCharacter();
             setTimeout(function() {
-                animWriter.animateCharacter({
-                    onComplete: function() {
-                        showToast('애니메이션 완료');
-                    }
-                });
+                animWriter.animateCharacter({ onComplete: function() { showToast('애니메이션 완료'); } });
             }, 200);
         }
 
-        function loopAnimation() {
-            if (!animWriter) return;
-            animWriter.loopCharacterAnimation();
-        }
-
-        function pauseAnim() {
-            if (!animWriter) return;
-            animWriter.pauseAnimation();
-        }
+        function loopAnimation() { if (animWriter) animWriter.loopCharacterAnimation(); }
+        function pauseAnim() { if (animWriter) animWriter.pauseAnimation(); }
 
         function startQuiz(noOutline) {
             if (!quizWriter) return;
-
-            if (noOutline) {
-                quizWriter.hideOutline();
-            } else {
-                quizWriter.showOutline();
-            }
-
+            if (noOutline) { quizWriter.hideOutline(); } else { quizWriter.showOutline(); }
             stats.correct = 0;
             stats.mistakes = 0;
             currentStrokeNum = 0;
             updateStats();
-
             document.getElementById('quizFeedback').textContent = '첫 번째 획을 그려보세요';
-
             quizWriter.quiz({
                 onMistake: function(data) {
                     stats.mistakes = data.totalMistakes;
                     updateStats();
-                    document.getElementById('quizFeedback').textContent =
-                        '다시 시도! (획 ' + (data.strokeNum + 1) + ', 오답 ' + data.mistakesOnStroke + '회)';
+                    document.getElementById('quizFeedback').textContent = '다시 시도! (획 ' + (data.strokeNum + 1) + ', 오답 ' + data.mistakesOnStroke + '회)';
                 },
                 onCorrectStroke: function(data) {
                     currentStrokeNum = data.strokeNum + 1;
                     stats.correct++;
                     updateStats();
                     if (data.strokesRemaining > 0) {
-                        document.getElementById('quizFeedback').textContent =
-                            '정답! 다음 획 (' + (data.strokeNum + 2) + '/' + stats.strokes + ')';
+                        document.getElementById('quizFeedback').textContent = '정답! 다음 획 (' + (data.strokeNum + 2) + '/' + stats.strokes + ')';
                     }
                 },
                 onComplete: function(data) {
                     stats.completed++;
                     updateStats();
-                    document.getElementById('quizFeedback').textContent =
-                        '완성! 총 오답: ' + data.totalMistakes + '회';
+                    document.getElementById('quizFeedback').textContent = '완성! 총 오답: ' + data.totalMistakes + '회';
                     showToast('한자 "' + currentChar + '" 완성!');
                 }
             });
         }
 
-        function showHint() {
-            if (!animWriter) return;
-            animWriter.animateStroke(currentStrokeNum);
-        }
+        function showHint() { if (animWriter) animWriter.animateStroke(currentStrokeNum); }
 
         function updateStats() {
             document.getElementById('statCorrect').textContent = stats.correct;
@@ -825,17 +749,14 @@
         }
 
         function showInfo(char) {
-            const info = CHAR_INFO[char];
-            const panel = document.getElementById('infoPanel');
+            var info = charLookup[char];
+            var panel = document.getElementById('infoPanel');
             panel.style.display = 'block';
-
             document.getElementById('charBig').textContent = char;
-
             if (info) {
-                document.getElementById('charName').textContent = info.name;
-                document.getElementById('charDesc').textContent = info.desc;
-                document.getElementById('charTags').innerHTML =
-                    '<span class="tag">한자</span><span class="tag">필순연습</span>';
+                document.getElementById('charName').textContent = info.meaning + ' ' + info.reading;
+                document.getElementById('charDesc').textContent = info.category + ' 카테고리';
+                document.getElementById('charTags').innerHTML = '<span class="tag">' + info.reading + '</span><span class="tag">' + info.category + '</span>';
             } else {
                 document.getElementById('charName').textContent = char;
                 document.getElementById('charDesc').textContent = '사용자 입력 한자';
@@ -844,15 +765,24 @@
         }
 
         function addToHistory(char) {
-            history = history.filter(c => c !== char);
+            history = history.filter(function(c) { return c !== char; });
             history.push(char);
             if (history.length > 30) history = history.slice(-30);
             localStorage.setItem('hanzi_history', JSON.stringify(history));
             renderHistory();
         }
 
+        function renderHistory() {
+            if (history.length === 0) { document.getElementById('historySection').style.display = 'none'; return; }
+            document.getElementById('historySection').style.display = 'block';
+            var unique = history.slice(-20);
+            document.getElementById('historyGrid').innerHTML = unique.map(function(c) {
+                return '<div class="history-item" onclick="selectChar(\'' + c + '\')">' + c + '</div>';
+            }).join('');
+        }
+
         function showToast(msg) {
-            const toast = document.getElementById('toast');
+            var toast = document.getElementById('toast');
             toast.textContent = msg;
             toast.classList.add('show');
             setTimeout(function() { toast.classList.remove('show'); }, 2500);
