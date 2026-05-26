@@ -6,6 +6,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["server.js"],
       "port": 3000
+    },
+    {
+      "name": "hanzi-writer",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "hanzi-writer-app", "-l", "3001", "--no-clipboard"],
+      "port": 3001
     }
   ]
 }
