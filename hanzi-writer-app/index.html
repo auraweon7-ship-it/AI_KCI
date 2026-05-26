@@ -6,6 +6,7 @@
     <title>한자 필순 연습</title>
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
     <script src="data.js"></script>
+    <script src="hsk-data.js"></script>
     <style>
         :root {
             --bg: #0f0f13;
@@ -148,6 +149,67 @@
             font-size: 11px;
             opacity: 0.7;
         }
+
+        /* HSK filter */
+        .hsk-filter {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+
+        .hsk-filter-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-right: 4px;
+        }
+
+        .hsk-btn {
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            color: var(--text-dim);
+        }
+
+        .hsk-btn:hover { border-color: var(--accent); color: var(--text); }
+        .hsk-btn.active { color: #fff; border-color: transparent; }
+        .hsk-btn[data-hsk="all"].active { background: var(--accent); }
+        .hsk-btn[data-hsk="1"].active { background: #22c55e; }
+        .hsk-btn[data-hsk="2"].active { background: #3b82f6; }
+        .hsk-btn[data-hsk="3"].active { background: #8b5cf6; }
+        .hsk-btn[data-hsk="4"].active { background: #f59e0b; }
+        .hsk-btn[data-hsk="5"].active { background: #ef4444; }
+        .hsk-btn[data-hsk="6"].active { background: #ec4899; }
+        .hsk-btn[data-hsk="7"].active { background: #6366f1; }
+        .hsk-btn[data-hsk="0"].active { background: #64748b; }
+
+        .hsk-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            color: #fff;
+            margin-left: 4px;
+            vertical-align: middle;
+        }
+
+        .hsk-1 { background: #22c55e; }
+        .hsk-2 { background: #3b82f6; }
+        .hsk-3 { background: #8b5cf6; }
+        .hsk-4 { background: #f59e0b; }
+        .hsk-5 { background: #ef4444; }
+        .hsk-6 { background: #ec4899; }
+        .hsk-7 { background: #6366f1; }
+        .hsk-0 { background: #64748b; }
 
         /* Character grid */
         .char-grid-section {
@@ -377,6 +439,20 @@
         <!-- Category Tabs -->
         <div class="category-tabs" id="categoryTabs"></div>
 
+        <!-- HSK Filter -->
+        <div class="hsk-filter" id="hskFilter">
+            <span class="hsk-filter-label">HSK 3.0</span>
+            <button class="hsk-btn active" data-hsk="all" onclick="filterHSK('all')">전체</button>
+            <button class="hsk-btn" data-hsk="1" onclick="filterHSK(1)">1급</button>
+            <button class="hsk-btn" data-hsk="2" onclick="filterHSK(2)">2급</button>
+            <button class="hsk-btn" data-hsk="3" onclick="filterHSK(3)">3급</button>
+            <button class="hsk-btn" data-hsk="4" onclick="filterHSK(4)">4급</button>
+            <button class="hsk-btn" data-hsk="5" onclick="filterHSK(5)">5급</button>
+            <button class="hsk-btn" data-hsk="6" onclick="filterHSK(6)">6급</button>
+            <button class="hsk-btn" data-hsk="7" onclick="filterHSK(7)">7-9급</button>
+            <button class="hsk-btn" data-hsk="0" onclick="filterHSK(0)">급외</button>
+        </div>
+
         <!-- Character Grid -->
         <div class="char-grid-section" id="charGridSection">
             <div class="char-grid-header">
@@ -493,12 +569,29 @@
         let quizWriter = null;
         let currentChar = '';
         let currentCategory = 'all';
+        let currentHSK = 'all';
         let currentChars = [];
+        let filteredByHSK = null;
         let stats = { correct: 0, mistakes: 0, completed: 0, strokes: 0 };
         let history = JSON.parse(localStorage.getItem('hanzi_history') || '[]');
         let currentStrokeNum = 0;
 
         const charLookup = {};
+
+        function getHSK(char) {
+            return HSK_DATA[char] || 0;
+        }
+
+        function hskLabel(lv) {
+            if (lv === 0) return '급외';
+            if (lv === 7) return '7-9급';
+            return lv + '급';
+        }
+
+        function hskBadgeHTML(char) {
+            var lv = getHSK(char);
+            return '<span class="hsk-badge hsk-' + lv + '">HSK ' + hskLabel(lv) + '</span>';
+        }
 
         function init() {
             let total = 0;
@@ -509,6 +602,7 @@
                 });
             });
             document.getElementById('totalCount').textContent = total + '자 수록';
+            updateHSKCounts();
 
             renderCategoryTabs();
             selectCategory('all');
@@ -536,6 +630,55 @@
             tabs.innerHTML = html;
         }
 
+        function updateHSKCounts() {
+            var counts = {all:0, 0:0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0};
+            HANZI_CATEGORIES.forEach(function(cat) {
+                cat.chars.forEach(function(c) {
+                    var lv = getHSK(c[0]);
+                    counts.all++;
+                    counts[lv]++;
+                });
+            });
+            document.querySelectorAll('.hsk-btn').forEach(function(btn) {
+                var hsk = btn.dataset.hsk;
+                var count = counts[hsk] || 0;
+                var label = btn.textContent.replace(/\s*\d+$/, '');
+                btn.textContent = label + ' ' + count;
+            });
+        }
+
+        function filterHSK(level) {
+            currentHSK = level;
+            document.querySelectorAll('.hsk-btn').forEach(function(b) {
+                b.classList.toggle('active', b.dataset.hsk === String(level));
+            });
+            applyFilters();
+        }
+
+        function applyFilters() {
+            var chars;
+            if (currentCategory === 'all' || currentCategory === 'search') {
+                chars = [];
+                HANZI_CATEGORIES.forEach(function(cat) {
+                    cat.chars.forEach(function(c) { chars.push(c); });
+                });
+                if (currentCategory === 'all') {
+                    document.getElementById('gridTitle').textContent = '전체 한자';
+                }
+            } else {
+                var cat = HANZI_CATEGORIES.find(function(c) { return c.id === currentCategory; });
+                chars = cat ? cat.chars : [];
+                if (cat) document.getElementById('gridTitle').textContent = cat.icon + ' ' + cat.name;
+            }
+
+            if (currentHSK !== 'all') {
+                chars = chars.filter(function(c) { return getHSK(c[0]) === currentHSK; });
+            }
+
+            currentChars = chars;
+            renderCharGrid(currentChars);
+        }
+
         function selectCategory(catId) {
             currentCategory = catId;
             document.getElementById('gridFilter').value = '';
@@ -544,22 +687,7 @@
                 t.classList.toggle('active', t.dataset.cat === catId);
             });
 
-            if (catId === 'all') {
-                currentChars = [];
-                HANZI_CATEGORIES.forEach(function(cat) {
-                    cat.chars.forEach(function(c) {
-                        currentChars.push(c);
-                    });
-                });
-                document.getElementById('gridTitle').textContent = '전체 한자';
-            } else {
-                var cat = HANZI_CATEGORIES.find(function(c) { return c.id === catId; });
-                if (!cat) return;
-                currentChars = cat.chars;
-                document.getElementById('gridTitle').textContent = cat.icon + ' ' + cat.name;
-            }
-
-            renderCharGrid(currentChars);
+            applyFilters();
         }
 
         function renderCharGrid(chars) {
@@ -574,7 +702,8 @@
             var html = '';
             chars.forEach(function(c) {
                 var sel = c[0] === currentChar ? ' selected' : '';
-                html += '<div class="char-cell' + sel + '" onclick="selectChar(\'' + c[0] + '\')" title="' + c[1] + ' - ' + c[2] + '">'
+                var lv = getHSK(c[0]);
+                html += '<div class="char-cell' + sel + '" onclick="selectChar(\'' + c[0] + '\')" title="' + c[1] + ' - ' + c[2] + ' [HSK ' + hskLabel(lv) + ']">'
                     + '<span class="hz">' + c[0] + '</span>'
                     + '<span class="rd">' + c[1] + '</span>'
                     + '</div>';
@@ -770,14 +899,15 @@
             var panel = document.getElementById('infoPanel');
             panel.style.display = 'block';
             document.getElementById('charBig').textContent = char;
+            var badge = hskBadgeHTML(char);
             if (info) {
-                document.getElementById('charName').textContent = info.meaning + ' ' + info.reading;
+                document.getElementById('charName').innerHTML = info.meaning + ' ' + info.reading + ' ' + badge;
                 document.getElementById('charDesc').textContent = info.category + ' 카테고리';
-                document.getElementById('charTags').innerHTML = '<span class="tag">' + info.reading + '</span><span class="tag">' + info.category + '</span>';
+                document.getElementById('charTags').innerHTML = '<span class="tag">' + info.reading + '</span><span class="tag">' + info.category + '</span><span class="tag">HSK ' + hskLabel(getHSK(char)) + '</span>';
             } else {
-                document.getElementById('charName').textContent = char;
+                document.getElementById('charName').innerHTML = char + ' ' + badge;
                 document.getElementById('charDesc').textContent = '사용자 입력 한자';
-                document.getElementById('charTags').innerHTML = '<span class="tag">사용자 입력</span>';
+                document.getElementById('charTags').innerHTML = '<span class="tag">사용자 입력</span><span class="tag">HSK ' + hskLabel(getHSK(char)) + '</span>';
             }
         }
 
