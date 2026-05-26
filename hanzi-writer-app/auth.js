@@ -8,8 +8,6 @@
     var adminToken = null;
     var isAdmin = false;
     var googleClientId = null;
-    var currentLoginTab = 'login';
-
     // ===== INIT =====
     function initAuth() {
         var saved = localStorage.getItem('auth_token');
@@ -23,10 +21,6 @@
             if (cfg.googleClientId) {
                 googleClientId = cfg.googleClientId;
                 loadGoogleSignIn();
-                var gDiv = document.getElementById('googleDivider');
-                var gBtn = document.getElementById('googleLoginBtn2');
-                if (gDiv) gDiv.style.display = '';
-                if (gBtn) gBtn.style.display = '';
             }
         }).catch(function() {});
 
@@ -81,112 +75,11 @@
     // ===== LOGIN MODAL =====
     window.showLoginModal = function() {
         document.getElementById('loginModal').style.display = 'flex';
-        document.getElementById('loginError').style.display = 'none';
-        document.getElementById('loginError').textContent = '';
-        switchLoginTab('login');
-        setTimeout(function() { document.getElementById('loginEmail').focus(); }, 100);
     };
 
     window.closeLoginModal = function() {
         document.getElementById('loginModal').style.display = 'none';
-        document.getElementById('loginEmail').value = '';
-        document.getElementById('loginPassword').value = '';
-        document.getElementById('regName').value = '';
-        document.getElementById('loginError').style.display = 'none';
     };
-
-    window.switchLoginTab = function(tab) {
-        currentLoginTab = tab;
-        var tabLogin = document.getElementById('tabLogin');
-        var tabRegister = document.getElementById('tabRegister');
-        var regFields = document.getElementById('registerFields');
-        var submitBtn = document.getElementById('loginSubmitBtn');
-
-        if (tab === 'login') {
-            tabLogin.classList.add('active');
-            tabRegister.classList.remove('active');
-            regFields.style.display = 'none';
-            submitBtn.textContent = '로그인';
-        } else {
-            tabLogin.classList.remove('active');
-            tabRegister.classList.add('active');
-            regFields.style.display = 'block';
-            submitBtn.textContent = '회원가입';
-            setTimeout(function() { document.getElementById('regName').focus(); }, 50);
-        }
-        document.getElementById('loginError').style.display = 'none';
-    };
-
-    window.submitLoginForm = function() {
-        if (currentLoginTab === 'login') {
-            doLogin();
-        } else {
-            doRegister();
-        }
-    };
-
-    function showLoginError(msg) {
-        var el = document.getElementById('loginError');
-        el.textContent = msg;
-        el.style.display = 'block';
-    }
-
-    function doLogin() {
-        var email = document.getElementById('loginEmail').value.trim();
-        var pw = document.getElementById('loginPassword').value;
-        if (!email || !pw) { showLoginError('이메일과 비밀번호를 입력하세요'); return; }
-
-        document.getElementById('loginSubmitBtn').textContent = '로그인 중...';
-        fetch(API_BASE + '/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email, password: pw })
-        })
-        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
-        .then(function(result) {
-            document.getElementById('loginSubmitBtn').textContent = '로그인';
-            if (result.ok && result.data.token) {
-                setAuth(result.data.token, result.data.user);
-                closeLoginModal();
-                if (typeof showToast === 'function') showToast('로그인 성공');
-            } else {
-                showLoginError(result.data.error || '로그인 실패');
-            }
-        })
-        .catch(function() {
-            document.getElementById('loginSubmitBtn').textContent = '로그인';
-            showLoginError('서버 연결 실패');
-        });
-    }
-
-    function doRegister() {
-        var name = document.getElementById('regName').value.trim();
-        var email = document.getElementById('loginEmail').value.trim();
-        var pw = document.getElementById('loginPassword').value;
-        if (!name || !email || !pw) { showLoginError('모든 필드를 입력하세요'); return; }
-
-        document.getElementById('loginSubmitBtn').textContent = '가입 중...';
-        fetch(API_BASE + '/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: name, email: email, password: pw })
-        })
-        .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
-        .then(function(result) {
-            document.getElementById('loginSubmitBtn').textContent = '회원가입';
-            if (result.ok && result.data.token) {
-                setAuth(result.data.token, result.data.user);
-                closeLoginModal();
-                if (typeof showToast === 'function') showToast('회원가입 완료');
-            } else {
-                showLoginError(result.data.error || '회원가입 실패');
-            }
-        })
-        .catch(function() {
-            document.getElementById('loginSubmitBtn').textContent = '회원가입';
-            showLoginError('서버 연결 실패');
-        });
-    }
 
     // ===== GOOGLE AUTH =====
     window.googleLogin = function() {
