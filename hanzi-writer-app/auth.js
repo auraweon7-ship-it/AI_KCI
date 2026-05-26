@@ -38,6 +38,17 @@
                 client_id: googleClientId,
                 callback: handleGoogleCredential
             });
+            // Render official Google Sign-In button inside login modal
+            var btnContainer = document.getElementById('googleBtnContainer');
+            if (btnContainer) {
+                google.accounts.id.renderButton(btnContainer, {
+                    type: 'standard',
+                    theme: 'filled_blue',
+                    size: 'large',
+                    text: 'signin_with',
+                    width: 300
+                });
+            }
         };
         document.head.appendChild(script);
     }
@@ -75,6 +86,18 @@
     // ===== LOGIN MODAL =====
     window.showLoginModal = function() {
         document.getElementById('loginModal').style.display = 'flex';
+        // Re-render Google button (may fail if modal was hidden during initial render)
+        var btnContainer = document.getElementById('googleBtnContainer');
+        if (btnContainer && typeof google !== 'undefined' && google.accounts && googleClientId) {
+            btnContainer.innerHTML = '';
+            google.accounts.id.renderButton(btnContainer, {
+                type: 'standard',
+                theme: 'filled_blue',
+                size: 'large',
+                text: 'signin_with',
+                width: 300
+            });
+        }
     };
 
     window.closeLoginModal = function() {
@@ -87,7 +110,12 @@
             if (typeof showToast === 'function') showToast('Google OAuth 미설정');
             return;
         }
-        google.accounts.id.prompt();
+        // Try One Tap prompt; if skipped, guide user to rendered button
+        google.accounts.id.prompt(function(notification) {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+                if (typeof showToast === 'function') showToast('위의 Google 버튼을 클릭하세요');
+            }
+        });
     };
 
     window.doLogout = function() {
