@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js" defer></script>
     <script src="data.js"></script>
     <script src="hsk-data.js"></script>
     <script src="pinyin-data.js"></script>
@@ -1619,6 +1620,210 @@
 
         .footer-link::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); }
 
+        /* ===== SRS REVIEW SECTION ===== */
+        .srs-section {
+            background: var(--surface);
+            backdrop-filter: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        .srs-section::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(251,191,36,0.4), rgba(124,106,255,0.2), transparent);
+        }
+        .srs-stats-row {
+            display: flex; gap: 16px; align-items: center;
+            font-size: 13px; color: var(--text-dim);
+        }
+        .srs-stats-row strong { color: var(--warning); font-size: 18px; font-weight: 800; }
+        .srs-queue {
+            display: flex; gap: 8px; overflow-x: auto; padding: 12px 0;
+            scrollbar-width: none;
+        }
+        .srs-queue::-webkit-scrollbar { display: none; }
+        .srs-card {
+            flex-shrink: 0; width: 64px; height: 80px;
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 12px; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer;
+            transition: all 0.2s;
+        }
+        .srs-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 6px 16px rgba(124,106,255,0.15); }
+        .srs-card.overdue { border-color: rgba(248,113,113,0.5); }
+        .srs-card .srs-char { font-size: 26px; font-family: 'Noto Serif KR', serif; }
+        .srs-card .srs-due { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+        .srs-empty { text-align: center; padding: 24px; color: var(--text-dim); font-size: 13px; }
+        .srs-progress { height: 4px; background: var(--surface2); border-radius: 2px; margin-top: 12px; overflow: hidden; }
+        .srs-progress-fill { height: 100%; background: linear-gradient(90deg, var(--warning), var(--success)); border-radius: 2px; transition: width 0.3s; }
+
+        /* ===== DASHBOARD ===== */
+        .dashboard-section {
+            background: var(--surface);
+            backdrop-filter: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        .dashboard-section::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(244,114,182,0.3), rgba(94,234,212,0.2), transparent);
+        }
+        .dashboard-chart-wrap { margin-top: 16px; position: relative; }
+        .dashboard-chart-wrap canvas { width: 100% !important; max-height: 200px; }
+        .dashboard-tabs {
+            display: flex; gap: 6px; margin-bottom: 10px;
+        }
+        .dashboard-tab {
+            padding: 5px 14px; border-radius: 8px; font-size: 11px; font-weight: 600;
+            cursor: pointer; border: 1px solid var(--border); background: transparent;
+            color: var(--text-dim); font-family: inherit; transition: all 0.2s;
+        }
+        .dashboard-tab:hover { border-color: var(--accent); color: var(--text); }
+        .dashboard-tab.active { background: rgba(124,106,255,0.2); border-color: var(--accent); color: #fff; }
+        .streak-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 4px 12px; background: rgba(251,191,36,0.1);
+            border: 1px solid rgba(251,191,36,0.25); border-radius: 8px;
+            font-size: 13px; font-weight: 700; color: var(--warning);
+        }
+        .hsk-progress-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .hsk-progress-item {
+            display: flex; flex-direction: column; gap: 4px;
+            padding: 10px; background: var(--surface2);
+            border: 1px solid var(--border); border-radius: 10px;
+        }
+        .hsk-progress-label { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; }
+        .hsk-progress-label span:first-child { color: var(--text); }
+        .hsk-progress-label span:last-child { color: var(--text-dim); }
+        .hsk-progress-bar { height: 6px; background: var(--surface3); border-radius: 3px; overflow: hidden; }
+        .hsk-progress-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; }
+
+        /* ===== QUIZ MODAL ===== */
+        .quiz-modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px); display: flex; align-items: center;
+            justify-content: center; z-index: 1000;
+        }
+        .quiz-modal {
+            background: var(--surface-solid); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 28px; width: 520px;
+            max-width: 94vw; max-height: 90vh; overflow-y: auto;
+            box-shadow: var(--shadow-lg); position: relative;
+        }
+        .quiz-modal::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+        .quiz-modal-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;
+        }
+        .quiz-modal-header span { font-size: 16px; font-weight: 700; }
+        .quiz-progress-bar { height: 4px; background: var(--surface2); border-radius: 2px; margin-bottom: 20px; overflow: hidden; }
+        .quiz-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; transition: width 0.3s; }
+        .quiz-question { text-align: center; margin-bottom: 24px; }
+        .quiz-question-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .quiz-question-char { font-size: 80px; font-family: 'Noto Serif KR', serif; line-height: 1.2;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .quiz-question-text { font-size: 22px; font-weight: 700; color: var(--text); margin-top: 4px; }
+        .quiz-question-sub { font-size: 14px; color: var(--text-dim); margin-top: 4px; }
+        .quiz-options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .quiz-option {
+            padding: 16px; background: var(--surface2); border: 2px solid var(--border);
+            border-radius: 14px; cursor: pointer; transition: all 0.2s;
+            text-align: center; font-family: inherit; color: var(--text); font-size: 15px; font-weight: 600;
+        }
+        .quiz-option:hover { border-color: var(--accent); background: rgba(124,106,255,0.08); transform: translateY(-2px); }
+        .quiz-option.correct { border-color: var(--success); background: rgba(52,211,153,0.12); }
+        .quiz-option.wrong { border-color: var(--danger); background: rgba(248,113,113,0.12); }
+        .quiz-option.disabled { pointer-events: none; opacity: 0.5; }
+        .quiz-option .opt-char { font-size: 36px; font-family: 'Noto Serif KR', serif; display: block; margin-bottom: 4px; }
+        .quiz-result { text-align: center; padding: 20px; }
+        .quiz-result-score { font-size: 52px; font-weight: 800; }
+        .quiz-result-label { font-size: 14px; color: var(--text-dim); margin-top: 4px; }
+        .quiz-launcher {
+            display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; align-items: center;
+            padding: 14px 18px; background: var(--surface); backdrop-filter: var(--glass);
+            border: 1px solid var(--border); border-radius: 16px;
+        }
+        .quiz-launcher-label {
+            font-size: 11px; color: var(--text-dim); text-transform: uppercase;
+            letter-spacing: 1.5px; font-weight: 700; margin-right: 6px;
+        }
+
+        /* ===== FAVORITES / WORD LISTS ===== */
+        .fav-btn-card {
+            position: absolute; bottom: 12px; left: 12px; z-index: 2;
+            width: 36px; height: 36px;
+            background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25);
+            border-radius: 50%; color: var(--text-dim); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; transition: all 0.2s;
+        }
+        .fav-btn-card:hover { background: rgba(251,191,36,0.25); border-color: var(--warning); transform: scale(1.1); }
+        .fav-btn-card.active { color: var(--warning); border-color: var(--warning); }
+        .fav-indicator { position: absolute; top: 3px; right: 4px; font-size: 10px; color: var(--warning); line-height: 1; }
+        .wordlist-section {
+            background: var(--surface); backdrop-filter: var(--glass);
+            border: 1px solid var(--border); border-radius: var(--radius);
+            padding: 24px; margin-bottom: 24px; box-shadow: var(--shadow);
+            position: relative; overflow: hidden;
+        }
+        .wordlist-section::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(251,191,36,0.3), rgba(124,106,255,0.2), transparent);
+        }
+        .wordlist-tabs {
+            display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+            padding-bottom: 6px; margin-bottom: 12px;
+        }
+        .wordlist-tabs::-webkit-scrollbar { display: none; }
+        .wordlist-tab {
+            flex-shrink: 0; padding: 6px 14px; border-radius: 10px; font-size: 12px;
+            font-weight: 600; cursor: pointer; border: 1px solid var(--border);
+            background: transparent; color: var(--text-dim); font-family: inherit;
+            transition: all 0.2s; display: flex; align-items: center; gap: 4px;
+        }
+        .wordlist-tab:hover { border-color: var(--accent); color: var(--text); }
+        .wordlist-tab.active { background: rgba(251,191,36,0.15); border-color: rgba(251,191,36,0.4); color: var(--warning); }
+        .wordlist-tab .wl-count { font-size: 10px; opacity: 0.6; }
+        .wordlist-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+            gap: 8px; max-height: 260px; overflow-y: auto;
+        }
+        .wordlist-grid::-webkit-scrollbar { width: 4px; }
+        .wordlist-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        .wordlist-char {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 8px 4px; background: var(--surface2); border: 1px solid transparent;
+            border-radius: 12px; cursor: pointer; transition: all 0.2s; min-height: 70px; position: relative;
+        }
+        .wordlist-char:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .wordlist-char .wc-hz { font-size: 28px; font-family: 'Noto Serif KR', serif; }
+        .wordlist-char .wc-rd { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
+        .wordlist-char .wc-remove {
+            position: absolute; top: 2px; right: 4px; font-size: 12px; color: var(--danger);
+            cursor: pointer; opacity: 0; transition: opacity 0.2s; background: none; border: none;
+            padding: 2px;
+        }
+        .wordlist-char:hover .wc-remove { opacity: 1; }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             /* Nav */
@@ -1725,6 +1930,17 @@
 
             /* Toast */
             .toast { font-size: 13px; padding: 12px 22px; bottom: 20px; }
+
+            /* New features */
+            .srs-section { padding: 16px; }
+            .dashboard-section { padding: 16px; }
+            .dashboard-chart-wrap canvas { max-height: 170px; }
+            .hsk-progress-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .quiz-modal { padding: 20px; }
+            .quiz-options { gap: 8px; }
+            .quiz-question-char { font-size: 64px; }
+            .quiz-launcher { padding: 10px 12px; }
+            .wordlist-section { padding: 16px; }
         }
 
         @media (max-width: 580px) {
@@ -1772,6 +1988,14 @@
             /* Footer */
             .footer-links { flex-direction: column; align-items: center; }
             .footer-name { font-size: 13px; }
+
+            /* New features */
+            .quiz-options { grid-template-columns: 1fr; }
+            .quiz-question-char { font-size: 56px; }
+            .hsk-progress-grid { grid-template-columns: 1fr; }
+            .dashboard-chart-wrap canvas { max-height: 150px; }
+            .quiz-launcher { flex-direction: column; }
+            .quiz-launcher .btn { width: 100%; justify-content: center; }
         }
 
         @media (max-width: 360px) {
@@ -1915,6 +2139,15 @@
                 <button class="hsk-btn" data-hsk="0" onclick="filterHSK(0)">급외</button>
             </div>
 
+            <!-- Quiz Mode Launcher -->
+            <div class="quiz-launcher" id="quizLauncher">
+                <span class="quiz-launcher-label">퀴즈</span>
+                <button class="btn btn-primary btn-sm" onclick="openQuizModal('char2meaning')">한자→뜻</button>
+                <button class="btn btn-outline btn-sm" onclick="openQuizModal('meaning2char')">뜻→한자</button>
+                <button class="btn btn-outline btn-sm" onclick="openQuizModal('pinyin2char')">🔊 병음→한자</button>
+                <button class="btn btn-success btn-sm" onclick="openQuizModal('daily')">📝 오늘의 퀴즈</button>
+            </div>
+
             <!-- Character Grid -->
             <div class="char-grid-section" id="charGridSection">
                 <div class="char-grid-header">
@@ -1938,6 +2171,7 @@
                                 <div class="flip-card-pinyin" id="flipPinyin"></div>
                                 <div class="flip-card-hsk" id="flipHsk"></div>
                                 <button class="flip-card-share" onclick="shareFlipCard(event)" title="공유 링크 복사">🔗</button>
+                                <button class="fav-btn-card" id="favBtn" onclick="toggleFavorite(event)" title="즐겨찾기">☆</button>
                                 <div class="flip-card-hint">클릭하여 뒤집기</div>
                             </div>
                             <div class="flip-card-back">
@@ -2029,18 +2263,68 @@
                 <div id="strokeBreakdown" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;"></div>
             </div>
 
-            <!-- My Stats -->
-            <div class="my-stats-section" id="myStatsSection" style="display:none;">
+            <!-- SRS Review Section -->
+            <div class="srs-section" id="srsSection" style="display:none;">
                 <div class="my-stats-header">
-                    <div class="my-stats-title">내 학습 통계</div>
-                    <button class="btn btn-outline btn-sm" style="padding:6px 12px;font-size:11px;" onclick="clearMyRecords()">초기화</button>
+                    <div class="my-stats-title">오늘의 복습</div>
+                    <div class="srs-stats-row">
+                        <strong id="srsDueCount">0</strong> 복습 예정
+                    </div>
+                </div>
+                <div class="srs-queue" id="srsQueue"></div>
+                <div class="srs-progress" id="srsProgress" style="display:none;">
+                    <div class="srs-progress-fill" id="srsProgressFill" style="width:0%"></div>
+                </div>
+                <div style="text-align:center;margin-top:12px;" id="srsActions">
+                    <button class="btn btn-primary btn-sm" onclick="startSRSReview()">복습 시작</button>
+                </div>
+            </div>
+
+            <!-- Favorites / Word Lists -->
+            <div class="wordlist-section" id="wordlistSection" style="display:none;">
+                <div class="my-stats-header">
+                    <div class="my-stats-title">단어장</div>
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn btn-outline btn-sm" style="padding:6px 12px;font-size:11px;" onclick="showCreateListModal()">+ 새 목록</button>
+                    </div>
+                </div>
+                <div class="wordlist-tabs" id="wordlistTabs"></div>
+                <div class="wordlist-grid" id="wordlistGrid"></div>
+                <div style="text-align:center;margin-top:12px;" id="wordlistQuizBtn" style="display:none;">
+                    <button class="btn btn-primary btn-sm" onclick="quizFromWordlist()">이 목록으로 퀴즈</button>
+                </div>
+            </div>
+
+            <!-- Learning Dashboard (replaces My Stats) -->
+            <div class="dashboard-section" id="myStatsSection" style="display:none;">
+                <div class="my-stats-header">
+                    <div class="my-stats-title">학습 대시보드</div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <div class="streak-badge" id="streakBadge">🔥 <span id="streakCount">0</span>일</div>
+                        <button class="btn btn-outline btn-sm" style="padding:6px 12px;font-size:11px;" onclick="clearMyRecords()">초기화</button>
+                    </div>
                 </div>
                 <div class="my-stats-grid">
                     <div class="my-stat-card"><div class="my-stat-val accent" id="myStatChars">0</div><div class="my-stat-lbl">학습 한자</div></div>
                     <div class="my-stat-card"><div class="my-stat-val success" id="myStatSessions">0</div><div class="my-stat-lbl">연습 횟수</div></div>
                     <div class="my-stat-card"><div class="my-stat-val warning" id="myStatAccuracy">0%</div><div class="my-stat-lbl">정답률</div></div>
                 </div>
-                <div id="myHistoryList"></div>
+                <div class="dashboard-chart-wrap">
+                    <div class="dashboard-tabs">
+                        <button class="dashboard-tab active" onclick="switchChartView('daily',this)">일별</button>
+                        <button class="dashboard-tab" onclick="switchChartView('weekly',this)">주별</button>
+                    </div>
+                    <canvas id="learningChart"></canvas>
+                </div>
+                <div class="dashboard-chart-wrap">
+                    <div style="font-size:11px;color:var(--text-dim);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">정답률 추이</div>
+                    <canvas id="accuracyChart"></canvas>
+                </div>
+                <div style="margin-top:18px;">
+                    <div style="font-size:11px;color:var(--text-dim);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">HSK 급수별 진행률</div>
+                    <div class="hsk-progress-grid" id="hskProgressGrid"></div>
+                </div>
+                <div id="myHistoryList" style="margin-top:16px;"></div>
             </div>
 
             <!-- History -->
@@ -2069,6 +2353,30 @@
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <!-- Quiz Mode Modal -->
+    <div class="quiz-modal-overlay" id="quizModalOverlay" style="display:none;" onclick="if(event.target===this)closeQuizModal()">
+        <div class="quiz-modal">
+            <div class="quiz-modal-header">
+                <span id="quizModalTitle">퀴즈</span>
+                <button class="btn btn-outline btn-sm" onclick="closeQuizModal()">닫기</button>
+            </div>
+            <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="quizProgressFill" style="width:0%"></div></div>
+            <div id="quizModalBody"></div>
+        </div>
+    </div>
+
+    <!-- Wordlist Create/Rename Modal -->
+    <div class="modal-overlay" id="wordlistModal" style="display:none;" onclick="if(event.target===this)closeWordlistModal()">
+        <div class="modal" style="width:400px;">
+            <h3 id="wordlistModalTitle">새 단어장</h3>
+            <input type="text" class="modal-input" id="wordlistNameInput" placeholder="단어장 이름" maxlength="30" onkeydown="if(event.key==='Enter')saveWordlist()">
+            <div class="modal-actions">
+                <button class="btn btn-primary btn-sm" onclick="saveWordlist()">만들기</button>
+                <button class="btn btn-outline btn-sm" onclick="closeWordlistModal()">취소</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         let animWriter = null;
@@ -2128,6 +2436,10 @@
             if (sharedChar) {
                 setTimeout(function() { selectChar(sharedChar); }, 300);
             }
+
+            // Init new features
+            renderSRSSection();
+            renderWordlistSection();
         }
 
         function renderCategoryTabs() {
@@ -2284,6 +2596,7 @@
             createAnimWriter(char);
             createQuizWriter(char);
             loadStrokeBreakdown(char);
+            updateFavBtn();
 
             document.getElementById('infoPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -2398,6 +2711,8 @@
                     if (typeof savePracticeRecord === 'function') {
                         savePracticeRecord(currentChar, stats.correct, data.totalMistakes);
                     }
+                    markCharLearned(currentChar, data.totalMistakes);
+                    if (srsReviewQueue.length > 0) advanceSRSReview(currentChar, data.totalMistakes);
                 }
             });
         }
@@ -2859,6 +3174,560 @@
                     showToast('카드 이미지가 저장되었습니다');
                 }
             }, 'image/png');
+        }
+
+        // ===== FEATURE 1: SPACED REPETITION (SM-2) =====
+        function getSRSData() {
+            return JSON.parse(localStorage.getItem('srs_data') || '{}');
+        }
+        function saveSRSData(data) {
+            localStorage.setItem('srs_data', JSON.stringify(data));
+        }
+        function todayStr() {
+            return new Date().toISOString().slice(0, 10);
+        }
+        function sm2(quality, card) {
+            var q = Math.max(0, Math.min(5, quality));
+            var rep = card.repetitions || 0;
+            var ease = card.ease || 2.5;
+            var interval = card.interval || 1;
+            if (q >= 3) {
+                if (rep === 0) interval = 1;
+                else if (rep === 1) interval = 6;
+                else interval = Math.round(interval * ease);
+                rep++;
+            } else {
+                rep = 0;
+                interval = 1;
+            }
+            ease = ease + (0.1 - (5 - q) * (0.08 + (5 - q) * 0.02));
+            if (ease < 1.3) ease = 1.3;
+            var next = new Date();
+            next.setDate(next.getDate() + interval);
+            return { interval: interval, ease: Math.round(ease * 100) / 100, repetitions: rep, nextReview: next.toISOString().slice(0, 10), lastReview: todayStr() };
+        }
+        function markCharLearned(char, totalMistakes) {
+            var data = getSRSData();
+            if (!data[char]) {
+                var quality = totalMistakes === 0 ? 5 : totalMistakes <= 1 ? 4 : totalMistakes <= 3 ? 3 : 2;
+                data[char] = sm2(quality, { repetitions: 0, ease: 2.5, interval: 1 });
+            }
+            saveSRSData(data);
+            renderSRSSection();
+        }
+        function updateSRSAfterReview(char, totalMistakes) {
+            var data = getSRSData();
+            var card = data[char] || { repetitions: 0, ease: 2.5, interval: 1 };
+            var quality = totalMistakes === 0 ? 5 : totalMistakes <= 1 ? 4 : totalMistakes <= 3 ? 3 : totalMistakes <= 5 ? 2 : 1;
+            data[char] = sm2(quality, card);
+            saveSRSData(data);
+            renderSRSSection();
+        }
+        function getDueCharacters() {
+            var data = getSRSData();
+            var today = todayStr();
+            var due = [];
+            Object.keys(data).forEach(function(ch) {
+                if (data[ch].nextReview <= today) {
+                    due.push({ char: ch, data: data[ch], overdue: data[ch].nextReview < today });
+                }
+            });
+            due.sort(function(a, b) { return a.data.nextReview < b.data.nextReview ? -1 : 1; });
+            return due;
+        }
+        function renderSRSSection() {
+            var section = document.getElementById('srsSection');
+            var data = getSRSData();
+            if (Object.keys(data).length === 0) { section.style.display = 'none'; return; }
+            section.style.display = 'block';
+            var due = getDueCharacters();
+            document.getElementById('srsDueCount').textContent = due.length;
+            var queue = document.getElementById('srsQueue');
+            if (due.length === 0) {
+                queue.innerHTML = '<div class="srs-empty">복습할 한자가 없습니다 ✨ 내일 다시 확인하세요!</div>';
+                document.getElementById('srsActions').style.display = 'none';
+                return;
+            }
+            document.getElementById('srsActions').style.display = 'block';
+            var html = '';
+            due.forEach(function(d) {
+                html += '<div class="srs-card' + (d.overdue ? ' overdue' : '') + '" onclick="selectChar(\'' + d.char + '\')">'
+                    + '<span class="srs-char">' + d.char + '</span>'
+                    + '<span class="srs-due">' + (d.overdue ? '지연' : '오늘') + '</span>'
+                    + '</div>';
+            });
+            queue.innerHTML = html;
+        }
+        var srsReviewQueue = [];
+        var srsReviewIdx = 0;
+        function startSRSReview() {
+            var due = getDueCharacters();
+            if (due.length === 0) { showToast('복습할 한자가 없습니다'); return; }
+            srsReviewQueue = due.map(function(d) { return d.char; });
+            srsReviewIdx = 0;
+            document.getElementById('srsProgress').style.display = 'block';
+            updateSRSProgress();
+            selectChar(srsReviewQueue[0]);
+            showToast('복습 모드: ' + srsReviewQueue.length + '개 한자');
+        }
+        function updateSRSProgress() {
+            var pct = srsReviewQueue.length > 0 ? Math.round((srsReviewIdx / srsReviewQueue.length) * 100) : 0;
+            document.getElementById('srsProgressFill').style.width = pct + '%';
+        }
+        function advanceSRSReview(char, totalMistakes) {
+            if (srsReviewQueue.length === 0) return;
+            updateSRSAfterReview(char, totalMistakes);
+            srsReviewIdx++;
+            updateSRSProgress();
+            if (srsReviewIdx < srsReviewQueue.length) {
+                setTimeout(function() { selectChar(srsReviewQueue[srsReviewIdx]); }, 800);
+            } else {
+                showToast('복습 완료! 🎉');
+                srsReviewQueue = [];
+                srsReviewIdx = 0;
+                document.getElementById('srsProgress').style.display = 'none';
+                renderSRSSection();
+            }
+        }
+
+        // ===== FEATURE 2: LEARNING DASHBOARD =====
+        var learningChartInstance = null;
+        var accuracyChartInstance = null;
+        function initDashboard() {
+            var records = JSON.parse(localStorage.getItem('practice_records') || '[]');
+            if (records.length === 0) return;
+            renderLearningChart('daily');
+            renderAccuracyChart();
+            renderHSKProgress();
+            calculateStreak();
+        }
+        function switchChartView(mode, btn) {
+            document.querySelectorAll('.dashboard-tab').forEach(function(t) { t.classList.remove('active'); });
+            if (btn) btn.classList.add('active');
+            renderLearningChart(mode);
+        }
+        function renderLearningChart(mode) {
+            if (typeof Chart === 'undefined') return;
+            var records = JSON.parse(localStorage.getItem('practice_records') || '[]');
+            var grouped = {};
+            records.forEach(function(r) {
+                var d = r.timestamp ? r.timestamp.slice(0, 10) : todayStr();
+                if (mode === 'weekly') {
+                    var dt = new Date(d);
+                    var day = dt.getDay();
+                    dt.setDate(dt.getDate() - day);
+                    d = dt.toISOString().slice(0, 10);
+                }
+                grouped[d] = (grouped[d] || 0) + 1;
+            });
+            var dates = Object.keys(grouped).sort().slice(-14);
+            var counts = dates.map(function(d) { return grouped[d]; });
+            var labels = dates.map(function(d) {
+                var dt = new Date(d);
+                return (dt.getMonth() + 1) + '/' + dt.getDate();
+            });
+            if (learningChartInstance) learningChartInstance.destroy();
+            var ctx = document.getElementById('learningChart');
+            if (!ctx) return;
+            learningChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: 'rgba(124,106,255,0.5)',
+                        borderColor: '#7c6aff',
+                        borderWidth: 1,
+                        borderRadius: 6,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: 'rgba(80,80,140,0.1)' }, ticks: { color: '#7878a0', font: { size: 10 } } },
+                        y: { grid: { color: 'rgba(80,80,140,0.1)' }, ticks: { color: '#7878a0', font: { size: 10 }, stepSize: 1 }, beginAtZero: true }
+                    }
+                }
+            });
+        }
+        function renderAccuracyChart() {
+            if (typeof Chart === 'undefined') return;
+            var records = JSON.parse(localStorage.getItem('practice_records') || '[]');
+            var grouped = {};
+            records.forEach(function(r) {
+                var d = r.timestamp ? r.timestamp.slice(0, 10) : todayStr();
+                if (!grouped[d]) grouped[d] = { correct: 0, total: 0 };
+                grouped[d].correct += r.correct || 0;
+                grouped[d].total += (r.correct || 0) + (r.mistakes || 0);
+            });
+            var dates = Object.keys(grouped).sort().slice(-14);
+            var accs = dates.map(function(d) {
+                return grouped[d].total > 0 ? Math.round(grouped[d].correct / grouped[d].total * 100) : 0;
+            });
+            var labels = dates.map(function(d) {
+                var dt = new Date(d);
+                return (dt.getMonth() + 1) + '/' + dt.getDate();
+            });
+            if (accuracyChartInstance) accuracyChartInstance.destroy();
+            var ctx = document.getElementById('accuracyChart');
+            if (!ctx) return;
+            accuracyChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: accs,
+                        borderColor: '#5eead4',
+                        backgroundColor: 'rgba(94,234,212,0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#5eead4'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: 'rgba(80,80,140,0.1)' }, ticks: { color: '#7878a0', font: { size: 10 } } },
+                        y: { grid: { color: 'rgba(80,80,140,0.1)' }, ticks: { color: '#7878a0', font: { size: 10 }, callback: function(v) { return v + '%'; } }, min: 0, max: 100 }
+                    }
+                }
+            });
+        }
+        function renderHSKProgress() {
+            var records = JSON.parse(localStorage.getItem('practice_records') || '[]');
+            var practiced = new Set();
+            records.forEach(function(r) { practiced.add(r.char); });
+            var hskTotals = {}, hskPracticed = {};
+            var allChars = [];
+            HANZI_CATEGORIES.forEach(function(cat) { cat.chars.forEach(function(c) { allChars.push(c[0]); }); });
+            allChars.forEach(function(ch) {
+                var lv = getHSK(ch);
+                if (lv === 0) return;
+                hskTotals[lv] = (hskTotals[lv] || 0) + 1;
+                if (practiced.has(ch)) hskPracticed[lv] = (hskPracticed[lv] || 0) + 1;
+            });
+            var grid = document.getElementById('hskProgressGrid');
+            if (!grid) return;
+            var hskColors = { 1:'#22c55e', 2:'#3b82f6', 3:'#8b5cf6', 4:'#f59e0b', 5:'#ef4444', 6:'#ec4899', 7:'#6366f1' };
+            var html = '';
+            [1,2,3,4,5,6,7].forEach(function(lv) {
+                var total = hskTotals[lv] || 0;
+                var done = hskPracticed[lv] || 0;
+                var pct = total > 0 ? Math.round(done / total * 100) : 0;
+                html += '<div class="hsk-progress-item">'
+                    + '<div class="hsk-progress-label"><span>HSK ' + (lv >= 7 ? '7-9' : lv) + '급</span><span>' + done + '/' + total + ' (' + pct + '%)</span></div>'
+                    + '<div class="hsk-progress-bar"><div class="hsk-progress-fill" style="width:' + pct + '%;background:' + (hskColors[lv] || '#64748b') + ';"></div></div>'
+                    + '</div>';
+            });
+            grid.innerHTML = html;
+        }
+        function calculateStreak() {
+            var records = JSON.parse(localStorage.getItem('practice_records') || '[]');
+            if (records.length === 0) { document.getElementById('streakCount').textContent = '0'; return; }
+            var days = new Set();
+            records.forEach(function(r) { if (r.timestamp) days.add(r.timestamp.slice(0, 10)); });
+            var sorted = Array.from(days).sort().reverse();
+            var streak = 0;
+            var check = new Date();
+            // If no practice today, start checking from yesterday
+            if (sorted[0] !== todayStr()) check.setDate(check.getDate() - 1);
+            for (var i = 0; i < 365; i++) {
+                var d = check.toISOString().slice(0, 10);
+                if (days.has(d)) { streak++; check.setDate(check.getDate() - 1); }
+                else break;
+            }
+            document.getElementById('streakCount').textContent = streak;
+        }
+
+        // ===== FEATURE 3: QUIZ MODES =====
+        var quizState = { type: '', questions: [], currentIdx: 0, score: 0, answered: false };
+
+        function openQuizModal(type, charPool) {
+            var pool = charPool || getAllCharsArray();
+            if (pool.length < 4) { showToast('퀴즈에 최소 4개 한자가 필요합니다'); return; }
+            quizState.type = type;
+            quizState.currentIdx = 0;
+            quizState.score = 0;
+            quizState.answered = false;
+            var count = type === 'daily' ? 10 : 10;
+            quizState.questions = generateQuizQuestions(type, count, pool);
+            document.getElementById('quizModalTitle').textContent = getQuizTitle(type);
+            document.getElementById('quizModalOverlay').style.display = 'flex';
+            renderQuizQuestion(0);
+        }
+
+        function closeQuizModal() {
+            document.getElementById('quizModalOverlay').style.display = 'none';
+        }
+
+        function getQuizTitle(type) {
+            switch(type) {
+                case 'char2meaning': return '한자 → 뜻';
+                case 'meaning2char': return '뜻 → 한자';
+                case 'pinyin2char': return '🔊 병음 → 한자';
+                case 'daily': return '📝 오늘의 퀴즈';
+                default: return '퀴즈';
+            }
+        }
+
+        function getAllCharsArray() {
+            var all = [];
+            HANZI_CATEGORIES.forEach(function(cat) { cat.chars.forEach(function(c) { all.push(c); }); });
+            return all;
+        }
+
+        function shuffleArray(arr) {
+            var a = arr.slice();
+            for (var i = a.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var t = a[i]; a[i] = a[j]; a[j] = t;
+            }
+            return a;
+        }
+
+        function generateQuizQuestions(type, count, pool) {
+            var questions = [];
+            var shuffled = shuffleArray(pool);
+            var types = type === 'daily' ? ['char2meaning', 'meaning2char', 'pinyin2char'] : [type];
+            for (var i = 0; i < Math.min(count, shuffled.length); i++) {
+                var c = shuffled[i];
+                var qType = types[i % types.length];
+                var wrongs = getWrongOptions(c, pool, 3);
+                var pinyin = (typeof PINYIN_DATA !== 'undefined' && PINYIN_DATA[c[0]]) || '';
+                if (qType === 'pinyin2char' && !pinyin) qType = 'char2meaning';
+                var options;
+                if (qType === 'char2meaning') {
+                    options = shuffleArray([c[2] + ' ' + c[1]].concat(wrongs.map(function(w) { return w[2] + ' ' + w[1]; })));
+                    questions.push({ type: qType, char: c[0], pinyin: pinyin, answer: c[2] + ' ' + c[1], options: options });
+                } else if (qType === 'meaning2char') {
+                    options = shuffleArray([c[0]].concat(wrongs.map(function(w) { return w[0]; })));
+                    questions.push({ type: qType, meaning: c[2], reading: c[1], pinyin: pinyin, answer: c[0], options: options });
+                } else {
+                    options = shuffleArray([c[0]].concat(wrongs.map(function(w) { return w[0]; })));
+                    questions.push({ type: qType, char: c[0], pinyin: pinyin, meaning: c[2], reading: c[1], answer: c[0], options: options });
+                }
+            }
+            return questions;
+        }
+
+        function getWrongOptions(correct, pool, count) {
+            var wrongs = [];
+            var shuffled = shuffleArray(pool);
+            for (var i = 0; i < shuffled.length && wrongs.length < count; i++) {
+                if (shuffled[i][0] !== correct[0]) wrongs.push(shuffled[i]);
+            }
+            return wrongs;
+        }
+
+        function renderQuizQuestion(idx) {
+            if (idx >= quizState.questions.length) { renderQuizResult(); return; }
+            quizState.currentIdx = idx;
+            quizState.answered = false;
+            var q = quizState.questions[idx];
+            var pct = Math.round((idx / quizState.questions.length) * 100);
+            document.getElementById('quizProgressFill').style.width = pct + '%';
+            var body = document.getElementById('quizModalBody');
+            var html = '<div style="text-align:center;font-size:12px;color:var(--text-dim);margin-bottom:12px;">' + (idx + 1) + ' / ' + quizState.questions.length + '</div>';
+            html += '<div class="quiz-question">';
+            if (q.type === 'char2meaning') {
+                html += '<div class="quiz-question-label">이 한자의 뜻은?</div>';
+                html += '<div class="quiz-question-char">' + q.char + '</div>';
+                if (q.pinyin) html += '<div class="quiz-question-sub" style="color:var(--accent2);font-style:italic;">[' + q.pinyin + ']</div>';
+            } else if (q.type === 'meaning2char') {
+                html += '<div class="quiz-question-label">이 뜻에 해당하는 한자는?</div>';
+                html += '<div class="quiz-question-text">' + q.meaning + ' ' + q.reading + '</div>';
+                if (q.pinyin) html += '<div class="quiz-question-sub" style="color:var(--accent2);font-style:italic;">[' + q.pinyin + ']</div>';
+            } else if (q.type === 'pinyin2char') {
+                html += '<div class="quiz-question-label">이 발음에 해당하는 한자는?</div>';
+                html += '<div class="quiz-question-text" style="font-size:28px;color:var(--accent2);font-style:italic;">[' + q.pinyin + ']</div>';
+                html += '<button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="speakChinese(\'' + q.char + '\')">🔊 다시 듣기</button>';
+                setTimeout(function() { speakChinese(q.char); }, 300);
+            }
+            html += '</div>';
+            html += '<div class="quiz-options">';
+            q.options.forEach(function(opt, oi) {
+                var isChar = q.type === 'meaning2char' || q.type === 'pinyin2char';
+                if (isChar) {
+                    html += '<button class="quiz-option" onclick="selectQuizOption(' + oi + ')">'
+                        + '<span class="opt-char">' + opt + '</span></button>';
+                } else {
+                    html += '<button class="quiz-option" onclick="selectQuizOption(' + oi + ')">' + opt + '</button>';
+                }
+            });
+            html += '</div>';
+            body.innerHTML = html;
+        }
+
+        function selectQuizOption(optIdx) {
+            if (quizState.answered) return;
+            quizState.answered = true;
+            var q = quizState.questions[quizState.currentIdx];
+            var selected = q.options[optIdx];
+            var correct = selected === q.answer;
+            if (correct) quizState.score++;
+            var btns = document.querySelectorAll('.quiz-option');
+            btns.forEach(function(btn, i) {
+                if (q.options[i] === q.answer) btn.classList.add('correct');
+                else if (i === optIdx && !correct) btn.classList.add('wrong');
+                if (i !== optIdx && q.options[i] !== q.answer) btn.classList.add('disabled');
+            });
+            // Save practice record for this character
+            var ch = q.char || q.answer;
+            if (typeof savePracticeRecord === 'function') {
+                savePracticeRecord(ch, correct ? 1 : 0, correct ? 0 : 1);
+            }
+            // SRS: mark learned or update review
+            var srsData = getSRSData();
+            if (srsData[ch]) { updateSRSAfterReview(ch, correct ? 0 : 3); }
+            else { markCharLearned(ch, correct ? 0 : 3); }
+            setTimeout(function() { renderQuizQuestion(quizState.currentIdx + 1); }, 1000);
+        }
+
+        function renderQuizResult() {
+            document.getElementById('quizProgressFill').style.width = '100%';
+            var pct = Math.round(quizState.score / quizState.questions.length * 100);
+            var color = pct >= 80 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)';
+            var emoji = pct >= 80 ? '🎉' : pct >= 50 ? '👍' : '💪';
+            var body = document.getElementById('quizModalBody');
+            body.innerHTML = '<div class="quiz-result">'
+                + '<div style="font-size:48px;margin-bottom:12px;">' + emoji + '</div>'
+                + '<div class="quiz-result-score" style="color:' + color + ';">' + pct + '%</div>'
+                + '<div class="quiz-result-label">' + quizState.score + ' / ' + quizState.questions.length + ' 정답</div>'
+                + '<div style="margin-top:20px;display:flex;gap:10px;justify-content:center;">'
+                + '<button class="btn btn-primary btn-sm" onclick="openQuizModal(\'' + quizState.type + '\')">다시 풀기</button>'
+                + '<button class="btn btn-outline btn-sm" onclick="closeQuizModal()">닫기</button>'
+                + '</div></div>';
+        }
+
+        // ===== FEATURE 4: FAVORITES / WORD LISTS =====
+        var currentWordlist = 'favorites';
+
+        function getWordlists() {
+            var data = JSON.parse(localStorage.getItem('wordlists') || '{}');
+            if (!data.favorites) data.favorites = [];
+            return data;
+        }
+        function saveWordlists(data) {
+            localStorage.setItem('wordlists', JSON.stringify(data));
+        }
+        function toggleFavorite(event) {
+            event.stopPropagation();
+            if (!currentChar) return;
+            var data = getWordlists();
+            var idx = data.favorites.indexOf(currentChar);
+            if (idx === -1) {
+                data.favorites.push(currentChar);
+                showToast(currentChar + ' 즐겨찾기 추가');
+            } else {
+                data.favorites.splice(idx, 1);
+                showToast(currentChar + ' 즐겨찾기 해제');
+            }
+            saveWordlists(data);
+            updateFavBtn();
+            renderWordlistSection();
+        }
+        function updateFavBtn() {
+            var btn = document.getElementById('favBtn');
+            if (!btn || !currentChar) return;
+            var data = getWordlists();
+            var isFav = data.favorites && data.favorites.indexOf(currentChar) !== -1;
+            btn.textContent = isFav ? '★' : '☆';
+            btn.classList.toggle('active', isFav);
+        }
+        function showCreateListModal() {
+            document.getElementById('wordlistModalTitle').textContent = '새 단어장';
+            document.getElementById('wordlistNameInput').value = '';
+            document.getElementById('wordlistModal').style.display = 'flex';
+            setTimeout(function() { document.getElementById('wordlistNameInput').focus(); }, 100);
+        }
+        function closeWordlistModal() {
+            document.getElementById('wordlistModal').style.display = 'none';
+        }
+        function saveWordlist() {
+            var name = document.getElementById('wordlistNameInput').value.trim();
+            if (!name) { showToast('이름을 입력해주세요'); return; }
+            if (name === 'favorites') { showToast('예약된 이름입니다'); return; }
+            var data = getWordlists();
+            if (!data[name]) data[name] = [];
+            saveWordlists(data);
+            closeWordlistModal();
+            renderWordlistSection();
+            currentWordlist = name;
+            showToast('"' + name + '" 단어장 생성');
+        }
+        function deleteWordlist(name) {
+            if (name === 'favorites') { showToast('기본 목록은 삭제할 수 없습니다'); return; }
+            if (!confirm('"' + name + '" 단어장을 삭제하시겠습니까?')) return;
+            var data = getWordlists();
+            delete data[name];
+            saveWordlists(data);
+            currentWordlist = 'favorites';
+            renderWordlistSection();
+            showToast('단어장 삭제됨');
+        }
+        function selectWordlist(name) {
+            currentWordlist = name;
+            renderWordlistSection();
+        }
+        function removeFromWordlist(char, listName) {
+            var data = getWordlists();
+            if (!data[listName]) return;
+            data[listName] = data[listName].filter(function(c) { return c !== char; });
+            saveWordlists(data);
+            renderWordlistSection();
+        }
+        function renderWordlistSection() {
+            var data = getWordlists();
+            var lists = Object.keys(data);
+            var section = document.getElementById('wordlistSection');
+            var hasAny = lists.some(function(k) { return data[k].length > 0; });
+            if (!hasAny && lists.length <= 1) { section.style.display = 'none'; return; }
+            section.style.display = 'block';
+            var tabsHtml = '';
+            lists.forEach(function(name) {
+                var active = name === currentWordlist ? ' active' : '';
+                var label = name === 'favorites' ? '⭐ 즐겨찾기' : name;
+                tabsHtml += '<button class="wordlist-tab' + active + '" onclick="selectWordlist(\'' + name.replace(/'/g, "\\'") + '\')">'
+                    + label + ' <span class="wl-count">' + data[name].length + '</span>';
+                if (name !== 'favorites') {
+                    tabsHtml += ' <span style="margin-left:4px;color:var(--danger);cursor:pointer;font-size:11px;" onclick="event.stopPropagation();deleteWordlist(\'' + name.replace(/'/g, "\\'") + '\')">✕</span>';
+                }
+                tabsHtml += '</button>';
+            });
+            document.getElementById('wordlistTabs').innerHTML = tabsHtml;
+            var chars = data[currentWordlist] || [];
+            var grid = document.getElementById('wordlistGrid');
+            var quizBtn = document.getElementById('wordlistQuizBtn');
+            if (chars.length === 0) {
+                grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:24px;color:var(--text-dim);font-size:13px;">한자 카드의 ☆ 버튼으로 추가하세요</div>';
+                quizBtn.style.display = 'none';
+                return;
+            }
+            quizBtn.style.display = chars.length >= 4 ? 'block' : 'none';
+            var html = '';
+            chars.forEach(function(ch) {
+                var info = charLookup[ch];
+                html += '<div class="wordlist-char" onclick="selectChar(\'' + ch + '\')">'
+                    + '<span class="wc-hz">' + ch + '</span>'
+                    + '<span class="wc-rd">' + (info ? info.reading : '') + '</span>'
+                    + '<button class="wc-remove" onclick="event.stopPropagation();removeFromWordlist(\'' + ch + '\',\'' + currentWordlist.replace(/'/g, "\\'") + '\')" title="제거">✕</button>'
+                    + '</div>';
+            });
+            grid.innerHTML = html;
+        }
+        function quizFromWordlist() {
+            var data = getWordlists();
+            var chars = data[currentWordlist] || [];
+            if (chars.length < 4) { showToast('최소 4개 한자가 필요합니다'); return; }
+            var pool = chars.map(function(ch) {
+                var info = charLookup[ch];
+                return info ? [ch, info.reading, info.meaning] : [ch, ch, ch];
+            });
+            openQuizModal('char2meaning', pool);
         }
 
         // ===== API Key Modal =====

@@ -114,6 +114,45 @@ app.get('/api/practices', auth, async function (req, res) {
     }
 });
 
+// --- SRS Data ---
+app.get('/api/srs', auth, async function (req, res) {
+    try {
+        var result = await pool.query(
+            'SELECT char, interval_days, ease_factor, repetitions, next_review, last_review FROM srs_data WHERE user_id = $1',
+            [req.user.id]
+        );
+        var data = {};
+        result.rows.forEach(function (r) {
+            data[r.char] = {
+                interval: r.interval_days, ease: r.ease_factor,
+                repetitions: r.repetitions, nextReview: r.next_review, lastReview: r.last_review
+            };
+        });
+        res.json(data);
+    } catch (e) {
+        res.status(500).json({ error: 'Load failed' });
+    }
+});
+
+app.post('/api/srs', auth, async function (req, res) {
+    try {
+        var b = req.body;
+        await pool.query(
+            `INSERT INTO srs_data (user_id, char, interval_days, ease_factor, repetitions, next_review, last_review)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             ON CONFLICT (user_id, char) DO UPDATE SET
+               interval_days = EXCLUDED.interval_days, ease_factor = EXCLUDED.ease_factor,
+               repetitions = EXCLUDED.repetitions, next_review = EXCLUDED.next_review,
+               last_review = EXCLUDED.last_review`,
+            [req.user.id, b.char, b.interval || 1, b.ease || 2.5, b.repetitions || 0, b.nextReview, b.lastReview]
+        );
+        res.json({ ok: true });
+    } catch (e) {
+        console.error('Save SRS error:', e.message);
+        res.status(500).json({ error: 'Save failed' });
+    }
+});
+
 // --- Admin: All Learners ---
 app.get('/api/admin/learners', auth, async function (req, res) {
     if (!req.user.admin && !req.user.id) return res.status(403).json({ error: 'Forbidden' });
@@ -167,6 +206,18 @@ async function initDB() {
         );
         CREATE INDEX IF NOT EXISTS idx_practices_user ON practices(user_id);
         CREATE INDEX IF NOT EXISTS idx_practices_created ON practices(created_at);
+        CREATE TABLE IF NOT EXISTS srs_data (
+            id SERIAL PRIMARY KEY,
+            user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+            char VARCHAR(10) NOT NULL,
+            interval_days INTEGER DEFAULT 1,
+            ease_factor REAL DEFAULT 2.5,
+            repetitions INTEGER DEFAULT 0,
+            next_review DATE,
+            last_review DATE,
+            UNIQUE(user_id, char)
+        );
+        CREATE INDEX IF NOT EXISTS idx_srs_user ON srs_data(user_id);
     `);
 }
 

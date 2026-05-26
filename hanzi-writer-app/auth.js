@@ -194,6 +194,9 @@
                 + '</div>';
         });
         document.getElementById('myHistoryList').innerHTML = html || '<div style="color:var(--text-dim);padding:10px;">기록 없음</div>';
+
+        // Dashboard charts
+        if (typeof initDashboard === 'function') initDashboard();
     }
 
     window.clearMyRecords = function() {
