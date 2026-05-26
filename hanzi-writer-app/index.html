@@ -8,8 +8,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
     <script src="data.js"></script>
     <script src="hsk-data.js"></script>
+    <script src="firebase-config.js"></script>
     <style>
         :root {
             --bg: #06060b;
@@ -22,7 +26,6 @@
             --border-light: rgba(120, 120, 200, 0.15);
             --text: #eaeaf4;
             --text-dim: #7878a0;
-            --text-muted: #5555780;
             --accent: #7c6aff;
             --accent2: #5eead4;
             --accent3: #f472b6;
@@ -47,7 +50,6 @@
             overflow-x: hidden;
         }
 
-        /* Background effects */
         body::before {
             content: '';
             position: fixed;
@@ -68,7 +70,6 @@
             66% { transform: translate(1%, -1%); }
         }
 
-        /* Noise texture overlay */
         body::after {
             content: '';
             position: fixed;
@@ -79,7 +80,6 @@
             opacity: 0.5;
         }
 
-        /* Glass card base */
         .glass {
             background: var(--surface);
             backdrop-filter: var(--glass);
@@ -89,12 +89,507 @@
             box-shadow: var(--shadow);
         }
 
+        /* ===== TOP NAV ===== */
+        .top-nav {
+            position: relative;
+            z-index: 10;
+            background: rgba(12, 12, 22, 0.85);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 20px;
+        }
+
+        .nav-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .nav-brand {
+            font-family: 'Noto Serif KR', serif;
+            font-size: 20px;
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-login-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 18px;
+            background: #fff;
+            color: #333;
+            border: none;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .nav-login-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(255,255,255,0.15);
+        }
+
+        .nav-login-btn svg { width: 16px; height: 16px; }
+
+        .nav-user {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+        }
+
+        .nav-username {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text);
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .nav-btn {
+            padding: 7px 14px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-dim);
+            font-size: 12px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-btn:hover {
+            border-color: var(--accent);
+            color: var(--text);
+        }
+
+        .nav-admin-btn {
+            background: rgba(244, 114, 182, 0.1);
+            border-color: rgba(244, 114, 182, 0.25);
+            color: var(--accent3);
+        }
+
+        .nav-admin-btn:hover {
+            background: rgba(244, 114, 182, 0.2);
+            border-color: var(--accent3);
+        }
+
+        .admin-active-badge {
+            padding: 4px 10px;
+            background: linear-gradient(135deg, var(--accent3), var(--accent));
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: 0.5px;
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background: var(--surface-solid);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 36px;
+            width: 360px;
+            max-width: 90vw;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+        }
+
+        .modal::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent3), var(--accent), var(--accent2));
+            border-radius: var(--radius) var(--radius) 0 0;
+        }
+
+        .modal h3 {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal-input {
+            width: 100%;
+            padding: 14px 18px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            font-size: 15px;
+            font-family: inherit;
+            outline: none;
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+
+        .modal-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .modal-actions .btn { flex: 1; justify-content: center; }
+
+        /* ===== ADMIN PANEL ===== */
+        .admin-panel {
+            position: relative;
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 20px 60px;
+        }
+
+        .admin-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .admin-title {
+            font-size: 24px;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent3), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .admin-notice {
+            background: rgba(251, 191, 36, 0.08);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: var(--radius-sm);
+            padding: 16px 20px;
+            font-size: 13px;
+            color: var(--text-dim);
+            line-height: 1.7;
+            margin-bottom: 20px;
+        }
+
+        .admin-summary {
+            font-size: 14px;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+        }
+
+        .admin-summary strong { color: var(--text); }
+
+        .admin-table-wrap {
+            background: var(--surface);
+            backdrop-filter: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .admin-table th {
+            padding: 14px 18px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            font-weight: 700;
+            background: rgba(30,30,60,0.3);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .admin-table td {
+            padding: 12px 18px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .admin-table tr:last-child td { border-bottom: none; }
+        .admin-table tr:hover td { background: rgba(124,106,255,0.04); }
+
+        .admin-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid var(--border);
+        }
+
+        .admin-avatar-placeholder {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--surface2);
+            border: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: var(--text-dim);
+        }
+
+        /* Learner detail */
+        .learner-detail-panel {
+            background: var(--surface);
+            backdrop-filter: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            margin-top: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .detail-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+
+        .detail-profile {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .detail-avatar {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 2px solid var(--accent);
+        }
+
+        .detail-stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .detail-stat {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .detail-stat-val {
+            font-size: 28px;
+            font-weight: 800;
+        }
+
+        .detail-stat-val.accent { color: var(--accent); }
+        .detail-stat-val.success { color: var(--success); }
+        .detail-stat-val.warning { color: var(--warning); }
+        .detail-stat-val.danger { color: var(--danger); }
+
+        .detail-stat-lbl {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+        }
+
+        .detail-list-header {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            margin-bottom: 12px;
+        }
+
+        .detail-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .detail-record {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .detail-record:last-child { border-bottom: none; }
+
+        .detail-r-char {
+            font-size: 24px;
+            font-family: 'Noto Serif KR', serif;
+            width: 36px;
+            text-align: center;
+        }
+
+        .detail-r-info {
+            flex: 1;
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .detail-r-time {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        /* ===== MY STATS SECTION ===== */
+        .my-stats-section {
+            background: var(--surface);
+            backdrop-filter: var(--glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .my-stats-section::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(244,114,182,0.3), rgba(94,234,212,0.2), transparent);
+        }
+
+        .my-stats-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .my-stats-title {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .my-stats-title::before {
+            content: '';
+            width: 3px;
+            height: 14px;
+            border-radius: 2px;
+            background: linear-gradient(180deg, var(--accent3), var(--accent2));
+        }
+
+        .my-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .my-stat-card {
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 14px;
+            text-align: center;
+        }
+
+        .my-stat-val {
+            font-size: 26px;
+            font-weight: 800;
+        }
+
+        .my-stat-lbl {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        .my-history-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+
+        .my-history-item:last-child { border-bottom: none; }
+
+        .my-h-char {
+            font-size: 22px;
+            font-family: 'Noto Serif KR', serif;
+            width: 32px;
+            text-align: center;
+        }
+
+        .my-h-result {
+            flex: 1;
+            color: var(--text-dim);
+        }
+
+        .my-h-time {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
         /* ===== HEADER ===== */
         header {
             position: relative;
             z-index: 1;
             text-align: center;
-            padding: 48px 16px 24px;
+            padding: 40px 16px 20px;
         }
 
         .header-eyebrow {
@@ -409,7 +904,7 @@
         .hsk-7 { background: linear-gradient(135deg, #6366f1, #4f46e5); }
         .hsk-0 { background: linear-gradient(135deg, #64748b, #475569); }
 
-        /* ===== CHARACTER GRID SECTION ===== */
+        /* ===== CHARACTER GRID ===== */
         .char-grid-section {
             background: var(--surface);
             backdrop-filter: var(--glass);
@@ -492,7 +987,6 @@
             cursor: pointer;
             transition: all 0.2s ease;
             min-height: 78px;
-            position: relative;
         }
 
         .char-cell:hover {
@@ -508,21 +1002,8 @@
             box-shadow: 0 0 0 2px var(--accent-glow), 0 8px 20px rgba(124,106,255,0.15);
         }
 
-        .char-cell .hz {
-            font-size: 30px;
-            line-height: 1.2;
-            font-family: 'Noto Serif KR', serif;
-        }
-
-        .char-cell .rd {
-            font-size: 10px;
-            color: var(--text-dim);
-            margin-top: 3px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-        }
+        .char-cell .hz { font-size: 30px; line-height: 1.2; font-family: 'Noto Serif KR', serif; }
+        .char-cell .rd { font-size: 10px; color: var(--text-dim); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
 
         /* ===== MAIN LAYOUT ===== */
         .main-layout {
@@ -642,25 +1123,12 @@
         .stat-card:nth-child(3)::after { background: linear-gradient(90deg, var(--danger), transparent); }
         .stat-card:nth-child(4)::after { background: linear-gradient(90deg, var(--warning), transparent); }
 
-        .stat-value {
-            font-size: 32px;
-            font-weight: 800;
-            font-family: 'Inter', sans-serif;
-        }
-
+        .stat-value { font-size: 32px; font-weight: 800; }
         .stat-value.accent { color: var(--accent); }
         .stat-value.success { color: var(--success); }
         .stat-value.danger { color: var(--danger); }
         .stat-value.warning { color: var(--warning); }
-
-        .stat-label {
-            font-size: 11px;
-            color: var(--text-dim);
-            margin-top: 4px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 600;
-        }
+        .stat-label { font-size: 11px; color: var(--text-dim); margin-top: 4px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
 
         /* ===== INFO PANEL ===== */
         .info-panel {
@@ -683,11 +1151,7 @@
             background: linear-gradient(90deg, transparent, rgba(94,234,212,0.3), rgba(124,106,255,0.2), transparent);
         }
 
-        .char-info {
-            display: flex;
-            align-items: center;
-            gap: 24px;
-        }
+        .char-info { display: flex; align-items: center; gap: 24px; }
 
         .char-big {
             font-size: 72px;
@@ -700,17 +1164,8 @@
             filter: drop-shadow(0 4px 8px var(--accent-glow));
         }
 
-        .char-details h2 {
-            font-size: 20px;
-            margin-bottom: 6px;
-            font-weight: 700;
-        }
-
-        .char-details p {
-            color: var(--text-dim);
-            font-size: 14px;
-            line-height: 1.6;
-        }
+        .char-details h2 { font-size: 20px; margin-bottom: 6px; font-weight: 700; }
+        .char-details p { color: var(--text-dim); font-size: 14px; line-height: 1.6; }
 
         .tag {
             display: inline-flex;
@@ -726,29 +1181,10 @@
             margin-top: 4px;
         }
 
-        .quiz-feedback {
-            text-align: center;
-            margin-top: 12px;
-            font-size: 13px;
-            min-height: 20px;
-            color: var(--text-dim);
-            font-weight: 500;
-        }
+        .quiz-feedback { text-align: center; margin-top: 12px; font-size: 13px; min-height: 20px; color: var(--text-dim); font-weight: 500; }
 
-        .speed-control {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 14px;
-        }
-
-        .speed-control label {
-            font-size: 12px;
-            color: var(--text-dim);
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
+        .speed-control { display: flex; align-items: center; gap: 10px; justify-content: center; margin-top: 14px; }
+        .speed-control label { font-size: 12px; color: var(--text-dim); font-weight: 600; letter-spacing: 0.5px; }
 
         .speed-slider {
             -webkit-appearance: none;
@@ -761,8 +1197,7 @@
 
         .speed-slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
+            width: 16px; height: 16px;
             background: linear-gradient(135deg, var(--accent), var(--accent2));
             border-radius: 50%;
             cursor: pointer;
@@ -771,17 +1206,10 @@
 
         /* ===== HISTORY ===== */
         .history-section { margin-top: 24px; }
-
-        .history-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-top: 12px;
-        }
+        .history-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 
         .history-item {
-            width: 48px;
-            height: 48px;
+            width: 48px; height: 48px;
             background: var(--surface);
             backdrop-filter: var(--glass);
             border: 1px solid var(--border);
@@ -839,7 +1267,6 @@
 
         .toast.show { transform: translateX(-50%) translateY(0); }
 
-        /* ===== STROKE CARD ===== */
         .stroke-card { margin-bottom: 24px; }
 
         /* ===== FOOTER ===== */
@@ -860,11 +1287,7 @@
             background: linear-gradient(90deg, transparent, rgba(124,106,255,0.4), rgba(94,234,212,0.3), transparent);
         }
 
-        .footer-inner {
-            max-width: 700px;
-            margin: 0 auto;
-            text-align: center;
-        }
+        .footer-inner { max-width: 700px; margin: 0 auto; text-align: center; }
 
         .footer-name {
             font-family: 'Noto Serif KR', serif;
@@ -877,28 +1300,11 @@
             margin-bottom: 14px;
         }
 
-        .footer-info {
-            color: var(--text-dim);
-            font-size: 13px;
-            line-height: 2.2;
-        }
-
-        .footer-info a {
-            color: var(--accent2);
-            text-decoration: none;
-            font-weight: 600;
-            transition: color 0.2s;
-        }
-
+        .footer-info { color: var(--text-dim); font-size: 13px; line-height: 2.2; }
+        .footer-info a { color: var(--accent2); text-decoration: none; font-weight: 600; transition: color 0.2s; }
         .footer-info a:hover { color: var(--accent); }
 
-        .footer-links {
-            margin-top: 18px;
-            display: flex;
-            gap: 12px;
-            justify-content: center;
-            flex-wrap: wrap;
-        }
+        .footer-links { margin-top: 18px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
 
         .footer-link {
             color: var(--accent2);
@@ -922,17 +1328,11 @@
             box-shadow: 0 4px 16px rgba(124,106,255,0.15);
         }
 
-        .footer-link::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: var(--accent2);
-        }
+        .footer-link::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--accent2); }
 
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
-            header { padding: 32px 16px 16px; }
+            header { padding: 28px 16px 12px; }
             header h1 { font-size: 28px; }
             .container { padding: 0 14px 40px; }
             .main-layout { grid-template-columns: 1fr; }
@@ -945,172 +1345,246 @@
             .char-grid-section { padding: 16px; }
             .stat-value { font-size: 26px; }
             .writer-container { max-width: 260px; max-height: 260px; }
+            .detail-stats { grid-template-columns: repeat(2, 1fr); }
+            .my-stats-grid { grid-template-columns: repeat(3, 1fr); }
+            .nav-username { display: none; }
         }
 
         @media (max-width: 480px) {
             .search-section { flex-direction: column; }
             .search-input { font-size: 18px; padding: 14px 18px; }
             .footer-links { flex-direction: column; align-items: center; }
+            .nav-inner { flex-wrap: wrap; }
         }
 
-        /* ===== ANIMATIONS ===== */
         @keyframes slideUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .char-grid-section,
-        .info-panel,
-        .stats-bar,
-        .main-layout,
-        .stroke-card {
-            animation: slideUp 0.4s ease;
-        }
+        .char-grid-section, .info-panel, .stats-bar, .main-layout, .stroke-card { animation: slideUp 0.4s ease; }
     </style>
 </head>
 <body>
-    <header>
-        <div class="header-eyebrow">
-            <span class="dot"></span>
-            Hanzi Writer Interactive
-        </div>
-        <h1>한자 필순 연습</h1>
-        <p class="subtitle">획순 애니메이션 &amp; 쓰기 퀴즈</p>
-        <div class="total-count" id="totalCount"></div>
-    </header>
 
-    <div class="container">
-        <!-- Search -->
-        <div class="search-section">
-            <input type="text" class="search-input" id="charInput" placeholder="한자 또는 훈음 검색 (예: 愛, 사랑, 물)" maxlength="20">
-            <button class="btn btn-primary" onclick="handleSearch()">검색</button>
-        </div>
-
-        <!-- Category Tabs -->
-        <div class="category-tabs" id="categoryTabs"></div>
-
-        <!-- HSK Filter -->
-        <div class="hsk-filter" id="hskFilter">
-            <span class="hsk-filter-label">HSK 3.0</span>
-            <button class="hsk-btn active" data-hsk="all" onclick="filterHSK('all')">전체</button>
-            <button class="hsk-btn" data-hsk="1" onclick="filterHSK(1)">1급</button>
-            <button class="hsk-btn" data-hsk="2" onclick="filterHSK(2)">2급</button>
-            <button class="hsk-btn" data-hsk="3" onclick="filterHSK(3)">3급</button>
-            <button class="hsk-btn" data-hsk="4" onclick="filterHSK(4)">4급</button>
-            <button class="hsk-btn" data-hsk="5" onclick="filterHSK(5)">5급</button>
-            <button class="hsk-btn" data-hsk="6" onclick="filterHSK(6)">6급</button>
-            <button class="hsk-btn" data-hsk="7" onclick="filterHSK(7)">7-9급</button>
-            <button class="hsk-btn" data-hsk="0" onclick="filterHSK(0)">급외</button>
-        </div>
-
-        <!-- Character Grid -->
-        <div class="char-grid-section" id="charGridSection">
-            <div class="char-grid-header">
-                <div class="char-grid-title" id="gridTitle">전체 한자</div>
-                <div class="char-grid-meta" id="gridMeta"></div>
-            </div>
-            <input type="text" class="char-search-filter" id="gridFilter" placeholder="카테고리 내 필터..." oninput="filterGrid()">
-            <div class="char-grid" id="charGrid"></div>
-        </div>
-
-        <!-- Info Panel -->
-        <div class="info-panel" id="infoPanel" style="display:none;">
-            <div class="char-info">
-                <div class="char-big" id="charBig"></div>
-                <div class="char-details">
-                    <h2 id="charName"></h2>
-                    <p id="charDesc"></p>
-                    <div id="charTags" style="margin-top:8px;"></div>
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="nav-inner">
+            <div class="nav-brand">漢字 필순연습</div>
+            <div class="nav-actions">
+                <span class="admin-active-badge" id="adminBadge" style="display:none;">ADMIN</span>
+                <button id="googleLoginBtn" class="nav-login-btn" onclick="googleLogin()">
+                    <svg viewBox="0 0 24 24" width="16" height="16"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                    Google 로그인
+                </button>
+                <div id="navUserInfo" class="nav-user" style="display:none;">
+                    <img id="navUserAvatar" class="nav-avatar" src="" onerror="this.style.display='none'">
+                    <span id="navUserName" class="nav-username"></span>
+                    <button class="nav-btn" onclick="googleLogout()">로그아웃</button>
                 </div>
+                <button class="nav-btn nav-admin-btn" onclick="showAdminLogin()">관리자</button>
             </div>
         </div>
+    </nav>
 
-        <!-- Stats -->
-        <div class="stats-bar" id="statsBar" style="display:none;">
-            <div class="stat-card"><div class="stat-value accent" id="statStrokes">0</div><div class="stat-label">총 획수</div></div>
-            <div class="stat-card"><div class="stat-value success" id="statCorrect">0</div><div class="stat-label">정답</div></div>
-            <div class="stat-card"><div class="stat-value danger" id="statMistakes">0</div><div class="stat-label">오답</div></div>
-            <div class="stat-card"><div class="stat-value warning" id="statCompleted">0</div><div class="stat-label">완료</div></div>
-        </div>
-
-        <!-- Main Area -->
-        <div class="main-layout" id="mainArea" style="display:none;">
-            <div class="card">
-                <div class="card-title">획순 애니메이션</div>
-                <div class="writer-wrap">
-                    <div class="writer-container" style="width:280px;height:280px;">
-                        <svg class="grid-bg" viewBox="0 0 280 280">
-                            <line x1="140" y1="0" x2="140" y2="280"/>
-                            <line x1="0" y1="140" x2="280" y2="140"/>
-                            <line x1="0" y1="0" x2="280" y2="280"/>
-                            <line x1="280" y1="0" x2="0" y2="280"/>
-                        </svg>
-                        <div id="animTarget"></div>
-                    </div>
-                </div>
-                <div class="speed-control">
-                    <label>속도</label>
-                    <input type="range" class="speed-slider" id="speedSlider" min="0.5" max="3" step="0.5" value="1">
-                    <span id="speedValue" style="font-size:12px;color:var(--text-dim);font-weight:600;">1x</span>
-                </div>
-                <div class="controls" style="margin-top:16px;">
-                    <button class="btn btn-primary btn-sm" onclick="playAnimation()">재생</button>
-                    <button class="btn btn-outline btn-sm" onclick="loopAnimation()">반복</button>
-                    <button class="btn btn-outline btn-sm" onclick="pauseAnim()">일시정지</button>
-                </div>
+    <!-- Admin Login Modal -->
+    <div class="modal-overlay" id="adminModal" style="display:none;" onclick="if(event.target===this)closeAdminModal()">
+        <div class="modal">
+            <h3>관리자 로그인</h3>
+            <input type="password" class="modal-input" id="adminPw" placeholder="비밀번호를 입력하세요" onkeydown="if(event.key==='Enter')tryAdminLogin()">
+            <div class="modal-actions">
+                <button class="btn btn-primary btn-sm" onclick="tryAdminLogin()">로그인</button>
+                <button class="btn btn-outline btn-sm" onclick="closeAdminModal()">취소</button>
             </div>
-
-            <div class="card">
-                <div class="card-title">쓰기 연습</div>
-                <div class="writer-wrap">
-                    <div class="writer-container" style="width:280px;height:280px;">
-                        <svg class="grid-bg" viewBox="0 0 280 280">
-                            <line x1="140" y1="0" x2="140" y2="280"/>
-                            <line x1="0" y1="140" x2="280" y2="140"/>
-                            <line x1="0" y1="0" x2="280" y2="280"/>
-                            <line x1="280" y1="0" x2="0" y2="280"/>
-                        </svg>
-                        <div id="quizTarget"></div>
-                    </div>
-                </div>
-                <div class="quiz-feedback" id="quizFeedback">한자를 선택한 후 퀴즈를 시작하세요</div>
-                <div class="controls" style="margin-top:12px;">
-                    <button class="btn btn-success btn-sm" onclick="startQuiz()">퀴즈 시작</button>
-                    <button class="btn btn-outline btn-sm" onclick="startQuiz(true)">윤곽 없이</button>
-                    <button class="btn btn-outline btn-sm" onclick="showHint()">힌트</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Stroke breakdown -->
-        <div class="card stroke-card" id="strokeCard" style="display:none;">
-            <div class="card-title">획 분석</div>
-            <div id="strokeBreakdown" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;"></div>
-        </div>
-
-        <!-- History -->
-        <div class="history-section" id="historySection" style="display:none;">
-            <div class="preset-label">연습 기록</div>
-            <div class="history-grid" id="historyGrid"></div>
         </div>
     </div>
 
-    <footer>
-        <div class="footer-inner">
-            <div class="footer-name">박정원 | 朴正元 | Park Jeong Weon 교수</div>
-            <div class="footer-info">
-                한국외국어대학교 중국학대학 중국언어문화학부<br>
-                Division of Chinese Language, Literature and Culture<br>
-                국가교육위원회 AI특별위원회 위원<br>
-                교육부 AI인재양성추진단<br>
-                <a href="https://k-ai.it.kr/" target="_blank" rel="noopener">K-AI 교육네트워크</a>
+    <!-- Admin Panel -->
+    <div class="admin-panel" id="adminPanel" style="display:none;">
+        <div class="admin-header">
+            <div class="admin-title">학습자 관리 대시보드</div>
+            <button class="btn btn-outline btn-sm" onclick="exitAdmin()">돌아가기</button>
+        </div>
+        <div class="admin-notice" id="adminNotice" style="display:none;"></div>
+        <div class="admin-summary" id="adminSummary"></div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>프로필</th>
+                        <th>이름</th>
+                        <th>이메일</th>
+                        <th>최근 활동</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody id="learnerTableBody">
+                    <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-dim);">로딩 중...</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="learner-detail-panel" id="learnerDetail" style="display:none;"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div id="mainContent">
+        <header>
+            <div class="header-eyebrow">
+                <span class="dot"></span>
+                Hanzi Writer Interactive
             </div>
-            <div class="footer-links">
-                <a href="https://kletter.kr" target="_blank" rel="noopener" class="footer-link">kletter.kr</a>
-                <a href="https://kteacher.kr" target="_blank" rel="noopener" class="footer-link">kteacher.kr</a>
+            <h1>한자 필순 연습</h1>
+            <p class="subtitle">획순 애니메이션 &amp; 쓰기 퀴즈</p>
+            <div class="total-count" id="totalCount"></div>
+        </header>
+
+        <div class="container">
+            <!-- Search -->
+            <div class="search-section">
+                <input type="text" class="search-input" id="charInput" placeholder="한자 또는 훈음 검색 (예: 愛, 사랑, 물)" maxlength="20">
+                <button class="btn btn-primary" onclick="handleSearch()">검색</button>
+            </div>
+
+            <!-- Category Tabs -->
+            <div class="category-tabs" id="categoryTabs"></div>
+
+            <!-- HSK Filter -->
+            <div class="hsk-filter" id="hskFilter">
+                <span class="hsk-filter-label">HSK 3.0</span>
+                <button class="hsk-btn active" data-hsk="all" onclick="filterHSK('all')">전체</button>
+                <button class="hsk-btn" data-hsk="1" onclick="filterHSK(1)">1급</button>
+                <button class="hsk-btn" data-hsk="2" onclick="filterHSK(2)">2급</button>
+                <button class="hsk-btn" data-hsk="3" onclick="filterHSK(3)">3급</button>
+                <button class="hsk-btn" data-hsk="4" onclick="filterHSK(4)">4급</button>
+                <button class="hsk-btn" data-hsk="5" onclick="filterHSK(5)">5급</button>
+                <button class="hsk-btn" data-hsk="6" onclick="filterHSK(6)">6급</button>
+                <button class="hsk-btn" data-hsk="7" onclick="filterHSK(7)">7-9급</button>
+                <button class="hsk-btn" data-hsk="0" onclick="filterHSK(0)">급외</button>
+            </div>
+
+            <!-- Character Grid -->
+            <div class="char-grid-section" id="charGridSection">
+                <div class="char-grid-header">
+                    <div class="char-grid-title" id="gridTitle">전체 한자</div>
+                    <div class="char-grid-meta" id="gridMeta"></div>
+                </div>
+                <input type="text" class="char-search-filter" id="gridFilter" placeholder="카테고리 내 필터..." oninput="filterGrid()">
+                <div class="char-grid" id="charGrid"></div>
+            </div>
+
+            <!-- Info Panel -->
+            <div class="info-panel" id="infoPanel" style="display:none;">
+                <div class="char-info">
+                    <div class="char-big" id="charBig"></div>
+                    <div class="char-details">
+                        <h2 id="charName"></h2>
+                        <p id="charDesc"></p>
+                        <div id="charTags" style="margin-top:8px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-bar" id="statsBar" style="display:none;">
+                <div class="stat-card"><div class="stat-value accent" id="statStrokes">0</div><div class="stat-label">총 획수</div></div>
+                <div class="stat-card"><div class="stat-value success" id="statCorrect">0</div><div class="stat-label">정답</div></div>
+                <div class="stat-card"><div class="stat-value danger" id="statMistakes">0</div><div class="stat-label">오답</div></div>
+                <div class="stat-card"><div class="stat-value warning" id="statCompleted">0</div><div class="stat-label">완료</div></div>
+            </div>
+
+            <!-- Main Area -->
+            <div class="main-layout" id="mainArea" style="display:none;">
+                <div class="card">
+                    <div class="card-title">획순 애니메이션</div>
+                    <div class="writer-wrap">
+                        <div class="writer-container" style="width:280px;height:280px;">
+                            <svg class="grid-bg" viewBox="0 0 280 280">
+                                <line x1="140" y1="0" x2="140" y2="280"/>
+                                <line x1="0" y1="140" x2="280" y2="140"/>
+                                <line x1="0" y1="0" x2="280" y2="280"/>
+                                <line x1="280" y1="0" x2="0" y2="280"/>
+                            </svg>
+                            <div id="animTarget"></div>
+                        </div>
+                    </div>
+                    <div class="speed-control">
+                        <label>속도</label>
+                        <input type="range" class="speed-slider" id="speedSlider" min="0.5" max="3" step="0.5" value="1">
+                        <span id="speedValue" style="font-size:12px;color:var(--text-dim);font-weight:600;">1x</span>
+                    </div>
+                    <div class="controls" style="margin-top:16px;">
+                        <button class="btn btn-primary btn-sm" onclick="playAnimation()">재생</button>
+                        <button class="btn btn-outline btn-sm" onclick="loopAnimation()">반복</button>
+                        <button class="btn btn-outline btn-sm" onclick="pauseAnim()">일시정지</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-title">쓰기 연습</div>
+                    <div class="writer-wrap">
+                        <div class="writer-container" style="width:280px;height:280px;">
+                            <svg class="grid-bg" viewBox="0 0 280 280">
+                                <line x1="140" y1="0" x2="140" y2="280"/>
+                                <line x1="0" y1="140" x2="280" y2="140"/>
+                                <line x1="0" y1="0" x2="280" y2="280"/>
+                                <line x1="280" y1="0" x2="0" y2="280"/>
+                            </svg>
+                            <div id="quizTarget"></div>
+                        </div>
+                    </div>
+                    <div class="quiz-feedback" id="quizFeedback">한자를 선택한 후 퀴즈를 시작하세요</div>
+                    <div class="controls" style="margin-top:12px;">
+                        <button class="btn btn-success btn-sm" onclick="startQuiz()">퀴즈 시작</button>
+                        <button class="btn btn-outline btn-sm" onclick="startQuiz(true)">윤곽 없이</button>
+                        <button class="btn btn-outline btn-sm" onclick="showHint()">힌트</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stroke breakdown -->
+            <div class="card stroke-card" id="strokeCard" style="display:none;">
+                <div class="card-title">획 분석</div>
+                <div id="strokeBreakdown" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;"></div>
+            </div>
+
+            <!-- My Stats -->
+            <div class="my-stats-section" id="myStatsSection" style="display:none;">
+                <div class="my-stats-header">
+                    <div class="my-stats-title">내 학습 통계</div>
+                    <button class="btn btn-outline btn-sm" style="padding:6px 12px;font-size:11px;" onclick="clearMyRecords()">초기화</button>
+                </div>
+                <div class="my-stats-grid">
+                    <div class="my-stat-card"><div class="my-stat-val accent" id="myStatChars">0</div><div class="my-stat-lbl">학습 한자</div></div>
+                    <div class="my-stat-card"><div class="my-stat-val success" id="myStatSessions">0</div><div class="my-stat-lbl">연습 횟수</div></div>
+                    <div class="my-stat-card"><div class="my-stat-val warning" id="myStatAccuracy">0%</div><div class="my-stat-lbl">정답률</div></div>
+                </div>
+                <div id="myHistoryList"></div>
+            </div>
+
+            <!-- History -->
+            <div class="history-section" id="historySection" style="display:none;">
+                <div class="preset-label">최근 연습</div>
+                <div class="history-grid" id="historyGrid"></div>
             </div>
         </div>
-    </footer>
+
+        <footer>
+            <div class="footer-inner">
+                <div class="footer-name">박정원 | 朴正元 | Park Jeong Weon 교수</div>
+                <div class="footer-info">
+                    한국외국어대학교 중국학대학 중국언어문화학부<br>
+                    Division of Chinese Language, Literature and Culture<br>
+                    국가교육위원회 AI특별위원회 위원<br>
+                    교육부 AI인재양성추진단<br>
+                    <a href="https://k-ai.it.kr/" target="_blank" rel="noopener">K-AI 교육네트워크</a>
+                </div>
+                <div class="footer-links">
+                    <a href="https://kletter.kr" target="_blank" rel="noopener" class="footer-link">kletter.kr</a>
+                    <a href="https://kteacher.kr" target="_blank" rel="noopener" class="footer-link">kteacher.kr</a>
+                </div>
+            </div>
+        </footer>
+    </div>
 
     <div class="toast" id="toast"></div>
 
@@ -1432,6 +1906,9 @@
                     updateStats();
                     document.getElementById('quizFeedback').textContent = '완성! 총 오답: ' + data.totalMistakes + '회';
                     showToast('한자 "' + currentChar + '" 완성!');
+                    if (typeof savePracticeRecord === 'function') {
+                        savePracticeRecord(currentChar, stats.correct, data.totalMistakes);
+                    }
                 }
             });
         }
@@ -1487,5 +1964,6 @@
 
         init();
     </script>
+    <script src="auth.js"></script>
 </body>
 </html>
