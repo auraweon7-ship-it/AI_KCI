@@ -1,6 +1,7 @@
 const express = require('express');
 const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
 const path = require('path');
 
@@ -59,14 +60,70 @@ app.post('/api/auth/google', async function (req, res) {
             [payload.sub, payload.name, payload.email, payload.picture]
         );
         var user = result.rows[0];
-        var token = jwt.sign(
-            { id: user.id, name: user.name, email: user.email, photoURL: user.photo_url },
-            JWT_SECRET, { expiresIn: '7d' }
-        );
-        res.json({ token: token, user: { id: user.id, name: user.name, email: user.email, photoURL: user.photo_url } });
+        res.json({ token: makeToken(user), user: userJson(user) });
     } catch (e) {
         console.error('Google auth error:', e.message);
         res.status(401).json({ error: 'Authentication failed' });
+    }
+});
+
+// --- Email/Password Auth ---
+function hashPassword(pw) {
+    var salt = crypto.randomBytes(16).toString('hex');
+    var hash = crypto.pbkdf2Sync(pw, salt, 10000, 64, 'sha512').toString('hex');
+    return salt + ':' + hash;
+}
+
+function verifyPassword(pw, stored) {
+    var parts = stored.split(':');
+    var hash = crypto.pbkdf2Sync(pw, parts[0], 10000, 64, 'sha512').toString('hex');
+    return hash === parts[1];
+}
+
+function makeToken(user) {
+    return jwt.sign(
+        { id: user.id, name: user.name, email: user.email, photoURL: user.photo_url || '' },
+        JWT_SECRET, { expiresIn: '7d' }
+    );
+}
+
+function userJson(user) {
+    return { id: user.id, name: user.name, email: user.email, photoURL: user.photo_url || '' };
+}
+
+app.post('/api/auth/register', async function (req, res) {
+    var b = req.body;
+    if (!b.email || !b.password || !b.name) return res.status(400).json({ error: '이름, 이메일, 비밀번호를 입력하세요' });
+    if (b.password.length < 4) return res.status(400).json({ error: '비밀번호는 4자 이상이어야 합니다' });
+    try {
+        var exists = await pool.query('SELECT id FROM users WHERE email = $1 AND password_hash IS NOT NULL', [b.email]);
+        if (exists.rows.length > 0) return res.status(409).json({ error: '이미 등록된 이메일입니다' });
+        var result = await pool.query(
+            `INSERT INTO users (name, email, password_hash, last_active)
+             VALUES ($1, $2, $3, NOW()) RETURNING id, name, email, photo_url`,
+            [b.name, b.email, hashPassword(b.password)]
+        );
+        var user = result.rows[0];
+        res.json({ token: makeToken(user), user: userJson(user) });
+    } catch (e) {
+        console.error('Register error:', e.message);
+        res.status(500).json({ error: '회원가입 실패' });
+    }
+});
+
+app.post('/api/auth/login', async function (req, res) {
+    var b = req.body;
+    if (!b.email || !b.password) return res.status(400).json({ error: '이메일과 비밀번호를 입력하세요' });
+    try {
+        var result = await pool.query('SELECT id, name, email, photo_url, password_hash FROM users WHERE email = $1 AND password_hash IS NOT NULL', [b.email]);
+        if (result.rows.length === 0) return res.status(401).json({ error: '이메일 또는 비밀번호가 틀립니다' });
+        var user = result.rows[0];
+        if (!verifyPassword(b.password, user.password_hash)) return res.status(401).json({ error: '이메일 또는 비밀번호가 틀립니다' });
+        await pool.query('UPDATE users SET last_active = NOW() WHERE id = $1', [user.id]);
+        res.json({ token: makeToken(user), user: userJson(user) });
+    } catch (e) {
+        console.error('Login error:', e.message);
+        res.status(500).json({ error: '로그인 실패' });
     }
 });
 
@@ -146,6 +203,7 @@ async function initDB() {
             google_id VARCHAR(255) UNIQUE,
             name VARCHAR(255),
             email VARCHAR(255),
+            password_hash TEXT,
             photo_url TEXT,
             last_active TIMESTAMP DEFAULT NOW(),
             created_at TIMESTAMP DEFAULT NOW()
