@@ -2013,6 +2013,37 @@
         .idiom-pager button:hover { border-color: var(--accent); color: var(--text); }
         .idiom-pager button:disabled { opacity: 0.3; cursor: default; }
         .idiom-pager span { font-size: 12px; color: var(--text-dim); }
+        .idiom-status-filter {
+            display: flex; gap: 4px; margin-bottom: 12px;
+        }
+        .idiom-status-btn {
+            padding: 5px 14px; border-radius: 10px; font-size: 11px; font-weight: 600;
+            background: var(--surface2); border: 1px solid var(--border); color: var(--text-dim);
+            cursor: pointer; transition: all 0.2s; font-family: inherit;
+        }
+        .idiom-status-btn:hover { border-color: var(--accent); color: var(--text); }
+        .idiom-status-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+        .idiom-status-btn.active-learned { background: var(--success); border-color: var(--success); color: #fff; }
+        .idiom-status-btn.active-unlearned { background: var(--warning); border-color: var(--warning); color: #000; }
+        .idiom-check-btn {
+            position: absolute; top: 8px; left: 8px; width: 26px; height: 26px;
+            border-radius: 50%; border: 2px solid var(--border); background: transparent;
+            cursor: pointer; transition: all 0.25s; display: flex; align-items: center;
+            justify-content: center; font-size: 13px; color: transparent; z-index: 2;
+            padding: 0;
+        }
+        .idiom-check-btn:hover { border-color: var(--success); background: rgba(52,211,153,0.1); }
+        .idiom-check-btn.checked {
+            border-color: var(--success); background: var(--success); color: #fff;
+        }
+        .idiom-card.learned {
+            border-color: rgba(52,211,153,0.3);
+        }
+        .idiom-card.learned .idiom-card-chars span { opacity: 0.7; }
+        .idiom-learned-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 11px; color: var(--success); font-weight: 600; margin-left: 8px;
+        }
         /* Related idioms in info panel */
         .related-idioms { margin-top: 10px; }
         .related-idioms-title { font-size: 12px; color: var(--accent2); font-weight: 600; margin-bottom: 6px; }
@@ -2551,6 +2582,7 @@
                 <div class="idiom-search-wrap">
                     <input type="text" id="idiomSearch" placeholder="고사성어, 음독, 뜻 검색..." oninput="filterIdioms()">
                 </div>
+                <div class="idiom-status-filter" id="idiomStatusFilter"></div>
                 <div class="idiom-cat-tabs" id="idiomCatTabs"></div>
                 <div class="idiom-count" id="idiomCount"></div>
                 <div class="idiom-grid" id="idiomGrid"></div>
@@ -4189,6 +4221,38 @@
         var currentIdiomPage = 0;
         var IDIOMS_PER_PAGE = 24;
         var filteredIdioms = [];
+        var currentIdiomStatus = 'all'; // 'all' | 'unlearned' | 'learned'
+
+        function getLearnedIdioms() {
+            try { return JSON.parse(localStorage.getItem('learnedIdioms') || '{}'); } catch(e) { return {}; }
+        }
+        function saveLearnedIdioms(data) {
+            localStorage.setItem('learnedIdioms', JSON.stringify(data));
+        }
+        function toggleIdiomLearned(chars, evt) {
+            if (evt) { evt.stopPropagation(); evt.preventDefault(); }
+            var data = getLearnedIdioms();
+            if (data[chars]) { delete data[chars]; } else { data[chars] = Date.now(); }
+            saveLearnedIdioms(data);
+            renderIdiomGrid();
+            renderIdiomStatusFilter();
+        }
+        function setIdiomStatus(status) {
+            currentIdiomStatus = status;
+            currentIdiomPage = 0;
+            filterIdioms();
+            renderIdiomStatusFilter();
+        }
+        function renderIdiomStatusFilter() {
+            var learned = getLearnedIdioms();
+            var learnedCnt = Object.keys(learned).length;
+            var unlearnedCnt = IDIOM_DATA.length - learnedCnt;
+            var html = '';
+            html += '<button class="idiom-status-btn' + (currentIdiomStatus === 'all' ? ' active' : '') + '" onclick="setIdiomStatus(\'all\')">전체 ' + IDIOM_DATA.length + '</button>';
+            html += '<button class="idiom-status-btn' + (currentIdiomStatus === 'unlearned' ? ' active-unlearned' : '') + '" onclick="setIdiomStatus(\'unlearned\')">미완료 ' + unlearnedCnt + '</button>';
+            html += '<button class="idiom-status-btn' + (currentIdiomStatus === 'learned' ? ' active-learned' : '') + '" onclick="setIdiomStatus(\'learned\')">✅ 완료 ' + learnedCnt + '</button>';
+            document.getElementById('idiomStatusFilter').innerHTML = html;
+        }
 
         function initIdiomSection() {
             if (typeof IDIOM_DATA === 'undefined' || !IDIOM_DATA.length) {
@@ -4196,6 +4260,7 @@
                 return;
             }
             document.getElementById('idiomTotal').textContent = IDIOM_DATA.length + '개';
+            renderIdiomStatusFilter();
             renderIdiomCatTabs();
             filteredIdioms = IDIOM_DATA.slice();
             currentIdiomPage = 0;
@@ -4225,8 +4290,11 @@
 
         function filterIdioms() {
             var q = (document.getElementById('idiomSearch').value || '').trim().toLowerCase();
+            var learned = getLearnedIdioms();
             filteredIdioms = IDIOM_DATA.filter(function(d) {
                 if (currentIdiomCat !== 'all' && d.category !== currentIdiomCat) return false;
+                if (currentIdiomStatus === 'learned' && !learned[d.chars]) return false;
+                if (currentIdiomStatus === 'unlearned' && learned[d.chars]) return false;
                 if (!q) return true;
                 return d.chars.indexOf(q) !== -1 || d.reading.indexOf(q) !== -1
                     || d.meaning.indexOf(q) !== -1 || d.origin.indexOf(q) !== -1;
@@ -4240,6 +4308,7 @@
             var start = currentIdiomPage * IDIOMS_PER_PAGE;
             var page = filteredIdioms.slice(start, start + IDIOMS_PER_PAGE);
             var totalPages = Math.ceil(total / IDIOMS_PER_PAGE) || 1;
+            var learned = getLearnedIdioms();
 
             document.getElementById('idiomCount').textContent = total + '개 고사성어' + (total !== IDIOM_DATA.length ? ' (검색 결과)' : '');
 
@@ -4247,6 +4316,7 @@
             page.forEach(function(d, i) {
                 var idx = start + i;
                 var catInfo = IDIOM_CATS[d.category] || { name: d.category, icon: '' };
+                var isLearned = !!learned[d.chars];
                 var charSpans = '';
                 for (var c = 0; c < d.chars.length; c++) {
                     charSpans += '<span>' + d.chars[c] + '</span>';
@@ -4259,7 +4329,8 @@
                     charTags += '<span class="idiom-char-tag" onclick="event.stopPropagation();selectChar(\'' + ch + '\')" title="' + label + '">'
                         + ch + (info ? ' ' + info.reading : '') + '</span>';
                 }
-                html += '<div class="idiom-card" id="idiomCard' + idx + '" onclick="toggleIdiomCard(' + idx + ')">'
+                html += '<div class="idiom-card' + (isLearned ? ' learned' : '') + '" id="idiomCard' + idx + '" onclick="toggleIdiomCard(' + idx + ')">'
+                    + '<button class="idiom-check-btn' + (isLearned ? ' checked' : '') + '" onclick="toggleIdiomLearned(\'' + d.chars + '\',event)" title="' + (isLearned ? '학습완료 해제' : '학습완료 체크') + '">✓</button>'
                     + '<div class="idiom-card-cat">' + catInfo.icon + ' ' + catInfo.name + '</div>'
                     + '<div class="idiom-card-chars">' + charSpans + '</div>'
                     + '<div class="idiom-card-reading">' + d.reading + '</div>'
