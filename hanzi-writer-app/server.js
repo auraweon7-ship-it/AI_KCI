@@ -62,7 +62,7 @@ app.post('/api/auth/google', async function (req, res) {
         res.json({ token: makeToken(user), user: userJson(user) });
     } catch (e) {
         console.error('Google auth error:', e.message);
-        res.status(401).json({ error: 'Authentication failed' });
+        res.status(401).json({ error: 'Authentication failed', detail: e.message });
     }
 });
 

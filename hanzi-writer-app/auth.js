@@ -66,11 +66,13 @@
                 closeLoginModal();
                 if (typeof showToast === 'function') showToast('로그인 성공');
             } else {
-                if (typeof showToast === 'function') showToast('로그인 실패');
+                console.error('Google login failed:', data);
+                if (typeof showToast === 'function') showToast('로그인 실패: ' + (data.detail || data.error || ''));
             }
         })
-        .catch(function() {
-            if (typeof showToast === 'function') showToast('로그인 실패');
+        .catch(function(e) {
+            console.error('Google login error:', e);
+            if (typeof showToast === 'function') showToast('로그인 실패: ' + e.message);
         });
     }
 
