@@ -1207,7 +1207,115 @@
             margin-bottom: 24px;
             box-shadow: var(--shadow);
             position: relative;
+            overflow: visible;
+        }
+
+        .info-panel-inner { display: flex; gap: 24px; align-items: flex-start; }
+        .info-panel-right { flex: 1; min-width: 0; }
+
+        /* ===== FLIP CARD ===== */
+        .flip-card {
+            width: 260px; min-width: 260px; height: 380px;
+            perspective: 1200px;
+            cursor: pointer;
+            animation: flipCardEntrance 0.5s ease;
+        }
+        .flip-card-body {
+            position: relative; width: 100%; height: 100%;
+            transition: transform 0.7s cubic-bezier(.4,.2,.2,1);
+            transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-body { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back {
+            position: absolute; inset: 0;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
             overflow: hidden;
+        }
+        .flip-card-front {
+            background: linear-gradient(160deg, rgba(18,18,35,0.95), rgba(30,20,60,0.95));
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 24px 20px;
+            position: relative;
+        }
+        .flip-card-front::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
+        }
+        .flip-card-emoji-bg {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 140px; opacity: 0.07; pointer-events: none;
+            filter: grayscale(30%);
+        }
+        .flip-card-char {
+            font-size: 100px; line-height: 1; z-index: 1;
+            font-family: 'Noto Serif KR', serif;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 6px 16px var(--accent-glow));
+            margin-bottom: 12px;
+        }
+        .flip-card-reading {
+            font-size: 18px; font-weight: 700; color: var(--text); z-index: 1;
+            margin-bottom: 4px; text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
+        .flip-card-pinyin {
+            font-size: 15px; font-weight: 600; color: var(--accent2); z-index: 1;
+            font-style: italic; margin-bottom: 6px;
+        }
+        .flip-card-hsk {
+            z-index: 1; margin-bottom: 12px;
+        }
+        .flip-card-share {
+            position: absolute; bottom: 12px; right: 12px; z-index: 2;
+            width: 36px; height: 36px;
+            background: rgba(94,234,212,0.1); border: 1px solid rgba(94,234,212,0.25);
+            border-radius: 50%; color: var(--accent2); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 15px; transition: all 0.2s;
+        }
+        .flip-card-share:hover {
+            background: rgba(94,234,212,0.25); border-color: var(--accent2); transform: scale(1.1);
+        }
+        .flip-card-hint {
+            position: absolute; bottom: 14px; left: 0; right: 0;
+            text-align: center; font-size: 11px; color: var(--text-dim);
+            opacity: 0.6; z-index: 1; pointer-events: none;
+        }
+        .flip-card-back {
+            background: linear-gradient(160deg, rgba(18,18,35,0.98), rgba(25,18,50,0.98));
+            transform: rotateY(180deg);
+            display: flex; flex-direction: column;
+            padding: 20px 16px;
+            overflow-y: auto;
+        }
+        .flip-card-back::-webkit-scrollbar { width: 4px; }
+        .flip-card-back::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        .flip-card-back-title {
+            font-size: 13px; font-weight: 700; color: var(--accent2);
+            letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;
+            padding-bottom: 8px; border-bottom: 1px solid var(--border);
+        }
+        .flip-card-back .example-zh { font-size: 18px; gap: 6px; }
+        .flip-card-back .example-pinyin { font-size: 13px; }
+        .flip-card-back .example-ko { font-size: 12px; }
+        .flip-card-back .example-sentence { gap: 6px; }
+        .flip-card-back .example-divider { margin: 8px 0; }
+        .flip-card-back .tts-btn { width: 28px; height: 28px; font-size: 12px; }
+        .flip-card-back-loading {
+            display: flex; align-items: center; justify-content: center;
+            height: 100%; color: var(--text-dim); font-size: 13px; text-align: center;
+        }
+        .flip-card-back-hint {
+            position: absolute; bottom: 10px; left: 0; right: 0;
+            text-align: center; font-size: 11px; color: var(--text-dim); opacity: 0.5;
+        }
+        @keyframes flipCardEntrance {
+            from { opacity: 0; transform: scale(0.92) translateY(12px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         .info-panel::before {
@@ -1513,6 +1621,8 @@
             .main-layout { grid-template-columns: 1fr; }
             .stats-bar { grid-template-columns: repeat(2, 1fr); }
             .char-info { flex-direction: column; text-align: center; }
+            .info-panel-inner { flex-direction: column; align-items: center; }
+            .flip-card { width: 100%; min-width: unset; max-width: 280px; height: 360px; }
             .char-grid { grid-template-columns: repeat(auto-fill, minmax(60px, 1fr)); }
             .char-search-filter { width: 100%; }
             .hsk-filter { padding: 10px 12px; }
@@ -1673,16 +1783,42 @@
 
             <!-- Info Panel -->
             <div class="info-panel" id="infoPanel" style="display:none;">
-                <div class="char-info">
-                    <div class="char-big" id="charBig"></div>
-                    <div class="char-details">
-                        <h2 id="charName"></h2>
-                        <p id="charDesc"></p>
-                        <div id="charTags" style="margin-top:8px;"></div>
+                <div class="info-panel-inner">
+                    <!-- Flip Card -->
+                    <div class="flip-card" id="flipCard" onclick="toggleFlipCard()">
+                        <div class="flip-card-body" id="flipCardBody">
+                            <div class="flip-card-front">
+                                <div class="flip-card-emoji-bg" id="flipEmojiBg"></div>
+                                <div class="flip-card-char" id="flipChar"></div>
+                                <div class="flip-card-reading" id="flipReading"></div>
+                                <div class="flip-card-pinyin" id="flipPinyin"></div>
+                                <div class="flip-card-hsk" id="flipHsk"></div>
+                                <button class="flip-card-share" onclick="shareFlipCard(event)" title="공유 링크 복사">🔗</button>
+                                <div class="flip-card-hint">클릭하여 뒤집기</div>
+                            </div>
+                            <div class="flip-card-back">
+                                <div class="flip-card-back-title">예문 Examples</div>
+                                <div class="flip-card-examples" id="flipExamples">
+                                    <div class="flip-card-back-loading">카드를 뒤집으면 예문을 불러옵니다</div>
+                                </div>
+                                <div class="flip-card-back-hint">클릭하여 앞면 보기</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="example-panel" id="examplePanel" style="display:none;">
-                    <div id="exampleContent"></div>
+                    <!-- Right: Info + Examples -->
+                    <div class="info-panel-right">
+                        <div class="char-info">
+                            <div class="char-big" id="charBig"></div>
+                            <div class="char-details">
+                                <h2 id="charName"></h2>
+                                <p id="charDesc"></p>
+                                <div id="charTags" style="margin-top:8px;"></div>
+                            </div>
+                        </div>
+                        <div class="example-panel" id="examplePanel" style="display:none;">
+                            <div id="exampleContent"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -1841,6 +1977,13 @@
             document.getElementById('speedSlider').addEventListener('input', function() {
                 document.getElementById('speedValue').textContent = this.value + 'x';
             });
+
+            // URL parameter ?char= for shared links
+            var urlParams = new URLSearchParams(window.location.search);
+            var sharedChar = urlParams.get('char');
+            if (sharedChar) {
+                setTimeout(function() { selectChar(sharedChar); }, 300);
+            }
         }
 
         function renderCategoryTabs() {
@@ -2141,6 +2284,7 @@
                 document.getElementById('charDesc').textContent = '사용자 입력 한자';
                 document.getElementById('charTags').innerHTML = '<span class="tag">사용자 입력</span>' + (PINYIN_DATA[char] ? '<span class="tag">' + PINYIN_DATA[char] + '</span>' : '') + '<span class="tag">HSK ' + hskLabel(getHSK(char)) + '</span>';
             }
+            populateFlipCard(char);
         }
 
         function addToHistory(char) {
@@ -2288,6 +2432,177 @@
         if ('speechSynthesis' in window) {
             window.speechSynthesis.getVoices();
             window.speechSynthesis.onvoiceschanged = function() { window.speechSynthesis.getVoices(); };
+        }
+
+        // ===== FLIP CARD =====
+        var MEANING_EMOJI = {
+            '하늘':'🌌','땅':'🌍','해':'☀️','달':'🌙','별':'⭐','빛':'✨','바람':'🌬️','구름':'☁️',
+            '비':'🌧️','눈':'❄️','우레':'⚡','물':'💧','불':'🔥','흙':'🪨','돌':'🪨','뫼':'⛰️',
+            '산':'⛰️','바다':'🌊','나무':'🌳','꽃':'🌸','풀':'🌿','대':'🎋','과일':'🍎','곡식':'🌾',
+            '사람':'🧑','여자':'👩','남자':'👨','아이':'👶','늙다':'👴','임금':'👑','벗':'🤝',
+            '마음':'💜','사랑':'❤️','기쁘다':'😊','슬프다':'😢','성내다':'😠','두렵다':'😨',
+            '눈':'👁️','귀':'👂','입':'👄','손':'✋','발':'🦶','뼈':'🦴','피':'🩸',
+            '말':'💬','글':'📝','배우다':'📚','가르치다':'👨‍🏫','책':'📖','붓':'🖌️',
+            '칼':'🗡️','활':'🏹','싸우다':'⚔️','군사':'🪖','수레':'🛞','배':'🚢','말':'🐴',
+            '집':'🏠','문':'🚪','길':'🛤️','다리':'🌉','탑':'🗼','성':'🏯',
+            '밥':'🍚','술':'🍶','차':'🍵','옷':'👘','비단':'🧣',
+            '소':'🐄','말':'🐴','양':'🐑','개':'🐕','닭':'🐓','새':'🐦','물고기':'🐟',
+            '벌레':'🐛','용':'🐉','거북':'🐢','범':'🐅','사슴':'🦌','코끼리':'🐘',
+            '금':'🥇','은':'🥈','쇠':'⚙️','구슬':'💎','거울':'🪞',
+            '하나':'1️⃣','둘':'2️⃣','셋':'3️⃣','넷':'4️⃣','다섯':'5️⃣',
+            '크다':'📐','작다':'🔹','높다':'📈','깊다':'🕳️','넓다':'🌐',
+            '봄':'🌱','여름':'☀️','가을':'🍂','겨울':'⛄',
+            '동녘':'🌅','서녘':'🌇','남녘':'🧭','북녘':'🧊',
+            '골짜기':'🏞️','들':'🌾','수풀':'🌲','섬':'🏝️','호수':'🏞️',
+            '나라':'🏛️','고을':'🏘️','서울':'🏙️'
+        };
+        var CATEGORY_EMOJI = {};
+        HANZI_CATEGORIES.forEach(function(cat) { CATEGORY_EMOJI[cat.id] = cat.icon; });
+
+        function getCharEmoji(char) {
+            var info = charLookup[char];
+            if (info) {
+                var meaning = info.meaning;
+                if (MEANING_EMOJI[meaning]) return MEANING_EMOJI[meaning];
+                // partial match
+                var keys = Object.keys(MEANING_EMOJI);
+                for (var i = 0; i < keys.length; i++) {
+                    if (meaning.indexOf(keys[i]) !== -1) return MEANING_EMOJI[keys[i]];
+                }
+                // category fallback
+                if (info.category) {
+                    var cat = HANZI_CATEGORIES.find(function(c) { return c.name === info.category; });
+                    if (cat) return cat.icon;
+                }
+            }
+            return char;
+        }
+
+        function populateFlipCard(char) {
+            var info = charLookup[char];
+            var fc = document.getElementById('flipCard');
+            fc.classList.remove('flipped');
+            fc.dataset.char = char;
+
+            document.getElementById('flipChar').textContent = char;
+            document.getElementById('flipReading').textContent = info ? info.meaning + ' ' + info.reading : char;
+            document.getElementById('flipPinyin').textContent = (typeof PINYIN_DATA !== 'undefined' && PINYIN_DATA[char]) ? '[' + PINYIN_DATA[char] + ']' : '';
+            document.getElementById('flipEmojiBg').textContent = getCharEmoji(char);
+            document.getElementById('flipHsk').innerHTML = hskBadgeHTML(char);
+
+            // Reset back face
+            var ex = document.getElementById('flipExamples');
+            ex.dataset.loadedChar = '';
+            ex.innerHTML = '<div class="flip-card-back-loading">카드를 뒤집으면 예문을 불러옵니다</div>';
+        }
+
+        function toggleFlipCard() {
+            var fc = document.getElementById('flipCard');
+            fc.classList.toggle('flipped');
+            if (fc.classList.contains('flipped')) {
+                loadFlipCardExamples(fc.dataset.char);
+            }
+        }
+
+        function loadFlipCardExamples(char) {
+            var container = document.getElementById('flipExamples');
+            if (container.dataset.loadedChar === char) return;
+
+            if (exampleCache[char]) {
+                renderFlipCardExamples(char, exampleCache[char]);
+                return;
+            }
+
+            container.innerHTML = '<div class="flip-card-back-loading">Claude AI 예문 생성 중...</div>';
+
+            var info = charLookup[char];
+            var meaning = info ? info.meaning + '(' + info.reading + ')' : char;
+            var apiKey = localStorage.getItem('claude_api_key') || (typeof CLAUDE_CONFIG !== 'undefined' && CLAUDE_CONFIG.apiKey) || '';
+            var apiModel = (typeof CLAUDE_CONFIG !== 'undefined' && CLAUDE_CONFIG.model) || 'claude-sonnet-4-20250514';
+
+            if (!apiKey) {
+                container.innerHTML = '<div class="flip-card-back-loading" style="color:var(--warning);flex-direction:column;gap:8px;">API 키가 필요합니다<br><button class="btn btn-sm btn-outline" onclick="event.stopPropagation();showApiKeyModal()">API 키 설정</button></div>';
+                return;
+            }
+
+            fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: apiModel,
+                    max_tokens: 400,
+                    messages: [{
+                        role: 'user',
+                        content: '한자 "' + char + '"(' + meaning + ')이 포함된 중국어 예문 2개를 만들어줘. 각 예문마다 중국어 문장, 한어병음(pinyin), 한국어 번역을 제공해. 반드시 아래 JSON 형식으로만 응답해:\n[{"zh":"중국어문장","pinyin":"병음","ko":"한국어번역"},{"zh":"중국어문장","pinyin":"병음","ko":"한국어번역"}]'
+                    }]
+                })
+            })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.content && data.content[0] && data.content[0].text) {
+                    var text = data.content[0].text.trim();
+                    var jsonMatch = text.match(/\[[\s\S]*\]/);
+                    if (jsonMatch) {
+                        var examples = JSON.parse(jsonMatch[0]);
+                        exampleCache[char] = examples;
+                        renderFlipCardExamples(char, examples);
+                    } else {
+                        container.innerHTML = '<div class="flip-card-back-loading" style="color:var(--danger);">파싱 실패</div>';
+                    }
+                } else if (data.error) {
+                    container.innerHTML = '<div class="flip-card-back-loading" style="color:var(--danger);">API 오류</div>';
+                }
+            })
+            .catch(function(err) {
+                container.innerHTML = '<div class="flip-card-back-loading" style="color:var(--danger);">요청 실패</div>';
+            });
+        }
+
+        function renderFlipCardExamples(char, examples) {
+            var container = document.getElementById('flipExamples');
+            container.dataset.loadedChar = char;
+            var html = '';
+            examples.forEach(function(ex, i) {
+                if (i > 0) html += '<div class="example-divider"></div>';
+                var zhHighlighted = ex.zh.split('').map(function(c) {
+                    return c === char ? '<span style="color:var(--accent);font-weight:700;">' + c + '</span>' : c;
+                }).join('');
+                html += '<div class="example-sentence">'
+                    + '<div class="example-zh"><span>' + zhHighlighted + '</span>'
+                    + '<button class="tts-btn" onclick="event.stopPropagation();speakChinese(\'' + ex.zh.replace(/'/g, "\\'") + '\')" title="발음 듣기">&#128264;</button>'
+                    + '</div>'
+                    + '<div class="example-pinyin">' + ex.pinyin + '</div>'
+                    + '<div class="example-ko">' + ex.ko + '</div>'
+                    + '</div>';
+            });
+            container.innerHTML = html;
+        }
+
+        function shareFlipCard(event) {
+            event.stopPropagation();
+            var char = document.getElementById('flipCard').dataset.char;
+            var info = charLookup[char];
+            var pinyin = (typeof PINYIN_DATA !== 'undefined' && PINYIN_DATA[char]) || '';
+            var text = char;
+            if (info) text += ' ' + info.meaning + ' ' + info.reading;
+            if (pinyin) text += ' [' + pinyin + ']';
+            var url = window.location.origin + window.location.pathname + '?char=' + encodeURIComponent(char);
+            text += '\n' + url;
+
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(function() {
+                    showToast('공유 링크가 복사되었습니다');
+                });
+            } else if (navigator.share) {
+                navigator.share({ title: char + ' - 한자 학습', text: text, url: url });
+            } else {
+                showToast('복사 실패');
+            }
         }
 
         // ===== API Key Modal =====
