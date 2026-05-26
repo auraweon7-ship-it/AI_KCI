@@ -1946,15 +1946,15 @@
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0.8);
             background: var(--surface-solid); border: 2px solid var(--warning);
             border-radius: 20px; padding: 32px 40px; text-align: center; z-index: 10000;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.5); opacity: 0;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5); display: none; opacity: 0;
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
-        .badge-unlock-toast.show { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        .badge-unlock-toast.show { display: block; opacity: 1; transform: translate(-50%, -50%) scale(1); }
         .badge-unlock-toast .bu-icon { font-size: 56px; }
         .badge-unlock-toast .bu-title { font-size: 12px; color: var(--warning); font-weight: 700; text-transform: uppercase; letter-spacing: 2px; margin-top: 8px; }
         .badge-unlock-toast .bu-name { font-size: 20px; font-weight: 800; margin-top: 4px; }
-        .badge-unlock-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; opacity: 0; transition: opacity 0.3s; }
-        .badge-unlock-backdrop.show { opacity: 1; }
+        .badge-unlock-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; display: none; opacity: 0; transition: opacity 0.3s; }
+        .badge-unlock-backdrop.show { display: block; opacity: 1; }
 
         /* ===== RADICAL TAG ===== */
         .radical-tag {
@@ -4338,13 +4338,25 @@
         function showBadgeUnlock(badge) {
             document.getElementById('buIcon').textContent = badge.icon;
             document.getElementById('buName').textContent = badge.name;
-            document.getElementById('badgeUnlockBg').classList.add('show');
-            document.getElementById('badgeUnlockToast').classList.add('show');
+            var bg = document.getElementById('badgeUnlockBg');
+            var toast = document.getElementById('badgeUnlockToast');
+            bg.style.display = 'block';
+            toast.style.display = 'block';
+            requestAnimationFrame(function() {
+                bg.classList.add('show');
+                toast.classList.add('show');
+            });
             setTimeout(closeBadgeUnlock, 2500);
         }
         function closeBadgeUnlock() {
-            document.getElementById('badgeUnlockBg').classList.remove('show');
-            document.getElementById('badgeUnlockToast').classList.remove('show');
+            var bg = document.getElementById('badgeUnlockBg');
+            var toast = document.getElementById('badgeUnlockToast');
+            bg.classList.remove('show');
+            toast.classList.remove('show');
+            setTimeout(function() {
+                bg.style.display = 'none';
+                toast.style.display = 'none';
+            }, 400);
         }
         function renderBadgeSection() {
             var ach = getAchievements();
