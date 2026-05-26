@@ -184,9 +184,36 @@ app.get('/api/admin/learners/:id', auth, async function (req, res) {
     }
 });
 
+// --- Visitor Counter ---
+app.post('/api/visit', async function (req, res) {
+    try {
+        var result = await pool.query(
+            `INSERT INTO site_stats (key, value) VALUES ('visits', 1)
+             ON CONFLICT (key) DO UPDATE SET value = site_stats.value + 1
+             RETURNING value`
+        );
+        res.json({ count: result.rows[0].value });
+    } catch (e) {
+        res.status(500).json({ error: 'Count failed' });
+    }
+});
+
+app.get('/api/visit', async function (req, res) {
+    try {
+        var result = await pool.query("SELECT value FROM site_stats WHERE key = 'visits'");
+        res.json({ count: result.rows.length > 0 ? result.rows[0].value : 0 });
+    } catch (e) {
+        res.status(500).json({ error: 'Count failed' });
+    }
+});
+
 // --- DB Init ---
 async function initDB() {
     await pool.query(`
+        CREATE TABLE IF NOT EXISTS site_stats (
+            key VARCHAR(50) PRIMARY KEY,
+            value INTEGER DEFAULT 0
+        );
         CREATE TABLE IF NOT EXISTS users (
             id SERIAL PRIMARY KEY,
             google_id VARCHAR(255) UNIQUE,
