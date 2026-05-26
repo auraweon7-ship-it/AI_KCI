@@ -186,6 +186,70 @@
             color: var(--text);
         }
 
+        .api-key-btn {
+            position: relative;
+            padding: 7px 12px;
+            background: var(--surface2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-dim);
+            font-size: 12px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .api-key-btn:hover { border-color: var(--accent2); color: var(--text); }
+        .api-key-btn.configured { border-color: var(--success); color: var(--success); }
+        .api-key-btn .key-icon { font-size: 14px; }
+
+        .api-modal-content {
+            width: 440px;
+            max-width: 92vw;
+        }
+        .api-key-input {
+            width: 100%;
+            padding: 12px 14px;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            margin: 12px 0;
+            box-sizing: border-box;
+        }
+        .api-key-input:focus { outline: none; border-color: var(--accent2); }
+        .api-key-hint {
+            font-size: 12px;
+            color: var(--text-dim);
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+        .api-key-actions { display: flex; gap: 8px; justify-content: flex-end; }
+        .api-key-actions .btn-save {
+            padding: 8px 20px;
+            background: linear-gradient(135deg, var(--accent2), var(--accent));
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .api-key-actions .btn-clear {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-dim);
+            font-size: 13px;
+            cursor: pointer;
+        }
+
         .nav-admin-btn {
             background: rgba(244, 114, 182, 0.1);
             border-color: rgba(244, 114, 182, 0.25);
@@ -1477,6 +1541,9 @@
                     <span id="navUserName" class="nav-username"></span>
                     <button class="nav-btn" onclick="googleLogout()">로그아웃</button>
                 </div>
+                <button id="apiKeyBtn" class="api-key-btn" onclick="showApiKeyModal()">
+                    <span class="key-icon">🔑</span> API 키
+                </button>
                 <button class="nav-btn nav-admin-btn" onclick="showAdminLogin()">관리자</button>
             </div>
         </div>
@@ -1490,6 +1557,22 @@
             <div class="modal-actions">
                 <button class="btn btn-primary btn-sm" onclick="tryAdminLogin()">로그인</button>
                 <button class="btn btn-outline btn-sm" onclick="closeAdminModal()">취소</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- API Key Modal -->
+    <div class="modal-overlay" id="apiKeyModal" style="display:none;" onclick="if(event.target===this)closeApiKeyModal()">
+        <div class="modal api-modal-content">
+            <h3>🔑 Claude API 키 설정</h3>
+            <div class="api-key-hint">
+                중국어 예문 생성에 사용됩니다.<br>
+                <a href="https://console.anthropic.com" target="_blank" style="color:var(--accent2);">console.anthropic.com</a>에서 발급받을 수 있습니다.
+            </div>
+            <input type="password" class="api-key-input" id="claudeApiKeyInput" placeholder="sk-ant-api03-..." onkeydown="if(event.key==='Enter')saveApiKey()">
+            <div class="api-key-actions">
+                <button class="btn-clear" onclick="clearApiKey()">초기화</button>
+                <button class="btn-save" onclick="saveApiKey()">저장</button>
             </div>
         </div>
     </div>
@@ -2088,16 +2171,25 @@
             var info = charLookup[char];
             var meaning = info ? info.meaning + '(' + info.reading + ')' : char;
 
+            var apiKey = localStorage.getItem('claude_api_key') || (typeof CLAUDE_CONFIG !== 'undefined' && CLAUDE_CONFIG.apiKey) || '';
+            var apiModel = (typeof CLAUDE_CONFIG !== 'undefined' && CLAUDE_CONFIG.model) || 'claude-sonnet-4-20250514';
+            if (!apiKey) {
+                btn.classList.remove('loading');
+                btn.textContent = '예문 보기';
+                panel.querySelector('#exampleContent').innerHTML = '<div style="color:var(--warning);">Claude API 키가 설정되지 않았습니다.<br><button class="btn btn-sm btn-outline" style="margin-top:8px;" onclick="showApiKeyModal()">API 키 설정하기</button></div>';
+                return;
+            }
+
             fetch('https://api.anthropic.com/v1/messages', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'x-api-key': CLAUDE_CONFIG.apiKey,
+                    'x-api-key': apiKey,
                     'anthropic-version': '2023-06-01',
                     'anthropic-dangerous-direct-browser-access': 'true'
                 },
                 body: JSON.stringify({
-                    model: CLAUDE_CONFIG.model,
+                    model: apiModel,
                     max_tokens: 400,
                     messages: [{
                         role: 'user',
@@ -2176,6 +2268,52 @@
             window.speechSynthesis.onvoiceschanged = function() { window.speechSynthesis.getVoices(); };
         }
 
+        // ===== API Key Modal =====
+        function showApiKeyModal() {
+            document.getElementById('apiKeyModal').style.display = 'flex';
+            var input = document.getElementById('claudeApiKeyInput');
+            var saved = localStorage.getItem('claude_api_key') || '';
+            input.value = saved;
+            setTimeout(function() { input.focus(); }, 100);
+        }
+
+        function closeApiKeyModal() {
+            document.getElementById('apiKeyModal').style.display = 'none';
+        }
+
+        function saveApiKey() {
+            var key = document.getElementById('claudeApiKeyInput').value.trim();
+            if (key) {
+                localStorage.setItem('claude_api_key', key);
+                updateApiKeyBtn();
+                closeApiKeyModal();
+                showToast('API 키가 저장되었습니다');
+            } else {
+                showToast('API 키를 입력해주세요');
+            }
+        }
+
+        function clearApiKey() {
+            localStorage.removeItem('claude_api_key');
+            document.getElementById('claudeApiKeyInput').value = '';
+            updateApiKeyBtn();
+            closeApiKeyModal();
+            showToast('API 키가 초기화되었습니다');
+        }
+
+        function updateApiKeyBtn() {
+            var btn = document.getElementById('apiKeyBtn');
+            var hasKey = !!localStorage.getItem('claude_api_key') || (typeof CLAUDE_CONFIG !== 'undefined' && !!CLAUDE_CONFIG.apiKey);
+            if (hasKey) {
+                btn.classList.add('configured');
+                btn.innerHTML = '<span class="key-icon">🔑</span> API 설정됨';
+            } else {
+                btn.classList.remove('configured');
+                btn.innerHTML = '<span class="key-icon">🔑</span> API 키';
+            }
+        }
+
+        updateApiKeyBtn();
         init();
     </script>
     <script src="auth.js"></script>
