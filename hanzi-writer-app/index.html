@@ -41,6 +41,7 @@
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
 
         body {
             font-family: 'Inter', 'Noto Sans KR', -apple-system, sans-serif;
@@ -117,6 +118,8 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            filter: drop-shadow(0 0 12px rgba(124,106,255,0.25));
+            letter-spacing: 1px;
         }
 
         .nav-visitor {
@@ -741,14 +744,20 @@
             align-items: center;
             gap: 6px;
             margin-top: 14px;
-            padding: 8px 18px;
-            background: var(--surface);
+            padding: 8px 20px;
+            background: linear-gradient(135deg, rgba(94,234,212,0.08), rgba(124,106,255,0.08));
             backdrop-filter: var(--glass);
-            border: 1px solid var(--border);
+            border: 1px solid rgba(94,234,212,0.2);
             border-radius: 100px;
             font-size: 13px;
             font-weight: 600;
             color: var(--accent2);
+            transition: all 0.3s;
+        }
+
+        .total-count:hover {
+            border-color: rgba(94,234,212,0.4);
+            box-shadow: 0 4px 16px rgba(94,234,212,0.15);
         }
 
         .total-count::before {
@@ -780,13 +789,15 @@
             margin-bottom: 24px;
         }
 
+        .search-section { position: relative; }
+
         .search-input {
             flex: 1;
             background: var(--surface);
             backdrop-filter: var(--glass);
             border: 1px solid var(--border);
             border-radius: 16px;
-            padding: 16px 24px;
+            padding: 16px 24px 16px 48px;
             color: var(--text);
             font-size: 20px;
             font-family: inherit;
@@ -794,9 +805,18 @@
             transition: all 0.3s ease;
         }
 
+        .search-icon {
+            position: absolute; left: 18px; top: 50%; transform: translateY(-50%);
+            font-size: 18px; color: var(--text-dim); pointer-events: none; z-index: 1;
+            transition: color 0.3s;
+        }
+
+        .search-input:focus ~ .search-icon,
+        .search-input:focus + .search-icon { color: var(--accent); }
+
         .search-input:focus {
             border-color: var(--accent);
-            box-shadow: 0 0 0 3px var(--accent-glow), var(--shadow);
+            box-shadow: 0 0 0 3px var(--accent-glow), 0 8px 32px rgba(124,106,255,0.12);
         }
 
         .search-input::placeholder {
@@ -837,7 +857,7 @@
         }
 
         .btn-primary:hover {
-            transform: translateY(-2px);
+            transform: translateY(-2px) scale(1.02);
             box-shadow: 0 8px 24px rgba(124,106,255,0.4);
         }
 
@@ -861,7 +881,7 @@
         }
 
         .btn-success:hover {
-            transform: translateY(-2px);
+            transform: translateY(-2px) scale(1.02);
             box-shadow: 0 8px 24px rgba(52,211,153,0.4);
         }
 
@@ -901,10 +921,11 @@
         }
 
         .cat-tab.active {
-            background: linear-gradient(135deg, rgba(124,106,255,0.25), rgba(94,234,212,0.15));
-            border-color: rgba(124,106,255,0.4);
+            background: linear-gradient(135deg, rgba(124,106,255,0.3), rgba(94,234,212,0.15));
+            border-color: rgba(124,106,255,0.5);
             color: #fff;
-            box-shadow: 0 4px 16px rgba(124,106,255,0.15);
+            box-shadow: 0 4px 16px rgba(124,106,255,0.2);
+            transform: translateY(-1px);
         }
 
         .cat-tab .cat-count {
@@ -1080,16 +1101,17 @@
         }
 
         .char-cell:hover {
-            border-color: rgba(124,106,255,0.4);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(124,106,255,0.12);
-            background: rgba(124,106,255,0.08);
+            border-color: rgba(124,106,255,0.5);
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 8px 24px rgba(124,106,255,0.2), 0 0 0 1px rgba(124,106,255,0.15);
+            background: rgba(124,106,255,0.1);
         }
 
         .char-cell.selected {
             border-color: var(--accent);
-            background: linear-gradient(135deg, rgba(124,106,255,0.15), rgba(94,234,212,0.08));
-            box-shadow: 0 0 0 2px var(--accent-glow), 0 8px 20px rgba(124,106,255,0.15);
+            background: linear-gradient(135deg, rgba(124,106,255,0.2), rgba(94,234,212,0.1));
+            box-shadow: 0 0 0 2px var(--accent-glow), 0 8px 24px rgba(124,106,255,0.2);
+            transform: translateY(-2px);
         }
 
         .char-cell .hz { font-size: 30px; line-height: 1.2; font-family: 'Noto Serif KR', serif; }
@@ -1118,8 +1140,8 @@
             content: '';
             position: absolute;
             top: 0; left: 0; right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(124,106,255,0.3), rgba(94,234,212,0.2), transparent);
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(124,106,255,0.4), rgba(94,234,212,0.3), transparent);
         }
 
         .card-title {
@@ -1202,7 +1224,9 @@
             box-shadow: var(--shadow);
             position: relative;
             overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
+        .stat-card:hover { transform: translateY(-2px); box-shadow: 0 12px 36px rgba(0,0,0,0.4); }
 
         .stat-card::after {
             content: '';
@@ -1540,8 +1564,9 @@
 
         .history-item:hover {
             border-color: var(--accent);
-            transform: scale(1.12) translateY(-2px);
-            box-shadow: 0 8px 20px rgba(124,106,255,0.2);
+            transform: scale(1.15) translateY(-3px);
+            box-shadow: 0 8px 24px rgba(124,106,255,0.25);
+            background: rgba(124,106,255,0.1);
         }
 
         .preset-label {
@@ -1734,12 +1759,18 @@
         .quiz-result-score { font-size: 52px; font-weight: 800; }
         .quiz-result-label { font-size: 14px; color: var(--text-dim); margin-top: 4px; }
         .quiz-launcher {
-            display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; align-items: center;
-            padding: 14px 18px; background: var(--surface); backdrop-filter: var(--glass);
-            border: 1px solid var(--border); border-radius: 16px;
+            display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; align-items: center;
+            padding: 16px 20px; background: linear-gradient(135deg, rgba(18,18,35,0.9), rgba(30,20,60,0.7));
+            backdrop-filter: var(--glass);
+            border: 1px solid rgba(124,106,255,0.2); border-radius: 16px;
+            position: relative; overflow: hidden;
+        }
+        .quiz-launcher::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent3));
         }
         .quiz-launcher-label {
-            font-size: 11px; color: var(--text-dim); text-transform: uppercase;
+            font-size: 11px; color: var(--accent); text-transform: uppercase;
             letter-spacing: 1.5px; font-weight: 700; margin-right: 6px;
         }
 
@@ -1848,8 +1879,14 @@
         .daily-goal-icon { font-size: 20px; flex-shrink: 0; }
         .daily-goal-info { flex: 1; min-width: 0; }
         .daily-goal-label { font-size: 11px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
-        .daily-goal-progress-wrap { margin-top: 4px; background: var(--surface2); border-radius: 6px; height: 8px; overflow: hidden; }
-        .daily-goal-progress-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width 0.5s ease; }
+        .daily-goal-progress-wrap { margin-top: 4px; background: var(--surface2); border-radius: 6px; height: 10px; overflow: hidden; box-shadow: inset 0 1px 3px rgba(0,0,0,0.2); }
+        .daily-goal-progress-fill {
+            height: 100%; border-radius: 6px;
+            background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent3));
+            background-size: 200% 100%; animation: goalShimmer 3s ease infinite;
+            transition: width 0.5s ease; box-shadow: 0 0 8px rgba(94,234,212,0.3);
+        }
+        @keyframes goalShimmer { 0%,100%{background-position:0% 50%} 50%{background-position:100% 50%} }
         .daily-goal-count { font-size: 14px; font-weight: 700; color: var(--accent2); white-space: nowrap; }
         .daily-goal-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 11px; color: var(--text-dim); cursor: pointer; font-family: inherit; transition: all 0.2s; }
         .daily-goal-btn:hover { border-color: var(--accent); color: var(--text); }
@@ -1907,10 +1944,17 @@
             padding: 14px 8px; background: var(--surface2); border: 1px solid var(--border);
             border-radius: 14px; transition: all 0.3s; position: relative;
         }
-        .badge-item.locked { opacity: 0.35; filter: grayscale(100%); }
-        .badge-item.unlocked { border-color: rgba(251,191,36,0.3); }
-        .badge-item.unlocked:hover { border-color: var(--warning); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(251,191,36,0.15); }
-        .badge-icon { font-size: 32px; margin-bottom: 6px; }
+        .badge-item.locked { opacity: 0.3; filter: grayscale(100%) brightness(0.7); }
+        .badge-item.unlocked {
+            border-color: rgba(251,191,36,0.35);
+            background: linear-gradient(135deg, rgba(251,191,36,0.06), rgba(124,106,255,0.04));
+        }
+        .badge-item.unlocked:hover {
+            border-color: var(--warning); transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 8px 28px rgba(251,191,36,0.2), 0 0 0 1px rgba(251,191,36,0.1);
+        }
+        .badge-icon { font-size: 32px; margin-bottom: 6px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2)); }
+        .badge-item.unlocked .badge-icon { filter: drop-shadow(0 2px 8px rgba(251,191,36,0.3)); }
         .badge-name { font-size: 11px; font-weight: 700; color: var(--text); }
         .badge-desc { font-size: 9px; color: var(--text-dim); margin-top: 2px; }
         .badge-new { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; background: var(--danger); border-radius: 50%; border: 2px solid var(--surface-solid); animation: badgePing 1s ease infinite; }
@@ -1976,10 +2020,17 @@
         }
         .idiom-card {
             background: var(--surface2); border: 1px solid var(--border); border-radius: 16px;
-            padding: 16px; cursor: pointer; transition: all 0.3s ease; position: relative; overflow: hidden;
+            padding: 18px 16px 16px; cursor: pointer; transition: all 0.3s ease; position: relative; overflow: hidden;
         }
-        .idiom-card:hover { border-color: var(--accent); transform: translateY(-3px); box-shadow: 0 8px 24px rgba(124,106,255,0.15); }
+        .idiom-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--accent2));
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .idiom-card:hover::before { opacity: 1; }
+        .idiom-card:hover { border-color: rgba(124,106,255,0.4); transform: translateY(-4px); box-shadow: 0 12px 32px rgba(124,106,255,0.15); }
         .idiom-card.expanded { border-color: var(--accent2); }
+        .idiom-card.expanded::before { opacity: 1; background: linear-gradient(90deg, var(--accent2), var(--accent)); }
         .idiom-card-chars {
             font-family: 'Noto Serif KR', serif; font-size: 28px; font-weight: 700;
             letter-spacing: 4px; color: var(--text); margin-bottom: 6px;
@@ -2276,7 +2327,10 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .char-grid-section, .info-panel, .stats-bar, .main-layout, .stroke-card { animation: slideUp 0.4s ease; }
+        .char-grid-section, .info-panel, .stats-bar, .main-layout, .stroke-card { animation: slideUp 0.5s ease both; }
+        .wordlist-section, .mistake-section, .badge-section, .idiom-section { animation: slideUp 0.5s ease both; }
+        .quiz-launcher { animation: slideUp 0.4s ease both; animation-delay: 0.05s; }
+        .daily-goal-bar { animation: slideUp 0.4s ease both; animation-delay: 0.1s; }
     </style>
 </head>
 <body>
@@ -2384,6 +2438,7 @@
         <div class="container">
             <!-- Search -->
             <div class="search-section">
+                <span class="search-icon">🔍</span>
                 <input type="text" class="search-input" id="charInput" placeholder="한자 또는 훈음 검색 (예: 愛, 사랑, 물)" maxlength="20">
                 <button class="btn btn-primary" onclick="handleSearch()">검색</button>
             </div>
