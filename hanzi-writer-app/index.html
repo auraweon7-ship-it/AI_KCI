@@ -2776,15 +2776,6 @@
                 <div class="mistake-grid" id="mistakeGrid"></div>
             </div>
 
-            <!-- Achievement Badges -->
-            <div class="badge-section" id="badgeSection">
-                <div class="my-stats-header">
-                    <div class="my-stats-title">🏆 성취 배지</div>
-                    <div style="font-size:12px;color:var(--text-dim);" id="badgeProgress">0/12</div>
-                </div>
-                <div class="badge-grid" id="badgeGrid"></div>
-            </div>
-
             <!-- 고사성어 Idiom Cards -->
             <div class="idiom-section" id="idiomSection">
                 <div class="my-stats-header">
@@ -2802,6 +2793,15 @@
                 <div class="idiom-count" id="idiomCount"></div>
                 <div class="idiom-grid" id="idiomGrid"></div>
                 <div class="idiom-pager" id="idiomPager"></div>
+            </div>
+
+            <!-- Achievement Badges -->
+            <div class="badge-section" id="badgeSection">
+                <div class="my-stats-header">
+                    <div class="my-stats-title">🏆 성취 배지</div>
+                    <div style="font-size:12px;color:var(--text-dim);" id="badgeProgress">0/16</div>
+                </div>
+                <div class="badge-grid" id="badgeGrid"></div>
             </div>
 
             <!-- History -->
@@ -4313,7 +4313,11 @@
             { id:'perfect', icon:'💯', name:'퀴즈 만점', desc:'퀴즈 100점 달성', check: function(s){return s.perfectQuiz;} },
             { id:'srs10', icon:'🧠', name:'복습 마스터', desc:'SRS 10회 완료', check: function(s){return s.srsReviews>=10;} },
             { id:'lists3', icon:'📚', name:'수집가', desc:'단어장 3개 생성', check: function(s){return s.wordlists>=3;} },
-            { id:'goalWeek', icon:'🎯', name:'목표 달성왕', desc:'목표 7회 달성', check: function(s){return s.goalsCompleted>=7;} }
+            { id:'goalWeek', icon:'🎯', name:'목표 달성왕', desc:'목표 7회 달성', check: function(s){return s.goalsCompleted>=7;} },
+            { id:'idiom10', icon:'📜', name:'고사성어 입문', desc:'고사성어 10개 학습', check: function(s){return s.idioms>=10;} },
+            { id:'idiom50', icon:'📖', name:'고사성어 탐험가', desc:'고사성어 50개 학습', check: function(s){return s.idioms>=50;} },
+            { id:'idiom100', icon:'🎓', name:'고사성어 학자', desc:'고사성어 100개 학습', check: function(s){return s.idioms>=100;} },
+            { id:'idiom281', icon:'🏅', name:'고사성어 마스터', desc:'고사성어 281개 완료', check: function(s){return s.idioms>=281;} }
         ];
         function getAchievements() { return JSON.parse(localStorage.getItem('hanzi_achievements') || '{}'); }
         function saveAchievements(d) { localStorage.setItem('hanzi_achievements', JSON.stringify(d)); }
@@ -4338,13 +4342,16 @@
             var srsData = getSRSData();
             var srsReviews = 0;
             Object.keys(srsData).forEach(function(k) { srsReviews += srsData[k].repetitions || 0; });
+            var learnedIdioms = getLearnedIdioms();
+            var idiomCount = Object.keys(learnedIdioms).length;
             return {
                 chars: practiced.size,
                 streak: streak,
                 perfectQuiz: !!ach._perfectQuiz,
                 srsReviews: srsReviews,
                 wordlists: wordlists,
-                goalsCompleted: parseInt(localStorage.getItem('goals_completed') || '0')
+                goalsCompleted: parseInt(localStorage.getItem('goals_completed') || '0'),
+                idioms: idiomCount
             };
         }
         function checkAchievements() {
@@ -4459,7 +4466,7 @@
         var currentIdiomPage = 0;
         var IDIOMS_PER_PAGE = 24;
         var filteredIdioms = [];
-        var currentIdiomStatus = 'all'; // 'all' | 'unlearned' | 'learned'
+        var currentIdiomStatus = 'unlearned'; // 'all' | 'unlearned' | 'learned'
 
         function getLearnedIdioms() {
             try { return JSON.parse(localStorage.getItem('learnedIdioms') || '{}'); } catch(e) { return {}; }
@@ -4470,10 +4477,16 @@
         function toggleIdiomLearned(chars, evt) {
             if (evt) { evt.stopPropagation(); evt.preventDefault(); }
             var data = getLearnedIdioms();
-            if (data[chars]) { delete data[chars]; } else { data[chars] = Date.now(); }
+            var wasLearned = !!data[chars];
+            if (wasLearned) { delete data[chars]; } else { data[chars] = Date.now(); }
             saveLearnedIdioms(data);
-            renderIdiomGrid();
+            filterIdioms();
             renderIdiomStatusFilter();
+            renderBadgeSection();
+            checkAchievements();
+            if (!wasLearned) {
+                showToast('✅ ' + chars + ' 학습 완료!');
+            }
         }
         function setIdiomStatus(status) {
             currentIdiomStatus = status;
@@ -4500,9 +4513,7 @@
             document.getElementById('idiomTotal').textContent = IDIOM_DATA.length + '개';
             renderIdiomStatusFilter();
             renderIdiomCatTabs();
-            filteredIdioms = IDIOM_DATA.slice();
-            currentIdiomPage = 0;
-            renderIdiomGrid();
+            filterIdioms();
         }
 
         function renderIdiomCatTabs() {
@@ -4680,7 +4691,8 @@
 
         function toggleIdiomLearnedFromDetail(chars) {
             var data = getLearnedIdioms();
-            if (data[chars]) { delete data[chars]; } else { data[chars] = Date.now(); }
+            var wasLearned = !!data[chars];
+            if (wasLearned) { delete data[chars]; } else { data[chars] = Date.now(); }
             saveLearnedIdioms(data);
             var isLearned = !!data[chars];
             var btn = document.getElementById('idiomDetailCheck');
@@ -4688,8 +4700,17 @@
                 btn.className = 'idiom-detail-check' + (isLearned ? ' checked' : '');
                 btn.innerHTML = isLearned ? '✅ 학습 완료' : '☐ 학습 완료로 표시';
             }
-            renderIdiomGrid();
+            filterIdioms();
             renderIdiomStatusFilter();
+            renderBadgeSection();
+            checkAchievements();
+            // Auto-close modal after marking learned (brief delay for feedback)
+            if (isLearned) {
+                setTimeout(function() {
+                    closeIdiomDetail();
+                    showToast('✅ ' + chars + ' 학습 완료!');
+                }, 400);
+            }
         }
 
         // ESC key closes idiom detail
