@@ -13,6 +13,7 @@
     <script src="pinyin-data.js"></script>
     <script src="radical-data.js"></script>
     <script src="idiom-data.js"></script>
+    <script src="idiom-detail-data.js"></script>
     <script src="claude-config.js"></script>
     <style>
         :root {
@@ -1864,6 +1865,10 @@
         body.light-theme .flip-card-front, body.light-theme .flip-card-back { background: linear-gradient(160deg, #fff 0%, #f0f0f8 100%); }
         body.light-theme .quiz-modal { background: #fff; }
         body.light-theme .modal { background: #fff; }
+        body.light-theme .idiom-detail-modal { background: #fff; }
+        body.light-theme .idiom-detail-example { background: rgba(0,0,0,0.03); }
+        body.light-theme .idiom-detail-origin { background: rgba(0,0,0,0.03); }
+        body.light-theme .idiom-detail-char-tag { background: rgba(0,0,0,0.03); }
 
         /* ===== DAILY GOAL ===== */
         .daily-goal-bar {
@@ -2129,6 +2134,130 @@
         }
         .related-idiom-chip:hover { border-color: var(--accent); transform: scale(1.05); }
 
+        /* ===== IDIOM DETAIL MODAL ===== */
+        .idiom-detail-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(10px); display: flex; align-items: center;
+            justify-content: center; z-index: 1100; opacity: 0;
+            transition: opacity 0.3s; pointer-events: none;
+        }
+        .idiom-detail-overlay.active { opacity: 1; pointer-events: auto; }
+        .idiom-detail-modal {
+            background: var(--surface-solid); border: 1px solid var(--border);
+            border-radius: var(--radius); width: 480px; max-width: 94vw;
+            max-height: 85vh; overflow-y: auto; box-shadow: var(--shadow-lg);
+            position: relative; transform: translateY(20px) scale(0.97);
+            transition: transform 0.3s; padding: 0;
+        }
+        .idiom-detail-overlay.active .idiom-detail-modal { transform: translateY(0) scale(1); }
+        .idiom-detail-modal::-webkit-scrollbar { width: 6px; }
+        .idiom-detail-modal::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        .idiom-detail-header {
+            padding: 28px 24px 20px; text-align: center;
+            border-bottom: 1px solid var(--border); position: relative;
+            background: linear-gradient(180deg, rgba(124,106,255,0.06) 0%, transparent 100%);
+        }
+        .idiom-detail-header::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--accent3), var(--accent), var(--accent2));
+        }
+        .idiom-detail-emoji {
+            font-size: 40px; margin-bottom: 8px; display: block;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+        .idiom-detail-chars {
+            font-family: 'Noto Serif KR', serif; font-size: 36px; font-weight: 900;
+            letter-spacing: 6px; color: var(--text); margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--text) 0%, var(--accent2) 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .idiom-detail-pinyin {
+            font-size: 16px; color: var(--accent2); font-weight: 600; margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+        .idiom-detail-reading {
+            font-size: 14px; color: var(--text-dim); margin-bottom: 8px;
+        }
+        .idiom-detail-meaning {
+            font-size: 15px; color: var(--text); font-weight: 500; line-height: 1.6;
+        }
+        .idiom-detail-tts-row {
+            display: flex; gap: 8px; justify-content: center; margin-top: 12px;
+        }
+        .idiom-detail-tts {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 18px; border-radius: 20px; font-size: 13px; font-weight: 600;
+            background: rgba(94,234,212,0.1); border: 1px solid rgba(94,234,212,0.3);
+            color: var(--accent2); cursor: pointer; transition: all 0.2s;
+        }
+        .idiom-detail-tts:hover { background: rgba(94,234,212,0.2); transform: scale(1.05); }
+        .idiom-detail-close {
+            position: absolute; top: 12px; right: 12px; width: 32px; height: 32px;
+            border-radius: 50%; border: 1px solid var(--border); background: var(--surface2);
+            color: var(--text-dim); cursor: pointer; display: flex; align-items: center;
+            justify-content: center; font-size: 16px; transition: all 0.2s; z-index: 2;
+        }
+        .idiom-detail-close:hover { border-color: var(--danger); color: var(--danger); background: rgba(248,113,113,0.1); }
+        .idiom-detail-body { padding: 20px 24px 24px; }
+        .idiom-detail-section {
+            margin-bottom: 20px;
+        }
+        .idiom-detail-section:last-child { margin-bottom: 0; }
+        .idiom-detail-section-title {
+            font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase;
+            letter-spacing: 2px; margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+        }
+        .idiom-detail-section-title::before {
+            content: ''; width: 3px; height: 14px; border-radius: 2px;
+            background: var(--accent); display: inline-block;
+        }
+        .idiom-detail-example {
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 16px; margin-bottom: 10px;
+            transition: border-color 0.2s;
+        }
+        .idiom-detail-example:hover { border-color: rgba(124,106,255,0.3); }
+        .idiom-detail-example:last-child { margin-bottom: 0; }
+        .idiom-detail-ex-zh {
+            font-size: 17px; color: var(--text); font-weight: 600; line-height: 1.6;
+            margin-bottom: 6px; display: flex; align-items: flex-start; gap: 8px;
+        }
+        .idiom-detail-ex-zh span { flex: 1; }
+        .idiom-detail-ex-pinyin {
+            font-size: 13px; color: var(--accent2); margin-bottom: 4px; line-height: 1.5;
+        }
+        .idiom-detail-ex-ko {
+            font-size: 14px; color: var(--text-dim); line-height: 1.6;
+        }
+        .idiom-detail-origin {
+            font-size: 13px; color: var(--text-dim); line-height: 1.7;
+            padding: 14px 16px; background: var(--surface2); border-radius: var(--radius-sm);
+            border-left: 3px solid var(--accent3);
+        }
+        .idiom-detail-char-tags {
+            display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;
+        }
+        .idiom-detail-char-tag {
+            padding: 8px 14px; border-radius: 10px; font-size: 14px;
+            background: var(--surface2); border: 1px solid var(--border);
+            color: var(--text); cursor: pointer; transition: all 0.2s;
+            display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 70px;
+        }
+        .idiom-detail-char-tag:hover { border-color: var(--accent2); color: var(--accent2); transform: translateY(-2px); }
+        .idiom-detail-char-tag .char-big { font-size: 22px; font-family: 'Noto Serif KR', serif; font-weight: 700; }
+        .idiom-detail-char-tag .char-info { font-size: 11px; color: var(--text-dim); }
+        .idiom-detail-check {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            padding: 12px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600;
+            cursor: pointer; transition: all 0.25s; border: 1px solid var(--border);
+            background: var(--surface2); color: var(--text-dim); margin-top: 16px;
+        }
+        .idiom-detail-check:hover { border-color: var(--success); color: var(--success); }
+        .idiom-detail-check.checked {
+            background: rgba(52,211,153,0.1); border-color: var(--success); color: var(--success);
+        }
+
         /* ===== RESPONSIVE ===== */
         @media (max-width: 768px) {
             /* Nav */
@@ -2253,6 +2382,11 @@
             .idiom-section { padding: 16px; }
             .idiom-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
             .idiom-card-chars { font-size: 24px; }
+            .idiom-detail-modal { max-width: 96vw; }
+            .idiom-detail-header { padding: 22px 18px 16px; }
+            .idiom-detail-chars { font-size: 28px; letter-spacing: 4px; }
+            .idiom-detail-body { padding: 16px 18px 20px; }
+            .idiom-detail-ex-zh { font-size: 15px; }
         }
 
         @media (max-width: 580px) {
@@ -2734,6 +2868,24 @@
                 <button class="btn btn-primary btn-sm" onclick="saveDailyGoal()">저장</button>
                 <button class="btn btn-outline btn-sm" onclick="closeGoalModal()">취소</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Idiom Detail Modal -->
+    <div class="idiom-detail-overlay" id="idiomDetailOverlay" onclick="if(event.target===this)closeIdiomDetail()">
+        <div class="idiom-detail-modal" id="idiomDetailModal">
+            <div class="idiom-detail-header">
+                <button class="idiom-detail-close" onclick="closeIdiomDetail()">&times;</button>
+                <span class="idiom-detail-emoji" id="idiomDetailEmoji"></span>
+                <div class="idiom-detail-chars" id="idiomDetailChars"></div>
+                <div class="idiom-detail-pinyin" id="idiomDetailPinyin"></div>
+                <div class="idiom-detail-reading" id="idiomDetailReading"></div>
+                <div class="idiom-detail-meaning" id="idiomDetailMeaning"></div>
+                <div class="idiom-detail-tts-row">
+                    <button class="idiom-detail-tts" id="idiomDetailTts" onclick="event.stopPropagation()">🔊 발음 듣기</button>
+                </div>
+            </div>
+            <div class="idiom-detail-body" id="idiomDetailBody"></div>
         </div>
     </div>
 
@@ -4415,7 +4567,7 @@
                     charTags += '<span class="idiom-char-tag" onclick="event.stopPropagation();selectChar(\'' + ch + '\')" title="' + label + '">'
                         + ch + (info ? ' ' + info.reading : '') + '</span>';
                 }
-                html += '<div class="idiom-card' + (isLearned ? ' learned' : '') + '" id="idiomCard' + idx + '" onclick="toggleIdiomCard(' + idx + ')">'
+                html += '<div class="idiom-card' + (isLearned ? ' learned' : '') + '" id="idiomCard' + idx + '" onclick="openIdiomDetail(\'' + d.chars + '\')">'
                     + '<button class="idiom-check-btn' + (isLearned ? ' checked' : '') + '" onclick="toggleIdiomLearned(\'' + d.chars + '\',event)" title="' + (isLearned ? '학습완료 해제' : '학습완료 체크') + '">✓</button>'
                     + '<div class="idiom-card-cat">' + catInfo.icon + ' ' + catInfo.name + '</div>'
                     + '<div class="idiom-card-chars">' + charSpans + '</div>'
@@ -4448,10 +4600,104 @@
             document.getElementById('idiomSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
 
-        function toggleIdiomCard(idx) {
-            var card = document.getElementById('idiomCard' + idx);
-            if (card) card.classList.toggle('expanded');
+        function openIdiomDetail(chars) {
+            var idiom = IDIOM_DATA.find(function(d) { return d.chars === chars; });
+            if (!idiom) return;
+            var detail = (typeof IDIOM_DETAIL !== 'undefined') ? IDIOM_DETAIL[chars] : null;
+            var learned = getLearnedIdioms();
+            var isLearned = !!learned[chars];
+
+            // Header
+            document.getElementById('idiomDetailEmoji').textContent = detail ? detail.emoji : '📜';
+            document.getElementById('idiomDetailChars').textContent = chars;
+            document.getElementById('idiomDetailPinyin').textContent = detail ? detail.pinyin : '';
+            document.getElementById('idiomDetailReading').textContent = idiom.reading;
+            document.getElementById('idiomDetailMeaning').textContent = idiom.meaning;
+
+            // TTS button
+            var ttsBtn = document.getElementById('idiomDetailTts');
+            ttsBtn.onclick = function(e) { e.stopPropagation(); speakChinese(chars); };
+
+            // Body
+            var html = '';
+
+            // Example sentences
+            if (detail && detail.examples && detail.examples.length > 0) {
+                html += '<div class="idiom-detail-section">';
+                html += '<div class="idiom-detail-section-title">중국어 예문</div>';
+                detail.examples.forEach(function(ex) {
+                    var zhHighlighted = ex.zh;
+                    // Highlight the idiom in simplified form within the sentence
+                    html += '<div class="idiom-detail-example">';
+                    html += '<div class="idiom-detail-ex-zh">';
+                    html += '<span>' + ex.zh + '</span>';
+                    html += '<button class="tts-btn" onclick="event.stopPropagation();speakChinese(\'' + ex.zh.replace(/'/g, "\\'") + '\')" title="발음 듣기">&#128264;</button>';
+                    html += '</div>';
+                    html += '<div class="idiom-detail-ex-pinyin">' + ex.pinyin + '</div>';
+                    html += '<div class="idiom-detail-ex-ko">' + ex.ko + '</div>';
+                    html += '</div>';
+                });
+                html += '</div>';
+            }
+
+            // Origin
+            html += '<div class="idiom-detail-section">';
+            html += '<div class="idiom-detail-section-title">유래</div>';
+            html += '<div class="idiom-detail-origin">' + idiom.origin + '</div>';
+            html += '</div>';
+
+            // Character breakdown
+            html += '<div class="idiom-detail-section">';
+            html += '<div class="idiom-detail-section-title">글자 분석</div>';
+            html += '<div class="idiom-detail-char-tags">';
+            for (var c = 0; c < chars.length; c++) {
+                var ch = chars[c];
+                var info = charLookup[ch];
+                html += '<div class="idiom-detail-char-tag" onclick="event.stopPropagation();closeIdiomDetail();selectChar(\'' + ch + '\')">';
+                html += '<span class="char-big">' + ch + '</span>';
+                html += '<span class="char-info">' + (info ? info.reading + ' · ' + info.meaning : '') + '</span>';
+                html += '</div>';
+            }
+            html += '</div>';
+            html += '</div>';
+
+            // Learned check
+            html += '<button class="idiom-detail-check' + (isLearned ? ' checked' : '') + '" id="idiomDetailCheck" onclick="toggleIdiomLearnedFromDetail(\'' + chars + '\')">';
+            html += (isLearned ? '✅ 학습 완료' : '☐ 학습 완료로 표시');
+            html += '</button>';
+
+            document.getElementById('idiomDetailBody').innerHTML = html;
+
+            // Show modal
+            document.getElementById('idiomDetailOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
         }
+
+        function closeIdiomDetail() {
+            document.getElementById('idiomDetailOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function toggleIdiomLearnedFromDetail(chars) {
+            var data = getLearnedIdioms();
+            if (data[chars]) { delete data[chars]; } else { data[chars] = Date.now(); }
+            saveLearnedIdioms(data);
+            var isLearned = !!data[chars];
+            var btn = document.getElementById('idiomDetailCheck');
+            if (btn) {
+                btn.className = 'idiom-detail-check' + (isLearned ? ' checked' : '');
+                btn.innerHTML = isLearned ? '✅ 학습 완료' : '☐ 학습 완료로 표시';
+            }
+            renderIdiomGrid();
+            renderIdiomStatusFilter();
+        }
+
+        // ESC key closes idiom detail
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && document.getElementById('idiomDetailOverlay').classList.contains('active')) {
+                closeIdiomDetail();
+            }
+        });
 
         function randomIdiom() {
             var pool = currentIdiomCat === 'all' ? IDIOM_DATA : IDIOM_DATA.filter(function(d) { return d.category === currentIdiomCat; });
@@ -4478,11 +4724,7 @@
         }
 
         function scrollToIdiom(chars) {
-            document.getElementById('idiomSearch').value = chars;
-            currentIdiomCat = 'all';
-            renderIdiomCatTabs();
-            filterIdioms();
-            document.getElementById('idiomSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            openIdiomDetail(chars);
         }
 
         // Idiom quiz mode
