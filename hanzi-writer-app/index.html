@@ -9,6 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
     <script src="data.js"></script>
+    <script src="data-extra.js"></script>
     <script src="hsk-data.js"></script>
     <script src="pinyin-data.js"></script>
     <script src="radical-data.js"></script>
@@ -3087,6 +3088,25 @@
             var lv = getHSK(char);
             return '<span class="hsk-badge hsk-' + lv + '">HSK ' + hskLabel(lv) + '</span>';
         }
+
+        /* Merge extra data into HANZI_CATEGORIES */
+        (function mergeExtra() {
+            if (typeof HANZI_EXTRA === 'undefined') return;
+            var catMap = {};
+            HANZI_CATEGORIES.forEach(function(cat) { catMap[cat.id] = cat; });
+            Object.keys(HANZI_EXTRA).forEach(function(id) {
+                if (catMap[id]) {
+                    var existing = {};
+                    catMap[id].chars.forEach(function(c) { existing[c[0]] = true; });
+                    HANZI_EXTRA[id].forEach(function(c) {
+                        if (!existing[c[0]]) { catMap[id].chars.push(c); existing[c[0]] = true; }
+                    });
+                }
+            });
+            if (typeof HANZI_NEW_CATS !== 'undefined') {
+                HANZI_NEW_CATS.forEach(function(cat) { HANZI_CATEGORIES.push(cat); });
+            }
+        })();
 
         function init() {
             let total = 0;
