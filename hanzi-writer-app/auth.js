@@ -293,11 +293,11 @@
                     ? '<img class="admin-avatar" src="' + d.photo_url + '" onerror="this.style.display=\'none\'">'
                     : '<div class="admin-avatar-placeholder">?</div>';
                 html += '<tr>'
-                    + '<td>' + avatar + '</td>'
-                    + '<td>' + (d.name || '-') + '</td>'
-                    + '<td>' + (d.email || '-') + '</td>'
-                    + '<td>' + lastActive + '</td>'
-                    + '<td><button class="btn btn-sm btn-outline" onclick="viewLearnerDetail(' + d.id + ')">상세보기</button></td>'
+                    + '<td data-label="프로필">' + avatar + '</td>'
+                    + '<td data-label="이름">' + (d.name || '-') + '</td>'
+                    + '<td data-label="이메일">' + (d.email || '-') + '</td>'
+                    + '<td data-label="최근활동">' + lastActive + '</td>'
+                    + '<td data-label=""><button class="btn btn-sm btn-outline" onclick="viewLearnerDetail(' + d.id + ')">상세보기</button></td>'
                     + '</tr>';
             });
             listEl.innerHTML = html;
@@ -334,11 +334,11 @@
             var d = new Date(r.timestamp);
             var timeStr = d.toLocaleDateString('ko-KR') + ' ' + d.toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'});
             html += '<tr>'
-                + '<td style="font-size:28px;font-family:\'Noto Serif KR\',serif;">' + r.char + '</td>'
-                + '<td>-</td>'
-                + '<td>정답 ' + (r.correct||0) + ' / 오답 ' + (r.mistakes||0) + '</td>'
-                + '<td>' + timeStr + '</td>'
-                + '<td>-</td>'
+                + '<td data-label="한자" style="font-size:28px;font-family:\'Noto Serif KR\',serif;">' + r.char + '</td>'
+                + '<td data-label="이름">-</td>'
+                + '<td data-label="성적">정답 ' + (r.correct||0) + ' / 오답 ' + (r.mistakes||0) + '</td>'
+                + '<td data-label="시간">' + timeStr + '</td>'
+                + '<td data-label="">-</td>'
                 + '</tr>';
         });
         listEl.innerHTML = html;

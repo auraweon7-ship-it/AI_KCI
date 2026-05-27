@@ -2387,6 +2387,64 @@
             .idiom-detail-chars { font-size: 28px; letter-spacing: 4px; }
             .idiom-detail-body { padding: 16px 18px 20px; }
             .idiom-detail-ex-zh { font-size: 15px; }
+
+            /* Admin panel mobile */
+            .admin-panel { padding: 16px 12px 40px; }
+            .admin-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+            .admin-title { font-size: 20px; }
+            .admin-notice { font-size: 12px; padding: 12px 14px; }
+            .admin-summary { font-size: 13px; }
+
+            /* Table → card layout on mobile */
+            .admin-table thead { display: none; }
+            .admin-table, .admin-table tbody, .admin-table tr, .admin-table td {
+                display: block; width: 100%;
+            }
+            .admin-table tr {
+                background: var(--surface2);
+                border: 1px solid var(--border);
+                border-radius: var(--radius-sm);
+                padding: 14px 16px;
+                margin-bottom: 10px;
+                position: relative;
+            }
+            .admin-table td {
+                padding: 4px 0;
+                border-bottom: none;
+                font-size: 13px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .admin-table td::before {
+                content: attr(data-label);
+                font-size: 10px;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                color: var(--text-dim);
+                min-width: 60px;
+                flex-shrink: 0;
+            }
+            .admin-table td:last-child {
+                margin-top: 8px;
+                padding-top: 8px;
+                border-top: 1px solid var(--border);
+            }
+            .admin-table td:last-child .btn { width: 100%; text-align: center; }
+            .admin-avatar, .admin-avatar-placeholder { width: 28px; height: 28px; }
+
+            /* Learner detail mobile */
+            .learner-detail-panel { padding: 16px; margin-top: 14px; }
+            .detail-header { flex-direction: column; gap: 12px; align-items: flex-start; }
+            .detail-header .btn { align-self: flex-end; }
+            .detail-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+            .detail-stat { padding: 12px; }
+            .detail-stat-val { font-size: 22px; }
+            .detail-record { gap: 10px; padding: 8px 10px; flex-wrap: wrap; }
+            .detail-r-char { font-size: 20px; width: 30px; }
+            .detail-r-info { font-size: 12px; }
+            .detail-r-time { font-size: 10px; }
         }
 
         @media (max-width: 580px) {
@@ -2443,6 +2501,13 @@
             .quiz-launcher .btn { width: 100%; justify-content: center; }
             .badge-grid { grid-template-columns: repeat(3, 1fr); }
             .mistake-grid { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); }
+
+            /* Admin panel — smaller phones */
+            .admin-panel { padding: 12px 8px 30px; }
+            .admin-title { font-size: 18px; }
+            .detail-stats { gap: 6px; }
+            .detail-stat-val { font-size: 20px; }
+            .detail-stat-lbl { font-size: 9px; }
         }
 
         @media (max-width: 360px) {
