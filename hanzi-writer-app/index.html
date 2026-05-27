@@ -1610,6 +1610,72 @@
 
         .stroke-card { margin-bottom: 24px; }
 
+        /* ===== CHAR NAVIGATION ===== */
+        .char-nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 20px;
+            padding: 0 4px;
+        }
+
+        .char-nav-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            min-width: 120px;
+        }
+
+        .char-nav-btn:hover:not(:disabled) {
+            background: var(--surface2);
+            border-color: var(--accent);
+        }
+
+        .char-nav-btn:disabled {
+            opacity: 0.3;
+            cursor: default;
+        }
+
+        .char-nav-arrow {
+            font-size: 12px;
+            color: var(--accent);
+        }
+
+        .char-nav-label {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+
+        .char-nav-char {
+            font-family: 'Noto Serif KR', serif;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .char-nav-pos {
+            font-size: 12px;
+            color: var(--text-dim);
+            white-space: nowrap;
+        }
+
+        #charNavNext {
+            flex-direction: row-reverse;
+            text-align: right;
+        }
+
+        #charNavNext .char-nav-arrow {
+            order: 1;
+        }
+
         /* ===== FOOTER ===== */
         footer {
             position: relative;
@@ -2349,6 +2415,8 @@
 
             /* Stroke card */
             .stroke-card { padding: 16px; }
+            .char-nav-btn { padding: 8px 12px; min-width: 100px; font-size: 13px; }
+            .char-nav-char { font-size: 18px; }
             .detail-stats { grid-template-columns: repeat(2, 1fr); }
 
             /* My stats */
@@ -2791,6 +2859,21 @@
                 </div>
             </div>
 
+            <!-- Prev / Next Char Navigation -->
+            <div class="char-nav" id="charNav" style="display:none;">
+                <button class="char-nav-btn" id="charNavPrev" onclick="navChar(-1)">
+                    <span class="char-nav-arrow">◀</span>
+                    <span class="char-nav-label">이전</span>
+                    <span class="char-nav-char" id="charNavPrevChar"></span>
+                </button>
+                <div class="char-nav-pos" id="charNavPos"></div>
+                <button class="char-nav-btn" id="charNavNext" onclick="navChar(1)">
+                    <span class="char-nav-label">다음</span>
+                    <span class="char-nav-arrow">▶</span>
+                    <span class="char-nav-char" id="charNavNextChar"></span>
+                </button>
+            </div>
+
             <!-- Stroke breakdown -->
             <div class="card stroke-card" id="strokeCard" style="display:none;">
                 <div class="card-title">획 분석</div>
@@ -3189,8 +3272,58 @@
             updateFavBtn();
             showRadicalInfo(char);
             showRelatedIdioms(char);
+            updateCharNav();
 
             document.getElementById('infoPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        function updateCharNav() {
+            var nav = document.getElementById('charNav');
+            if (!currentChar || !currentChars || currentChars.length === 0) {
+                nav.style.display = 'none';
+                return;
+            }
+            var idx = -1;
+            for (var i = 0; i < currentChars.length; i++) {
+                if (currentChars[i][0] === currentChar) { idx = i; break; }
+            }
+            if (idx === -1) { nav.style.display = 'none'; return; }
+
+            nav.style.display = 'flex';
+            var prevBtn = document.getElementById('charNavPrev');
+            var nextBtn = document.getElementById('charNavNext');
+            var prevChar = document.getElementById('charNavPrevChar');
+            var nextChar = document.getElementById('charNavNextChar');
+            var pos = document.getElementById('charNavPos');
+
+            if (idx > 0) {
+                prevBtn.disabled = false;
+                prevChar.textContent = currentChars[idx - 1][0];
+            } else {
+                prevBtn.disabled = true;
+                prevChar.textContent = '';
+            }
+
+            if (idx < currentChars.length - 1) {
+                nextBtn.disabled = false;
+                nextChar.textContent = currentChars[idx + 1][0];
+            } else {
+                nextBtn.disabled = true;
+                nextChar.textContent = '';
+            }
+
+            pos.textContent = (idx + 1) + ' / ' + currentChars.length;
+        }
+
+        function navChar(dir) {
+            if (!currentChar || !currentChars) return;
+            var idx = -1;
+            for (var i = 0; i < currentChars.length; i++) {
+                if (currentChars[i][0] === currentChar) { idx = i; break; }
+            }
+            var newIdx = idx + dir;
+            if (newIdx < 0 || newIdx >= currentChars.length) return;
+            selectChar(currentChars[newIdx][0]);
         }
 
         function createAnimWriter(char) {
