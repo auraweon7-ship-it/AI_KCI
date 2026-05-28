@@ -320,27 +320,30 @@ app.post('/api/images/generate-prompts', async (req, res) => {
     const { projectId, script, style, count } = req.body;
     const project = getProject(projectId);
 
-    const prompt = `다음 유튜브 영상 대본을 읽고, ${count || 8}개 장면에 대한 이미지 생성 프롬프트를 영어로 작성해주세요.
+    const fullScript = script || project.script || '';
+    const sceneCount = parseInt(count) || 8;
+
+    const prompt = `다음 유튜브 영상 대본을 꼼꼼히 읽고, 대본 내용에 정확히 맞는 ${sceneCount}개 장면의 이미지 생성 프롬프트를 영어로 작성하세요.
 
 대본:
-${(script || project.script || '').substring(0, 3000)}
+${fullScript.substring(0, 8000)}
 
-각 프롬프트는 다음 JSON 배열 형식으로 작성:
-[
-  {
-    "scene": 1,
-    "name": "장면 이름 (한국어)",
-    "prompt": "영어 이미지 생성 프롬프트 (상세하게, 50단어 이상)"
-  }
-]
+중요 규칙:
+1. 대본의 [장면] 태그와 "▶ 이미지:" 설명을 반드시 참고하여 해당 장면의 내용을 정확히 반영하세요.
+2. 대본에 언급된 구체적인 인물, 장소, 사건, 시대를 프롬프트에 포함하세요.
+3. 대본 순서대로 장면을 배치하세요 (오프닝 → 본론 → 클라이맥스 → 엔딩).
+4. 각 프롬프트는 50단어 이상, 배경/조명/분위기/구도를 구체적으로 묘사하세요.
+5. 반드시 ${sceneCount}개를 모두 생성하세요.
 
 스타일: ${style || 'european-animation'}
 모든 이미지가 일관된 스타일을 유지하도록 프롬프트를 작성하세요.
-JSON 배열만 반환하세요.`;
+
+JSON 배열 형식으로만 반환:
+[{"scene":1,"name":"장면 이름 (한국어)","prompt":"영어 이미지 프롬프트"}]`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 3000,
+      max_tokens: 6000,
       messages: [{ role: 'user', content: prompt }]
     });
 
