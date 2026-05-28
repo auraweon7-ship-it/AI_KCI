@@ -264,15 +264,15 @@ ${wordCount || 3000}자 이상의 완성된 대본을 작성해주세요.`;
 });
 
 // ========================
-// 4. 이미지 생성 (DALL-E 3)
+// 4. 이미지 생성 (ChatGPT Images 2.0)
 // ========================
 app.post('/api/images/generate', async (req, res) => {
   try {
     const { projectId, prompt, style, index, ratio } = req.body;
 
     const sizeMap = {
-      '16:9': '1792x1024',
-      '9:16': '1024x1792',
+      '16:9': '1536x1024',
+      '9:16': '1024x1536',
       '1:1': '1024x1024'
     };
 
@@ -287,18 +287,15 @@ app.post('/api/images/generate', async (req, res) => {
     const fullPrompt = `${stylePrefix[style] || ''} ${prompt}. High quality, detailed, professional.`;
 
     const image = await openai.images.generate({
-      model: 'dall-e-3',
+      model: 'gpt-image-1',
       prompt: fullPrompt,
-      size: sizeMap[ratio] || '1792x1024',
-      quality: 'hd',
+      size: sizeMap[ratio] || '1536x1024',
+      quality: 'high',
       n: 1
     });
 
-    const imageUrl = image.data[0].url;
-    const revisedPrompt = image.data[0].revised_prompt;
-
-    const response = await fetch(imageUrl);
-    const buffer = Buffer.from(await response.arrayBuffer());
+    const b64 = image.data[0].b64_json;
+    const buffer = Buffer.from(b64, 'base64');
     const filename = `scene_${index || Date.now()}.png`;
     const filepath = path.join(OUTPUT_DIR, 'images', filename);
     fs.writeFileSync(filepath, buffer);
@@ -309,7 +306,6 @@ app.post('/api/images/generate', async (req, res) => {
     res.json({
       success: true,
       imageUrl: `/output/images/${filename}`,
-      revisedPrompt,
       filename
     });
   } catch (error) {
@@ -851,7 +847,7 @@ JSON만 반환하세요.`;
 });
 
 // ========================
-// 8. 썸네일 생성 (DALL-E 3)
+// 8. 썸네일 생성 (ChatGPT Images 2.0)
 // ========================
 app.post('/api/thumbnail/generate', async (req, res) => {
   try {
@@ -867,16 +863,15 @@ app.post('/api/thumbnail/generate', async (req, res) => {
     const thumbPrompt = `YouTube video thumbnail, ${styleGuide[style] || styleGuide.dramatic}, topic: "${topic}", ${text ? `with text overlay "${text}"` : 'visually striking without text'}, 1280x720 resolution, eye-catching, professional quality, 16:9 aspect ratio`;
 
     const image = await openai.images.generate({
-      model: 'dall-e-3',
+      model: 'gpt-image-1',
       prompt: thumbPrompt,
-      size: '1792x1024',
-      quality: 'hd',
+      size: '1536x1024',
+      quality: 'high',
       n: 1
     });
 
-    const imageUrl = image.data[0].url;
-    const response = await fetch(imageUrl);
-    const buffer = Buffer.from(await response.arrayBuffer());
+    const b64 = image.data[0].b64_json;
+    const buffer = Buffer.from(b64, 'base64');
     const filename = `thumbnail_${Date.now()}.png`;
     const filepath = path.join(OUTPUT_DIR, 'thumbnails', filename);
     fs.writeFileSync(filepath, buffer);
@@ -884,8 +879,7 @@ app.post('/api/thumbnail/generate', async (req, res) => {
     res.json({
       success: true,
       imageUrl: `/output/thumbnails/${filename}`,
-      filename,
-      revisedPrompt: image.data[0].revised_prompt
+      filename
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -1152,7 +1146,7 @@ app.listen(PORT, () => {
   console.log(`${'='.repeat(50)}`);
   console.log(`\n  API 상태:`);
   console.log(`  - Claude API: ${process.env.ANTHROPIC_API_KEY ? '✅' : '❌'}`);
-  console.log(`  - DALL-E API: ${process.env.OPENAI_API_KEY ? '✅' : '❌'}`);
+  console.log(`  - GPT Image:  ${process.env.OPENAI_API_KEY ? '✅' : '❌'}`);
   console.log(`  - ElevenLabs: ${process.env.ELEVENLABS_API_KEY ? '✅' : '❌'}`);
   console.log(`  - YouTube:    ${process.env.YOUTUBE_CLIENT_ID ? '✅' : '❌'}`);
   console.log(`\n  출력 폴더: ${OUTPUT_DIR}\n`);
