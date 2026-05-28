@@ -263,6 +263,53 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
 /* BGM */
 .bgm-drop{border:2px dashed var(--bd);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;transition:all .2s;color:var(--t3);font-size:11px}
 .bgm-drop:hover,.bgm-drop.dragover{border-color:var(--acc);color:var(--acc);background:var(--accd)}
+
+/* Hamburger */
+.ham{display:none;background:none;border:none;color:var(--t1);font-size:22px;cursor:pointer;padding:4px 8px;margin-right:8px;line-height:1}
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
+
+/* Mobile Responsive */
+@media(max-width:768px){
+  .ham{display:block}
+  .sb{transform:translateX(-100%);transition:transform .3s ease;width:280px}
+  .sb.open{transform:translateX(0)}
+  .sb-overlay.open{display:block}
+  .mn{margin-left:0}
+  .ct{padding:16px 12px;max-width:100%}
+  .top{padding:0 12px}
+  .top-a{gap:2px}
+  .top-a .b{padding:5px 8px;font-size:10px}
+  .hero{padding:30px 10px 20px}
+  .hero h2{font-size:22px}
+  .hero p{font-size:12px}
+  .hero-btns .b{padding:8px 18px;font-size:12px}
+  .feat-grid{grid-template-columns:1fr 1fr}
+  .spec-grid{grid-template-columns:repeat(2,1fr)}
+  .pipe-sec{max-width:100%}
+  .fr{grid-template-columns:1fr}
+  .fr3{grid-template-columns:1fr}
+  .g2{grid-template-columns:1fr}
+  .g3{grid-template-columns:1fr}
+  .ig{grid-template-columns:1fr}
+  .an-grid{grid-template-columns:repeat(2,1fr)}
+  .cd{padding:14px}
+  .out{max-height:350px;font-size:11.5px}
+  .out-edit{min-height:150px;max-height:400px;font-size:11.5px}
+  .auto-wrap{max-width:100%}
+  .toast{left:12px;right:12px;bottom:12px;text-align:center}
+  .land-footer{padding:20px 14px}
+}
+@media(max-width:480px){
+  .feat-grid{grid-template-columns:1fr}
+  .spec-grid{grid-template-columns:repeat(2,1fr)}
+  .hero h2{font-size:18px}
+  .top-t{font-size:11px}
+  .an-grid{grid-template-columns:1fr}
+  .sc-act{flex-wrap:wrap}
+  .tl-track{padding:4px}
+  .tl-item{min-width:60px}
+  .prev-grid{grid-template-columns:repeat(2,1fr)}
+}
 </style>
 </head>
 <body>
@@ -305,8 +352,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
   </div>
 </aside>
 
+<div class="sb-overlay" id="sbOverlay" onclick="closeSb()"></div>
 <div class="mn">
   <div class="top">
+    <button class="ham" onclick="toggleSb()">☰</button>
     <div class="top-t" id="topT">🏠 YouTube 롱폼 제작 에이전트</div>
     <div class="top-a">
       <button class="b bs" onclick="viewFiles()">📂 파일</button>
@@ -838,7 +887,11 @@ const NAMES = {auto:'🤖 자동 제작',topic:'💡 주제 선정',plan:'📋 �
 const PREREQS = {plan:['topic'],script:['plan'],image:['script'],tts:['script'],render:['image','tts'],meta:['script'],shorts:['script'],upload:['render'],srt:['script'],timeline:['image']};
 
 // === Nav ===
+function toggleSb(){document.querySelector('.sb').classList.toggle('open');document.getElementById('sbOverlay').classList.toggle('open')}
+function closeSb(){document.querySelector('.sb').classList.remove('open');document.getElementById('sbOverlay').classList.remove('open')}
+
 function goHome() {
+  closeSb();
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('act'));
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('act'));
   document.getElementById('sec-home').classList.add('act');
@@ -848,6 +901,7 @@ function goHome() {
 }
 
 function go(id) {
+  closeSb();
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('act'));
   document.getElementById('sec-home').classList.remove('act');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('act'));
