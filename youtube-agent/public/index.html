@@ -606,7 +606,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
           <button class="b bs" id="trendBtn" onclick="loadYtTrends()">📡 트렌드 불러오기</button>
         </div>
         <div class="divider"></div>
-        <div class="cd-t" style="margin-bottom:10px">🔥 인기 주제 추천</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px"><div class="cd-t">🔥 인기 주제 추천</div><button class="b bs" onclick="doTopics()" style="font-size:12px;padding:6px 14px">✨ AI 생성</button></div>
         <div class="cd-s" style="margin-bottom:12px">카테고리별 트렌드 주제를 클릭하면 자동 입력됩니다</div>
         <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">
           <button class="b bs pop-cat act" onclick="showPopular('all',this)">전체</button>
