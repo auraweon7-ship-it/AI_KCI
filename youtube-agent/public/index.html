@@ -441,6 +441,43 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
               </select>
             </div>
           </div>
+          <div class="divider"></div>
+          <div style="font-size:10px;font-weight:600;color:var(--t2);margin-bottom:8px">🎬 영상 편집 옵션</div>
+          <div class="fr3">
+            <div class="fg"><label class="fl">✨ 장면 전환</label>
+              <select class="fs" id="autoTrans">
+                <option value="none">없음 (컷)</option>
+                <option value="fade" selected>페이드</option>
+                <option value="fadeblack">페이드 블랙</option>
+                <option value="fadewhite">페이드 화이트</option>
+                <option value="dissolve">디졸브</option>
+                <option value="wipeleft">와이프 좌</option>
+                <option value="wiperight">와이프 우</option>
+                <option value="smoothleft">스무스 좌</option>
+              </select>
+            </div>
+            <div class="fg"><label class="fl">⏱️ 전환 시간</label>
+              <input type="number" class="fi" id="autoTransDur" value="0.8" min="0.3" max="3" step="0.1">
+            </div>
+            <div class="fg"><label class="fl">🎵 BGM</label>
+              <select class="fs" id="autoBgm">
+                <option value="">BGM 없음</option>
+              </select>
+              <div class="fh" style="margin-top:2px">영상 합성 > BGM에서 먼저 업로드</div>
+            </div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label class="fl">🔊 BGM 볼륨</label>
+              <input type="range" id="autoBgmVol" min="0.05" max="0.5" step="0.05" value="0.15" style="width:100%" oninput="document.getElementById('autoBgmVolLbl').textContent=Math.round(this.value*100)+'%'">
+              <div class="fh">나레이션 대비 <span id="autoBgmVolLbl">15</span>%</div>
+            </div>
+            <div class="fg"><label class="fl">📝 SRT 자막</label>
+              <select class="fs" id="autoSrt">
+                <option value="yes" selected>자동 생성</option>
+                <option value="no">생성 안함</option>
+              </select>
+            </div>
+          </div>
           <button class="b bp blg" id="autoBtn" onclick="startAutoPipeline()" style="width:100%;justify-content:center;font-size:14px;padding:12px 0;border-radius:10px;margin-top:6px">🚀 자동 제작 시작</button>
         </div>
 
@@ -452,6 +489,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
           <div class="auto-step" id="as-render"><div class="as-ico">🎬</div><div class="as-body"><div class="as-name">5. 영상 합성</div><div class="as-status">대기</div></div><div class="as-time" id="ast-render"></div></div>
           <div class="auto-step" id="as-meta"><div class="as-ico">🏷️</div><div class="as-body"><div class="as-name">6. 메타데이터</div><div class="as-status">대기</div></div><div class="as-time" id="ast-meta"></div></div>
           <div class="auto-step" id="as-thumb"><div class="as-ico">🖼️</div><div class="as-body"><div class="as-name">7. 썸네일</div><div class="as-status">대기</div></div><div class="as-time" id="ast-thumb"></div></div>
+          <div class="auto-step" id="as-srt"><div class="as-ico">📝</div><div class="as-body"><div class="as-name">8. SRT 자막</div><div class="as-status">대기</div></div><div class="as-time" id="ast-srt"></div></div>
+          <div class="auto-step" id="as-save"><div class="as-ico">💾</div><div class="as-body"><div class="as-name">9. 프로젝트 저장</div><div class="as-status">대기</div></div><div class="as-time" id="ast-save"></div></div>
         </div>
 
         <div id="autoResult" style="display:none"></div>
@@ -819,6 +858,7 @@ function go(id) {
   else document.getElementById('ban').style.display='none';
   checkPrereqs(id);
   if(id==='plan') document.getElementById('planTopic').value=S.topic;
+  if(id==='auto') loadAutoBgmList();
   if(id==='tts') prepareTTS();
   if(id==='render') { prepareRender(); loadBgmList(); }
   if(id==='upload') prepareUpload();
@@ -1348,8 +1388,8 @@ function exportAll(){
 }
 
 // === Auto Pipeline ===
-const AUTO_STEPS = ['plan','script','image','tts','render','meta','thumb'];
-const AUTO_LABELS = {plan:'대본 기획',script:'대본 작성',image:'이미지 생성',tts:'TTS 음성',render:'영상 합성',meta:'메타데이터',thumb:'썸네일'};
+const AUTO_STEPS = ['plan','script','image','tts','render','meta','thumb','srt','save'];
+const AUTO_LABELS = {plan:'대본 기획',script:'대본 작성',image:'이미지 생성',tts:'TTS 음성',render:'영상 합성',meta:'메타데이터',thumb:'썸네일',srt:'SRT 자막',save:'프로젝트 저장'};
 let autoRunning = false;
 
 function autoStatus(step,status,msg){
@@ -1375,6 +1415,11 @@ async function startAutoPipeline(){
   const style=document.getElementById('autoStyle').value;
   const imgCnt=document.getElementById('autoImgCnt').value;
   const voiceId=document.getElementById('autoVoice').value;
+  const transition=document.getElementById('autoTrans').value;
+  const transDur=parseFloat(document.getElementById('autoTransDur').value)||0.8;
+  const bgmFile=document.getElementById('autoBgm').value;
+  const bgmVol=parseFloat(document.getElementById('autoBgmVol').value)||0.15;
+  const doSrtAuto=document.getElementById('autoSrt').value==='yes';
   const langNames={ko:'한국어',en:'English',zh:'中文'};
   const wordCounts={10:'2000',15:'3000',20:'4500',30:'6000'};
 
@@ -1424,20 +1469,20 @@ async function startAutoPipeline(){
     t1=Date.now();
     autoStatus('tts','running','ElevenLabs TTS 변환 중...');
     const cleanScript=S.script.replace(/\[장면[^\]]*\]/g,'').replace(/[━═─▶■●•🎙️🎬📌🔹✅☐]/g,'').replace(/\n{3,}/g,'\n\n').trim();
-    const ttsData=await api('/api/tts/full-script',{script:cleanScript.slice(0,5000),voiceId,stability:0.5,similarity:0.75});
+    const ttsData=await api('/api/tts/full-script',{script:cleanScript,voiceId,stability:0.5,similarity:0.75});
     S.audioFile=ttsData.filename;markOk('tts');save();
     let audioDur=parseInt(len)*60;
     try{const dr=await fetch('/api/audio/duration/'+ttsData.filename).then(r=>r.json());if(dr.duration>0)audioDur=Math.ceil(dr.duration)}catch(e){}
     autoTime('tts',Math.round((Date.now()-t1)/1000));
-    autoStatus('tts','done',`음성 완료 (${ttsData.charCount}자)`);
+    autoStatus('tts','done',`음성 완료 (${ttsData.charCount}자${ttsData.chunks>1?`, ${ttsData.chunks}청크`:''})`);
 
     // 5. Render
     t1=Date.now();
-    autoStatus('render','running','FFmpeg 영상 합성 중...');
-    const renderData=await api('/api/render/video',{duration:audioDur});
+    autoStatus('render','running',`FFmpeg 영상 합성 중...${transition!=='none'?' (전환효과: '+transition+')':''}${bgmFile?' + BGM':''}`);
+    const renderData=await api('/api/render/video',{duration:audioDur,transition,transitionDuration:transDur,bgmFile,bgmVolume:bgmVol});
     lastResult.video=renderData;markOk('render');save();
     autoTime('render',Math.round((Date.now()-t1)/1000));
-    autoStatus('render','done','영상 합성 완료');
+    autoStatus('render','done',`영상 합성 완료${renderData.transition&&renderData.transition!=='none'?' ('+renderData.transition+')':''}${renderData.bgm?' + BGM':''}`);
 
     // 6. Meta
     t1=Date.now();
@@ -1457,6 +1502,34 @@ async function startAutoPipeline(){
     autoTime('thumb',Math.round((Date.now()-t1)/1000));
     autoStatus('thumb','done','썸네일 완료');
 
+    // 8. SRT
+    if(doSrtAuto){
+      t1=Date.now();
+      autoStatus('srt','running','SRT 자막 생성 중...');
+      try{
+        const srtData=await api('/api/srt/generate',{script:S.script,duration:audioDur});
+        lastResult.srt=srtData;markOk('srt');
+        autoTime('srt',Math.round((Date.now()-t1)/1000));
+        autoStatus('srt','done',`자막 완료 (${srtData.subtitleCount}개)`);
+      }catch(e){autoStatus('srt','fail',e.message)}
+    }else{
+      autoStatus('srt','done','건너뜀');
+    }
+
+    // 9. Project Save
+    t1=Date.now();
+    autoStatus('save','running','프로젝트 저장 중...');
+    const projName=topic.substring(0,30);
+    const projects=JSON.parse(localStorage.getItem(PROJ_STORAGE_KEY)||'[]');
+    projects.push({
+      name:projName,topic:S.topic,target:S.target,plan:S.plan,script:S.script,
+      meta:S.meta,ttsText:'',thumbFile:S.thumbFile,audioFile:S.audioFile,
+      done:[...S.done],imgPrompts:S.imgPrompts,savedAt:new Date().toISOString()
+    });
+    localStorage.setItem(PROJ_STORAGE_KEY,JSON.stringify(projects));
+    autoTime('save',Math.round((Date.now()-t1)/1000));
+    autoStatus('save','done','저장 완료');
+
     // Done
     const totalSec=Math.round((Date.now()-t0)/1000);
     const totalMin=Math.floor(totalSec/60);const totalRemSec=totalSec%60;
@@ -1467,13 +1540,16 @@ async function startAutoPipeline(){
       ${thumbData.imageUrl?`<div style="margin:10px 0"><img src="${thumbData.imageUrl}" style="width:100%;max-width:400px;border-radius:var(--rs);border:1px solid var(--bd)"></div>`:''}
       <div style="font-size:11px;color:var(--t2);line-height:2;margin:10px 0">
         ${lastResult.meta?.titles?.[0]?.options?.[0]?`<div>📌 제목: <strong>${esc(lastResult.meta.titles[0].options[0])}</strong></div>`:''}
-        <div>📹 영상: ${renderData.filename||''} | ${renderData.fileSize||''}</div>
+        <div>📹 영상: ${renderData.filename||''} | ${renderData.fileSize||''}${renderData.transition&&renderData.transition!=='none'?' | ✨'+renderData.transition:''}${renderData.bgm?' | 🎵BGM':''}</div>
         <div>🖼️ 썸네일: ${thumbData.filename||''}</div>
+        ${lastResult.srt?`<div>📝 자막: ${lastResult.srt.filename} (${lastResult.srt.subtitleCount}개)</div>`:''}
+        <div>💾 프로젝트 자동 저장됨</div>
       </div>
       <div class="cd-t" style="margin:10px 0 6px">🖼️ 생성된 이미지 미리보기</div>
       <div class="prev-grid" id="autoPrevGrid"></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
         ${renderData.videoUrl?`<a href="${renderData.videoUrl}" download class="b bs">💾 영상 다운로드</a>`:''}
+        ${lastResult.srt?`<a href="${lastResult.srt.srtUrl}" download class="b bs">📝 자막 다운로드</a>`:''}
         <button class="b bp" onclick="applyAutoMeta();go('upload')">📤 YouTube 업로드</button>
         <button class="b bs" onclick="go('script')">✍️ 대본 확인/수정</button>
         <button class="b bs" onclick="go('timeline')">🎞️ 타임라인 편집</button>
@@ -1543,6 +1619,22 @@ async function loadBgmList() {
     r.files.forEach(f => {
       const o = document.createElement('option');
       o.value = f.name; o.textContent = `${f.name} (${f.size})`;
+      sel.appendChild(o);
+    });
+    if (cur) sel.value = cur;
+  } catch (e) {}
+}
+
+async function loadAutoBgmList() {
+  try {
+    const r = await fetch('/api/bgm/list').then(r => r.json());
+    const sel = document.getElementById('autoBgm');
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">🔇 BGM 없음</option>';
+    r.files.forEach(f => {
+      const o = document.createElement('option');
+      o.value = f.name; o.textContent = `🎵 ${f.name} (${f.size})`;
       sel.appendChild(o);
     });
     if (cur) sel.value = cur;
