@@ -826,6 +826,18 @@ app.post('/api/render/video', async (req, res) => {
     project.videoFile = outputFile;
     const stats = fs.statSync(outputPath);
 
+    let videoDuration = totalDuration;
+    try {
+      const dur = await new Promise((resolve, reject) => {
+        execFile('ffmpeg', ['-i', outputPath], { timeout: 10000 }, (error, stdout, stderr) => {
+          const match = (stderr || '').match(/Duration:\s*(\d+):(\d+):(\d+)\.(\d+)/);
+          if (match) resolve(parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]));
+          else resolve(totalDuration);
+        });
+      });
+      videoDuration = dur;
+    } catch(e) {}
+
     res.json({
       success: true,
       videoUrl: `/output/video/${outputFile}`,
@@ -834,7 +846,8 @@ app.post('/api/render/video', async (req, res) => {
       imageCount: images.length,
       audioFile,
       transition: transType,
-      bgm: hasBgm ? bgmFile : null
+      bgm: hasBgm ? bgmFile : null,
+      duration: videoDuration
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

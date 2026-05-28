@@ -1084,7 +1084,7 @@ function go(id) {
   if(id==='timeline') loadTimeline();
   if(id==='projmgr') loadProjectList();
   if(id==='analytics') loadAnalytics();
-  if(id==='srt') { const dur=parseFloat(document.getElementById('renderDur')?.value||2)*60; document.getElementById('srtDuration').value=Math.round(dur); }
+  if(id==='srt') { const dur=S.videoDuration||(parseFloat(document.getElementById('renderDur')?.value||2)*60); document.getElementById('srtDuration').value=Math.round(dur); }
   updateNav();
 }
 
@@ -1447,6 +1447,7 @@ async function doRender(){
         <button class="b bok" onclick="markOk('render');save();go('upload')">→ YouTube 업로드</button>
         <a href="${d.videoUrl}" download class="b bs">💾 다운로드</a>
       </div></div>`;
+    if(d.duration) S.videoDuration=d.duration;
     markOk('render');save();
   }catch(e){toast(e.message,'err')}
   loading('renderBtn',false);
