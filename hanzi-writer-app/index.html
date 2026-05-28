@@ -2845,6 +2845,7 @@
                         <input type="range" class="speed-slider" id="speedSlider" min="0.5" max="3" step="0.5" value="1">
                         <span id="speedValue" style="font-size:12px;color:var(--text-dim);font-weight:600;">1x</span>
                     </div>
+                    <div id="animCharInfo" style="text-align:center;margin-top:8px;font-size:13px;color:var(--text-dim);line-height:1.6;display:none;"></div>
                     <div class="controls" style="margin-top:16px;">
                         <button class="btn btn-primary btn-sm" onclick="playAnimation()">재생</button>
                         <button class="btn btn-outline btn-sm" onclick="loopAnimation()">반복</button>
@@ -2865,6 +2866,7 @@
                             <div id="quizTarget"></div>
                         </div>
                     </div>
+                    <div id="quizCharInfo" style="text-align:center;margin-top:8px;font-size:13px;color:var(--text-dim);line-height:1.6;display:none;"></div>
                     <div class="quiz-feedback" id="quizFeedback">한자를 선택한 후 퀴즈를 시작하세요</div>
                     <div class="controls" style="margin-top:12px;">
                         <button class="btn btn-success btn-sm" onclick="startQuiz()">퀴즈 시작</button>
@@ -3307,6 +3309,7 @@
             showRadicalInfo(char);
             showRelatedIdioms(char);
             updateCharNav();
+            updateWriterCharInfo(char);
 
             document.getElementById('infoPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -3507,6 +3510,23 @@
                 document.getElementById('charTags').innerHTML = '<span class="tag">사용자 입력</span>' + (PINYIN_DATA[char] ? '<span class="tag">' + PINYIN_DATA[char] + '</span>' : '') + '<span class="tag">HSK ' + hskLabel(getHSK(char)) + '</span>';
             }
             populateFlipCard(char);
+        }
+
+        function updateWriterCharInfo(char) {
+            var info = charLookup[char];
+            var pinyin = (typeof PINYIN_DATA !== 'undefined' && PINYIN_DATA[char]) ? PINYIN_DATA[char] : '';
+            var html = '';
+            if (info) {
+                html = '<span style="color:var(--accent)">' + info.reading + '</span> · ' + info.meaning;
+                if (pinyin) html += ' · <span style="color:#a78bfa">[' + pinyin + ']</span>';
+            } else if (pinyin) {
+                html = '<span style="color:#a78bfa">[' + pinyin + ']</span>';
+            }
+            ['animCharInfo','quizCharInfo'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (html) { el.innerHTML = html; el.style.display = 'block'; }
+                else { el.style.display = 'none'; }
+            });
         }
 
         function addToHistory(char) {
