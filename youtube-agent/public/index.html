@@ -22,9 +22,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
 .ni:hover{background:var(--bg4);color:var(--t1)}
 .ni.act{background:var(--accd);color:var(--acc);font-weight:500}
 .ni.act::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:16px;background:var(--acc);border-radius:0 3px 3px 0}
-.ni .sn{font-size:15px;font-weight:800;min-width:22px;text-align:center;color:var(--t3);opacity:.5;font-family:Consolas,monospace;line-height:1}
-.ni.act .sn{color:var(--acc);opacity:1}
-.ni.ok .sn{color:var(--ok);opacity:.8}
+.ni .sn{font-size:10px;font-weight:800;min-width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:#ff4040;color:#000;font-family:Consolas,monospace;line-height:1;flex-shrink:0}
+.ni.act .sn{background:#ff4040;color:#000;box-shadow:0 0 8px rgba(255,64,64,.4)}
+.ni.ok .sn{background:var(--ok);color:#000}
 .ni .n{display:none}
 .ni .req{width:6px;height:6px;border-radius:50%;background:var(--warn);margin-left:auto;margin-right:4px;display:none}
 .ni.need .req{display:block}
