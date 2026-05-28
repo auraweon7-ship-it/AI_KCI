@@ -479,7 +479,7 @@
                 + '<div class="detail-stat"><div class="detail-stat-val" style="color:var(--text);font-size:16px;">' + lastDate + '</div><div class="detail-stat-lbl">최근 학습</div></div>'
                 + '</div>';
             panel.innerHTML = html;
-            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            setTimeout(function() { panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
         })
         .catch(function(e) {
             panel.innerHTML = '<div style="color:var(--danger);padding:20px;">로딩 실패: ' + e.message
