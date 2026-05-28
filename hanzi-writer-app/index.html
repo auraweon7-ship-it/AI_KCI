@@ -2689,24 +2689,8 @@
         </div>
         <div class="admin-notice" id="adminNotice" style="display:none;"></div>
         <div class="admin-summary" id="adminSummary"></div>
-        <div class="admin-table-wrap">
-            <table class="admin-table">
-                <thead>
-                    <tr>
-                        <th>프로필</th>
-                        <th>이름</th>
-                        <th>이메일</th>
-                        <th>최근 활동</th>
-                        <th>관리</th>
-                    </tr>
-                </thead>
-                <tbody id="learnerTableBody">
-                    <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-dim);">로딩 중...</td></tr>
-                </tbody>
-            </table>
-        </div>
         <!-- Learning Stats Charts -->
-        <div id="adminCharts" style="display:none;margin-top:20px;">
+        <div id="adminCharts" style="display:none;margin-top:20px;margin-bottom:20px;">
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                 <div class="card" style="padding:20px;">
                     <div class="card-title">일별 학습 현황 (최근 14일)</div>
@@ -2727,6 +2711,22 @@
                     <canvas id="charsChart" height="200"></canvas>
                 </div>
             </div>
+        </div>
+        <div class="admin-table-wrap">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>프로필</th>
+                        <th>이름</th>
+                        <th>이메일</th>
+                        <th>최근 활동</th>
+                        <th>관리</th>
+                    </tr>
+                </thead>
+                <tbody id="learnerTableBody">
+                    <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-dim);">로딩 중...</td></tr>
+                </tbody>
+            </table>
         </div>
         <div class="learner-detail-panel" id="learnerDetail" style="display:none;"></div>
     </div>
