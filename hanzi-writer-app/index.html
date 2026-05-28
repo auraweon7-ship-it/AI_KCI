@@ -1548,6 +1548,24 @@
 
         /* ===== HISTORY ===== */
         .history-section { margin-top: 24px; }
+        .history-stats {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+            margin-top: 12px; margin-bottom: 14px;
+        }
+        .history-stat {
+            text-align: center; padding: 12px 6px;
+            background: var(--surface2); border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+        }
+        .history-stat-num { font-size: 22px; font-weight: 800; }
+        .history-stat-label { font-size: 10px; color: var(--text-dim); margin-top: 3px; }
+        .history-stat-num.hs-total { color: var(--accent); }
+        .history-stat-num.hs-correct { color: var(--accent2); }
+        .history-stat-num.hs-wrong { color: var(--danger); }
+        .history-stat-num.hs-date { color: var(--warning); font-size: 14px; }
+        @media (max-width: 480px) {
+            .history-stats { grid-template-columns: repeat(2, 1fr); }
+        }
         .history-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 
         .history-item {
@@ -2970,6 +2988,7 @@
             <!-- History -->
             <div class="history-section" id="historySection" style="display:none;">
                 <div class="preset-label">최근 연습</div>
+                <div class="history-stats" id="historyStats"></div>
                 <div class="history-grid" id="historyGrid"></div>
             </div>
 
@@ -3618,10 +3637,38 @@
         function renderHistory() {
             if (history.length === 0) { document.getElementById('historySection').style.display = 'none'; return; }
             document.getElementById('historySection').style.display = 'block';
+            renderHistoryStats();
             var unique = history.slice(-20);
             document.getElementById('historyGrid').innerHTML = unique.map(function(c) {
                 return '<div class="history-item" onclick="selectChar(\'' + c + '\')">' + c + '</div>';
             }).join('');
+        }
+
+        function renderHistoryStats() {
+            var srs = getSRSData();
+            var srsKeys = Object.keys(srs);
+            var totalLearned = srsKeys.length;
+
+            var mistakes = getMistakes();
+            var totalWrong = 0;
+            Object.values(mistakes).forEach(function(m) { totalWrong += m.count; });
+
+            var totalCorrect = 0;
+            srsKeys.forEach(function(ch) {
+                totalCorrect += (srs[ch].repetitions || 0);
+            });
+
+            var lastDate = '-';
+            srsKeys.forEach(function(ch) {
+                if (srs[ch].lastReview && srs[ch].lastReview > lastDate) lastDate = srs[ch].lastReview;
+            });
+            if (lastDate !== '-') lastDate = lastDate.slice(5).replace('-', '/');
+
+            document.getElementById('historyStats').innerHTML =
+                '<div class="history-stat"><div class="history-stat-num hs-total">' + totalLearned + '</div><div class="history-stat-label">총 학습 한자</div></div>'
+                + '<div class="history-stat"><div class="history-stat-num hs-correct">' + totalCorrect + '</div><div class="history-stat-label">정답수</div></div>'
+                + '<div class="history-stat"><div class="history-stat-num hs-wrong">' + totalWrong + '</div><div class="history-stat-label">오답수</div></div>'
+                + '<div class="history-stat"><div class="history-stat-num hs-date">' + lastDate + '</div><div class="history-stat-label">최근 학습일</div></div>';
         }
 
         function showToast(msg) {
