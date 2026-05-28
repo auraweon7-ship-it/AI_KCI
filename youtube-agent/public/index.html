@@ -224,6 +224,45 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
 .auto-step.running .as-status{color:var(--warn)}
 .auto-step.done .as-status{color:var(--ok)}
 .auto-step .as-time{font-size:9px;color:var(--t3);font-family:Consolas,monospace}
+
+/* Timeline Editor */
+.tl-wrap{position:relative;overflow-x:auto;padding:10px 0}
+.tl-track{display:flex;gap:2px;min-width:max-content;padding:8px;background:var(--bgi);border:1px solid var(--bd);border-radius:var(--rs)}
+.tl-item{position:relative;min-width:80px;background:var(--bg3);border:1px solid var(--bd);border-radius:6px;overflow:hidden;cursor:pointer;transition:all .2s;flex-shrink:0}
+.tl-item:hover,.tl-item.sel{border-color:var(--acc)}
+.tl-item img{width:100%;height:50px;object-fit:cover;display:block}
+.tl-item .tl-dur{font-size:8px;text-align:center;padding:2px;color:var(--t3);background:var(--bg2)}
+.tl-item .tl-dur input{width:40px;background:var(--bgi);border:1px solid var(--bd);border-radius:3px;color:var(--t1);font-size:8px;text-align:center;padding:1px}
+.tl-time{display:flex;justify-content:space-between;font-size:8px;color:var(--t3);padding:2px 8px;font-family:Consolas,monospace}
+.tl-ruler{display:flex;gap:2px;padding:0 8px;margin-top:2px}
+.tl-ruler span{height:3px;background:var(--acc);border-radius:2px;opacity:.4;flex:1}
+.tl-ruler span.active{opacity:1}
+
+/* Image Preview Grid */
+.prev-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:12px 0}
+.prev-grid .prev-item{position:relative;border-radius:var(--rs);overflow:hidden;border:1px solid var(--bd);cursor:pointer;transition:all .2s}
+.prev-grid .prev-item:hover{border-color:var(--acc);transform:scale(1.02)}
+.prev-grid .prev-item img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
+.prev-grid .prev-item .prev-label{position:absolute;bottom:0;left:0;right:0;padding:3px 6px;background:rgba(0,0,0,.7);font-size:8px;color:#fff}
+
+/* Project Manager */
+.pj-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:10px}
+.pj-card{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:14px;transition:all .2s;cursor:pointer}
+.pj-card:hover{border-color:var(--acc)}
+.pj-card.active{border-color:var(--ok);background:rgba(52,211,153,.06)}
+.pj-card h4{font-size:12px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pj-card .pj-meta{font-size:9px;color:var(--t3);display:flex;gap:8px;margin-top:4px}
+.pj-card .pj-acts{display:flex;gap:4px;margin-top:8px}
+
+/* Analytics */
+.an-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.an-card{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);padding:14px;text-align:center}
+.an-val{font-size:20px;font-weight:900;margin-bottom:2px}
+.an-lbl{font-size:9px;color:var(--t2)}
+
+/* BGM */
+.bgm-drop{border:2px dashed var(--bd);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;transition:all .2s;color:var(--t3);font-size:11px}
+.bgm-drop:hover,.bgm-drop.dragover{border-color:var(--acc);color:var(--acc);background:var(--accd)}
 </style>
 </head>
 <body>
@@ -250,6 +289,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     <div class="sb-lbl">확장</div>
     <div class="ni" data-s="shorts" onclick="go('shorts')"><span>📱</span> 쇼츠 <span class="req"></span><span class="n">9</span></div>
     <div class="ni" data-s="intro" onclick="go('intro')"><span>🚀</span> 인트로 <span class="n">10</span></div>
+    <div class="sb-lbl">편집</div>
+    <div class="ni" data-s="timeline" onclick="go('timeline')"><span>🎞️</span> 타임라인</div>
+    <div class="ni" data-s="srt" onclick="go('srt')"><span>📝</span> SRT 자막</div>
+    <div class="sb-lbl">관리</div>
+    <div class="ni" data-s="projmgr" onclick="go('projmgr')"><span>📁</span> 프로젝트</div>
+    <div class="ni" data-s="analytics" onclick="go('analytics')"><span>📊</span> Analytics</div>
     <div class="sb-lbl">업로드</div>
     <div class="ni" data-s="upload" onclick="go('upload')"><span>📤</span> YouTube <span class="req"></span><span class="n">⬆</span></div>
   </nav>
@@ -522,7 +567,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         </div>
         <div class="fg"><label class="fl">TTS 변환 텍스트 (편집 가능 — 대본에서 자동 추출됨)</label>
           <textarea class="out-edit" id="ttsText" rows="8" placeholder="대본 생성 후 자동으로 채워집니다..."></textarea>
-          <div class="fh"><span id="ttsCharCnt">0</span>자 | ElevenLabs 최대: 약 5,000자/요청</div>
+          <div class="fh"><span id="ttsCharCnt">0</span>자 | 5,000자 초과 시 자동 청크 분할</div>
         </div>
         <button class="b bp blg" id="ttsBtn" onclick="doTTS()">🎙️ TTS 음성 생성</button>
       </div>
@@ -541,7 +586,46 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
           <div class="fg"><label class="fl">자료 현황</label>
             <div id="renderAssets" style="font-size:11px;color:var(--t2);line-height:1.8"></div></div>
         </div>
-        <button class="b bp blg" id="renderBtn" onclick="doRender()">🎬 영상 합성 시작</button>
+        <div class="divider"></div>
+        <div class="cd-t" style="margin-bottom:10px">🎵 BGM 배경음악</div>
+        <div class="bgm-drop" id="bgmDrop" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="handleBgmDrop(event)">
+          🎵 BGM 파일을 여기에 드래그하거나 <label style="color:var(--acc);cursor:pointer;text-decoration:underline"><input type="file" accept="audio/*" style="display:none" onchange="handleBgmFile(this.files[0])">클릭하여 업로드</label>
+          <div id="bgmCurrent" style="margin-top:6px;font-size:10px;color:var(--ok);display:none"></div>
+        </div>
+        <div class="fr" style="margin-top:8px">
+          <div class="fg"><label class="fl">BGM 볼륨</label>
+            <input type="range" id="bgmVol" min="0.05" max="0.5" step="0.05" value="0.15" style="width:100%" oninput="document.getElementById('bgmVolLabel').textContent=Math.round(this.value*100)+'%'">
+            <div class="fh">나레이션 대비 <span id="bgmVolLabel">15</span>%</div>
+          </div>
+          <div class="fg"><label class="fl">BGM 파일 목록</label>
+            <select class="fs" id="bgmSelect"><option value="">BGM 없음</option></select>
+            <button class="b bg" onclick="loadBgmList()" style="font-size:9px;margin-top:4px">🔄 새로고침</button>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="cd-t" style="margin-bottom:10px">✨ 장면 전환 효과</div>
+        <div class="fr">
+          <div class="fg"><label class="fl">전환 스타일</label>
+            <select class="fs" id="renderTrans">
+              <option value="none">없음 (컷 편집)</option>
+              <option value="fade" selected>페이드 (Fade)</option>
+              <option value="fadeblack">페이드 블랙</option>
+              <option value="fadewhite">페이드 화이트</option>
+              <option value="dissolve">디졸브</option>
+              <option value="wipeleft">와이프 좌</option>
+              <option value="wiperight">와이프 우</option>
+              <option value="slideup">슬라이드 업</option>
+              <option value="slidedown">슬라이드 다운</option>
+              <option value="smoothleft">스무스 좌</option>
+              <option value="smoothright">스무스 우</option>
+            </select>
+          </div>
+          <div class="fg"><label class="fl">전환 시간 (초)</label>
+            <input type="number" class="fi" id="renderTransDur" value="0.8" min="0.3" max="3" step="0.1">
+            <div class="fh">장면 간 전환에 사용되는 시간</div>
+          </div>
+        </div>
+        <button class="b bp blg" id="renderBtn" onclick="doRender()" style="margin-top:8px">🎬 영상 합성 시작</button>
       </div>
       <div id="renderOut"></div>
     </div>
@@ -621,6 +705,83 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div id="uploadOut"></div>
     </div>
 
+    <!-- ===== 타임라인 편집기 ===== -->
+    <div class="sec" id="sec-timeline">
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">🎞️ 비주얼 타임라인 편집기</div><div class="cd-s">장면별 시간 배분과 순서를 조정하세요</div></div>
+          <button class="b bs" onclick="loadTimeline()">🔄 새로고침</button>
+        </div>
+        <div id="tlInfo" class="alert alert-info" style="display:none"></div>
+        <div class="tl-wrap">
+          <div class="tl-track" id="tlTrack"></div>
+          <div class="tl-time" id="tlTime"></div>
+          <div class="tl-ruler" id="tlRuler"></div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:6px;align-items:center">
+          <button class="b bs" onclick="tlDistributeEvenly()">⚖️ 균등 배분</button>
+          <span style="font-size:10px;color:var(--t3)">총 시간: <strong id="tlTotal">0</strong>초</span>
+        </div>
+      </div>
+      <div class="cd">
+        <div class="cd-t" style="margin-bottom:10px">📷 이미지 프리뷰</div>
+        <div class="prev-grid" id="prevGrid"></div>
+      </div>
+    </div>
+
+    <!-- ===== SRT 자막 ===== -->
+    <div class="sec" id="sec-srt">
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">📝 SRT 자막 생성</div><div class="cd-s">대본에서 자동으로 타임스탬프 자막 생성</div></div></div>
+        <div class="fg"><label class="fl">기준 영상 길이 (초)</label>
+          <input type="number" class="fi" id="srtDuration" value="120" min="30">
+          <div class="fh">영상 합성 시 사용한 시간과 동일하게 설정하세요</div>
+        </div>
+        <button class="b bp blg" id="srtBtn" onclick="doSrt()">📝 SRT 자막 생성</button>
+      </div>
+      <div id="srtOut"></div>
+    </div>
+
+    <!-- ===== 프로젝트 관리 ===== -->
+    <div class="sec" id="sec-projmgr">
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">📁 프로젝트 관리</div><div class="cd-s">여러 프로젝트를 저장·불러오기·삭제</div></div>
+          <button class="b bp" onclick="saveCurrentProject()">💾 현재 프로젝트 저장</button>
+        </div>
+        <div class="fg"><label class="fl">프로젝트 이름</label>
+          <input type="text" class="fi" id="projName" placeholder="프로젝트 이름 입력">
+        </div>
+      </div>
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">📋 저장된 프로젝트</div><div class="cd-s" id="projCount">0개</div></div>
+          <button class="b bs" onclick="loadProjectList()">🔄 새로고침</button>
+        </div>
+        <div class="pj-list" id="projList"></div>
+      </div>
+    </div>
+
+    <!-- ===== YouTube Analytics ===== -->
+    <div class="sec" id="sec-analytics">
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">📊 YouTube Analytics</div><div class="cd-s">업로드된 영상 성과 확인</div></div>
+          <button class="b bs" onclick="checkYtStatus()">🔗 연동 확인</button>
+        </div>
+        <div class="an-grid" id="anGrid">
+          <div class="an-card"><div class="an-val" id="anViews" style="color:var(--acc)">-</div><div class="an-lbl">총 조회수</div></div>
+          <div class="an-card"><div class="an-val" id="anSubs" style="color:var(--ok)">-</div><div class="an-lbl">구독자</div></div>
+          <div class="an-card"><div class="an-val" id="anVideos" style="color:var(--info)">-</div><div class="an-lbl">영상 수</div></div>
+          <div class="an-card"><div class="an-val" id="anWatch" style="color:var(--warn)">-</div><div class="an-lbl">시청시간(h)</div></div>
+        </div>
+      </div>
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">📹 최근 영상 성과</div></div></div>
+        <div id="anVideoList" style="font-size:11px;color:var(--t2)">YouTube 인증 후 확인 가능합니다.</div>
+      </div>
+      <div class="cd">
+        <div class="cd-t" style="margin-bottom:10px">🔑 이 에이전트로 제작된 프로젝트</div>
+        <div id="anProjectStats"></div>
+      </div>
+    </div>
+
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -633,9 +794,9 @@ const S = {
   done: new Set(), langs:['ko']
 };
 
-const SECS = ['auto','topic','plan','script','image','tts','render','meta','thumb','shorts','intro','upload'];
-const NAMES = {auto:'🤖 자동 제작',topic:'💡 주제 선정',plan:'📋 대본 기획',script:'✍️ 대본 작성',image:'🎨 이미지 생성',tts:'🎙️ TTS 음성',render:'🎬 영상 합성',meta:'🏷️ 제목/설명',thumb:'🖼️ 썸네일',shorts:'📱 쇼츠',intro:'🚀 인트로',upload:'📤 업로드'};
-const PREREQS = {plan:['topic'],script:['plan'],image:['script'],tts:['script'],render:['image','tts'],meta:['script'],shorts:['script'],upload:['render']};
+const SECS = ['auto','topic','plan','script','image','tts','render','meta','thumb','shorts','intro','timeline','srt','projmgr','analytics','upload'];
+const NAMES = {auto:'🤖 자동 제작',topic:'💡 주제 선정',plan:'📋 대본 기획',script:'✍️ 대본 작성',image:'🎨 이미지 생성',tts:'🎙️ TTS 음성',render:'🎬 영상 합성',meta:'🏷️ 제목/설명',thumb:'🖼️ 썸네일',shorts:'📱 쇼츠',intro:'🚀 인트로',timeline:'🎞️ 타임라인',srt:'📝 SRT 자막',projmgr:'📁 프로젝트',analytics:'📊 Analytics',upload:'📤 업로드'};
+const PREREQS = {plan:['topic'],script:['plan'],image:['script'],tts:['script'],render:['image','tts'],meta:['script'],shorts:['script'],upload:['render'],srt:['script'],timeline:['image']};
 
 // === Nav ===
 function goHome() {
@@ -659,8 +820,12 @@ function go(id) {
   checkPrereqs(id);
   if(id==='plan') document.getElementById('planTopic').value=S.topic;
   if(id==='tts') prepareTTS();
-  if(id==='render') prepareRender();
+  if(id==='render') { prepareRender(); loadBgmList(); }
   if(id==='upload') prepareUpload();
+  if(id==='timeline') loadTimeline();
+  if(id==='projmgr') loadProjectList();
+  if(id==='analytics') loadAnalytics();
+  if(id==='srt') { const dur=parseFloat(document.getElementById('renderDur')?.value||2)*60; document.getElementById('srtDuration').value=Math.round(dur); }
   updateNav();
 }
 
@@ -922,7 +1087,7 @@ function prepareTTS(){
 async function doTTS(){
   const text=document.getElementById('ttsText').value;
   if(!text){toast('텍스트 입력 필요','err');return}
-  if(text.length>5000){toast(`텍스트가 ${text.length}자입니다. 5,000자 이하로 줄여주세요.`,'err');return}
+  // 5000자 초과 시 서버에서 자동 청크 분할
   loading('ttsBtn',true,'ElevenLabs TTS 변환 중...');
   try{
     const d=await api('/api/tts/full-script',{script:text,voiceId:document.getElementById('ttsVoice').value,stability:parseFloat(document.getElementById('ttsSt').value),similarity:parseFloat(document.getElementById('ttsSim').value)});
@@ -982,7 +1147,14 @@ async function prepareRender(){
 async function doRender(){
   loading('renderBtn',true,'FFmpeg 렌더링 중... (수 분 소요)');
   try{
-    const d=await api('/api/render/video',{duration:Math.round(parseFloat(document.getElementById('renderDur').value)*60)});
+    const bgmSel=document.getElementById('bgmSelect');
+    const d=await api('/api/render/video',{
+      duration:Math.round(parseFloat(document.getElementById('renderDur').value)*60),
+      bgmFile:bgmSel?.value||'',
+      bgmVolume:parseFloat(document.getElementById('bgmVol')?.value||0.15),
+      transition:document.getElementById('renderTrans')?.value||'none',
+      transitionDuration:parseFloat(document.getElementById('renderTransDur')?.value||0.8)
+    });
     document.getElementById('renderOut').innerHTML=`<div class="cd">
       <div class="cd-t" style="margin-bottom:10px;color:var(--ok)">✅ 영상 합성 완료</div>
       <div class="vc"><video controls src="${d.videoUrl}"></video></div>
@@ -1298,14 +1470,23 @@ async function startAutoPipeline(){
         <div>📹 영상: ${renderData.filename||''} | ${renderData.fileSize||''}</div>
         <div>🖼️ 썸네일: ${thumbData.filename||''}</div>
       </div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <div class="cd-t" style="margin:10px 0 6px">🖼️ 생성된 이미지 미리보기</div>
+      <div class="prev-grid" id="autoPrevGrid"></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
         ${renderData.videoUrl?`<a href="${renderData.videoUrl}" download class="b bs">💾 영상 다운로드</a>`:''}
         <button class="b bp" onclick="applyAutoMeta();go('upload')">📤 YouTube 업로드</button>
         <button class="b bs" onclick="go('script')">✍️ 대본 확인/수정</button>
-        <button class="b bs" onclick="go('image')">🎨 이미지 확인</button>
+        <button class="b bs" onclick="go('timeline')">🎞️ 타임라인 편집</button>
       </div>
     </div>`;
     toast('자동 제작 완료! 🎉');
+    // Load image preview grid
+    try{
+      const flist=await fetch('/api/files/list').then(r=>r.json());
+      const imgs=(flist.files.images||[]).filter(f=>f.name.startsWith('scene_'));
+      const prevEl=document.getElementById('autoPrevGrid');
+      if(prevEl)prevEl.innerHTML=imgs.map((img,i)=>`<div class="prev-item" onclick="window.open('${img.url}','_blank')"><img src="${img.url}" alt="Scene ${i+1}"><div class="prev-label">장면 ${i+1} | ${img.size}</div></div>`).join('');
+    }catch(e){}
   }catch(e){
     const failStep=AUTO_STEPS.find(s=>document.getElementById('as-'+s).classList.contains('running'));
     if(failStep)autoStatus(failStep,'fail',e.message);
@@ -1320,6 +1501,239 @@ function applyAutoMeta(){
   if(S.meta?.titles?.[0]?.options?.[0])document.getElementById('upTitle').value=S.meta.titles[0].options[0];
   if(S.meta?.description)document.getElementById('upDesc').value=Object.values(S.meta.description)[0]||'';
   if(S.meta?.tags)document.getElementById('upTags').value=S.meta.tags.join(', ');
+}
+
+// === BGM ===
+let currentBgmFile = '';
+
+async function handleBgmDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('dragover');
+  const file = e.dataTransfer.files[0];
+  if (file) await uploadBgm(file);
+}
+
+async function handleBgmFile(file) {
+  if (file) await uploadBgm(file);
+}
+
+async function uploadBgm(file) {
+  const status = document.getElementById('bgmCurrent');
+  status.style.display = 'block';
+  status.innerHTML = '<span class="sp"></span> 업로드 중...';
+  try {
+    const buf = await file.arrayBuffer();
+    const r = await fetch('/api/bgm/upload', { method: 'POST', headers: { 'Content-Type': file.type || 'audio/mpeg' }, body: buf });
+    const d = await r.json();
+    if (!d.success) throw new Error(d.error);
+    currentBgmFile = d.filename;
+    status.innerHTML = `✅ ${d.filename}`;
+    loadBgmList();
+    document.getElementById('bgmSelect').value = d.filename;
+    toast('BGM 업로드 완료');
+  } catch (e) { status.innerHTML = '❌ ' + e.message; }
+}
+
+async function loadBgmList() {
+  try {
+    const r = await fetch('/api/bgm/list').then(r => r.json());
+    const sel = document.getElementById('bgmSelect');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">BGM 없음</option>';
+    r.files.forEach(f => {
+      const o = document.createElement('option');
+      o.value = f.name; o.textContent = `${f.name} (${f.size})`;
+      sel.appendChild(o);
+    });
+    if (cur) sel.value = cur;
+  } catch (e) {}
+}
+
+// === SRT ===
+async function doSrt() {
+  if (!S.script) { toast('대본 먼저 생성', 'err'); return; }
+  loading('srtBtn', true, 'SRT 생성 중...');
+  try {
+    const dur = parseInt(document.getElementById('srtDuration').value) || 120;
+    const d = await api('/api/srt/generate', { script: S.script, duration: dur });
+    document.getElementById('srtOut').innerHTML = `<div class="cd">
+      <div class="cd-t" style="margin-bottom:10px;color:var(--ok)">✅ SRT 자막 생성 완료 (${d.subtitleCount}개 항목)</div>
+      <div class="otb">
+        <button class="b bs" onclick="cp(document.getElementById('srtEdit').value)">📋 복사</button>
+        <a href="${d.srtUrl}" download class="b bs">💾 다운로드 (.srt)</a>
+      </div>
+      <textarea class="out-edit" id="srtEdit" style="min-height:300px;font-family:Consolas,monospace;font-size:11px">${esc(d.preview)}${d.subtitleCount > 10 ? '\n\n... (전체 파일 다운로드)' : ''}</textarea>
+    </div>`;
+    markOk('srt'); save();
+  } catch (e) { toast(e.message, 'err'); }
+  loading('srtBtn', false);
+}
+
+// === Timeline Editor ===
+let tlDurations = [];
+
+async function loadTimeline() {
+  try {
+    const r = await fetch('/api/files/list').then(r => r.json());
+    const images = (r.files.images || []).filter(f => f.name.startsWith('scene_'));
+    if (images.length === 0) {
+      document.getElementById('tlInfo').style.display = 'block';
+      document.getElementById('tlInfo').textContent = '이미지가 없습니다. 먼저 이미지를 생성하세요.';
+      return;
+    }
+    document.getElementById('tlInfo').style.display = 'none';
+
+    const totalDur = parseFloat(document.getElementById('renderDur')?.value || 2) * 60;
+    const perImg = totalDur / images.length;
+    tlDurations = images.map(() => perImg);
+
+    renderTimeline(images);
+    renderPreviewGrid(images);
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function renderTimeline(images) {
+  const track = document.getElementById('tlTrack');
+  track.innerHTML = images.map((img, i) => `
+    <div class="tl-item" style="width:${Math.max(60, tlDurations[i] * 3)}px" id="tli${i}">
+      <img src="${img.url}" alt="Scene ${i + 1}">
+      <div class="tl-dur">
+        <input type="number" value="${tlDurations[i].toFixed(1)}" min="1" step="0.5"
+          onchange="tlDurations[${i}]=parseFloat(this.value);updateTlTotal()"
+          style="width:45px">초
+      </div>
+    </div>`).join('');
+
+  updateTlTotal();
+
+  const ruler = document.getElementById('tlRuler');
+  ruler.innerHTML = images.map(() => '<span></span>').join('');
+}
+
+function updateTlTotal() {
+  const total = tlDurations.reduce((a, b) => a + b, 0);
+  document.getElementById('tlTotal').textContent = total.toFixed(1);
+
+  const timeEl = document.getElementById('tlTime');
+  let t = 0;
+  const times = tlDurations.map(d => { const s = t; t += d; return formatSec(s); });
+  times.push(formatSec(t));
+  timeEl.innerHTML = `<span>0:00</span><span>${formatSec(t)}</span>`;
+}
+
+function formatSec(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+function tlDistributeEvenly() {
+  const total = parseFloat(document.getElementById('renderDur')?.value || 2) * 60;
+  const per = total / tlDurations.length;
+  tlDurations = tlDurations.map(() => per);
+  loadTimeline();
+}
+
+function renderPreviewGrid(images) {
+  const grid = document.getElementById('prevGrid');
+  grid.innerHTML = images.map((img, i) => `
+    <div class="prev-item" onclick="window.open('${img.url}','_blank')">
+      <img src="${img.url}" alt="Scene ${i + 1}">
+      <div class="prev-label">장면 ${i + 1} | ${img.size}</div>
+    </div>`).join('');
+}
+
+// === Project Manager ===
+const PROJ_STORAGE_KEY = 'yt_agent_projects';
+
+function saveCurrentProject() {
+  const name = document.getElementById('projName').value.trim() || S.topic || `프로젝트 ${new Date().toLocaleString('ko')}`;
+  const projects = JSON.parse(localStorage.getItem(PROJ_STORAGE_KEY) || '[]');
+  const existing = projects.findIndex(p => p.name === name);
+  const proj = {
+    name, topic: S.topic, target: S.target, plan: S.plan, script: S.script,
+    meta: S.meta, ttsText: S.ttsText, thumbFile: S.thumbFile,
+    audioFile: S.audioFile, done: [...S.done], imgPrompts: S.imgPrompts,
+    savedAt: new Date().toISOString()
+  };
+  if (existing >= 0) projects[existing] = proj;
+  else projects.push(proj);
+  localStorage.setItem(PROJ_STORAGE_KEY, JSON.stringify(projects));
+  toast(`프로젝트 "${name}" 저장 완료`);
+  loadProjectList();
+}
+
+function loadProjectList() {
+  const projects = JSON.parse(localStorage.getItem(PROJ_STORAGE_KEY) || '[]');
+  document.getElementById('projCount').textContent = `${projects.length}개`;
+  const list = document.getElementById('projList');
+  if (projects.length === 0) {
+    list.innerHTML = '<div style="font-size:11px;color:var(--t3);padding:20px;text-align:center">저장된 프로젝트가 없습니다</div>';
+    return;
+  }
+  list.innerHTML = projects.map((p, i) => `
+    <div class="pj-card${p.topic === S.topic ? ' active' : ''}">
+      <h4>${esc(p.name || p.topic || '제목 없음')}</h4>
+      <div style="font-size:10px;color:var(--t2);margin-top:2px">${esc(p.topic || '')}</div>
+      <div class="pj-meta">
+        <span>${p.done?.length || 0}단계 완료</span>
+        <span>${new Date(p.savedAt).toLocaleDateString('ko')}</span>
+      </div>
+      <div class="pj-acts">
+        <button class="b bp" onclick="loadProject(${i})" style="font-size:9px;padding:3px 8px">📂 불러오기</button>
+        <button class="b bs" onclick="exportProject(${i})" style="font-size:9px;padding:3px 8px">📥 JSON</button>
+        <button class="b bg" onclick="deleteProject(${i})" style="font-size:9px;padding:3px 8px;color:#ff5252">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+function loadProject(idx) {
+  const projects = JSON.parse(localStorage.getItem(PROJ_STORAGE_KEY) || '[]');
+  const p = projects[idx];
+  if (!p) return;
+  S.topic = p.topic || ''; S.target = p.target || ''; S.plan = p.plan || '';
+  S.script = p.script || ''; S.meta = p.meta || {}; S.ttsText = p.ttsText || '';
+  S.thumbFile = p.thumbFile || ''; S.audioFile = p.audioFile || '';
+  S.imgPrompts = p.imgPrompts || []; S.done = new Set(p.done || []);
+  document.getElementById('directTopic').value = S.topic;
+  document.getElementById('projName').value = p.name || '';
+  updateNav(); save();
+  toast(`"${p.name}" 불러옴`);
+  go('topic');
+}
+
+function deleteProject(idx) {
+  const projects = JSON.parse(localStorage.getItem(PROJ_STORAGE_KEY) || '[]');
+  if (!confirm(`"${projects[idx]?.name}" 삭제?`)) return;
+  projects.splice(idx, 1);
+  localStorage.setItem(PROJ_STORAGE_KEY, JSON.stringify(projects));
+  loadProjectList();
+  toast('프로젝트 삭제됨');
+}
+
+function exportProject(idx) {
+  const projects = JSON.parse(localStorage.getItem(PROJ_STORAGE_KEY) || '[]');
+  const p = projects[idx];
+  if (!p) return;
+  const blob = new Blob([JSON.stringify(p, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${(p.name || 'project').replace(/\s/g, '_')}.json`;
+  a.click();
+}
+
+// === Analytics ===
+function loadAnalytics() {
+  const projects = JSON.parse(localStorage.getItem(PROJ_STORAGE_KEY) || '[]');
+  const el = document.getElementById('anProjectStats');
+  el.innerHTML = `
+    <div style="font-size:11px;color:var(--t2);line-height:2">
+      <div>📁 총 프로젝트: <strong>${projects.length}</strong>개</div>
+      <div>✅ 완료 프로젝트: <strong>${projects.filter(p => p.done?.includes('render')).length}</strong>개</div>
+      <div>📤 업로드 완료: <strong>${projects.filter(p => p.done?.includes('upload')).length}</strong>개</div>
+      <div>📝 총 대본 글자 수: <strong>${projects.reduce((a, p) => a + (p.script?.length || 0), 0).toLocaleString()}</strong>자</div>
+      <div>🎨 총 생성 이미지: <strong>${projects.reduce((a, p) => a + (p.imgPrompts?.length || 0), 0)}</strong>장</div>
+    </div>`;
 }
 
 // === Init ===

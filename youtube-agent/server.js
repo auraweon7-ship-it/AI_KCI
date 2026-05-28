@@ -23,7 +23,7 @@ app.use('/output', express.static(path.join(__dirname, 'output')));
 const PORT = process.env.PORT || 3003;
 const OUTPUT_DIR = path.join(__dirname, 'output');
 
-['images', 'audio', 'video', 'thumbnails'].forEach(dir => {
+['images', 'audio', 'video', 'thumbnails', 'bgm', 'srt'].forEach(dir => {
   fs.mkdirSync(path.join(OUTPUT_DIR, dir), { recursive: true });
 });
 
@@ -393,43 +393,83 @@ app.post('/api/tts/full-script', async (req, res) => {
 
     const apiKey = process.env.ELEVENLABS_API_KEY;
     const vid = voiceId || 'pNInz6obpgDQGcFmaJgB';
+    const voiceSettings = {
+      stability: stability || 0.5,
+      similarity_boost: similarity || 0.75,
+      style: 0.3,
+      use_speaker_boost: true
+    };
 
-    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`, {
-      method: 'POST',
-      headers: {
-        'xi-api-key': apiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        text: cleanScript,
-        model_id: 'eleven_multilingual_v2',
-        voice_settings: {
-          stability: stability || 0.5,
-          similarity_boost: similarity || 0.75,
-          style: 0.3,
-          use_speaker_boost: true
-        }
-      })
-    });
+    const CHUNK_LIMIT = 4800;
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(`ElevenLabs 오류: ${response.status} - ${err}`);
+    async function generateTTSChunk(text) {
+      const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`, {
+        method: 'POST',
+        headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: voiceSettings })
+      });
+      if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`ElevenLabs 오류: ${response.status} - ${err}`);
+      }
+      return Buffer.from(await response.arrayBuffer());
     }
 
-    const audioBuffer = Buffer.from(await response.arrayBuffer());
-    const filename = `full_narration_${Date.now()}.mp3`;
-    const filepath = path.join(OUTPUT_DIR, 'audio', filename);
-    fs.writeFileSync(filepath, audioBuffer);
+    function splitTextIntoChunks(text, limit) {
+      if (text.length <= limit) return [text];
+      const chunks = [];
+      let remaining = text;
+      while (remaining.length > 0) {
+        if (remaining.length <= limit) { chunks.push(remaining); break; }
+        let splitIdx = remaining.lastIndexOf('. ', limit);
+        if (splitIdx < limit * 0.3) splitIdx = remaining.lastIndexOf('。', limit);
+        if (splitIdx < limit * 0.3) splitIdx = remaining.lastIndexOf('\n', limit);
+        if (splitIdx < limit * 0.3) splitIdx = remaining.lastIndexOf(' ', limit);
+        if (splitIdx < limit * 0.3) splitIdx = limit;
+        chunks.push(remaining.substring(0, splitIdx + 1).trim());
+        remaining = remaining.substring(splitIdx + 1).trim();
+      }
+      return chunks.filter(c => c.length > 0);
+    }
 
-    project.audioFiles = [{ index: 0, filename, filepath, full: true }];
+    const chunks = splitTextIntoChunks(cleanScript, CHUNK_LIMIT);
+    const timestamp = Date.now();
 
-    res.json({
-      success: true,
-      audioUrl: `/output/audio/${filename}`,
-      filename,
-      charCount: cleanScript.length
+    if (chunks.length === 1) {
+      const audioBuffer = await generateTTSChunk(chunks[0]);
+      const filename = `full_narration_${timestamp}.mp3`;
+      fs.writeFileSync(path.join(OUTPUT_DIR, 'audio', filename), audioBuffer);
+      project.audioFiles = [{ index: 0, filename, filepath: path.join(OUTPUT_DIR, 'audio', filename), full: true }];
+      return res.json({ success: true, audioUrl: `/output/audio/${filename}`, filename, charCount: cleanScript.length, chunks: 1 });
+    }
+
+    const chunkFiles = [];
+    for (let i = 0; i < chunks.length; i++) {
+      const buf = await generateTTSChunk(chunks[i]);
+      const chunkFile = `chunk_${timestamp}_${i}.mp3`;
+      fs.writeFileSync(path.join(OUTPUT_DIR, 'audio', chunkFile), buf);
+      chunkFiles.push(chunkFile);
+      if (i < chunks.length - 1) await new Promise(r => setTimeout(r, 500));
+    }
+
+    const concatList = chunkFiles.map(f => `file '${path.join(OUTPUT_DIR, 'audio', f).replace(/\\/g, '/')}'`).join('\n');
+    const concatFile = path.join(OUTPUT_DIR, 'audio', `concat_${timestamp}.txt`);
+    fs.writeFileSync(concatFile, concatList);
+
+    const filename = `full_narration_${timestamp}.mp3`;
+    const outputPath = path.join(OUTPUT_DIR, 'audio', filename);
+
+    await new Promise((resolve, reject) => {
+      execFile('ffmpeg', ['-f', 'concat', '-safe', '0', '-i', concatFile, '-c', 'copy', '-y', outputPath],
+        { timeout: 60000 }, (error) => { if (error) reject(error); else resolve(); });
     });
+
+    chunkFiles.forEach(f => { try { fs.unlinkSync(path.join(OUTPUT_DIR, 'audio', f)); } catch(e) {} });
+    try { fs.unlinkSync(concatFile); } catch(e) {}
+
+    project.audioFiles = [{ index: 0, filename, filepath: outputPath, full: true }];
+
+    res.json({ success: true, audioUrl: `/output/audio/${filename}`, filename, charCount: cleanScript.length, chunks: chunks.length });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -480,11 +520,83 @@ app.post('/api/tts/sample', async (req, res) => {
 });
 
 // ========================
+// 5-1. SRT 자막 생성
+// ========================
+app.post('/api/srt/generate', async (req, res) => {
+  try {
+    const { projectId, script, duration } = req.body;
+    const project = getProject(projectId);
+    const text = script || project.script || '';
+    if (!text) throw new Error('대본이 없습니다');
+
+    const sceneRegex = /\[장면\s*(\d+)[^\]]*\]([\s\S]*?)(?=\[장면|\s*$)/g;
+    const scenes = [];
+    let match;
+    while ((match = sceneRegex.exec(text)) !== null) {
+      const content = match[2].replace(/[━═─▶■●•🎙️🎬📌🔹✅☐]/g, '').replace(/\(.*?\)/g, '').replace(/\n{2,}/g, '\n').trim();
+      if (content) scenes.push(content);
+    }
+
+    if (scenes.length === 0) {
+      const paragraphs = text.replace(/\[.*?\]/g, '').replace(/[━═─▶■●•🎙️🎬📌🔹✅☐]/g, '').replace(/\(.*?\)/g, '').split(/\n{2,}/).map(p => p.trim()).filter(p => p.length > 10);
+      scenes.push(...paragraphs);
+    }
+
+    const totalDur = duration || 120;
+    const totalChars = scenes.reduce((a, s) => a + s.length, 0);
+    let currentTime = 0;
+    let srtContent = '';
+
+    scenes.forEach((scene, idx) => {
+      const sceneDur = (scene.length / totalChars) * totalDur;
+      const sentences = scene.match(/[^.!?。！？\n]+[.!?。！？]?/g) || [scene];
+      const sentTotalChars = sentences.reduce((a, s) => a + s.length, 0);
+
+      sentences.forEach((sent, si) => {
+        const sentText = sent.trim();
+        if (!sentText || sentText.length < 3) return;
+        const sentDur = Math.max(1, (sentText.length / sentTotalChars) * sceneDur);
+        const startTime = currentTime;
+        const endTime = currentTime + sentDur;
+
+        const formatTime = (sec) => {
+          const h = Math.floor(sec / 3600);
+          const m = Math.floor((sec % 3600) / 60);
+          const s = Math.floor(sec % 60);
+          const ms = Math.round((sec % 1) * 1000);
+          return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
+        };
+
+        const subIdx = srtContent.split('\n\n').filter(Boolean).length + 1;
+        srtContent += `${subIdx}\n${formatTime(startTime)} --> ${formatTime(endTime)}\n${sentText}\n\n`;
+        currentTime = endTime;
+      });
+    });
+
+    const filename = `subtitles_${Date.now()}.srt`;
+    fs.writeFileSync(path.join(OUTPUT_DIR, 'srt', filename), srtContent, 'utf-8');
+
+    res.json({
+      success: true,
+      srtUrl: `/output/srt/${filename}`,
+      filename,
+      subtitleCount: srtContent.split('\n\n').filter(Boolean).length,
+      preview: srtContent.substring(0, 500)
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.use('/output/srt', express.static(path.join(OUTPUT_DIR, 'srt')));
+app.use('/output/bgm', express.static(path.join(OUTPUT_DIR, 'bgm')));
+
+// ========================
 // 6. 영상 렌더링 (FFmpeg)
 // ========================
 app.post('/api/render/video', async (req, res) => {
   try {
-    const { projectId, duration } = req.body;
+    const { projectId, duration, bgmFile, bgmVolume, transition, transitionDuration } = req.body;
     const project = getProject(projectId);
 
     const images = fs.readdirSync(path.join(OUTPUT_DIR, 'images'))
@@ -500,35 +612,102 @@ app.post('/api/render/video', async (req, res) => {
     const audioFile = audioFiles.find(f => f.startsWith('full_')) || audioFiles[0];
     const audioPath = path.join(OUTPUT_DIR, 'audio', audioFile);
 
-    const concatFile = path.join(OUTPUT_DIR, 'images', 'concat.txt');
-    const durationPerImage = (duration || 120) / images.length;
-    const concatContent = images
-      .map(img => `file '${path.join(OUTPUT_DIR, 'images', img).replace(/\\/g, '/')}'\nduration ${durationPerImage}`)
-      .join('\n');
-    fs.writeFileSync(concatFile, concatContent + `\nfile '${path.join(OUTPUT_DIR, 'images', images[images.length - 1]).replace(/\\/g, '/')}'`);
+    const totalDuration = duration || 120;
+    const durationPerImage = totalDuration / images.length;
+    const transDur = Math.min(parseFloat(transitionDuration) || 0.8, durationPerImage * 0.4);
+    const transType = transition || 'none';
 
     const outputFile = `video_${Date.now()}.mp4`;
     const outputPath = path.join(OUTPUT_DIR, 'video', outputFile);
 
-    const ffmpegArgs = [
-      '-f', 'concat', '-safe', '0', '-i', concatFile,
-      '-i', audioPath,
-      '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,zoompan=z=\'min(zoom+0.0005,1.15)\':d=1:x=\'iw/2-(iw/zoom/2)\':y=\'ih/2-(ih/zoom/2)\':s=1920x1080:fps=30',
-      '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
-      '-c:a', 'aac', '-b:a', '192k',
-      '-shortest', '-movflags', '+faststart',
-      '-y', outputPath
-    ];
+    let ffmpegArgs;
+
+    if (transType !== 'none' && images.length > 1) {
+      const inputArgs = [];
+      images.forEach(img => {
+        inputArgs.push('-loop', '1', '-t', String(durationPerImage), '-i', path.join(OUTPUT_DIR, 'images', img));
+      });
+      inputArgs.push('-i', audioPath);
+
+      let filterComplex = '';
+      const scaledLabels = [];
+      images.forEach((_, i) => {
+        filterComplex += `[${i}:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1,zoompan=z='min(zoom+0.0005,1.15)':d=${Math.round(durationPerImage*30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=30[v${i}];`;
+        scaledLabels.push(`v${i}`);
+      });
+
+      let prevLabel = scaledLabels[0];
+      for (let i = 1; i < scaledLabels.length; i++) {
+        const offset = i * durationPerImage - i * transDur;
+        const outLabel = i < scaledLabels.length - 1 ? `xf${i}` : 'vout';
+        filterComplex += `[${prevLabel}][${scaledLabels[i]}]xfade=transition=${transType}:duration=${transDur}:offset=${offset.toFixed(2)}[${outLabel}];`;
+        prevLabel = outLabel;
+      }
+
+      filterComplex = filterComplex.slice(0, -1);
+
+      ffmpegArgs = [
+        ...inputArgs,
+        '-filter_complex', filterComplex,
+        '-map', '[vout]', '-map', `${images.length}:a`,
+        '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
+        '-c:a', 'aac', '-b:a', '192k',
+        '-shortest', '-movflags', '+faststart',
+        '-y', outputPath
+      ];
+    } else {
+      const concatFile = path.join(OUTPUT_DIR, 'images', 'concat.txt');
+      const concatContent = images
+        .map(img => `file '${path.join(OUTPUT_DIR, 'images', img).replace(/\\/g, '/')}'\nduration ${durationPerImage}`)
+        .join('\n');
+      fs.writeFileSync(concatFile, concatContent + `\nfile '${path.join(OUTPUT_DIR, 'images', images[images.length - 1]).replace(/\\/g, '/')}'`);
+
+      ffmpegArgs = [
+        '-f', 'concat', '-safe', '0', '-i', concatFile,
+        '-i', audioPath,
+        '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,zoompan=z=\'min(zoom+0.0005,1.15)\':d=1:x=\'iw/2-(iw/zoom/2)\':y=\'ih/2-(ih/zoom/2)\':s=1920x1080:fps=30',
+        '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
+        '-c:a', 'aac', '-b:a', '192k',
+        '-shortest', '-movflags', '+faststart',
+        '-y', outputPath
+      ];
+    }
+
+    // BGM mixing as a second pass if requested
+    let finalOutput = outputPath;
+    const bgmPath = bgmFile ? path.join(OUTPUT_DIR, 'bgm', bgmFile) : null;
+    const hasBgm = bgmPath && fs.existsSync(bgmPath);
 
     await new Promise((resolve, reject) => {
-      const proc = execFile('ffmpeg', ffmpegArgs, { timeout: 600000 }, (error, stdout, stderr) => {
+      execFile('ffmpeg', ffmpegArgs, { timeout: 600000 }, (error, stdout, stderr) => {
         if (error) reject(new Error(`FFmpeg 오류: ${error.message}\n${stderr}`));
         else resolve(stdout);
       });
     });
 
-    project.videoFile = outputFile;
+    if (hasBgm) {
+      const bgmOutput = path.join(OUTPUT_DIR, 'video', `bgm_${outputFile}`);
+      const vol = bgmVolume || 0.15;
+      const bgmArgs = [
+        '-i', outputPath,
+        '-stream_loop', '-1', '-i', bgmPath,
+        '-filter_complex', `[1:a]volume=${vol}[bgm];[0:a][bgm]amix=inputs=2:duration=first:dropout_transition=3[aout]`,
+        '-map', '0:v', '-map', '[aout]',
+        '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k',
+        '-shortest', '-movflags', '+faststart',
+        '-y', bgmOutput
+      ];
+      await new Promise((resolve, reject) => {
+        execFile('ffmpeg', bgmArgs, { timeout: 300000 }, (error, stdout, stderr) => {
+          if (error) reject(new Error(`BGM 믹싱 오류: ${error.message}`));
+          else resolve(stdout);
+        });
+      });
+      try { fs.unlinkSync(outputPath); } catch(e) {}
+      fs.renameSync(bgmOutput, outputPath);
+    }
 
+    project.videoFile = outputFile;
     const stats = fs.statSync(outputPath);
 
     res.json({
@@ -537,11 +716,47 @@ app.post('/api/render/video', async (req, res) => {
       filename: outputFile,
       fileSize: `${(stats.size / 1024 / 1024).toFixed(1)}MB`,
       imageCount: images.length,
-      audioFile
+      audioFile,
+      transition: transType,
+      bgm: hasBgm ? bgmFile : null
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
+});
+
+// BGM 업로드
+app.post('/api/bgm/upload', express.raw({ type: 'audio/*', limit: '50mb' }), (req, res) => {
+  try {
+    const filename = `bgm_${Date.now()}.mp3`;
+    fs.writeFileSync(path.join(OUTPUT_DIR, 'bgm', filename), req.body);
+    res.json({ success: true, filename, url: `/output/bgm/${filename}` });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/bgm/list', (req, res) => {
+  const bgmDir = path.join(OUTPUT_DIR, 'bgm');
+  const files = fs.readdirSync(bgmDir).filter(f => f.endsWith('.mp3') || f.endsWith('.wav') || f.endsWith('.m4a')).map(f => ({
+    name: f, url: `/output/bgm/${f}`, size: `${(fs.statSync(path.join(bgmDir, f)).size / 1024).toFixed(0)}KB`
+  }));
+  res.json({ success: true, files });
+});
+
+// 프로젝트 목록 관리
+app.get('/api/projects/list', (req, res) => {
+  const list = Object.values(projects).map(p => ({
+    id: p.id, topic: p.topic, createdAt: p.createdAt,
+    hasScript: !!p.script, hasVideo: !!p.videoFile,
+    imageCount: p.imageFiles?.length || 0
+  }));
+  res.json({ success: true, projects: list });
+});
+
+app.delete('/api/project/:id', (req, res) => {
+  delete projects[req.params.id];
+  res.json({ success: true });
 });
 
 // ========================
@@ -838,7 +1053,7 @@ app.get('/api/project/:id', (req, res) => {
 
 app.get('/api/files/list', (req, res) => {
   const result = {};
-  ['images', 'audio', 'video', 'thumbnails'].forEach(dir => {
+  ['images', 'audio', 'video', 'thumbnails', 'bgm', 'srt'].forEach(dir => {
     const dirPath = path.join(OUTPUT_DIR, dir);
     result[dir] = fs.readdirSync(dirPath).filter(f => !f.endsWith('.txt')).map(f => ({
       name: f,
@@ -885,7 +1100,7 @@ app.get('/api/audio/duration/:filename', (req, res) => {
 // ========================
 app.post('/api/files/clean', (req, res) => {
   let deleted = 0;
-  ['images', 'audio', 'video', 'thumbnails'].forEach(dir => {
+  ['images', 'audio', 'video', 'thumbnails', 'bgm', 'srt'].forEach(dir => {
     const dirPath = path.join(OUTPUT_DIR, dir);
     fs.readdirSync(dirPath).forEach(f => {
       if (f === '.gitkeep' || f === 'concat.txt') return;
