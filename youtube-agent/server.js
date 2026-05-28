@@ -412,9 +412,11 @@ app.post('/api/tts/full-script', async (req, res) => {
 
     const cleanScript = (script || project.script || '')
       .replace(/\[장면[^\]]*\]/g, '')
-      .replace(/[━═─]/g, '')
-      .replace(/[🎙️🎬📌🔹▶✅☐■●•]/g, '')
-      .replace(/\(.*?\)/g, '')
+      .replace(/▶\s*이미지\s*[:：][^\n]*/g, '')
+      .replace(/\((?:차분하게|긴장감 있게|무겁게|밝게|조용히|힘주어|속삭이듯|빠르게|느리게|감정적으로|진지하게|유쾌하게|경쾌하게|슬프게|놀라며|분노하며|웃으며|담담하게|강조하며|나지막이)[^)]*\)/g, '')
+      .replace(/^#+\s.*$/gm, '')
+      .replace(/^[-*]\s/gm, '')
+      .replace(/[━═─■●•🎙️🎬📌🔹✅☐▶🎵🎶⚡⏩]/g, '')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
 
