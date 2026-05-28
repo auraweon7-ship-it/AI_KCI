@@ -466,28 +466,18 @@
                 + '<button class="btn btn-sm btn-outline" onclick="document.getElementById(\'learnerDetail\').style.display=\'none\'">닫기</button>'
                 + '</div>';
 
+            var lastDate = '-';
+            if (practiceList.length > 0 && practiceList[0].created_at) {
+                lastDate = new Date(practiceList[0].created_at).toLocaleDateString('ko-KR', {year:'numeric',month:'long',day:'numeric'});
+            }
+
             html += '<div class="detail-stats">'
                 + '<div class="detail-stat"><div class="detail-stat-val accent">' + charSet.size + '</div><div class="detail-stat-lbl">학습 한자</div></div>'
                 + '<div class="detail-stat"><div class="detail-stat-val success">' + practiceList.length + '</div><div class="detail-stat-lbl">연습 횟수</div></div>'
                 + '<div class="detail-stat"><div class="detail-stat-val warning">' + accuracy + '%</div><div class="detail-stat-lbl">정답률</div></div>'
                 + '<div class="detail-stat"><div class="detail-stat-val danger">' + totalMistakes + '</div><div class="detail-stat-lbl">총 오답</div></div>'
+                + '<div class="detail-stat"><div class="detail-stat-val" style="color:var(--text);font-size:16px;">' + lastDate + '</div><div class="detail-stat-lbl">최근 학습</div></div>'
                 + '</div>';
-
-            html += '<div class="detail-list-header">최근 학습 기록</div>';
-            html += '<div class="detail-list">';
-            if (practiceList.length === 0) {
-                html += '<div style="color:var(--text-dim);padding:20px;text-align:center;">학습 기록이 없습니다</div>';
-            } else {
-                practiceList.forEach(function(p) {
-                    var timeStr = p.created_at ? new Date(p.created_at).toLocaleString('ko-KR') : '-';
-                    html += '<div class="detail-record">'
-                        + '<span class="detail-r-char">' + p.char + '</span>'
-                        + '<span class="detail-r-info">정답 ' + (p.correct||0) + ' / 오답 ' + (p.mistakes||0) + '</span>'
-                        + '<span class="detail-r-time">' + timeStr + '</span>'
-                        + '</div>';
-                });
-            }
-            html += '</div>';
             panel.innerHTML = html;
             panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         })
