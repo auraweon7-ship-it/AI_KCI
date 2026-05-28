@@ -763,6 +763,19 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
           </div>
         </div>
         <div class="divider"></div>
+        <div class="cd-t" style="margin-bottom:10px">🎥 Ken Burns 효과 (카메라 움직임)</div>
+        <div class="fr">
+          <div class="fg"><label class="fl">🎥 카메라 효과</label>
+            <select class="fs" id="renderKenburns">
+              <option value="varied" selected>다양한 효과 (추천)</option>
+              <option value="zoom-in">줌 인</option>
+              <option value="zoom-out">줌 아웃</option>
+              <option value="none">없음 (정지)</option>
+            </select>
+            <div class="fh">장면마다 pan/zoom이 자동 적용되어 영상이 생동감 있게 됩니다</div>
+          </div>
+        </div>
+        <div class="divider"></div>
         <div class="cd-t" style="margin-bottom:10px">✨ 장면 전환 효과</div>
         <div class="fr">
           <div class="fg"><label class="fl">✨ 전환 스타일</label>
@@ -1436,6 +1449,7 @@ async function doRender(){
       bgmVolume:parseFloat(document.getElementById('bgmVol')?.value||0.15),
       transition:document.getElementById('renderTrans')?.value||'none',
       transitionDuration:parseFloat(document.getElementById('renderTransDur')?.value||0.8),
+      kenburns:document.getElementById('renderKenburns')?.value||'varied',
       burnSrt:document.getElementById('renderSrt')?.checked||false,
       showThumb:document.getElementById('renderThumb')?.checked||false,
       showIntro:document.getElementById('renderIntro')?.checked||false

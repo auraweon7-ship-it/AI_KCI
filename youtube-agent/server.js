@@ -638,7 +638,7 @@ app.use('/output/bgm', express.static(path.join(OUTPUT_DIR, 'bgm')));
 // ========================
 app.post('/api/render/video', async (req, res) => {
   try {
-    const { projectId, duration, bgmFile, bgmVolume, transition, transitionDuration, burnSrt, showThumb, showIntro } = req.body;
+    const { projectId, duration, bgmFile, bgmVolume, transition, transitionDuration, burnSrt, showThumb, showIntro, kenburns } = req.body;
     const project = getProject(projectId);
 
     const images = fs.readdirSync(path.join(OUTPUT_DIR, 'images'))
@@ -658,6 +658,26 @@ app.post('/api/render/video', async (req, res) => {
     const durationPerImage = totalDuration / images.length;
     const transDur = Math.min(parseFloat(transitionDuration) || 0.8, durationPerImage * 0.4);
     const transType = transition || 'none';
+    const kbMode = kenburns || 'varied';
+
+    const KB_PATTERNS = [
+      { z: "min(zoom+0.0008,1.25)", x: "iw/2-(iw/zoom/2)", y: "ih/2-(ih/zoom/2)" },
+      { z: "if(eq(on,1),1.25,max(zoom-0.0008,1))", x: "iw/2-(iw/zoom/2)", y: "ih/2-(ih/zoom/2)" },
+      { z: "min(zoom+0.0006,1.2)", x: "0", y: "ih/2-(ih/zoom/2)" },
+      { z: "min(zoom+0.0006,1.2)", x: "iw/zoom-iw", y: "ih/2-(ih/zoom/2)" },
+      { z: "min(zoom+0.0006,1.2)", x: "iw/2-(iw/zoom/2)", y: "0" },
+      { z: "min(zoom+0.0006,1.2)", x: "iw/2-(iw/zoom/2)", y: "ih/zoom-ih" },
+      { z: "min(zoom+0.0008,1.25)", x: "0", y: "0" },
+      { z: "min(zoom+0.0008,1.25)", x: "iw/zoom-iw", y: "ih/zoom-ih" },
+    ];
+
+    function getKenBurns(idx, frames) {
+      if (kbMode === 'none') return `scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1`;
+      const p = kbMode === 'zoom-in'  ? KB_PATTERNS[0]
+              : kbMode === 'zoom-out' ? KB_PATTERNS[1]
+              : KB_PATTERNS[idx % KB_PATTERNS.length];
+      return `scale=3840:2160:force_original_aspect_ratio=decrease,pad=3840:2160:(ow-iw)/2:(oh-ih)/2,setsar=1,zoompan=z='${p.z}':d=${frames}:x='${p.x}':y='${p.y}':s=1920x1080:fps=30`;
+    }
 
     const outputFile = `video_${Date.now()}.mp4`;
     const outputPath = path.join(OUTPUT_DIR, 'video', outputFile);
@@ -673,8 +693,9 @@ app.post('/api/render/video', async (req, res) => {
 
       let filterComplex = '';
       const scaledLabels = [];
+      const frames = Math.round(durationPerImage * 30);
       images.forEach((_, i) => {
-        filterComplex += `[${i}:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1,zoompan=z='min(zoom+0.0005,1.15)':d=${Math.round(durationPerImage*30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=30[v${i}];`;
+        filterComplex += `[${i}:v]${getKenBurns(i, frames)}[v${i}];`;
         scaledLabels.push(`v${i}`);
       });
 
@@ -707,7 +728,7 @@ app.post('/api/render/video', async (req, res) => {
       ffmpegArgs = [
         '-f', 'concat', '-safe', '0', '-i', concatFile,
         '-i', audioPath,
-        '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,zoompan=z=\'min(zoom+0.0005,1.15)\':d=1:x=\'iw/2-(iw/zoom/2)\':y=\'ih/2-(ih/zoom/2)\':s=1920x1080:fps=30',
+        '-vf', `scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,zoompan=z='min(zoom+0.0008,1.25)':d=${Math.round(durationPerImage*30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=30`,
         '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
         '-c:a', 'aac', '-b:a', '192k',
         '-shortest', '-movflags', '+faststart',
