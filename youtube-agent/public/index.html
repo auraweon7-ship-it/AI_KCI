@@ -789,27 +789,29 @@ async function previewVoiceById(voiceId){
   const audioEl=document.getElementById('voiceSampleAudio');
   if(audioEl._playing===voiceId){audioEl.pause();audioEl.currentTime=0;audioEl._playing=null;statusEl.textContent='';return}
 
-  if(voicePreviewUrls[voiceId]){
-    audioEl.src=voicePreviewUrls[voiceId];audioEl.style.display='none';audioEl._playing=voiceId;audioEl.play();
+  const cacheKey=voiceId+'_'+ttsLang;
+  if(voicePreviewUrls[cacheKey]){
+    audioEl.src=voicePreviewUrls[cacheKey];audioEl.style.display='none';audioEl._playing=voiceId;audioEl.play();
     statusEl.textContent='▶ 재생 중...';
     audioEl.onended=()=>{statusEl.textContent='';audioEl._playing=null};
     return;
   }
 
-  statusEl.innerHTML='<span class="sp"></span> 샘플 로딩...';
+  const voices=VOICE_PRESETS[ttsLang]||[];
+  const voice=voices.find(v=>v.id===voiceId);
+  const sampleText=voice?.sample||'샘플 텍스트입니다.';
+
+  statusEl.innerHTML='<span class="sp"></span> 샘플 생성 중...';
   try{
-    const r=await fetch('/api/tts/voices').then(r=>r.json());
-    if(r.success){
-      r.voices.forEach(v=>{if(v.previewUrl)voicePreviewUrls[v.id]=v.previewUrl});
-      if(voicePreviewUrls[voiceId]){
-        audioEl.src=voicePreviewUrls[voiceId];audioEl._playing=voiceId;audioEl.play();
-        statusEl.textContent='▶ 재생 중...';
-        audioEl.onended=()=>{statusEl.textContent='';audioEl._playing=null};
-      } else {
-        statusEl.textContent='샘플 없음';
-      }
-    }
-  }catch(e){statusEl.textContent='로드 실패'}
+    const r=await fetch('/api/tts/sample',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({voiceId,text:sampleText})});
+    if(!r.ok)throw new Error('생성 실패');
+    const blob=await r.blob();
+    const url=URL.createObjectURL(blob);
+    voicePreviewUrls[cacheKey]=url;
+    audioEl.src=url;audioEl._playing=voiceId;audioEl.play();
+    statusEl.textContent='▶ 재생 중...';
+    audioEl.onended=()=>{statusEl.textContent='';audioEl._playing=null};
+  }catch(e){statusEl.textContent='샘플 생성 실패'}
 }
 
 function prepareTTS(){

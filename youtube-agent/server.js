@@ -455,6 +455,30 @@ app.get('/api/tts/voices', async (req, res) => {
   }
 });
 
+app.post('/api/tts/sample', async (req, res) => {
+  try {
+    const apiKey = process.env.ELEVENLABS_API_KEY;
+    const { voiceId, text } = req.body;
+    if (!text || !voiceId) throw new Error('voiceId와 text 필요');
+    const sampleText = text.slice(0, 200);
+    const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+      method: 'POST',
+      headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: sampleText,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+      })
+    });
+    if (!response.ok) throw new Error(`ElevenLabs: ${response.status}`);
+    const audioBuffer = Buffer.from(await response.arrayBuffer());
+    res.set({ 'Content-Type': 'audio/mpeg', 'Content-Length': audioBuffer.length });
+    res.send(audioBuffer);
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ========================
 // 6. 영상 렌더링 (FFmpeg)
 // ========================
