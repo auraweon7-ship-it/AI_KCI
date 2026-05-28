@@ -399,6 +399,7 @@
             }
             html += '</div>';
             panel.innerHTML = html;
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         })
         .catch(function(e) {
             panel.innerHTML = '<div style="color:var(--danger);padding:20px;">로딩 실패: ' + e.message
