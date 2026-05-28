@@ -627,7 +627,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         <div class="cd-t" style="margin-bottom:12px">🤖 AI 주제 추천</div>
         <div class="fr">
           <div class="fg"><label class="fl">📂 카테고리</label><select class="fs" id="topCat"><option value="">선택...</option><option>역사/다큐</option><option>과학/기술</option><option>미스터리/괴담</option><option>경제/재테크</option><option>심리/자기계발</option><option>세계문화/여행</option><option>범죄/사건</option><option>자연/동물</option><option>철학/인문학</option></select></div>
-          <div class="fg"><label class="fl">👥 타겟</label><select class="fs" id="topTar"><option value="">선택...</option><option>10대 청소년</option><option>20~30대</option><option>30~40대 직장인</option><option>40~60대 중장년</option><option>전 연령</option></select></div>
+          <div class="fg"><label class="fl">👥 타겟</label><select class="fs" id="topTar" onchange="S.target=this.value"><option value="">선택...</option><option>10대 청소년</option><option>20~30대</option><option>30~40대 직장인</option><option>40~60대 중장년</option><option>전 연령</option></select></div>
         </div>
         <div class="fg"><label class="fl">🔑 키워드 (선택)</label><input type="text" class="fi" id="topKw" placeholder="예: 전쟁, AI, 우주..."></div>
         <button class="b bs blg" id="topBtn" onclick="doTopics()">🔍 AI 주제 추천받기</button>
@@ -642,7 +642,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         <div class="cd-h"><div><div class="cd-t">📋 대본 기획 (Claude AI)</div><div class="cd-s">영상 구조를 설계합니다</div></div></div>
         <div class="fg"><label class="fl">🎯 영상 주제 *</label><input type="text" class="fi" id="planTopic" placeholder="주제"></div>
         <div class="fr">
-          <div class="fg"><label class="fl">👥 타겟 시청자</label><input type="text" class="fi" id="planTarget" placeholder="예: 역사 관심 중장년층"></div>
+          <div class="fg"><label class="fl">👥 타겟 시청자</label><select class="fs" id="planTarget"><option value="">선택...</option><option>10대 청소년</option><option>20~30대</option><option>30~40대 직장인</option><option>40~60대 중장년</option><option>전 연령</option></select></div>
           <div class="fg"><label class="fl">⏱️ 영상 길이</label><select class="fs" id="planLen"><option value="10">10분</option><option value="15" selected>15분</option><option value="20">20분</option><option value="30">30분+</option></select></div>
         </div>
         <div class="fr">
@@ -1080,7 +1080,7 @@ function go(id) {
   if(id!=='topic'&&S.topic){document.getElementById('ban').style.display='flex';document.getElementById('banN').textContent=S.topic}
   else document.getElementById('ban').style.display='none';
   checkPrereqs(id);
-  if(id==='plan') document.getElementById('planTopic').value=S.topic;
+  if(id==='plan') { document.getElementById('planTopic').value=S.topic; const tv=document.getElementById('topTar').value; if(tv) document.getElementById('planTarget').value=tv; }
   if(id==='auto') loadAutoBgmList();
   if(id==='tts') prepareTTS();
   if(id==='render') { prepareRender(); loadBgmList(); }
