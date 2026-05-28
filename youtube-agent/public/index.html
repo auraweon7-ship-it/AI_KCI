@@ -1201,7 +1201,8 @@ async function doImgPrompts(){
     d.prompts.forEach((p,i)=>{
       h+=`<div class="sc" id="sc${i}"><div class="sc-h"><span class="sc-n">${i+1}</span><span class="sc-nm">${esc(p.name)}</span></div>
         <textarea class="sc-p" id="scP${i}" style="width:100%;border:1px solid var(--bd);resize:vertical;min-height:60px;background:var(--bgi);color:var(--info);font-family:Consolas,monospace;font-size:10.5px;padding:7px 10px;border-radius:var(--rs)" oninput="S.imgPrompts[${i}].prompt=this.value">${esc(p.prompt)}</textarea>
-        <div class="sc-act"><button class="b bs" onclick="cp(S.imgPrompts[${i}].prompt)" style="font-size:9px">📋</button><button class="b bp" onclick="genOneImg(${i})" style="font-size:9px">🎨 생성</button><button class="b bg" onclick="regenOneImg(${i})" style="font-size:9px">🔄 재생성</button><span class="sc-st" id="imgSt${i}"></span></div></div>`;
+        <div class="sc-act"><button class="b bs" onclick="cp(S.imgPrompts[${i}].prompt)" style="font-size:9px">📋</button><button class="b bp" onclick="genOneImg(${i})" style="font-size:9px">🎨 생성</button><button class="b bg" onclick="regenOneImg(${i})" style="font-size:9px">🔄 재생성</button><span class="sc-st" id="imgSt${i}"></span></div>
+        <div id="imgPreview${i}" style="margin-top:8px"></div></div>`;
     });
     h+='</div>';
     document.getElementById('imgPOut').innerHTML=h;
@@ -1216,6 +1217,7 @@ async function genOneImg(i){
   try{
     const d=await api('/api/images/generate',{prompt:p.prompt,style:document.getElementById('imgStyle').value,ratio:document.getElementById('imgRatio').value,index:i+1});
     st.innerHTML='✅ 완료';
+    document.getElementById('imgPreview'+i).innerHTML=`<img src="${d.imageUrl}" alt="Scene ${i+1}" style="width:100%;max-width:480px;border-radius:var(--r);border:1px solid var(--bd)">`;
     const g=document.getElementById('imgOut');
     const existing=document.getElementById('imgCard'+i);
     const card=`<div class="ic" id="imgCard${i}"><img src="${d.imageUrl}" alt="Scene ${i+1}"><div class="ic-i">장면 ${i+1}: ${esc(p.name)}</div></div>`;
