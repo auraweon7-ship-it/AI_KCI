@@ -635,7 +635,7 @@ app.use('/output/bgm', express.static(path.join(OUTPUT_DIR, 'bgm')));
 // ========================
 app.post('/api/render/video', async (req, res) => {
   try {
-    const { projectId, duration, bgmFile, bgmVolume, transition, transitionDuration } = req.body;
+    const { projectId, duration, bgmFile, bgmVolume, transition, transitionDuration, burnSrt, showThumb, showIntro } = req.body;
     const project = getProject(projectId);
 
     const images = fs.readdirSync(path.join(OUTPUT_DIR, 'images'))
@@ -744,6 +744,83 @@ app.post('/api/render/video', async (req, res) => {
       });
       try { fs.unlinkSync(outputPath); } catch(e) {}
       fs.renameSync(bgmOutput, outputPath);
+    }
+
+    // SRT 자막 하드섭
+    if (burnSrt) {
+      const srtFiles = fs.readdirSync(path.join(OUTPUT_DIR, 'srt')).filter(f => f.endsWith('.srt')).sort();
+      if (srtFiles.length > 0) {
+        const srtPath = path.join(OUTPUT_DIR, 'srt', srtFiles[srtFiles.length - 1]).replace(/\\/g, '/').replace(/:/g, '\\:');
+        const srtOutput = path.join(OUTPUT_DIR, 'video', `srt_${outputFile}`);
+        await new Promise((resolve, reject) => {
+          execFile('ffmpeg', [
+            '-i', outputPath,
+            '-vf', `subtitles='${srtPath}':force_style='FontSize=24,FontName=Malgun Gothic,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2,Shadow=1,MarginV=30'`,
+            '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
+            '-movflags', '+faststart', '-y', srtOutput
+          ], { timeout: 600000 }, (error, stdout, stderr) => {
+            if (error) reject(new Error(`자막 삽입 오류: ${error.message}`));
+            else resolve(stdout);
+          });
+        });
+        try { fs.unlinkSync(outputPath); } catch(e) {}
+        fs.renameSync(srtOutput, outputPath);
+      }
+    }
+
+    // 썸네일 인트로 (3초)
+    if (showThumb) {
+      const thumbFiles = fs.readdirSync(path.join(OUTPUT_DIR, 'thumbnails')).filter(f => f.endsWith('.png')).sort();
+      if (thumbFiles.length > 0) {
+        const thumbPath = path.join(OUTPUT_DIR, 'thumbnails', thumbFiles[thumbFiles.length - 1]);
+        const thumbVid = path.join(OUTPUT_DIR, 'video', `thumb_intro_${Date.now()}.mp4`);
+        const thumbOutput = path.join(OUTPUT_DIR, 'video', `withthumb_${outputFile}`);
+        await new Promise((resolve, reject) => {
+          execFile('ffmpeg', [
+            '-loop', '1', '-t', '3', '-i', thumbPath,
+            '-f', 'lavfi', '-t', '3', '-i', 'anullsrc=r=44100:cl=stereo',
+            '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
+            '-c:v', 'libx264', '-preset', 'medium', '-crf', '23', '-pix_fmt', 'yuv420p',
+            '-c:a', 'aac', '-b:a', '192k', '-shortest',
+            '-y', thumbVid
+          ], { timeout: 60000 }, (error) => {
+            if (error) reject(new Error(`썸네일 인트로 생성 오류: ${error.message}`));
+            else resolve();
+          });
+        });
+        const concatList = path.join(OUTPUT_DIR, 'video', 'thumb_concat.txt');
+        fs.writeFileSync(concatList, `file '${thumbVid.replace(/\\/g, '/')}'\nfile '${outputPath.replace(/\\/g, '/')}'`);
+        await new Promise((resolve, reject) => {
+          execFile('ffmpeg', [
+            '-f', 'concat', '-safe', '0', '-i', concatList,
+            '-c', 'copy', '-movflags', '+faststart', '-y', thumbOutput
+          ], { timeout: 120000 }, (error) => {
+            if (error) reject(new Error(`썸네일 인트로 결합 오류: ${error.message}`));
+            else resolve();
+          });
+        });
+        try { fs.unlinkSync(outputPath); fs.unlinkSync(thumbVid); fs.unlinkSync(concatList); } catch(e) {}
+        fs.renameSync(thumbOutput, outputPath);
+      }
+    }
+
+    // 인트로 텍스트 오버레이 (첫 5초)
+    if (showIntro && project.topic) {
+      const introOutput = path.join(OUTPUT_DIR, 'video', `intro_${outputFile}`);
+      const introText = project.topic.replace(/'/g, "'\\''");
+      await new Promise((resolve, reject) => {
+        execFile('ffmpeg', [
+          '-i', outputPath,
+          '-vf', `drawtext=text='${introText}':fontsize=48:fontcolor=white:borderw=3:bordercolor=black:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,0,5)':fontfile='C\\:/Windows/Fonts/malgun.ttf'`,
+          '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
+          '-movflags', '+faststart', '-y', introOutput
+        ], { timeout: 300000 }, (error) => {
+          if (error) reject(new Error(`인트로 텍스트 오류: ${error.message}`));
+          else resolve();
+        });
+      });
+      try { fs.unlinkSync(outputPath); } catch(e) {}
+      fs.renameSync(introOutput, outputPath);
     }
 
     project.videoFile = outputFile;

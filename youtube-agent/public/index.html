@@ -787,6 +787,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
             <div class="fh">장면 간 전환에 사용되는 시간</div>
           </div>
         </div>
+        <div class="divider"></div>
+        <div class="cd-t" style="margin-bottom:10px">📎 추가 적용</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="renderSrt" checked> 📝 SRT 자막 삽입</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="renderThumb"> 🖼️ 썸네일 인트로 (3초)</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer"><input type="checkbox" id="renderIntro"> 🚀 인트로 텍스트 오버레이</label>
+        </div>
         <button class="b bp blg" id="renderBtn" onclick="doRender()" style="margin-top:8px">🎬 영상 합성 시작</button>
       </div>
       <div id="renderOut"></div>
@@ -1442,7 +1449,10 @@ async function doRender(){
       bgmFile:bgmSel?.value||'',
       bgmVolume:parseFloat(document.getElementById('bgmVol')?.value||0.15),
       transition:document.getElementById('renderTrans')?.value||'none',
-      transitionDuration:parseFloat(document.getElementById('renderTransDur')?.value||0.8)
+      transitionDuration:parseFloat(document.getElementById('renderTransDur')?.value||0.8),
+      burnSrt:document.getElementById('renderSrt')?.checked||false,
+      showThumb:document.getElementById('renderThumb')?.checked||false,
+      showIntro:document.getElementById('renderIntro')?.checked||false
     });
     document.getElementById('renderOut').innerHTML=`<div class="cd">
       <div class="cd-t" style="margin-bottom:10px;color:var(--ok)">✅ 영상 합성 완료</div>
