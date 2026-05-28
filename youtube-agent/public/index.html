@@ -442,7 +442,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         <div class="cd-h"><div><div class="cd-t">🎬 영상 합성 (FFmpeg)</div><div class="cd-s">이미지 + 음성 → MP4 영상</div></div></div>
         <div id="ffmpegStatus"></div>
         <div class="fr">
-          <div class="fg"><label class="fl">총 영상 길이 (초)</label><input type="number" class="fi" id="renderDur" value="120">
+          <div class="fg"><label class="fl">총 영상 길이 (분)</label><input type="number" class="fi" id="renderDur" value="2" min="0.5" step="0.5">
             <div class="fh" id="renderDurHint">오디오 길이 기반 자동 설정됨</div></div>
           <div class="fg"><label class="fl">자료 현황</label>
             <div id="renderAssets" style="font-size:11px;color:var(--t2);line-height:1.8"></div></div>
@@ -816,7 +816,7 @@ async function doTTS(){
       <div style="margin-top:8px"><button class="b bp" onclick="markOk('tts');save();go('render')">→ 영상 합성</button></div></div>`;
     markOk('tts');save();
     // Auto-get audio duration
-    try{const dr=await fetch('/api/audio/duration/'+d.filename).then(r=>r.json());if(dr.duration>0)document.getElementById('renderDur').value=Math.ceil(dr.duration)}catch(e){}
+    try{const dr=await fetch('/api/audio/duration/'+d.filename).then(r=>r.json());if(dr.duration>0)document.getElementById('renderDur').value=Math.round(dr.duration/60*10)/10}catch(e){}
   }catch(e){toast(e.message,'err')}
   loading('ttsBtn',false);
 }
@@ -864,7 +864,7 @@ async function prepareRender(){
 async function doRender(){
   loading('renderBtn',true,'FFmpeg 렌더링 중... (수 분 소요)');
   try{
-    const d=await api('/api/render/video',{duration:parseInt(document.getElementById('renderDur').value)});
+    const d=await api('/api/render/video',{duration:Math.round(parseFloat(document.getElementById('renderDur').value)*60)});
     document.getElementById('renderOut').innerHTML=`<div class="cd">
       <div class="cd-t" style="margin-bottom:10px;color:var(--ok)">✅ 영상 합성 완료</div>
       <div class="vc"><video controls src="${d.videoUrl}"></video></div>
