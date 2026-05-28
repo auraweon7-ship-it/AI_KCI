@@ -297,7 +297,7 @@
                     + '<td data-label="이름">' + (d.name || '-') + '</td>'
                     + '<td data-label="이메일">' + (d.email || '-') + '</td>'
                     + '<td data-label="최근활동">' + lastActive + '</td>'
-                    + '<td data-label=""><button class="btn btn-sm btn-outline" onclick="viewLearnerDetail(' + d.id + ')">상세보기</button></td>'
+                    + '<td data-label=""><button class="btn btn-sm btn-outline" onclick="viewLearnerDetail(' + d.id + ', this)">상세보기</button></td>'
                     + '</tr>';
             });
             listEl.innerHTML = html;
@@ -434,10 +434,30 @@
         listEl.innerHTML = html;
     }
 
-    window.viewLearnerDetail = function(uid) {
-        var panel = document.getElementById('learnerDetail');
-        panel.style.display = 'block';
-        panel.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-dim);">로딩 중...</div>';
+    window.viewLearnerDetail = function(uid, btn) {
+        // Remove any existing inline detail row
+        var old = document.getElementById('learnerDetailRow');
+        if (old) old.remove();
+
+        // Find clicked row and insert detail row after it
+        var clickedRow = btn ? btn.closest('tr') : null;
+        var detailRow = document.createElement('tr');
+        detailRow.id = 'learnerDetailRow';
+        var detailCell = document.createElement('td');
+        detailCell.colSpan = 5;
+        detailCell.style.cssText = 'padding:0;border:none;';
+        detailCell.innerHTML = '<div class="learner-detail-panel" style="display:block;"><div style="text-align:center;padding:40px;color:var(--text-dim);">로딩 중...</div></div>';
+        detailRow.appendChild(detailCell);
+
+        if (clickedRow && clickedRow.nextSibling) {
+            clickedRow.parentNode.insertBefore(detailRow, clickedRow.nextSibling);
+        } else if (clickedRow) {
+            clickedRow.parentNode.appendChild(detailRow);
+        } else {
+            document.getElementById('learnerTableBody').appendChild(detailRow);
+        }
+
+        var panel = detailCell.querySelector('.learner-detail-panel');
 
         fetch(API_BASE + '/admin/learners/' + uid, { headers: getAdminHeaders() })
         .then(function(r) { return r.json(); })
@@ -463,7 +483,7 @@
                 + '<p style="color:var(--text-dim);font-size:13px;">' + (ud.email || '') + '</p>'
                 + '</div>'
                 + '</div>'
-                + '<button class="btn btn-sm btn-outline" onclick="document.getElementById(\'learnerDetail\').style.display=\'none\'">닫기</button>'
+                + '<button class="btn btn-sm btn-outline" onclick="var r=document.getElementById(\'learnerDetailRow\');if(r)r.remove();">닫기</button>'
                 + '</div>';
 
             var lastDate = '-';
@@ -479,11 +499,11 @@
                 + '<div class="detail-stat"><div class="detail-stat-val" style="color:var(--text);font-size:16px;">' + lastDate + '</div><div class="detail-stat-lbl">최근 학습</div></div>'
                 + '</div>';
             panel.innerHTML = html;
-            setTimeout(function() { panel.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
+            setTimeout(function() { detailRow.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }, 100);
         })
         .catch(function(e) {
             panel.innerHTML = '<div style="color:var(--danger);padding:20px;">로딩 실패: ' + e.message
-                + '<br><button class="btn btn-sm btn-outline" style="margin-top:10px;" onclick="document.getElementById(\'learnerDetail\').style.display=\'none\'">닫기</button></div>';
+                + '<br><button class="btn btn-sm btn-outline" style="margin-top:10px;" onclick="var r=document.getElementById(\'learnerDetailRow\');if(r)r.remove();">닫기</button></div>';
         });
     };
 
