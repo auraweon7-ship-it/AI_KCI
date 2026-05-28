@@ -420,17 +420,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         <div class="sec-header">
           <div class="sec-header-top"><div class="sec-header-ico">🎯</div><h3><em>핵심 기능</em> 12가지</h3></div>
           <p>AI 기획부터 영상 렌더링, YouTube 업로드까지 — 4개 API가 유기적으로 연결된 End-to-End 자동화 파이프라인</p>
-          <div class="sec-header-tags"><span>Claude AI</span><span>DALL-E 3</span><span>ElevenLabs</span><span>FFmpeg</span><span>YouTube API</span></div>
+          <div class="sec-header-tags"><span>Claude AI</span><span>GPT Image</span><span>ElevenLabs</span><span>FFmpeg</span><span>YouTube API</span></div>
         </div>
         <div class="feat-grid">
           <div class="feat"><div class="feat-ico">💡</div><h4>AI 주제 추천</h4><p>카테고리·타겟·키워드 기반으로 조회수 높은 주제를 AI가 분석·추천</p><span class="feat-tag ai">Claude AI</span></div>
           <div class="feat"><div class="feat-ico">📋</div><h4>대본 기획</h4><p>영상 구조, 장면 구성, 타임라인을 자동 설계하는 프리프로덕션</p><span class="feat-tag ai">Claude AI</span></div>
           <div class="feat"><div class="feat-ico">✍️</div><h4>대본 작성</h4><p>팩트체크 기반 전문 나레이션 대본을 원하는 분량·톤으로 생성</p><span class="feat-tag ai">Claude AI</span></div>
-          <div class="feat"><div class="feat-ico">🎨</div><h4>이미지 생성</h4><p>장면별 고품질 이미지를 DALL-E 3로 실제 생성 (HD 1792×1024)</p><span class="feat-tag api">DALL-E 3</span></div>
+          <div class="feat"><div class="feat-ico">🎨</div><h4>이미지 생성</h4><p>장면별 고품질 이미지를 ChatGPT Images 2.0으로 실제 생성 (HD 1536×1024)</p><span class="feat-tag api">GPT Image</span></div>
           <div class="feat"><div class="feat-ico">🎙️</div><h4>TTS 음성</h4><p>대본을 자연스러운 나레이션으로 변환, 다국어 음성 지원</p><span class="feat-tag api">ElevenLabs</span></div>
           <div class="feat"><div class="feat-ico">🎬</div><h4>영상 합성</h4><p>이미지+음성을 Ken Burns 효과와 함께 MP4 영상으로 렌더링</p><span class="feat-tag tool">FFmpeg</span></div>
           <div class="feat"><div class="feat-ico">🏷️</div><h4>SEO 메타데이터</h4><p>클릭률 최적화 제목, 설명, 태그, 고정 댓글을 다국어로 생성</p><span class="feat-tag ai">Claude AI</span></div>
-          <div class="feat"><div class="feat-ico">🖼️</div><h4>썸네일 생성</h4><p>시선을 사로잡는 유튜브 썸네일을 AI로 자동 디자인</p><span class="feat-tag api">DALL-E 3</span></div>
+          <div class="feat"><div class="feat-ico">🖼️</div><h4>썸네일 생성</h4><p>시선을 사로잡는 유튜브 썸네일을 AI로 자동 디자인</p><span class="feat-tag api">GPT Image</span></div>
           <div class="feat"><div class="feat-ico">📱</div><h4>쇼츠 변환</h4><p>롱폼 대본에서 핵심을 추출해 30~60초 쇼츠 대본 생성</p><span class="feat-tag ai">Claude AI</span></div>
           <div class="feat"><div class="feat-ico">🚀</div><h4>인트로 생성</h4><p>시청자 이탈 방지를 위한 후킹 오프닝 자동 작성</p><span class="feat-tag ai">Claude AI</span></div>
           <div class="feat"><div class="feat-ico">📤</div><h4>YouTube 업로드</h4><p>완성된 영상을 YouTube에 직접 업로드, 썸네일 자동 설정</p><span class="feat-tag api">YouTube API</span></div>
@@ -445,7 +445,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         </div>
         <div class="pipe-line">
           <div class="pipe-step"><div class="pipe-dot s1">1</div><div class="pipe-body"><h5>기획 (Pre-Production)</h5><p>주제 선정 → 대본 기획 → 대본 작성<br>Claude AI가 주제 분석, 구조 설계, 나레이션 대본까지 자동 생성</p><div class="pipe-api">Claude API (claude-sonnet-4-20250514)</div></div></div>
-          <div class="pipe-step"><div class="pipe-dot s2">2</div><div class="pipe-body"><h5>시각 소재 (Visual Assets)</h5><p>대본의 장면 지시에 따라 DALL-E 3가 고해상도 일러스트를 배치 생성<br>프롬프트 자동 생성 → 개별 검토/수정 → 일괄 또는 개별 이미지 생성</p><div class="pipe-api">DALL-E 3 API (hd, 1792×1024)</div></div></div>
+          <div class="pipe-step"><div class="pipe-dot s2">2</div><div class="pipe-body"><h5>시각 소재 (Visual Assets)</h5><p>대본의 장면 지시에 따라 ChatGPT Images 2.0이 고해상도 일러스트를 배치 생성<br>프롬프트 자동 생성 → 개별 검토/수정 → 일괄 또는 개별 이미지 생성</p><div class="pipe-api">GPT Image API (high, 1536×1024)</div></div></div>
           <div class="pipe-step"><div class="pipe-dot s3">3</div><div class="pipe-body"><h5>음성 제작 (Audio Production)</h5><p>대본 텍스트를 ElevenLabs TTS로 자연스러운 나레이션 음성 변환<br>음성 선택, 안정성/유사도 파라미터 조절 가능</p><div class="pipe-api">ElevenLabs API (eleven_multilingual_v2)</div></div></div>
           <div class="pipe-step"><div class="pipe-dot s4">4</div><div class="pipe-body"><h5>영상 합성 (Video Rendering)</h5><p>이미지 + 음성 → Ken Burns 줌팬 효과 적용 MP4 영상으로 합성<br>오디오 길이 기반 자동 타이밍, 1080p 렌더링</p><div class="pipe-api">FFmpeg (zoompan, concat)</div></div></div>
           <div class="pipe-step"><div class="pipe-dot s5">5</div><div class="pipe-body"><h5>퍼블리싱 (Publishing)</h5><p>SEO 최적화 메타데이터 생성 → 썸네일 디자인 → YouTube 직접 업로드<br>쇼츠 변환, 인트로 생성까지 원스톱 완료</p><div class="pipe-api">YouTube Data API v3 + OAuth 2.0</div></div></div>
@@ -673,7 +673,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     <div class="sec" id="sec-image">
       <div id="imageReq"></div>
       <div class="cd">
-        <div class="cd-h"><div><div class="cd-t">🎨 이미지 생성 (DALL-E 3)</div><div class="cd-s">대본 기반 장면별 이미지 실제 생성</div></div></div>
+        <div class="cd-h"><div><div class="cd-t">🎨 이미지 생성 (ChatGPT Images 2.0)</div><div class="cd-s">대본 기반 장면별 이미지 실제 생성</div></div></div>
         <div class="fr3">
           <div class="fg"><label class="fl">🎨 스타일</label><select class="fs" id="imgStyle"><option value="european-animation">유럽풍 애니메이션</option><option value="realistic">실사</option><option value="cinematic">시네마틱</option><option value="watercolor">수채화</option><option value="oil-painting">유화</option></select></div>
           <div class="fg"><label class="fl">📐 비율</label><select class="fs" id="imgRatio"><option value="16:9" selected>16:9</option><option value="9:16">9:16 (쇼츠)</option><option value="1:1">1:1</option></select></div>
@@ -681,7 +681,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="b bs blg" id="imgPBtn" onclick="doImgPrompts()">① 프롬프트 생성 (Claude)</button>
-          <button class="b bp blg" id="imgGBtn" onclick="doImgGenAll()" disabled>② 전체 이미지 생성 (DALL-E 3)</button>
+          <button class="b bp blg" id="imgGBtn" onclick="doImgGenAll()" disabled>② 전체 이미지 생성 (ChatGPT Images 2.0)</button>
         </div>
         <div class="fh">① 프롬프트 생성 → 검토/수정 → ② 이미지 생성. 개별 이미지도 생성/재생성 가능합니다.</div>
       </div>
@@ -806,7 +806,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     <!-- ===== 8. 썸네일 ===== -->
     <div class="sec" id="sec-thumb">
       <div class="cd">
-        <div class="cd-h"><div><div class="cd-t">🖼️ 썸네일 생성 (DALL-E 3)</div><div class="cd-s">클릭 유도 썸네일 이미지 생성</div></div></div>
+        <div class="cd-h"><div><div class="cd-t">🖼️ 썸네일 생성 (ChatGPT Images 2.0)</div><div class="cd-s">클릭 유도 썸네일 이미지 생성</div></div></div>
         <div class="fr">
           <div class="fg"><label class="fl">🎨 스타일</label><select class="fs" id="thStyle"><option value="dramatic">드라마틱</option><option value="clean">미니멀</option><option value="clickbait">호기심 자극</option><option value="cinematic">시네마틱</option></select></div>
           <div class="fg"><label class="fl">✏️ 텍스트 오버레이</label><input type="text" class="fi" id="thText" placeholder="썸네일 텍스트 (선택)"></div>
@@ -1230,7 +1230,7 @@ async function genOneImg(i){
 async function regenOneImg(i){await genOneImg(i)}
 
 async function doImgGenAll(){
-  loading('imgGBtn',true,'DALL-E 3 이미지 생성...');
+  loading('imgGBtn',true,'ChatGPT Images 2.0 이미지 생성...');
   const pg=document.getElementById('imgPg');const pgf=document.getElementById('imgPgF');const pgt=document.getElementById('imgPgT');
   pg.style.display='block';pgt.style.display='block';
   document.getElementById('imgOut').innerHTML='';
@@ -1486,7 +1486,7 @@ function applyMeta(){
 
 // === 8. 썸네일 ===
 async function doThumb(){
-  loading('thBtn',true,'DALL-E 3 썸네일 생성...');
+  loading('thBtn',true,'ChatGPT Images 2.0 썸네일 생성...');
   try{
     const d=await api('/api/thumbnail/generate',{topic:S.topic,style:document.getElementById('thStyle').value,text:document.getElementById('thText').value});
     S.thumbFile=d.filename;
