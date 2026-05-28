@@ -203,6 +203,27 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
 .land-footer .prof-divider{height:1px;background:var(--bd);margin:14px auto;max-width:300px}
 .land-footer .prof-roles{display:flex;flex-direction:column;gap:3px;margin-top:6px}
 .land-footer .prof-roles span{font-size:10px;color:var(--t3);letter-spacing:.3px}
+
+/* Auto Pipeline */
+.auto-wrap{max-width:700px;margin:0 auto}
+.auto-hero{text-align:center;padding:30px 0 20px}
+.auto-hero h3{font-size:20px;font-weight:800;margin-bottom:6px}
+.auto-hero p{font-size:11.5px;color:var(--t2)}
+.auto-steps{margin-top:16px}
+.auto-step{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--rs);margin-bottom:4px;background:var(--bg3);border:1px solid var(--bd);transition:all .3s}
+.auto-step.running{border-color:var(--warn);background:rgba(251,191,36,.06)}
+.auto-step.done{border-color:var(--ok);background:rgba(52,211,153,.06)}
+.auto-step.fail{border-color:#ff3b3b;background:rgba(255,59,59,.06)}
+.auto-step .as-ico{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;background:var(--bg);border:1px solid var(--bd);flex-shrink:0}
+.auto-step.done .as-ico{background:var(--ok);color:#000;border-color:var(--ok)}
+.auto-step.running .as-ico{border-color:var(--warn)}
+.auto-step.fail .as-ico{background:#ff3b3b;color:#fff;border-color:#ff3b3b}
+.auto-step .as-body{flex:1}
+.auto-step .as-name{font-size:12px;font-weight:600}
+.auto-step .as-status{font-size:9.5px;color:var(--t3);margin-top:1px}
+.auto-step.running .as-status{color:var(--warn)}
+.auto-step.done .as-status{color:var(--ok)}
+.auto-step .as-time{font-size:9px;color:var(--t3);font-family:Consolas,monospace}
 </style>
 </head>
 <body>
@@ -214,6 +235,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
   </div>
   <nav class="sb-nav">
     <div class="ni act" data-s="home" onclick="goHome()" style="margin:4px 0 2px;font-weight:600;color:var(--t1)"><span>🏠</span> 홈</div>
+    <div class="ni" data-s="auto" onclick="go('auto')" style="margin:2px 0 4px;background:linear-gradient(135deg,rgba(255,59,59,.08),rgba(255,107,53,.08));border:1px solid rgba(255,59,59,.15);border-radius:var(--rs)"><span>🤖</span> <strong>자동 제작</strong></div>
     <div class="sb-lbl">기획</div>
     <div class="ni" data-s="topic" onclick="go('topic')"><span>💡</span> 주제 선정 <span class="n">1</span></div>
     <div class="ni" data-s="plan" onclick="go('plan')"><span>📋</span> 대본 기획 <span class="req"></span><span class="n">2</span></div>
@@ -316,6 +338,78 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
           <a href="https://kletter.kr" target="_blank">kletter.kr</a>
           <a href="https://kteacher.kr" target="_blank">kteacher.kr</a>
         </div>
+      </div>
+    </div>
+
+    <!-- ===== Auto Pipeline ===== -->
+    <div class="sec" id="sec-auto">
+      <div class="auto-wrap">
+        <div class="auto-hero">
+          <h3>🤖 원클릭 자동 제작</h3>
+          <p>주제·시간·언어만 선택하면 대본→이미지→음성→영상→메타데이터→썸네일까지 자동 완료</p>
+        </div>
+        <div class="cd">
+          <div class="fg"><label class="fl">영상 주제 *</label>
+            <input type="text" class="fi" id="autoTopic" placeholder="예: 베트남 전쟁 속 병사들의 고독과 연대">
+          </div>
+          <div class="fr3">
+            <div class="fg"><label class="fl">영상 길이</label>
+              <select class="fs" id="autoLen">
+                <option value="10">10분</option>
+                <option value="15" selected>15분</option>
+                <option value="20">20분</option>
+                <option value="30">30분+</option>
+              </select>
+            </div>
+            <div class="fg"><label class="fl">영상 언어</label>
+              <select class="fs" id="autoLang">
+                <option value="ko" selected>🇰🇷 한국어</option>
+                <option value="en">🇺🇸 영어</option>
+                <option value="zh">🇨🇳 중국어</option>
+              </select>
+            </div>
+            <div class="fg"><label class="fl">이미지 스타일</label>
+              <select class="fs" id="autoStyle">
+                <option value="european-animation">유럽풍 애니메이션</option>
+                <option value="realistic">실사/포토리얼</option>
+                <option value="cinematic">시네마틱</option>
+                <option value="watercolor">수채화풍</option>
+              </select>
+            </div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label class="fl">이미지 수</label>
+              <select class="fs" id="autoImgCnt">
+                <option value="5">5장</option>
+                <option value="8" selected>8장</option>
+                <option value="10">10장</option>
+              </select>
+            </div>
+            <div class="fg"><label class="fl">음성</label>
+              <select class="fs" id="autoVoice">
+                <option value="21m00Tcm4TlvDq8ikWAM">Rachel (여성)</option>
+                <option value="TxGEqnHWrfWFTfGW9XjX">Josh (남성)</option>
+                <option value="pNInz6obpgDQGcFmaJgB">Adam (남성)</option>
+                <option value="EXAVITQu4vr4xnSDxMaL">Bella (여성)</option>
+                <option value="ErXwobaYiN019PkySvjV">Antoni (남성)</option>
+                <option value="MF3mGyEYCl7XYWbV9V6O">Elli (여성)</option>
+              </select>
+            </div>
+          </div>
+          <button class="b bp blg" id="autoBtn" onclick="startAutoPipeline()" style="width:100%;justify-content:center;font-size:14px;padding:12px 0;border-radius:10px;margin-top:6px">🚀 자동 제작 시작</button>
+        </div>
+
+        <div class="auto-steps" id="autoSteps" style="display:none">
+          <div class="auto-step" id="as-plan"><div class="as-ico">📋</div><div class="as-body"><div class="as-name">1. 대본 기획</div><div class="as-status">대기</div></div><div class="as-time" id="ast-plan"></div></div>
+          <div class="auto-step" id="as-script"><div class="as-ico">✍️</div><div class="as-body"><div class="as-name">2. 대본 작성</div><div class="as-status">대기</div></div><div class="as-time" id="ast-script"></div></div>
+          <div class="auto-step" id="as-image"><div class="as-ico">🎨</div><div class="as-body"><div class="as-name">3. 이미지 생성</div><div class="as-status">대기</div></div><div class="as-time" id="ast-image"></div></div>
+          <div class="auto-step" id="as-tts"><div class="as-ico">🎙️</div><div class="as-body"><div class="as-name">4. TTS 음성</div><div class="as-status">대기</div></div><div class="as-time" id="ast-tts"></div></div>
+          <div class="auto-step" id="as-render"><div class="as-ico">🎬</div><div class="as-body"><div class="as-name">5. 영상 합성</div><div class="as-status">대기</div></div><div class="as-time" id="ast-render"></div></div>
+          <div class="auto-step" id="as-meta"><div class="as-ico">🏷️</div><div class="as-body"><div class="as-name">6. 메타데이터</div><div class="as-status">대기</div></div><div class="as-time" id="ast-meta"></div></div>
+          <div class="auto-step" id="as-thumb"><div class="as-ico">🖼️</div><div class="as-body"><div class="as-name">7. 썸네일</div><div class="as-status">대기</div></div><div class="as-time" id="ast-thumb"></div></div>
+        </div>
+
+        <div id="autoResult" style="display:none"></div>
       </div>
     </div>
 
@@ -539,8 +633,8 @@ const S = {
   done: new Set(), langs:['ko']
 };
 
-const SECS = ['topic','plan','script','image','tts','render','meta','thumb','shorts','intro','upload'];
-const NAMES = {topic:'💡 주제 선정',plan:'📋 대본 기획',script:'✍️ 대본 작성',image:'🎨 이미지 생성',tts:'🎙️ TTS 음성',render:'🎬 영상 합성',meta:'🏷️ 제목/설명',thumb:'🖼️ 썸네일',shorts:'📱 쇼츠',intro:'🚀 인트로',upload:'📤 업로드'};
+const SECS = ['auto','topic','plan','script','image','tts','render','meta','thumb','shorts','intro','upload'];
+const NAMES = {auto:'🤖 자동 제작',topic:'💡 주제 선정',plan:'📋 대본 기획',script:'✍️ 대본 작성',image:'🎨 이미지 생성',tts:'🎙️ TTS 음성',render:'🎬 영상 합성',meta:'🏷️ 제목/설명',thumb:'🖼️ 썸네일',shorts:'📱 쇼츠',intro:'🚀 인트로',upload:'📤 업로드'};
 const PREREQS = {plan:['topic'],script:['plan'],image:['script'],tts:['script'],render:['image','tts'],meta:['script'],shorts:['script'],upload:['render']};
 
 // === Nav ===
@@ -1079,6 +1173,153 @@ function exportAll(){
   const d={...S,exportDate:new Date().toISOString()};
   const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`yt_project_${(S.topic||'untitled').replace(/\s/g,'_')}.json`;a.click();
+}
+
+// === Auto Pipeline ===
+const AUTO_STEPS = ['plan','script','image','tts','render','meta','thumb'];
+const AUTO_LABELS = {plan:'대본 기획',script:'대본 작성',image:'이미지 생성',tts:'TTS 음성',render:'영상 합성',meta:'메타데이터',thumb:'썸네일'};
+let autoRunning = false;
+
+function autoStatus(step,status,msg){
+  const el=document.getElementById('as-'+step);
+  el.className='auto-step'+(status?' '+status:'');
+  el.querySelector('.as-status').textContent=msg;
+  if(status==='done')el.querySelector('.as-ico').textContent='✅';
+  if(status==='fail')el.querySelector('.as-ico').textContent='❌';
+  if(status==='running')el.querySelector('.as-ico').innerHTML='<span class="sp"></span>';
+}
+function autoTime(step,sec){
+  document.getElementById('ast-'+step).textContent=sec>=60?`${Math.floor(sec/60)}분 ${sec%60}초`:sec+'초';
+}
+
+async function startAutoPipeline(){
+  const topic=document.getElementById('autoTopic').value.trim();
+  if(!topic){toast('주제를 입력하세요','err');return}
+  if(autoRunning){toast('이미 실행 중','err');return}
+  autoRunning=true;
+
+  const len=document.getElementById('autoLen').value;
+  const lang=document.getElementById('autoLang').value;
+  const style=document.getElementById('autoStyle').value;
+  const imgCnt=document.getElementById('autoImgCnt').value;
+  const voiceId=document.getElementById('autoVoice').value;
+  const langNames={ko:'한국어',en:'English',zh:'中文'};
+  const wordCounts={10:'2000',15:'3000',20:'4500',30:'6000'};
+
+  S.topic=topic;
+  document.getElementById('autoSteps').style.display='block';
+  document.getElementById('autoResult').style.display='none';
+  document.getElementById('autoBtn').disabled=true;
+  document.getElementById('autoBtn').innerHTML='<span class="sp"></span> 자동 제작 진행 중...';
+  AUTO_STEPS.forEach(s=>{autoStatus(s,'','대기');document.getElementById('ast-'+s).textContent=''});
+
+  const t0=Date.now();
+  let lastResult={};
+
+  try{
+    // 1. Plan
+    let t1=Date.now();
+    autoStatus('plan','running','Claude AI 기획 중...');
+    const planData=await api('/api/plan/generate',{topic,target:'전 연령',length:len,tone:'진지하고 무게감 있는',style,notes:`언어: ${langNames[lang]}`});
+    S.plan=planData.plan;markOk('topic');markOk('plan');save();
+    autoTime('plan',Math.round((Date.now()-t1)/1000));
+    autoStatus('plan','done','기획 완료');
+
+    // 2. Script
+    t1=Date.now();
+    autoStatus('script','running','Claude AI 대본 작성 중...');
+    const scriptData=await api('/api/script/generate',{topic,target:'전 연령',plan:S.plan,wordCount:wordCounts[len]||'3000',narration:'3인칭 나레이터',language:langNames[lang]});
+    S.script=scriptData.script;markOk('script');save();
+    autoTime('script',Math.round((Date.now()-t1)/1000));
+    autoStatus('script','done',`대본 완료 (${S.script.length}자)`);
+
+    // 3. Images
+    t1=Date.now();
+    autoStatus('image','running','프롬프트 생성 중...');
+    const promptData=await api('/api/images/generate-prompts',{script:S.script,style,count:imgCnt});
+    S.imgPrompts=promptData.prompts;
+    autoStatus('image','running',`0/${imgCnt} 이미지 생성 중...`);
+    for(let i=0;i<S.imgPrompts.length;i++){
+      autoStatus('image','running',`${i+1}/${S.imgPrompts.length} 이미지 생성 중...`);
+      try{await api('/api/images/generate',{prompt:S.imgPrompts[i].prompt,style,ratio:'16:9',index:i+1})}catch(e){}
+      if(i<S.imgPrompts.length-1)await new Promise(r=>setTimeout(r,1500));
+    }
+    markOk('image');save();
+    autoTime('image',Math.round((Date.now()-t1)/1000));
+    autoStatus('image','done',`${S.imgPrompts.length}장 생성 완료`);
+
+    // 4. TTS
+    t1=Date.now();
+    autoStatus('tts','running','ElevenLabs TTS 변환 중...');
+    const cleanScript=S.script.replace(/\[장면[^\]]*\]/g,'').replace(/[━═─▶■●•🎙️🎬📌🔹✅☐]/g,'').replace(/\n{3,}/g,'\n\n').trim();
+    const ttsData=await api('/api/tts/full-script',{script:cleanScript.slice(0,5000),voiceId,stability:0.5,similarity:0.75});
+    S.audioFile=ttsData.filename;markOk('tts');save();
+    let audioDur=parseInt(len)*60;
+    try{const dr=await fetch('/api/audio/duration/'+ttsData.filename).then(r=>r.json());if(dr.duration>0)audioDur=Math.ceil(dr.duration)}catch(e){}
+    autoTime('tts',Math.round((Date.now()-t1)/1000));
+    autoStatus('tts','done',`음성 완료 (${ttsData.charCount}자)`);
+
+    // 5. Render
+    t1=Date.now();
+    autoStatus('render','running','FFmpeg 영상 합성 중...');
+    const renderData=await api('/api/render/video',{duration:audioDur});
+    lastResult.video=renderData;markOk('render');save();
+    autoTime('render',Math.round((Date.now()-t1)/1000));
+    autoStatus('render','done','영상 합성 완료');
+
+    // 6. Meta
+    t1=Date.now();
+    autoStatus('meta','running','메타데이터 생성 중...');
+    const metaData=await api('/api/meta/generate',{topic,script:S.script,languages:[lang]});
+    S.meta=metaData.meta;markOk('meta');save();
+    lastResult.meta=metaData.meta;
+    autoTime('meta',Math.round((Date.now()-t1)/1000));
+    autoStatus('meta','done','메타데이터 완료');
+
+    // 7. Thumbnail
+    t1=Date.now();
+    autoStatus('thumb','running','썸네일 생성 중...');
+    const thumbData=await api('/api/thumbnail/generate',{topic,style:'dramatic',text:''});
+    S.thumbFile=thumbData.filename;markOk('thumb');save();
+    lastResult.thumb=thumbData;
+    autoTime('thumb',Math.round((Date.now()-t1)/1000));
+    autoStatus('thumb','done','썸네일 완료');
+
+    // Done
+    const totalSec=Math.round((Date.now()-t0)/1000);
+    const totalMin=Math.floor(totalSec/60);const totalRemSec=totalSec%60;
+    document.getElementById('autoResult').style.display='block';
+    document.getElementById('autoResult').innerHTML=`<div class="cd" style="border-color:var(--ok);margin-top:16px">
+      <div class="cd-t" style="color:var(--ok);font-size:16px;margin-bottom:12px">🎉 자동 제작 완료! (${totalMin}분 ${totalRemSec}초)</div>
+      ${renderData.videoUrl?`<div class="vc"><video controls src="${renderData.videoUrl}"></video></div>`:''}
+      ${thumbData.imageUrl?`<div style="margin:10px 0"><img src="${thumbData.imageUrl}" style="width:100%;max-width:400px;border-radius:var(--rs);border:1px solid var(--bd)"></div>`:''}
+      <div style="font-size:11px;color:var(--t2);line-height:2;margin:10px 0">
+        ${lastResult.meta?.titles?.[0]?.options?.[0]?`<div>📌 제목: <strong>${esc(lastResult.meta.titles[0].options[0])}</strong></div>`:''}
+        <div>📹 영상: ${renderData.filename||''} | ${renderData.fileSize||''}</div>
+        <div>🖼️ 썸네일: ${thumbData.filename||''}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${renderData.videoUrl?`<a href="${renderData.videoUrl}" download class="b bs">💾 영상 다운로드</a>`:''}
+        <button class="b bp" onclick="applyAutoMeta();go('upload')">📤 YouTube 업로드</button>
+        <button class="b bs" onclick="go('script')">✍️ 대본 확인/수정</button>
+        <button class="b bs" onclick="go('image')">🎨 이미지 확인</button>
+      </div>
+    </div>`;
+    toast('자동 제작 완료! 🎉');
+  }catch(e){
+    const failStep=AUTO_STEPS.find(s=>document.getElementById('as-'+s).classList.contains('running'));
+    if(failStep)autoStatus(failStep,'fail',e.message);
+    toast('자동 제작 실패: '+e.message,'err');
+  }
+  autoRunning=false;
+  document.getElementById('autoBtn').disabled=false;
+  document.getElementById('autoBtn').innerHTML='🚀 자동 제작 시작';
+}
+
+function applyAutoMeta(){
+  if(S.meta?.titles?.[0]?.options?.[0])document.getElementById('upTitle').value=S.meta.titles[0].options[0];
+  if(S.meta?.description)document.getElementById('upDesc').value=Object.values(S.meta.description)[0]||'';
+  if(S.meta?.tags)document.getElementById('upTags').value=S.meta.tags.join(', ');
 }
 
 // === Init ===
