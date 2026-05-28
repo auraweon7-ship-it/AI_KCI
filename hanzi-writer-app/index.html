@@ -2869,8 +2869,8 @@
                     <div id="quizCharInfo" style="text-align:center;margin-top:8px;font-size:13px;color:var(--text-dim);line-height:1.6;display:none;"></div>
                     <div class="quiz-feedback" id="quizFeedback">한자를 선택한 후 퀴즈를 시작하세요</div>
                     <div class="controls" style="margin-top:12px;">
-                        <button class="btn btn-success btn-sm" onclick="startQuiz()">퀴즈 시작</button>
                         <button class="btn btn-outline btn-sm" onclick="startQuiz(true)">윤곽 없이</button>
+                        <button class="btn btn-outline btn-sm" onclick="startQuiz()">다시 쓰기</button>
                         <button class="btn btn-outline btn-sm" onclick="showHint()">힌트</button>
                     </div>
                 </div>
@@ -3517,8 +3517,9 @@
             var pinyin = (typeof PINYIN_DATA !== 'undefined' && PINYIN_DATA[char]) ? PINYIN_DATA[char] : '';
             var html = '';
             if (info) {
-                html = '<span style="color:var(--accent)">' + info.reading + '</span> · ' + info.meaning;
-                if (pinyin) html += ' · <span style="color:#a78bfa">[' + pinyin + ']</span>';
+                html = '<span style="color:var(--accent)">' + info.reading + '</span>';
+                if (pinyin) html += ' <span style="color:#a78bfa">[' + pinyin + ']</span>';
+                html += ' · ' + info.meaning;
             } else if (pinyin) {
                 html = '<span style="color:#a78bfa">[' + pinyin + ']</span>';
             }
