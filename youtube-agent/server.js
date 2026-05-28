@@ -242,12 +242,14 @@ ${plan || project.plan ? `[기획안 참고]:\n${(plan || project.plan).substrin
 4. 나레이션에 감정/톤 지문을 괄호 안에 표기 (예: (차분하게), (긴장감 있게))
 5. CTA: 마지막에 자연스러운 좋아요/구독 요청
 6. 각 장면마다 "▶ 이미지:" 태그로 해당 장면의 비주얼을 간략히 묘사
+7. 절대 문장을 "..." 으로 생략하지 마세요. 모든 문장은 반드시 완전하게 끝맺어야 합니다.
+8. "~것을...", "~했다는..." 같은 미완성 문장은 금지합니다. 마지막 문장까지 완결된 형태로 작성하세요.
 
-${wordCount || 3000}자 이상의 완성된 대본을 작성해주세요.`;
+${wordCount || 3000}자 이상의 완성된 대본을 작성해주세요. 절대 중간에 끊기지 않도록 끝까지 완성하세요.`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 8000,
+      max_tokens: 16000,
       messages: [{ role: 'user', content: prompt }]
     });
 
