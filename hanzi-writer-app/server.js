@@ -185,6 +185,35 @@ app.get('/api/admin/learners/:id', auth, async function (req, res) {
     }
 });
 
+// --- Admin: Stats for charts ---
+app.get('/api/admin/stats', auth, async function (req, res) {
+    if (!req.user.admin && !req.user.id) return res.status(403).json({ error: 'Forbidden' });
+    try {
+        var results = await Promise.all([
+            // Daily practice counts (last 14 days)
+            pool.query(
+                `SELECT DATE(created_at) as day, COUNT(*)::int as cnt,
+                        SUM(correct)::int as correct, SUM(mistakes)::int as mistakes
+                 FROM practices
+                 WHERE created_at >= NOW() - INTERVAL '14 days'
+                 GROUP BY DATE(created_at) ORDER BY day`
+            ),
+            // Per-learner summary
+            pool.query(
+                `SELECT u.name, COUNT(p.id)::int as cnt,
+                        COALESCE(SUM(p.correct),0)::int as correct,
+                        COALESCE(SUM(p.mistakes),0)::int as mistakes,
+                        COUNT(DISTINCT p.char)::int as chars
+                 FROM users u LEFT JOIN practices p ON p.user_id = u.id
+                 GROUP BY u.id, u.name ORDER BY cnt DESC LIMIT 20`
+            )
+        ]);
+        res.json({ daily: results[0].rows, learners: results[1].rows });
+    } catch (e) {
+        res.status(500).json({ error: 'Stats failed' });
+    }
+});
+
 // --- Visitor Counter ---
 app.post('/api/visit', async function (req, res) {
     try {

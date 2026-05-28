@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@700;900&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <script src="data.js"></script>
     <script src="data-extra.js"></script>
     <script src="hsk-data.js"></script>
@@ -2514,6 +2515,8 @@
             .admin-table td:last-child .btn { width: 100%; text-align: center; }
             .admin-avatar, .admin-avatar-placeholder { width: 32px; height: 32px; }
 
+            /* Admin charts mobile */
+            #adminCharts > div { grid-template-columns: 1fr !important; }
             /* Learner detail mobile */
             .learner-detail-panel { padding: 16px; margin-top: 14px; }
             .detail-header { flex-direction: column; gap: 12px; align-items: flex-start; }
@@ -2701,6 +2704,29 @@
                     <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-dim);">로딩 중...</td></tr>
                 </tbody>
             </table>
+        </div>
+        <!-- Learning Stats Charts -->
+        <div id="adminCharts" style="display:none;margin-top:20px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                <div class="card" style="padding:20px;">
+                    <div class="card-title">일별 학습 현황 (최근 14일)</div>
+                    <canvas id="dailyChart" height="200"></canvas>
+                </div>
+                <div class="card" style="padding:20px;">
+                    <div class="card-title">학습자별 학습량</div>
+                    <canvas id="learnerChart" height="200"></canvas>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
+                <div class="card" style="padding:20px;">
+                    <div class="card-title">학습자별 정답률</div>
+                    <canvas id="accuracyChart" height="200"></canvas>
+                </div>
+                <div class="card" style="padding:20px;">
+                    <div class="card-title">학습자별 학습 한자 수</div>
+                    <canvas id="charsChart" height="200"></canvas>
+                </div>
+            </div>
         </div>
         <div class="learner-detail-panel" id="learnerDetail" style="display:none;"></div>
     </div>

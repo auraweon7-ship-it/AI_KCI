@@ -301,12 +301,102 @@
                     + '</tr>';
             });
             listEl.innerHTML = html;
+            loadAdminCharts();
         })
         .catch(function(e) {
             noticeEl.style.display = 'block';
             noticeEl.innerHTML = '<span style="color:var(--warning);">DB 연결 실패</span> — 서버가 실행 중인지 확인하세요.'
                 + '<br><br>현재 이 브라우저의 로컬 데이터만 표시됩니다.';
             showLocalAdminData(listEl, summaryEl);
+        });
+    }
+
+    var adminChartInstances = [];
+
+    function loadAdminCharts() {
+        if (typeof Chart === 'undefined') return;
+        var chartsEl = document.getElementById('adminCharts');
+        if (!chartsEl) return;
+
+        fetch(API_BASE + '/admin/stats', { headers: getAdminHeaders() })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            chartsEl.style.display = 'block';
+            adminChartInstances.forEach(function(c) { c.destroy(); });
+            adminChartInstances = [];
+
+            var chartColors = {
+                accent: 'rgba(94,234,212,0.8)',
+                accentBg: 'rgba(94,234,212,0.15)',
+                purple: 'rgba(124,106,255,0.8)',
+                purpleBg: 'rgba(124,106,255,0.15)',
+                success: 'rgba(52,211,153,0.8)',
+                warning: 'rgba(251,191,36,0.8)',
+                danger: 'rgba(248,113,113,0.8)',
+                text: 'rgba(234,234,244,0.7)',
+                grid: 'rgba(255,255,255,0.06)'
+            };
+
+            var defaults = Chart.defaults;
+            defaults.color = chartColors.text;
+            defaults.borderColor = chartColors.grid;
+
+            // Daily chart
+            var daily = data.daily || [];
+            var labels = daily.map(function(d) {
+                var dt = new Date(d.day);
+                return (dt.getMonth()+1) + '/' + dt.getDate();
+            });
+            adminChartInstances.push(new Chart(document.getElementById('dailyChart'), {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: '정답', data: daily.map(function(d){return d.correct;}), backgroundColor: chartColors.accent, borderRadius: 4 },
+                        { label: '오답', data: daily.map(function(d){return d.mistakes;}), backgroundColor: chartColors.danger, borderRadius: 4 }
+                    ]
+                },
+                options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
+            }));
+
+            // Learner practice count chart
+            var learners = data.learners || [];
+            var lNames = learners.map(function(l){return l.name || '?';});
+            adminChartInstances.push(new Chart(document.getElementById('learnerChart'), {
+                type: 'bar',
+                data: {
+                    labels: lNames,
+                    datasets: [{ label: '연습 횟수', data: learners.map(function(l){return l.cnt;}), backgroundColor: chartColors.purple, borderRadius: 4 }]
+                },
+                options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+            }));
+
+            // Accuracy chart
+            var accData = learners.map(function(l) {
+                var total = l.correct + l.mistakes;
+                return total > 0 ? Math.round(l.correct / total * 100) : 0;
+            });
+            adminChartInstances.push(new Chart(document.getElementById('accuracyChart'), {
+                type: 'bar',
+                data: {
+                    labels: lNames,
+                    datasets: [{ label: '정답률 %', data: accData, backgroundColor: accData.map(function(v){return v >= 70 ? chartColors.success : v >= 40 ? chartColors.warning : chartColors.danger;}), borderRadius: 4 }]
+                },
+                options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 100 } } }
+            }));
+
+            // Chars learned chart
+            adminChartInstances.push(new Chart(document.getElementById('charsChart'), {
+                type: 'bar',
+                data: {
+                    labels: lNames,
+                    datasets: [{ label: '학습 한자', data: learners.map(function(l){return l.chars;}), backgroundColor: chartColors.accent, borderRadius: 4 }]
+                },
+                options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+            }));
+        })
+        .catch(function() {
+            chartsEl.style.display = 'none';
         });
     }
 
