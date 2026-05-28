@@ -2699,9 +2699,7 @@
         .dash-chart-card {
             background: var(--surface2); border-radius: var(--radius-sm);
             padding: 16px; border: 1px solid var(--border);
-            position: relative; height: 280px;
         }
-        .dash-chart-card canvas { max-height: 230px; }
         .dash-chart-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-dim); }
         @media (max-width: 768px) {
             .dash-stats-row { grid-template-columns: repeat(3, 1fr); }
@@ -2785,21 +2783,21 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                 <div class="card" style="padding:20px;">
                     <div class="card-title">일별 학습 현황 (최근 14일)</div>
-                    <canvas id="dailyChart" height="200"></canvas>
+                    <canvas id="dailyChart"></canvas>
                 </div>
                 <div class="card" style="padding:20px;">
                     <div class="card-title">학습자별 학습량</div>
-                    <canvas id="learnerChart" height="200"></canvas>
+                    <canvas id="learnerChart"></canvas>
                 </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px;">
                 <div class="card" style="padding:20px;">
                     <div class="card-title">학습자별 정답률</div>
-                    <canvas id="accuracyChart" height="200"></canvas>
+                    <canvas id="accuracyChart"></canvas>
                 </div>
                 <div class="card" style="padding:20px;">
                     <div class="card-title">학습자별 학습 한자 수</div>
-                    <canvas id="charsChart" height="200"></canvas>
+                    <canvas id="charsChart"></canvas>
                 </div>
             </div>
         </div>
@@ -2890,19 +2888,19 @@
                 <div class="dash-charts" id="dashCharts">
                     <div class="dash-chart-card">
                         <div class="dash-chart-title">📅 일별 학습량 (최근 14일)</div>
-                        <canvas id="dashDailyChart" height="200"></canvas>
+                        <canvas id="dashDailyChart"></canvas>
                     </div>
                     <div class="dash-chart-card">
                         <div class="dash-chart-title">🎯 정답률 추이</div>
-                        <canvas id="dashAccuracyChart" height="200"></canvas>
+                        <canvas id="dashAccuracyChart"></canvas>
                     </div>
                     <div class="dash-chart-card">
                         <div class="dash-chart-title">📊 카테고리별 학습 진행</div>
-                        <canvas id="dashCategoryChart" height="200"></canvas>
+                        <canvas id="dashCategoryChart"></canvas>
                     </div>
                     <div class="dash-chart-card">
                         <div class="dash-chart-title">❌ 가장 많이 틀린 한자 TOP 10</div>
-                        <canvas id="dashMistakeChart" height="200"></canvas>
+                        <canvas id="dashMistakeChart"></canvas>
                     </div>
                 </div>
             </div>
@@ -5566,7 +5564,7 @@
             var chartOpts = {
                 responsive: true,
                 maintainAspectRatio: true,
-                aspectRatio: 1.8,
+                aspectRatio: 2.5,
                 plugins: { legend: { display: false } },
                 scales: {
                     x: { ticks: { color: '#7878a0', font: { size: 10 } }, grid: { color: 'rgba(120,120,200,0.1)' } },
