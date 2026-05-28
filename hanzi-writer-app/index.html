@@ -2659,52 +2659,6 @@
             background: rgba(52,211,153,0.2); color: var(--success);
         }
         .mistake-char .mc-streak { position: absolute; bottom: 2px; right: 4px; font-size: 9px; color: var(--success); }
-
-        /* ===== PERSONAL DASHBOARD ===== */
-        .my-dashboard {
-            background: var(--surface); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 24px;
-            margin-bottom: 20px; animation: slideUp 0.5s ease both;
-        }
-        .my-dashboard-header {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        .my-dashboard-title { font-size: 18px; font-weight: 700; }
-        .my-dashboard-toggle {
-            font-size: 12px; color: var(--text-dim); cursor: pointer;
-            padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px;
-            background: transparent; transition: all 0.2s;
-        }
-        .my-dashboard-toggle:hover { background: var(--surface2); color: var(--text); }
-        .dash-stats-row {
-            display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
-            margin-bottom: 20px;
-        }
-        .dash-stat {
-            text-align: center; padding: 16px 8px;
-            background: var(--surface2); border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-        }
-        .dash-stat-num { font-size: 28px; font-weight: 800; }
-        .dash-stat-label { font-size: 11px; color: var(--text-dim); margin-top: 4px; }
-        .dash-stat-num.accent { color: var(--accent); }
-        .dash-stat-num.accent2 { color: var(--accent2); }
-        .dash-stat-num.danger { color: var(--danger); }
-        .dash-stat-num.warning { color: var(--warning); }
-        .dash-stat-num.accent3 { color: var(--accent3); }
-        .dash-charts {
-            display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
-        }
-        .dash-chart-card {
-            background: var(--surface2); border-radius: var(--radius-sm);
-            padding: 16px; border: 1px solid var(--border);
-        }
-        .dash-chart-title { font-size: 13px; font-weight: 600; margin-bottom: 12px; color: var(--text-dim); }
-        @media (max-width: 768px) {
-            .dash-stats-row { grid-template-columns: repeat(3, 1fr); }
-            .dash-charts { grid-template-columns: 1fr; }
-        }
     </style>
 </head>
 <body>
@@ -2876,33 +2830,6 @@
                 </div>
                 <div class="daily-goal-count" id="goalCount">0/10</div>
                 <button class="daily-goal-btn" onclick="showGoalModal()">⚙️</button>
-            </div>
-
-            <!-- Personal Dashboard -->
-            <div class="my-dashboard" id="myDashboard" style="display:none;">
-                <div class="my-dashboard-header">
-                    <div class="my-dashboard-title">📊 나의 학습 현황</div>
-                    <button class="my-dashboard-toggle" onclick="toggleDashCharts()">차트 접기/펼치기</button>
-                </div>
-                <div class="dash-stats-row" id="dashStats"></div>
-                <div class="dash-charts" id="dashCharts">
-                    <div class="dash-chart-card">
-                        <div class="dash-chart-title">📅 일별 학습량 (최근 14일)</div>
-                        <canvas id="dashDailyChart"></canvas>
-                    </div>
-                    <div class="dash-chart-card">
-                        <div class="dash-chart-title">🎯 정답률 추이</div>
-                        <canvas id="dashAccuracyChart"></canvas>
-                    </div>
-                    <div class="dash-chart-card">
-                        <div class="dash-chart-title">📊 카테고리별 학습 진행</div>
-                        <canvas id="dashCategoryChart"></canvas>
-                    </div>
-                    <div class="dash-chart-card">
-                        <div class="dash-chart-title">❌ 가장 많이 틀린 한자 TOP 10</div>
-                        <canvas id="dashMistakeChart"></canvas>
-                    </div>
-                </div>
             </div>
 
             <!-- Character Grid -->
@@ -5364,7 +5291,6 @@
                 showToast('🎉 오답 집중 복습 완료!');
                 _mistakeReviewQueue = [];
                 renderMistakeSection();
-                renderMyDashboard();
                 return;
             }
 
@@ -5458,239 +5384,6 @@
             if (reviewBtn) reviewBtn.style.display = keys.length > 0 ? 'inline-block' : 'none';
         };
 
-        // ===== FEATURE: PERSONAL DASHBOARD =====
-        var dashChartInstances = [];
-
-        function getDailyStudyLog() {
-            return JSON.parse(localStorage.getItem('hanzi_daily_log') || '{}');
-        }
-        function saveDailyStudyLog(d) {
-            localStorage.setItem('hanzi_daily_log', JSON.stringify(d));
-        }
-
-        function logDailyStudy(char, correct, mistakes) {
-            var today = todayStr();
-            var log = getDailyStudyLog();
-            if (!log[today]) log[today] = { chars: [], correct: 0, mistakes: 0, count: 0 };
-            if (log[today].chars.indexOf(char) === -1) log[today].chars.push(char);
-            log[today].correct += (correct || 0);
-            log[today].mistakes += (mistakes || 0);
-            log[today].count++;
-            saveDailyStudyLog(log);
-        }
-
-        // Hook into markCharLearned for logging
-        function initDashboardHook() {
-            var prevMark = window.markCharLearned;
-            window.markCharLearned = function(char, totalMistakes) {
-                prevMark(char, totalMistakes);
-                logDailyStudy(char, totalMistakes === 0 ? 1 : 0, totalMistakes);
-            };
-        }
-
-        function getStudyStreak() {
-            var log = getDailyStudyLog();
-            var dates = Object.keys(log).sort().reverse();
-            if (dates.length === 0) return 0;
-
-            var streak = 0;
-            var today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            for (var i = 0; i < dates.length; i++) {
-                var checkDate = new Date(today);
-                checkDate.setDate(checkDate.getDate() - i);
-                var ds = checkDate.toISOString().slice(0, 10);
-                if (log[ds] && log[ds].count > 0) {
-                    streak++;
-                } else {
-                    break;
-                }
-            }
-            return streak;
-        }
-
-        function renderMyDashboard() {
-            var section = document.getElementById('myDashboard');
-            if (!section) return;
-
-            var log = getDailyStudyLog();
-            var mistakes = getMistakes();
-            var learnedChars = JSON.parse(localStorage.getItem('hanzi_learned') || '{}');
-            var streak = getStudyStreak();
-
-            // Compute totals
-            var totalLearned = Object.keys(learnedChars).length;
-            var totalCorrect = 0, totalMistakes = 0, totalSessions = 0;
-            var today = todayStr();
-            var todayData = log[today] || { chars: [], correct: 0, mistakes: 0, count: 0 };
-
-            Object.values(log).forEach(function(d) {
-                totalCorrect += d.correct;
-                totalMistakes += d.mistakes;
-                totalSessions += d.count;
-            });
-
-            var accuracy = (totalCorrect + totalMistakes) > 0
-                ? Math.round((totalCorrect / (totalCorrect + totalMistakes)) * 100) : 0;
-
-            // Show section only if user has some activity
-            if (totalSessions > 0 || totalLearned > 0) {
-                section.style.display = 'block';
-            } else {
-                section.style.display = 'none';
-                return;
-            }
-
-            // Stats row
-            document.getElementById('dashStats').innerHTML =
-                '<div class="dash-stat"><div class="dash-stat-num accent">' + totalLearned + '</div><div class="dash-stat-label">학습 한자</div></div>'
-                + '<div class="dash-stat"><div class="dash-stat-num accent2">' + streak + '일</div><div class="dash-stat-label">연속 학습</div></div>'
-                + '<div class="dash-stat"><div class="dash-stat-num warning">' + accuracy + '%</div><div class="dash-stat-label">정답률</div></div>'
-                + '<div class="dash-stat"><div class="dash-stat-num accent3">' + todayData.chars.length + '자</div><div class="dash-stat-label">오늘 학습</div></div>'
-                + '<div class="dash-stat"><div class="dash-stat-num danger">' + Object.keys(mistakes).length + '</div><div class="dash-stat-label">오답 한자</div></div>';
-
-            // Render charts
-            renderDashCharts(log, mistakes);
-        }
-
-        function renderDashCharts(log, mistakes) {
-            // Cleanup old charts
-            dashChartInstances.forEach(function(c) { c.destroy(); });
-            dashChartInstances = [];
-
-            if (typeof Chart === 'undefined') return;
-
-            var chartOpts = {
-                responsive: true,
-                maintainAspectRatio: true,
-                aspectRatio: 2.5,
-                plugins: { legend: { display: false } },
-                scales: {
-                    x: { ticks: { color: '#7878a0', font: { size: 10 } }, grid: { color: 'rgba(120,120,200,0.1)' } },
-                    y: { ticks: { color: '#7878a0', font: { size: 10 } }, grid: { color: 'rgba(120,120,200,0.1)' }, beginAtZero: true }
-                }
-            };
-
-            // 1. Daily study chart (14 days)
-            var days = [];
-            var today = new Date();
-            for (var i = 13; i >= 0; i--) {
-                var d = new Date(today);
-                d.setDate(d.getDate() - i);
-                days.push(d.toISOString().slice(0, 10));
-            }
-            var dailyCounts = days.map(function(ds) {
-                return log[ds] ? log[ds].chars.length : 0;
-            });
-            var dayLabels = days.map(function(ds) { return ds.slice(5); }); // MM-DD
-
-            var ctx1 = document.getElementById('dashDailyChart');
-            if (ctx1) {
-                dashChartInstances.push(new Chart(ctx1, {
-                    type: 'bar',
-                    data: {
-                        labels: dayLabels,
-                        datasets: [{ data: dailyCounts, backgroundColor: 'rgba(124,106,255,0.6)', borderRadius: 4 }]
-                    },
-                    options: chartOpts
-                }));
-            }
-
-            // 2. Accuracy trend (14 days)
-            var accData = days.map(function(ds) {
-                var d = log[ds];
-                if (!d || (d.correct + d.mistakes) === 0) return null;
-                return Math.round((d.correct / (d.correct + d.mistakes)) * 100);
-            });
-
-            var ctx2 = document.getElementById('dashAccuracyChart');
-            if (ctx2) {
-                dashChartInstances.push(new Chart(ctx2, {
-                    type: 'line',
-                    data: {
-                        labels: dayLabels,
-                        datasets: [{
-                            data: accData, borderColor: '#5eead4', backgroundColor: 'rgba(94,234,212,0.1)',
-                            tension: 0.3, fill: true, pointRadius: 3, spanGaps: true
-                        }]
-                    },
-                    options: Object.assign({}, chartOpts, {
-                        scales: Object.assign({}, chartOpts.scales, {
-                            y: Object.assign({}, chartOpts.scales.y, { max: 100, ticks: Object.assign({}, chartOpts.scales.y.ticks, { callback: function(v) { return v + '%'; } }) })
-                        })
-                    })
-                }));
-            }
-
-            // 3. Category progress (doughnut)
-            var learnedChars = JSON.parse(localStorage.getItem('hanzi_learned') || '{}');
-            var catNames = [];
-            var catLearned = [];
-            var catTotal = [];
-            var catColors = ['#7c6aff', '#5eead4', '#f472b6', '#fbbf24', '#34d399', '#f87171', '#a78bfa', '#38bdf8'];
-
-            HANZI_CATEGORIES.slice(0, 8).forEach(function(cat, i) {
-                catNames.push(cat.name.length > 4 ? cat.name.slice(0, 4) + '..' : cat.name);
-                var learned = 0;
-                cat.chars.forEach(function(c) { if (learnedChars[c[0]]) learned++; });
-                catLearned.push(learned);
-                catTotal.push(cat.chars.length);
-            });
-
-            var ctx3 = document.getElementById('dashCategoryChart');
-            if (ctx3) {
-                dashChartInstances.push(new Chart(ctx3, {
-                    type: 'bar',
-                    data: {
-                        labels: catNames,
-                        datasets: [
-                            { label: '학습', data: catLearned, backgroundColor: 'rgba(124,106,255,0.7)', borderRadius: 4 },
-                            { label: '전체', data: catTotal, backgroundColor: 'rgba(120,120,200,0.2)', borderRadius: 4 }
-                        ]
-                    },
-                    options: Object.assign({}, chartOpts, {
-                        plugins: { legend: { display: true, labels: { color: '#7878a0', font: { size: 10 } } } },
-                        scales: {
-                            x: { ticks: { color: '#7878a0', font: { size: 9 } }, grid: { display: false } },
-                            y: chartOpts.scales.y
-                        }
-                    })
-                }));
-            }
-
-            // 4. Top mistakes (horizontal bar)
-            var mistakeKeys = Object.keys(mistakes);
-            mistakeKeys.sort(function(a, b) { return mistakes[b].count - mistakes[a].count; });
-            var top10 = mistakeKeys.slice(0, 10);
-
-            var ctx4 = document.getElementById('dashMistakeChart');
-            if (ctx4) {
-                if (top10.length === 0) {
-                    ctx4.parentNode.querySelector('.dash-chart-title').textContent = '❌ 오답 없음 - 완벽해요! 🎉';
-                }
-                dashChartInstances.push(new Chart(ctx4, {
-                    type: 'bar',
-                    data: {
-                        labels: top10.map(function(ch) {
-                            var info = charLookup[ch];
-                            return ch + (info ? '(' + info.reading + ')' : '');
-                        }),
-                        datasets: [{
-                            data: top10.map(function(ch) { return mistakes[ch].count; }),
-                            backgroundColor: 'rgba(248,113,113,0.6)', borderRadius: 4
-                        }]
-                    },
-                    options: Object.assign({}, chartOpts, { indexAxis: 'y' })
-                }));
-            }
-        }
-
-        function toggleDashCharts() {
-            var charts = document.getElementById('dashCharts');
-            charts.style.display = charts.style.display === 'none' ? 'grid' : 'none';
-        }
-
         function initNewFeatures() {
             renderDailyGoal();
             renderMistakeSection();
@@ -5700,8 +5393,6 @@
             initVisitorCounter();
             initSearchAutocomplete();
             initMistakeReviewHook();
-            initDashboardHook();
-            renderMyDashboard();
         }
 
         updateApiKeyBtn();
