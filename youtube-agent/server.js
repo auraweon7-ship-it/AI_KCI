@@ -679,7 +679,7 @@ app.post('/api/render/video', async (req, res) => {
     const hasBgm = bgmPath && fs.existsSync(bgmPath);
 
     await new Promise((resolve, reject) => {
-      execFile('ffmpeg', ffmpegArgs, { timeout: 600000 }, (error, stdout, stderr) => {
+      execFile('ffmpeg', ffmpegArgs, { timeout: 1200000 }, (error, stdout, stderr) => {
         if (error) reject(new Error(`FFmpeg 오류: ${error.message}\n${stderr}`));
         else resolve(stdout);
       });
