@@ -3311,7 +3311,11 @@
             updateCharNav();
             updateWriterCharInfo(char);
 
-            document.getElementById('infoPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Only scroll to top on first char selection, not on prev/next navigation
+            if (!window._charNavActive) {
+                document.getElementById('infoPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            window._charNavActive = false;
         }
 
         function updateCharNav() {
@@ -3360,6 +3364,7 @@
             }
             var newIdx = idx + dir;
             if (newIdx < 0 || newIdx >= currentChars.length) return;
+            window._charNavActive = true;
             selectChar(currentChars[newIdx][0]);
         }
 
