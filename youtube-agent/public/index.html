@@ -6,960 +6,834 @@
 <title>YouTube 롱폼 제작 에이전트</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap');
+:root{--bg:#0f0f13;--bg2:#16161d;--bg3:#1c1c26;--bg4:#22222e;--bgi:#12121a;--acc:#ff3b3b;--acc2:#ff5252;--accd:rgba(255,59,59,.15);--t1:#f0f0f5;--t2:#9898a8;--t3:#5e5e70;--bd:#2a2a38;--ok:#34d399;--warn:#fbbf24;--info:#60a5fa;--r:12px;--rs:8px}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;display:flex}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
 
-:root {
-  --bg-primary: #0f0f13;
-  --bg-secondary: #16161d;
-  --bg-card: #1c1c26;
-  --bg-hover: #22222e;
-  --bg-input: #12121a;
-  --accent: #ff3b3b;
-  --accent-hover: #ff5252;
-  --accent-dim: rgba(255,59,59,0.15);
-  --text-primary: #f0f0f5;
-  --text-secondary: #9898a8;
-  --text-muted: #5e5e70;
-  --border: #2a2a38;
-  --success: #34d399;
-  --warning: #fbbf24;
-  --info: #60a5fa;
-  --radius: 12px;
-  --radius-sm: 8px;
-}
+/* Sidebar */
+.sb{width:250px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--bd);position:fixed;left:0;top:0;bottom:0;z-index:100;display:flex;flex-direction:column;overflow-y:auto}
+.sb-h{padding:18px 14px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
+.sb-ico{width:36px;height:36px;background:linear-gradient(135deg,#ff3b3b,#ff6b35);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#fff}
+.sb-t h1{font-size:13px;font-weight:700}.sb-t span{font-size:9px;color:var(--t3)}
+.sb-nav{padding:6px;flex:1}
+.sb-lbl{font-size:8px;font-weight:600;text-transform:uppercase;letter-spacing:1.5px;color:var(--t3);padding:12px 10px 4px}
+.ni{display:flex;align-items:center;gap:9px;padding:8px 11px;border-radius:var(--rs);cursor:pointer;font-size:12.5px;color:var(--t2);position:relative;transition:all .15s}
+.ni:hover{background:var(--bg4);color:var(--t1)}
+.ni.act{background:var(--accd);color:var(--acc);font-weight:500}
+.ni.act::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:16px;background:var(--acc);border-radius:0 3px 3px 0}
+.ni .n{font-size:8px;background:var(--bg);color:var(--t3);width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-left:auto;font-weight:600}
+.ni.act .n{background:var(--acc);color:#fff}
+.ni.ok .n{background:var(--ok);color:#000}
+.ni .req{width:6px;height:6px;border-radius:50%;background:var(--warn);margin-left:auto;margin-right:4px;display:none}
+.ni.need .req{display:block}
 
-* { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:'Noto Sans KR',sans-serif; background:var(--bg-primary); color:var(--text-primary); min-height:100vh; display:flex; }
-::-webkit-scrollbar { width:6px; }
-::-webkit-scrollbar-track { background:transparent; }
-::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+.sb-ft{padding:10px 14px;border-top:1px solid var(--bd)}
+.pr-info{display:flex;justify-content:space-between;font-size:9px;color:var(--t3);margin-bottom:3px}
+.pr-bar{height:3px;background:var(--bg);border-radius:2px;overflow:hidden}.pr-fill{height:100%;background:linear-gradient(90deg,#ff3b3b,#ff6b35);border-radius:2px;transition:width .4s;width:0%}
+.api-st{margin-top:8px;display:flex;flex-wrap:wrap;gap:3px}
+.api-b{font-size:8px;padding:1px 5px;border-radius:8px}.api-b.on{background:rgba(52,211,153,.15);color:var(--ok)}.api-b.off{background:rgba(255,59,59,.1);color:#ff5252}
 
-.sidebar {
-  width:260px; min-height:100vh; background:var(--bg-secondary);
-  border-right:1px solid var(--border); position:fixed; left:0; top:0; bottom:0; z-index:100;
-  display:flex; flex-direction:column; overflow-y:auto;
-}
-.sidebar-header { padding:20px 16px; border-bottom:1px solid var(--border); }
-.sidebar-logo { display:flex; align-items:center; gap:10px; }
-.logo-icon { width:38px; height:38px; background:linear-gradient(135deg,#ff3b3b,#ff6b35); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:900; color:#fff; }
-.logo-text h1 { font-size:14px; font-weight:700; }
-.logo-text span { font-size:10px; color:var(--text-muted); }
+/* Main */
+.mn{margin-left:250px;flex:1;min-height:100vh}
+.top{height:50px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--bg2);position:sticky;top:0;z-index:50}
+.top-t{font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px}
+.badge{background:var(--accd);color:var(--acc);font-size:9px;padding:2px 7px;border-radius:12px;font-weight:600}
+.top-a{display:flex;gap:5px}
 
-.sidebar-nav { padding:8px; flex:1; }
-.nav-label { font-size:9px; font-weight:600; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-muted); padding:14px 10px 6px; }
-.nav-item { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:var(--radius-sm); cursor:pointer; font-size:13px; color:var(--text-secondary); position:relative; transition:all .15s; }
-.nav-item:hover { background:var(--bg-hover); color:var(--text-primary); }
-.nav-item.active { background:var(--accent-dim); color:var(--accent); font-weight:500; }
-.nav-item.active::before { content:''; position:absolute; left:0; top:50%; transform:translateY(-50%); width:3px; height:18px; background:var(--accent); border-radius:0 3px 3px 0; }
-.nav-item .num { font-size:9px; background:var(--bg-primary); color:var(--text-muted); width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-left:auto; font-weight:600; }
-.nav-item.active .num { background:var(--accent); color:#fff; }
-.nav-item.done .num { background:var(--success); color:#000; }
+/* Buttons */
+.b{padding:6px 13px;border-radius:var(--rs);border:none;font-size:11.5px;font-weight:500;cursor:pointer;transition:all .15s;font-family:inherit;display:inline-flex;align-items:center;gap:5px}
+.bp{background:var(--acc);color:#fff}.bp:hover{background:var(--acc2)}.bp:disabled{opacity:.4;cursor:not-allowed}
+.bs{background:var(--bg4);color:var(--t1);border:1px solid var(--bd)}.bs:hover{background:var(--bd)}
+.bg{background:transparent;color:var(--t2)}.bg:hover{color:var(--t1);background:var(--bg4)}
+.bok{background:var(--ok);color:#000}
+.blg{padding:10px 22px;font-size:13px}
 
-.sidebar-footer { padding:12px 16px; border-top:1px solid var(--border); }
-.progress-info { display:flex; justify-content:space-between; font-size:10px; color:var(--text-muted); margin-bottom:4px; }
-.progress-bar { height:3px; background:var(--bg-primary); border-radius:2px; overflow:hidden; }
-.progress-fill { height:100%; background:linear-gradient(90deg,#ff3b3b,#ff6b35); border-radius:2px; transition:width .5s; width:0%; }
+.ct{padding:24px;max-width:1100px}
+.sec{display:none}.sec.act{display:block}
 
-.api-status { margin-top:10px; display:flex; flex-wrap:wrap; gap:4px; }
-.api-badge { font-size:9px; padding:2px 6px; border-radius:10px; display:flex; align-items:center; gap:3px; }
-.api-badge.on { background:rgba(52,211,153,.15); color:var(--success); }
-.api-badge.off { background:rgba(255,59,59,.1); color:#ff5252; }
+/* Card */
+.cd{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:20px;margin-bottom:16px}
+.cd-h{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
+.cd-t{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px}
+.cd-s{font-size:10px;color:var(--t3);margin-top:2px}
 
-.main { margin-left:260px; flex:1; min-height:100vh; }
-.topbar { height:54px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 28px; background:var(--bg-secondary); position:sticky; top:0; z-index:50; }
-.topbar-title { font-size:14px; font-weight:600; display:flex; align-items:center; gap:8px; }
-.step-badge { background:var(--accent-dim); color:var(--accent); font-size:10px; padding:2px 8px; border-radius:14px; font-weight:600; }
-.topbar-actions { display:flex; gap:6px; }
+/* Alert */
+.alert{padding:10px 14px;border-radius:var(--rs);font-size:11px;margin-bottom:14px;display:flex;align-items:center;gap:8px;line-height:1.5}
+.alert-warn{background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2);color:var(--warn)}
+.alert-info{background:rgba(96,165,250,.1);border:1px solid rgba(96,165,250,.2);color:var(--info)}
+.alert-ok{background:rgba(52,211,153,.1);border:1px solid rgba(52,211,153,.2);color:var(--ok)}
 
-.btn { padding:7px 14px; border-radius:var(--radius-sm); border:none; font-size:12px; font-weight:500; cursor:pointer; transition:all .15s; font-family:inherit; display:inline-flex; align-items:center; gap:5px; }
-.btn-primary { background:var(--accent); color:#fff; }
-.btn-primary:hover { background:var(--accent-hover); }
-.btn-primary:disabled { opacity:.5; cursor:not-allowed; }
-.btn-secondary { background:var(--bg-hover); color:var(--text-primary); border:1px solid var(--border); }
-.btn-secondary:hover { background:var(--border); }
-.btn-ghost { background:transparent; color:var(--text-secondary); }
-.btn-ghost:hover { color:var(--text-primary); background:var(--bg-hover); }
-.btn-success { background:var(--success); color:#000; }
-.btn-sm { padding:5px 10px; font-size:11px; }
-.btn-lg { padding:10px 24px; font-size:14px; }
+/* Form */
+.fg{margin-bottom:12px}
+.fl{font-size:10.5px;font-weight:500;color:var(--t2);margin-bottom:4px;display:block}
+.fi,.ft,.fs{width:100%;padding:8px 11px;background:var(--bgi);border:1px solid var(--bd);border-radius:var(--rs);color:var(--t1);font-size:12.5px;font-family:inherit;outline:none;transition:border-color .2s}
+.fi:focus,.ft:focus,.fs:focus{border-color:var(--acc)}
+.ft{min-height:90px;resize:vertical;line-height:1.7}
+.fs option{background:var(--bg3)}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.fh{font-size:9px;color:var(--t3);margin-top:2px}
 
-.content { padding:28px; max-width:1100px; }
-.section { display:none; }
-.section.active { display:block; }
+/* Output */
+.out{background:var(--bgi);border:1px solid var(--bd);border-radius:var(--r);padding:16px;min-height:120px;font-size:12.5px;line-height:1.8;white-space:pre-wrap;color:var(--t1);position:relative;overflow-y:auto;max-height:500px}
+.out-edit{resize:vertical;width:100%;background:var(--bgi);border:1px solid var(--bd);border-radius:var(--r);padding:16px;font-size:12.5px;line-height:1.8;color:var(--t1);font-family:inherit;outline:none;min-height:200px;max-height:600px}
+.out-edit:focus{border-color:var(--acc)}
+.otb{display:flex;gap:4px;margin-bottom:7px;flex-wrap:wrap;align-items:center}
+.wc{font-size:9px;color:var(--t3);margin-left:auto}
 
-.card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:18px; }
-.card-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
-.card-title { font-size:14px; font-weight:600; display:flex; align-items:center; gap:7px; }
-.card-sub { font-size:11px; color:var(--text-muted); margin-top:2px; }
+/* Tags */
+.tl{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px}
+.tag{background:var(--bg4);border:1px solid var(--bd);padding:4px 10px;border-radius:14px;font-size:10.5px;cursor:pointer;transition:all .15s;color:var(--t2)}
+.tag:hover,.tag.sel{background:var(--accd);border-color:var(--acc);color:var(--acc)}
 
-.form-group { margin-bottom:14px; }
-.form-label { font-size:11px; font-weight:500; color:var(--text-secondary); margin-bottom:5px; display:block; }
-.form-input,.form-textarea,.form-select { width:100%; padding:9px 12px; background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius-sm); color:var(--text-primary); font-size:13px; font-family:inherit; outline:none; transition:border-color .2s; }
-.form-input:focus,.form-textarea:focus,.form-select:focus { border-color:var(--accent); }
-.form-textarea { min-height:100px; resize:vertical; line-height:1.7; }
-.form-select option { background:var(--bg-card); }
-.form-row { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-.form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
-.form-hint { font-size:10px; color:var(--text-muted); margin-top:3px; }
+/* Grid */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 
-.output-area { background:var(--bg-input); border:1px solid var(--border); border-radius:var(--radius); padding:18px; min-height:160px; font-size:13px; line-height:1.8; white-space:pre-wrap; color:var(--text-primary); position:relative; overflow-y:auto; max-height:500px; }
-.output-toolbar { display:flex; gap:5px; margin-bottom:8px; flex-wrap:wrap; }
+/* Topic card */
+.tc{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:16px;cursor:pointer;transition:all .2s}
+.tc:hover{border-color:var(--acc);transform:translateY(-1px)}
+.tc-cat{font-size:8px;text-transform:uppercase;letter-spacing:1px;color:var(--acc);font-weight:600;margin-bottom:5px}
+.tc h3{font-size:13px;font-weight:600;margin-bottom:4px}.tc p{font-size:10.5px;color:var(--t2);line-height:1.5}
+.tc-m{display:flex;gap:8px;margin-top:8px;font-size:9px;color:var(--t3)}
 
-.tag-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
-.tag { background:var(--bg-hover); border:1px solid var(--border); padding:5px 12px; border-radius:16px; font-size:11px; cursor:pointer; transition:all .15s; color:var(--text-secondary); }
-.tag:hover,.tag.selected { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
-
-.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-.grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
-
-/* Topic cards */
-.topic-card { background:var(--bg-card); border:1px solid var(--border); border-radius:var(--radius); padding:18px; cursor:pointer; transition:all .2s; }
-.topic-card:hover { border-color:var(--accent); transform:translateY(-2px); }
-.topic-cat { font-size:9px; text-transform:uppercase; letter-spacing:1px; color:var(--accent); font-weight:600; margin-bottom:6px; }
-.topic-card h3 { font-size:14px; font-weight:600; margin-bottom:5px; }
-.topic-card p { font-size:11px; color:var(--text-secondary); line-height:1.6; }
-.topic-meta { display:flex; gap:10px; margin-top:10px; font-size:10px; color:var(--text-muted); }
+/* Scene card */
+.sc{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px;margin-bottom:8px}
+.sc-h{display:flex;align-items:center;gap:7px;margin-bottom:7px}
+.sc-n{background:var(--acc);color:#fff;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700}
+.sc-nm{font-size:11.5px;font-weight:600}
+.sc-p{background:var(--bgi);border-left:3px solid var(--info);padding:7px 10px;border-radius:0 var(--rs) var(--rs) 0;font-size:10.5px;color:var(--info);font-family:'Consolas',monospace;line-height:1.5}
+.sc-act{display:flex;gap:4px;margin-top:7px;align-items:center}
+.sc-st{font-size:9px;color:var(--t3);margin-left:4px}
 
 /* Image grid */
-.img-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; }
-.img-card { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; }
-.img-card img { width:100%; aspect-ratio:16/9; object-fit:cover; display:block; }
-.img-card-info { padding:10px; }
-.img-card-title { font-size:12px; font-weight:500; margin-bottom:4px; }
-.img-card-prompt { font-size:10px; color:var(--text-muted); line-height:1.4; max-height:40px; overflow:hidden; }
+.ig{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:12px}
+.ic{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rs);overflow:hidden}
+.ic img{width:100%;aspect-ratio:16/9;object-fit:cover;display:block}
+.ic-i{padding:8px;font-size:10px;color:var(--t3)}
 
-/* Audio player */
-.audio-player { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px; display:flex; align-items:center; gap:12px; }
-.audio-player audio { flex:1; height:36px; }
+/* Audio */
+.ap{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px;display:flex;align-items:center;gap:10px}
+.ap audio{flex:1;height:34px}
 
-/* Video player */
-.video-container { background:#000; border-radius:var(--radius); overflow:hidden; margin-bottom:14px; }
-.video-container video { width:100%; max-height:480px; }
+/* Video */
+.vc{background:#000;border-radius:var(--r);overflow:hidden;margin-bottom:12px}
+.vc video{width:100%;max-height:450px}
 
-/* Loading */
-.spinner { display:inline-block; width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--accent); border-radius:50%; animation:spin .7s linear infinite; }
-@keyframes spin { to { transform:rotate(360deg); } }
-.loading-overlay { position:absolute; inset:0; background:rgba(15,15,19,.9); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; border-radius:var(--radius); z-index:10; }
-.loading-text { font-size:12px; color:var(--text-secondary); }
+/* Progress */
+.pgb{height:6px;background:var(--bg);border-radius:3px;overflow:hidden;margin:8px 0}
+.pgf{height:100%;background:linear-gradient(90deg,var(--acc),var(--warn));border-radius:3px;transition:width .3s}
+.pg-txt{font-size:10px;color:var(--t3);text-align:center;margin-top:2px}
+
+/* Spinner */
+.sp{display:inline-block;width:14px;height:14px;border:2px solid var(--bd);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* Toast */
-.toast { position:fixed; bottom:20px; right:20px; padding:10px 18px; border-radius:var(--radius-sm); font-size:12px; font-weight:500; transform:translateY(50px); opacity:0; transition:all .3s; z-index:999; }
-.toast.show { transform:translateY(0); opacity:1; }
-.toast.success { background:var(--success); color:#000; }
-.toast.error { background:#ff3b3b; color:#fff; }
+.toast{position:fixed;bottom:18px;right:18px;padding:9px 16px;border-radius:var(--rs);font-size:11px;font-weight:500;transform:translateY(50px);opacity:0;transition:all .3s;z-index:999}
+.toast.show{transform:translateY(0);opacity:1}
+.toast.ok{background:var(--ok);color:#000}.toast.err{background:#ff3b3b;color:#fff}
 
-/* Project banner */
-.project-banner { background:linear-gradient(135deg,rgba(255,59,59,.06),rgba(139,92,246,.06)); border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px; margin-bottom:18px; display:flex; align-items:center; justify-content:space-between; }
-.project-info { display:flex; align-items:center; gap:10px; font-size:12px; color:var(--text-secondary); }
-.project-dot { width:7px; height:7px; background:var(--success); border-radius:50%; animation:pulse 2s ease infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+/* YT status */
+.yt-st{display:flex;align-items:center;gap:7px;padding:10px;background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rs);margin-bottom:12px;font-size:11px}
+.dot{width:7px;height:7px;border-radius:50%}.dot.g{background:var(--ok)}.dot.r{background:#ff3b3b}
 
-/* Scene prompt card */
-.scene-card { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px; margin-bottom:10px; }
-.scene-header { display:flex; align-items:center; gap:8px; margin-bottom:8px; }
-.scene-num { background:var(--accent); color:#fff; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; }
-.scene-name { font-size:12px; font-weight:600; }
-.scene-prompt-text { background:var(--bg-input); border-left:3px solid var(--info); padding:8px 12px; border-radius:0 var(--radius-sm) var(--radius-sm) 0; font-size:11px; color:var(--info); font-family:'Consolas',monospace; line-height:1.5; }
-.scene-actions { display:flex; gap:4px; margin-top:8px; }
+/* Banner */
+.ban{background:linear-gradient(135deg,rgba(255,59,59,.06),rgba(139,92,246,.06));border:1px solid var(--bd);border-radius:var(--r);padding:10px 14px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:11px;color:var(--t2)}
+.ban .pdot{width:6px;height:6px;background:var(--ok);border-radius:50%;animation:pulse 2s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 
-/* YouTube upload */
-.yt-status { display:flex; align-items:center; gap:8px; padding:12px; background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:14px; }
-.yt-status .dot { width:8px; height:8px; border-radius:50%; }
-.yt-status .dot.green { background:var(--success); }
-.yt-status .dot.red { background:#ff3b3b; }
+/* Title option */
+.topt{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rs);padding:10px;margin-bottom:6px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s}
+.topt:hover{border-color:var(--acc)}.topt.sel{border-color:var(--acc);background:var(--accd)}
+.topt-r{font-size:14px;font-weight:700;color:var(--acc);width:26px;text-align:center}
+.topt-t{font-size:12px;font-weight:500;flex:1}
 
-/* Meta title option */
-.title-option { background:var(--bg-secondary); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px; margin-bottom:8px; display:flex; align-items:center; gap:10px; cursor:pointer; transition:all .15s; }
-.title-option:hover { border-color:var(--accent); }
-.title-option.selected { border-color:var(--accent); background:var(--accent-dim); }
-.title-rank { font-size:16px; font-weight:700; color:var(--accent); width:30px; text-align:center; }
-.title-text { font-size:13px; font-weight:500; flex:1; }
+.divider{height:1px;background:var(--bd);margin:16px 0}
 </style>
 </head>
 <body>
 
-<aside class="sidebar">
-  <div class="sidebar-header">
-    <div class="sidebar-logo">
-      <div class="logo-icon">YT</div>
-      <div class="logo-text"><h1>YouTube Agent</h1><span>풀스택 제작 에이전트 v2.0</span></div>
-    </div>
+<aside class="sb">
+  <div class="sb-h">
+    <div class="sb-ico">YT</div>
+    <div class="sb-t"><h1>YouTube Agent</h1><span>풀스택 영상 제작 v2.0</span></div>
   </div>
-  <nav class="sidebar-nav">
-    <div class="nav-label">기획</div>
-    <div class="nav-item active" data-s="topic" onclick="go('topic')"><span>💡</span> 주제 추천 <span class="num">1</span></div>
-    <div class="nav-item" data-s="plan" onclick="go('plan')"><span>📋</span> 대본 기획 <span class="num">2</span></div>
-    <div class="nav-item" data-s="script" onclick="go('script')"><span>✍️</span> 대본 생성 <span class="num">3</span></div>
-    <div class="nav-label">제작</div>
-    <div class="nav-item" data-s="image" onclick="go('image')"><span>🎨</span> 이미지 생성 <span class="num">4</span></div>
-    <div class="nav-item" data-s="tts" onclick="go('tts')"><span>🎙️</span> TTS 생성 <span class="num">5</span></div>
-    <div class="nav-item" data-s="render" onclick="go('render')"><span>🎬</span> 영상 렌더링 <span class="num">6</span></div>
-    <div class="nav-label">퍼블리싱</div>
-    <div class="nav-item" data-s="meta" onclick="go('meta')"><span>🏷️</span> 제목/설명 <span class="num">7</span></div>
-    <div class="nav-item" data-s="thumbnail" onclick="go('thumbnail')"><span>🖼️</span> 썸네일 <span class="num">8</span></div>
-    <div class="nav-label">확장</div>
-    <div class="nav-item" data-s="shorts" onclick="go('shorts')"><span>📱</span> 쇼츠 <span class="num">9</span></div>
-    <div class="nav-item" data-s="intro" onclick="go('intro')"><span>🚀</span> 인트로 <span class="num">10</span></div>
-    <div class="nav-label">업로드</div>
-    <div class="nav-item" data-s="upload" onclick="go('upload')"><span>📤</span> YouTube 업로드 <span class="num">⬆</span></div>
+  <nav class="sb-nav">
+    <div class="sb-lbl">기획</div>
+    <div class="ni act" data-s="topic" onclick="go('topic')"><span>💡</span> 주제 선정 <span class="n">1</span></div>
+    <div class="ni" data-s="plan" onclick="go('plan')"><span>📋</span> 대본 기획 <span class="req"></span><span class="n">2</span></div>
+    <div class="ni" data-s="script" onclick="go('script')"><span>✍️</span> 대본 작성 <span class="req"></span><span class="n">3</span></div>
+    <div class="sb-lbl">제작</div>
+    <div class="ni" data-s="image" onclick="go('image')"><span>🎨</span> 이미지 생성 <span class="req"></span><span class="n">4</span></div>
+    <div class="ni" data-s="tts" onclick="go('tts')"><span>🎙️</span> TTS 음성 <span class="req"></span><span class="n">5</span></div>
+    <div class="ni" data-s="render" onclick="go('render')"><span>🎬</span> 영상 합성 <span class="req"></span><span class="n">6</span></div>
+    <div class="sb-lbl">퍼블리싱</div>
+    <div class="ni" data-s="meta" onclick="go('meta')"><span>🏷️</span> 제목/설명 <span class="req"></span><span class="n">7</span></div>
+    <div class="ni" data-s="thumb" onclick="go('thumb')"><span>🖼️</span> 썸네일 <span class="n">8</span></div>
+    <div class="sb-lbl">확장</div>
+    <div class="ni" data-s="shorts" onclick="go('shorts')"><span>📱</span> 쇼츠 <span class="req"></span><span class="n">9</span></div>
+    <div class="ni" data-s="intro" onclick="go('intro')"><span>🚀</span> 인트로 <span class="n">10</span></div>
+    <div class="sb-lbl">업로드</div>
+    <div class="ni" data-s="upload" onclick="go('upload')"><span>📤</span> YouTube <span class="req"></span><span class="n">⬆</span></div>
   </nav>
-  <div class="sidebar-footer">
-    <div class="progress-info"><span>워크플로우</span><span id="pctText">0%</span></div>
-    <div class="progress-bar"><div class="progress-fill" id="pctBar"></div></div>
-    <div class="api-status" id="apiStatus"></div>
+  <div class="sb-ft">
+    <div class="pr-info"><span>진행률</span><span id="pT">0%</span></div>
+    <div class="pr-bar"><div class="pr-fill" id="pB"></div></div>
+    <div class="api-st" id="apiSt"></div>
   </div>
 </aside>
 
-<div class="main">
-  <div class="topbar">
-    <div class="topbar-title" id="topTitle">💡 주제 추천 <span class="step-badge">STEP 1</span></div>
-    <div class="topbar-actions">
-      <button class="btn btn-secondary btn-sm" onclick="exportAll()">📥 내보내기</button>
-      <button class="btn btn-ghost btn-sm" onclick="viewFiles()">📂 파일 목록</button>
+<div class="mn">
+  <div class="top">
+    <div class="top-t" id="topT">💡 주제 선정 <span class="badge">STEP 1</span></div>
+    <div class="top-a">
+      <button class="b bs" onclick="viewFiles()">📂 파일</button>
+      <button class="b bs" onclick="cleanFiles()">🗑️ 초기화</button>
+      <button class="b bs" onclick="exportAll()">📥 내보내기</button>
     </div>
   </div>
+  <div class="ct">
+    <div class="ban" id="ban" style="display:none"><div class="pdot"></div><span>프로젝트: <strong id="banN"></strong></span></div>
 
-  <div class="content">
-    <div class="project-banner" id="banner" style="display:none">
-      <div class="project-info"><div class="project-dot"></div><span>프로젝트: <strong id="bannerName"></strong></span></div>
-    </div>
-
-    <!-- ===== 1. 주제 추천 ===== -->
-    <div class="section active" id="sec-topic">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">💡 AI 주제 추천</div><div class="card-sub">Claude가 트렌드 기반 주제를 추천합니다</div></div></div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">카테고리</label>
-            <select class="form-select" id="topCat">
-              <option value="">선택...</option>
-              <option value="역사/다큐">역사/다큐</option><option value="과학/기술">과학/기술</option>
-              <option value="미스터리">미스터리/괴담</option><option value="경제/재테크">경제/재테크</option>
-              <option value="심리/자기계발">심리/자기계발</option><option value="세계문화">세계문화/여행</option>
-              <option value="범죄/사건">범죄/사건</option><option value="자연/동물">자연/동물</option>
-            </select></div>
-          <div class="form-group"><label class="form-label">타겟 시청자</label>
-            <select class="form-select" id="topTarget">
-              <option value="">선택...</option>
-              <option value="10대 청소년">10대</option><option value="20~30대">20~30대</option>
-              <option value="30~40대 직장인">30~40대</option><option value="40~60대 중장년">중장년</option>
-              <option value="전 연령">전 연령</option>
-            </select></div>
+    <!-- ===== 1. 주제 ===== -->
+    <div class="sec act" id="sec-topic">
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">💡 주제 선정</div><div class="cd-s">직접 입력하거나 AI 추천을 받으세요</div></div></div>
+        <div class="fg"><label class="fl">영상 주제 직접 입력</label>
+          <input type="text" class="fi" id="directTopic" placeholder="예: 베트남 전쟁 속 병사들의 고독과 연대" oninput="S.topic=this.value">
+          <div class="fh">직접 입력 후 '다음 단계' 클릭, 또는 아래에서 AI 추천을 받으세요</div></div>
+        <button class="b bp" onclick="if(S.topic){markOk('topic');go('plan')}else{toast('주제를 입력하세요','err')}">→ 다음 단계 (대본 기획)</button>
+        <div class="divider"></div>
+        <div class="cd-t" style="margin-bottom:12px">🤖 AI 주제 추천</div>
+        <div class="fr">
+          <div class="fg"><label class="fl">카테고리</label><select class="fs" id="topCat"><option value="">선택...</option><option>역사/다큐</option><option>과학/기술</option><option>미스터리/괴담</option><option>경제/재테크</option><option>심리/자기계발</option><option>세계문화/여행</option><option>범죄/사건</option><option>자연/동물</option><option>철학/인문학</option></select></div>
+          <div class="fg"><label class="fl">타겟</label><select class="fs" id="topTar"><option value="">선택...</option><option>10대 청소년</option><option>20~30대</option><option>30~40대 직장인</option><option>40~60대 중장년</option><option>전 연령</option></select></div>
         </div>
-        <div class="form-group"><label class="form-label">키워드 (선택)</label><input type="text" class="form-input" id="topKw" placeholder="예: 전쟁, AI, 우주..."></div>
-        <button class="btn btn-primary btn-lg" id="topBtn" onclick="doTopics()">🔍 AI 주제 추천</button>
+        <div class="fg"><label class="fl">키워드 (선택)</label><input type="text" class="fi" id="topKw" placeholder="예: 전쟁, AI, 우주..."></div>
+        <button class="b bs blg" id="topBtn" onclick="doTopics()">🔍 AI 주제 추천받기</button>
       </div>
       <div id="topOut"></div>
     </div>
 
     <!-- ===== 2. 대본 기획 ===== -->
-    <div class="section" id="sec-plan">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">📋 AI 대본 기획</div><div class="card-sub">Claude가 전체 기획안을 작성합니다</div></div></div>
-        <div class="form-group"><label class="form-label">영상 주제 *</label><input type="text" class="form-input" id="planTopic" placeholder="주제 입력..."></div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">타겟 시청자</label><input type="text" class="form-input" id="planTarget" placeholder="예: 역사 관심 중장년층"></div>
-          <div class="form-group"><label class="form-label">영상 길이</label>
-            <select class="form-select" id="planLen"><option value="10">10분</option><option value="15" selected>15분</option><option value="20">20분</option><option value="30">30분+</option></select></div>
+    <div class="sec" id="sec-plan">
+      <div id="planReq"></div>
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">📋 대본 기획 (Claude AI)</div><div class="cd-s">영상 구조를 설계합니다</div></div></div>
+        <div class="fg"><label class="fl">영상 주제 *</label><input type="text" class="fi" id="planTopic" placeholder="주제"></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">타겟 시청자</label><input type="text" class="fi" id="planTarget" placeholder="예: 역사 관심 중장년층"></div>
+          <div class="fg"><label class="fl">영상 길이</label><select class="fs" id="planLen"><option value="10">10분</option><option value="15" selected>15분</option><option value="20">20분</option><option value="30">30분+</option></select></div>
         </div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">톤</label>
-            <select class="form-select" id="planTone"><option value="진지하고 무게감 있는">진지/무게감</option><option value="따뜻하고 감성적인">따뜻/감성</option><option value="긴박하고 흥미진진한">긴박/흥미</option><option value="교육적이고 차분한">교육/차분</option></select></div>
-          <div class="form-group"><label class="form-label">이미지 스타일</label>
-            <select class="form-select" id="planStyle"><option value="european-animation">유럽풍 애니메이션</option><option value="realistic">실사/포토리얼</option><option value="cinematic">시네마틱</option><option value="watercolor">수채화풍</option></select></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">톤</label><select class="fs" id="planTone"><option value="진지하고 무게감 있는">진지/무게감</option><option value="따뜻하고 감성적인">따뜻/감성</option><option value="긴박하고 흥미진진한">긴박/흥미</option><option value="교육적이고 차분한">교육/차분</option></select></div>
+          <div class="fg"><label class="fl">이미지 스타일</label><select class="fs" id="planStyle"><option value="european-animation">유럽풍 애니메이션</option><option value="realistic">실사/포토리얼</option><option value="cinematic">시네마틱</option><option value="watercolor">수채화풍</option></select></div>
         </div>
-        <div class="form-group"><label class="form-label">특별 요청 (선택)</label><textarea class="form-textarea" id="planNotes" rows="2" placeholder="추가 사항..."></textarea></div>
-        <button class="btn btn-primary btn-lg" id="planBtn" onclick="doPlan()">📋 기획안 생성 (Claude AI)</button>
+        <div class="fg"><label class="fl">특별 요청</label><textarea class="ft" id="planNotes" rows="2" placeholder="추가 참고사항..."></textarea></div>
+        <button class="b bp blg" id="planBtn" onclick="doPlan()">📋 기획안 생성 (Claude AI)</button>
       </div>
       <div id="planOut"></div>
     </div>
 
     <!-- ===== 3. 대본 생성 ===== -->
-    <div class="section" id="sec-script">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">✍️ AI 대본 생성</div><div class="card-sub">Fact-Check 기반 전체 대본 작성</div></div></div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">분량</label>
-            <select class="form-select" id="scriptWc"><option value="2000">~2,000자 (10분)</option><option value="3000" selected>~3,000자 (15분)</option><option value="4500">~4,500자 (20분)</option><option value="6000">~6,000자 (30분)</option></select></div>
-          <div class="form-group"><label class="form-label">나레이션</label>
-            <select class="form-select" id="scriptNar"><option value="3인칭 나레이터">3인칭 나레이터</option><option value="이야기꾼">이야기꾼</option><option value="리포터">리포터</option><option value="대화체">대화체</option></select></div>
+    <div class="sec" id="sec-script">
+      <div id="scriptReq"></div>
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">✍️ 대본 생성 (Claude AI)</div><div class="cd-s">Fact-Check 기반 전체 대본 작성</div></div></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">분량</label><select class="fs" id="scriptWc"><option value="2000">~2,000자 (10분)</option><option value="3000" selected>~3,000자 (15분)</option><option value="4500">~4,500자 (20분)</option><option value="6000">~6,000자 (30분)</option></select></div>
+          <div class="fg"><label class="fl">나레이션</label><select class="fs" id="scriptNar"><option value="3인칭 나레이터">3인칭 나레이터</option><option value="이야기꾼">이야기꾼 (구연)</option><option value="리포터">리포터</option><option value="대화체">대화체</option></select></div>
         </div>
-        <button class="btn btn-primary btn-lg" id="scriptBtn" onclick="doScript()">✍️ 대본 생성 (Claude AI)</button>
+        <button class="b bp blg" id="scriptBtn" onclick="doScript()">✍️ 대본 생성 (Claude AI)</button>
       </div>
       <div id="scriptOut"></div>
     </div>
 
     <!-- ===== 4. 이미지 생성 ===== -->
-    <div class="section" id="sec-image">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">🎨 이미지 생성 (DALL-E 3)</div><div class="card-sub">장면별 이미지를 실제 생성합니다</div></div></div>
-        <div class="form-row-3">
-          <div class="form-group"><label class="form-label">스타일</label>
-            <select class="form-select" id="imgStyle"><option value="european-animation">유럽풍 애니메이션</option><option value="realistic">실사</option><option value="cinematic">시네마틱</option><option value="watercolor">수채화</option><option value="oil-painting">유화</option></select></div>
-          <div class="form-group"><label class="form-label">비율</label>
-            <select class="form-select" id="imgRatio"><option value="16:9" selected>16:9</option><option value="9:16">9:16 (쇼츠)</option><option value="1:1">1:1</option></select></div>
-          <div class="form-group"><label class="form-label">장면 수</label>
-            <select class="form-select" id="imgCount"><option value="5">5개</option><option value="8" selected>8개</option><option value="10">10개</option></select></div>
+    <div class="sec" id="sec-image">
+      <div id="imageReq"></div>
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">🎨 이미지 생성 (DALL-E 3)</div><div class="cd-s">대본 기반 장면별 이미지 실제 생성</div></div></div>
+        <div class="fr3">
+          <div class="fg"><label class="fl">스타일</label><select class="fs" id="imgStyle"><option value="european-animation">유럽풍 애니메이션</option><option value="realistic">실사</option><option value="cinematic">시네마틱</option><option value="watercolor">수채화</option><option value="oil-painting">유화</option></select></div>
+          <div class="fg"><label class="fl">비율</label><select class="fs" id="imgRatio"><option value="16:9" selected>16:9</option><option value="9:16">9:16 (쇼츠)</option><option value="1:1">1:1</option></select></div>
+          <div class="fg"><label class="fl">장면 수</label><select class="fs" id="imgCnt"><option value="5">5개</option><option value="8" selected>8개</option><option value="10">10개</option><option value="12">12개</option></select></div>
         </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-secondary btn-lg" id="imgPromptBtn" onclick="doImgPrompts()">1단계: 프롬프트 생성 (Claude)</button>
-          <button class="btn btn-primary btn-lg" id="imgGenBtn" onclick="doImgGenAll()" disabled>2단계: 이미지 생성 (DALL-E 3)</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="b bs blg" id="imgPBtn" onclick="doImgPrompts()">① 프롬프트 생성 (Claude)</button>
+          <button class="b bp blg" id="imgGBtn" onclick="doImgGenAll()" disabled>② 전체 이미지 생성 (DALL-E 3)</button>
         </div>
+        <div class="fh">① 프롬프트 생성 → 검토/수정 → ② 이미지 생성. 개별 이미지도 생성/재생성 가능합니다.</div>
       </div>
-      <div id="imgPromptOut"></div>
-      <div id="imgOut" class="img-grid" style="margin-top:14px"></div>
+      <div id="imgPOut"></div>
+      <div class="pgb" id="imgPg" style="display:none"><div class="pgf" id="imgPgF"></div></div>
+      <div class="pg-txt" id="imgPgT" style="display:none"></div>
+      <div class="ig" id="imgOut"></div>
     </div>
 
-    <!-- ===== 5. TTS 생성 ===== -->
-    <div class="section" id="sec-tts">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">🎙️ TTS 음성 생성 (ElevenLabs)</div><div class="card-sub">대본 전체를 음성으로 변환합니다</div></div></div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">음성 ID</label><input type="text" class="form-input" id="ttsVoice" placeholder="ElevenLabs Voice ID" value="pNInz6obpgDQGcFmaJgB">
-            <div class="form-hint">기본: Adam (pNInz6obpgDQGcFmaJgB)</div></div>
-          <div class="form-group"><label class="form-label">안정성 / 유사도</label>
-            <div class="form-row"><input type="number" class="form-input" id="ttsSt" value="0.5" min="0" max="1" step="0.1" placeholder="안정성"><input type="number" class="form-input" id="ttsSim" value="0.75" min="0" max="1" step="0.1" placeholder="유사도"></div></div>
+    <!-- ===== 5. TTS ===== -->
+    <div class="sec" id="sec-tts">
+      <div id="ttsReq"></div>
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">🎙️ TTS 음성 생성 (ElevenLabs)</div><div class="cd-s">대본을 음성으로 변환합니다</div></div></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">음성 선택</label>
+            <select class="fs" id="ttsVoice"><option value="pNInz6obpgDQGcFmaJgB">Adam (기본)</option></select>
+            <div class="fh"><button class="b bg" onclick="loadVoices()" style="padding:2px 6px;font-size:9px">🔄 음성 목록 새로고침</button></div></div>
+          <div class="fg"><label class="fl">설정</label>
+            <div class="fr"><div class="fg"><label class="fl">안정성</label><input type="number" class="fi" id="ttsSt" value="0.5" min="0" max="1" step="0.1"></div>
+            <div class="fg"><label class="fl">유사도</label><input type="number" class="fi" id="ttsSim" value="0.75" min="0" max="1" step="0.1"></div></div></div>
         </div>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-primary btn-lg" id="ttsBtn" onclick="doTTS()">🎙️ 전체 대본 TTS 생성</button>
-          <button class="btn btn-secondary btn-sm" onclick="loadVoices()">🔍 음성 목록 조회</button>
+        <div class="fg"><label class="fl">TTS 변환 텍스트 (편집 가능 — 대본에서 자동 추출됨)</label>
+          <textarea class="out-edit" id="ttsText" rows="8" placeholder="대본 생성 후 자동으로 채워집니다..."></textarea>
+          <div class="fh"><span id="ttsCharCnt">0</span>자 | ElevenLabs 최대: 약 5,000자/요청</div>
         </div>
+        <button class="b bp blg" id="ttsBtn" onclick="doTTS()">🎙️ TTS 음성 생성</button>
       </div>
       <div id="ttsOut"></div>
     </div>
 
-    <!-- ===== 6. 영상 렌더링 ===== -->
-    <div class="section" id="sec-render">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">🎬 영상 렌더링 (FFmpeg)</div><div class="card-sub">이미지 + 음성을 합성하여 MP4 생성</div></div></div>
-        <div class="form-group"><label class="form-label">영상 길이 (초)</label><input type="number" class="form-input" id="renderDur" value="120" placeholder="초 단위"></div>
-        <button class="btn btn-primary btn-lg" id="renderBtn" onclick="doRender()">🎬 영상 렌더링 시작</button>
-        <div class="form-hint" style="margin-top:6px">⚠️ FFmpeg가 설치되어 있어야 합니다. 이미지와 TTS 파일이 준비된 상태에서 실행하세요.</div>
+    <!-- ===== 6. 렌더링 ===== -->
+    <div class="sec" id="sec-render">
+      <div id="renderReq"></div>
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">🎬 영상 합성 (FFmpeg)</div><div class="cd-s">이미지 + 음성 → MP4 영상</div></div></div>
+        <div id="ffmpegStatus"></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">총 영상 길이 (초)</label><input type="number" class="fi" id="renderDur" value="120">
+            <div class="fh" id="renderDurHint">오디오 길이 기반 자동 설정됨</div></div>
+          <div class="fg"><label class="fl">자료 현황</label>
+            <div id="renderAssets" style="font-size:11px;color:var(--t2);line-height:1.8"></div></div>
+        </div>
+        <button class="b bp blg" id="renderBtn" onclick="doRender()">🎬 영상 합성 시작</button>
       </div>
       <div id="renderOut"></div>
     </div>
 
     <!-- ===== 7. 제목/설명 ===== -->
-    <div class="section" id="sec-meta">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">🏷️ AI 메타데이터 생성</div><div class="card-sub">제목, 설명, 태그, 고정댓글을 AI로 생성</div></div></div>
-        <div class="form-group"><label class="form-label">다국어</label>
-          <div class="tag-list" id="langTags">
-            <span class="tag selected" data-l="ko" onclick="togLang(this)">🇰🇷 한국어</span>
+    <div class="sec" id="sec-meta">
+      <div id="metaReq"></div>
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">🏷️ 제목 / 설명 / 태그 (Claude AI)</div><div class="cd-s">클릭률 최적화된 메타데이터 생성</div></div></div>
+        <div class="fg"><label class="fl">다국어 지원</label>
+          <div class="tl" id="langTags">
+            <span class="tag sel" data-l="ko" onclick="togLang(this)">🇰🇷 한국어</span>
             <span class="tag" data-l="en" onclick="togLang(this)">🇺🇸 영어</span>
             <span class="tag" data-l="ja" onclick="togLang(this)">🇯🇵 일본어</span>
           </div></div>
-        <button class="btn btn-primary btn-lg" id="metaBtn" onclick="doMeta()">🏷️ 메타데이터 생성 (Claude AI)</button>
+        <button class="b bp blg" id="metaBtn" onclick="doMeta()">🏷️ 메타데이터 생성</button>
       </div>
       <div id="metaOut"></div>
     </div>
 
     <!-- ===== 8. 썸네일 ===== -->
-    <div class="section" id="sec-thumbnail">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">🖼️ 썸네일 생성 (DALL-E 3)</div><div class="card-sub">클릭을 유도하는 썸네일 이미지 생성</div></div></div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">스타일</label>
-            <select class="form-select" id="thumbStyle"><option value="dramatic">드라마틱</option><option value="clean">미니멀</option><option value="clickbait">호기심 자극</option><option value="cinematic">시네마틱</option></select></div>
-          <div class="form-group"><label class="form-label">텍스트 오버레이</label><input type="text" class="form-input" id="thumbText" placeholder="썸네일 텍스트 (선택)"></div>
+    <div class="sec" id="sec-thumb">
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">🖼️ 썸네일 생성 (DALL-E 3)</div><div class="cd-s">클릭 유도 썸네일 이미지 생성</div></div></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">스타일</label><select class="fs" id="thStyle"><option value="dramatic">드라마틱</option><option value="clean">미니멀</option><option value="clickbait">호기심 자극</option><option value="cinematic">시네마틱</option></select></div>
+          <div class="fg"><label class="fl">텍스트 오버레이</label><input type="text" class="fi" id="thText" placeholder="썸네일 텍스트 (선택)"></div>
         </div>
-        <button class="btn btn-primary btn-lg" id="thumbBtn" onclick="doThumb()">🖼️ 썸네일 생성 (DALL-E 3)</button>
+        <button class="b bp blg" id="thBtn" onclick="doThumb()">🖼️ 썸네일 생성</button>
       </div>
       <div id="thumbOut"></div>
     </div>
 
     <!-- ===== 9. 쇼츠 ===== -->
-    <div class="section" id="sec-shorts">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">📱 쇼츠 대본 생성</div><div class="card-sub">롱폼에서 핵심 추출 → 30~60초 쇼츠</div></div></div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">길이</label>
-            <select class="form-select" id="shortsLen"><option value="30">30초</option><option value="45">45초</option><option value="60" selected>60초</option></select></div>
-          <div class="form-group"><label class="form-label">수량</label>
-            <select class="form-select" id="shortsCnt"><option value="1">1개</option><option value="2">2개</option><option value="3" selected>3개</option></select></div>
+    <div class="sec" id="sec-shorts">
+      <div id="shortsReq"></div>
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">📱 쇼츠 대본 (Claude AI)</div><div class="cd-s">롱폼에서 핵심 추출 → 30~60초 쇼츠</div></div></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">길이</label><select class="fs" id="shLen"><option value="30">30초</option><option value="45">45초</option><option value="60" selected>60초</option></select></div>
+          <div class="fg"><label class="fl">수량</label><select class="fs" id="shCnt"><option value="1">1개</option><option value="2">2개</option><option value="3" selected>3개</option></select></div>
         </div>
-        <button class="btn btn-primary btn-lg" id="shortsBtn" onclick="doShorts()">📱 쇼츠 대본 생성 (Claude AI)</button>
+        <button class="b bp blg" id="shBtn" onclick="doShorts()">📱 쇼츠 대본 생성</button>
       </div>
       <div id="shortsOut"></div>
     </div>
 
     <!-- ===== 10. 인트로 ===== -->
-    <div class="section" id="sec-intro">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">🚀 AI 인트로 생성</div><div class="card-sub">시청자를 사로잡는 오프닝 대본</div></div></div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">길이</label>
-            <select class="form-select" id="introLen"><option value="15">15초</option><option value="30" selected>30초</option><option value="45">45초</option></select></div>
-          <div class="form-group"><label class="form-label">유형</label>
-            <select class="form-select" id="introType"><option value="질문형">질문형</option><option value="충격적 사실">충격적 사실</option><option value="미니 스토리">스토리텔링</option><option value="통계/데이터">통계/데이터</option></select></div>
+    <div class="sec" id="sec-intro">
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">🚀 인트로 생성 (Claude AI)</div><div class="cd-s">시청자를 사로잡는 오프닝</div></div></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">길이</label><select class="fs" id="intLen"><option value="15">15초</option><option value="30" selected>30초</option><option value="45">45초</option></select></div>
+          <div class="fg"><label class="fl">유형</label><select class="fs" id="intType"><option value="질문형">질문형</option><option value="충격적 사실">충격적 사실</option><option value="미니 스토리">스토리텔링</option><option value="통계/데이터">통계/데이터</option></select></div>
         </div>
-        <button class="btn btn-primary btn-lg" id="introBtn" onclick="doIntro()">🚀 인트로 생성 (Claude AI)</button>
+        <button class="b bp blg" id="intBtn" onclick="doIntro()">🚀 인트로 생성</button>
       </div>
       <div id="introOut"></div>
     </div>
 
-    <!-- ===== 11. YouTube 업로드 ===== -->
-    <div class="section" id="sec-upload">
-      <div class="card">
-        <div class="card-header"><div><div class="card-title">📤 YouTube 업로드</div><div class="card-sub">렌더링된 영상을 YouTube에 바로 업로드</div></div></div>
-        <div class="yt-status" id="ytStatus">
-          <div class="dot red"></div>
-          <span style="font-size:12px;color:var(--text-secondary)">YouTube 미연동</span>
-          <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="ytAuth()">🔗 YouTube 연동</button>
+    <!-- ===== 11. 업로드 ===== -->
+    <div class="sec" id="sec-upload">
+      <div id="uploadReq"></div>
+      <div class="cd">
+        <div class="cd-h"><div><div class="cd-t">📤 YouTube 업로드</div><div class="cd-s">영상을 YouTube에 바로 업로드</div></div></div>
+        <div class="yt-st" id="ytSt"><div class="dot r"></div><span>YouTube 미연동</span><button class="b bs" style="margin-left:auto" onclick="ytAuth()">🔗 연동</button></div>
+        <div class="fg"><label class="fl">제목 *</label><input type="text" class="fi" id="upTitle" placeholder="영상 제목"></div>
+        <div class="fg"><label class="fl">설명</label><textarea class="ft" id="upDesc" rows="4" placeholder="영상 설명 (타임스탬프 포함)"></textarea></div>
+        <div class="fg"><label class="fl">태그 (쉼표 구분)</label><input type="text" class="fi" id="upTags" placeholder="태그1, 태그2"></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">공개 상태</label><select class="fs" id="upPriv"><option value="private" selected>비공개</option><option value="unlisted">일부공개</option><option value="public">공개</option></select></div>
+          <div class="fg"><label class="fl">카테고리</label><select class="fs" id="upCat"><option value="27">교육</option><option value="24">엔터테인먼트</option><option value="28">과학기술</option><option value="22">인물/블로그</option></select></div>
         </div>
-        <div class="form-group"><label class="form-label">제목</label><input type="text" class="form-input" id="upTitle" placeholder="영상 제목"></div>
-        <div class="form-group"><label class="form-label">설명</label><textarea class="form-textarea" id="upDesc" rows="4" placeholder="영상 설명"></textarea></div>
-        <div class="form-group"><label class="form-label">태그 (쉼표 구분)</label><input type="text" class="form-input" id="upTags" placeholder="태그1, 태그2, 태그3"></div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">공개 상태</label>
-            <select class="form-select" id="upPrivacy"><option value="private" selected>비공개</option><option value="unlisted">일부공개</option><option value="public">공개</option></select></div>
-          <div class="form-group"><label class="form-label">카테고리</label>
-            <select class="form-select" id="upCat"><option value="22">교육</option><option value="24">엔터테인먼트</option><option value="27">교육</option><option value="28">과학기술</option></select></div>
-        </div>
-        <button class="btn btn-success btn-lg" id="upBtn" onclick="doUpload()" disabled>📤 YouTube 업로드</button>
+        <div id="upPreview" style="margin-bottom:12px"></div>
+        <button class="b bok blg" id="upBtn" onclick="doUpload()" disabled>📤 YouTube 업로드</button>
       </div>
       <div id="uploadOut"></div>
     </div>
 
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
-<!-- Files Modal -->
-<div id="filesModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center">
-  <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:600px;width:90%;max-height:80vh;overflow-y:auto">
-    <div style="display:flex;justify-content:space-between;margin-bottom:16px"><h3 style="font-size:15px">📂 생성된 파일</h3><button class="btn btn-ghost btn-sm" onclick="document.getElementById('filesModal').style.display='none'">✕</button></div>
-    <div id="filesContent"></div>
-  </div>
-</div>
-
 <script>
-// ========================
-// State
-// ========================
 const S = {
-  projectId: 'p_' + Date.now(),
-  topic: '', target: '', plan: '', script: '',
-  imagePrompts: [], meta: {},
-  done: new Set(),
-  langs: ['ko']
+  pid: 'p_' + Date.now(),
+  topic:'', target:'', plan:'', script:'', ttsText:'',
+  imgPrompts:[], meta:{}, thumbFile:'', audioFile:'',
+  done: new Set(), langs:['ko']
 };
 
-const SEC = ['topic','plan','script','image','tts','render','meta','thumbnail','shorts','intro','upload'];
-const SEC_NAMES = { topic:'💡 주제 추천', plan:'📋 대본 기획', script:'✍️ 대본 생성', image:'🎨 이미지 생성', tts:'🎙️ TTS 생성', render:'🎬 영상 렌더링', meta:'🏷️ 제목/설명', thumbnail:'🖼️ 썸네일', shorts:'📱 쇼츠', intro:'🚀 인트로', upload:'📤 업로드' };
+const SECS = ['topic','plan','script','image','tts','render','meta','thumb','shorts','intro','upload'];
+const NAMES = {topic:'💡 주제 선정',plan:'📋 대본 기획',script:'✍️ 대본 작성',image:'🎨 이미지 생성',tts:'🎙️ TTS 음성',render:'🎬 영상 합성',meta:'🏷️ 제목/설명',thumb:'🖼️ 썸네일',shorts:'📱 쇼츠',intro:'🚀 인트로',upload:'📤 업로드'};
+const PREREQS = {plan:['topic'],script:['plan'],image:['script'],tts:['script'],render:['image','tts'],meta:['script'],shorts:['script'],upload:['render']};
 
-// ========================
-// Nav
-// ========================
+// === Nav ===
 function go(id) {
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  document.getElementById('sec-' + id)?.classList.add('active');
-  document.querySelector(`[data-s="${id}"]`)?.classList.add('active');
-  const i = SEC.indexOf(id) + 1;
-  document.getElementById('topTitle').innerHTML = `${SEC_NAMES[id] || ''} <span class="step-badge">STEP ${i}</span>`;
-  if (id !== 'topic' && S.topic) {
-    document.getElementById('banner').style.display = 'flex';
-    document.getElementById('bannerName').textContent = S.topic;
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('act'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('act'));
+  document.getElementById('sec-'+id)?.classList.add('act');
+  document.querySelector(`[data-s="${id}"]`)?.classList.add('act');
+  document.getElementById('topT').innerHTML=`${NAMES[id]||''} <span class="badge">STEP ${SECS.indexOf(id)+1}</span>`;
+  if(id!=='topic'&&S.topic){document.getElementById('ban').style.display='flex';document.getElementById('banN').textContent=S.topic}
+  else document.getElementById('ban').style.display='none';
+  checkPrereqs(id);
+  if(id==='plan') document.getElementById('planTopic').value=S.topic;
+  if(id==='tts') prepareTTS();
+  if(id==='render') prepareRender();
+  if(id==='upload') prepareUpload();
+  updateNav();
+}
+
+function checkPrereqs(id) {
+  const reqs = PREREQS[id];
+  const el = document.getElementById(id+'Req');
+  if(!reqs||!el) return;
+  const missing = reqs.filter(r=>!S.done.has(r));
+  if(missing.length>0) {
+    el.innerHTML=`<div class="alert alert-warn">⚠️ 선행 단계 필요: ${missing.map(m=>`<strong>${NAMES[m]}</strong>`).join(', ')} → <button class="b bs" onclick="go('${missing[0]}')" style="font-size:10px">이동</button></div>`;
   } else {
-    document.getElementById('banner').style.display = 'none';
+    el.innerHTML=`<div class="alert alert-ok">✅ 선행 단계 완료. 진행 가능합니다.</div>`;
   }
 }
 
-function markDone(sec) {
+function markOk(sec) {
   S.done.add(sec);
-  const el = document.querySelector(`[data-s="${sec}"] .num`);
-  if (el) el.parentElement.classList.add('done');
-  const pct = Math.round((S.done.size / 10) * 100);
-  document.getElementById('pctText').textContent = pct + '%';
-  document.getElementById('pctBar').style.width = pct + '%';
+  updateNav();
 }
 
-// ========================
-// Utils
-// ========================
-function toast(msg, type = 'success') {
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = `toast ${type} show`;
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-function copyText(text) {
-  navigator.clipboard.writeText(text).then(() => toast('복사 완료'));
-}
-
-async function api(url, body) {
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...body, projectId: S.projectId })
+function updateNav() {
+  document.querySelectorAll('.ni').forEach(n=>{
+    const s=n.dataset.s;
+    n.classList.toggle('ok',S.done.has(s));
+    const reqs=PREREQS[s];
+    n.classList.toggle('need',reqs?reqs.some(r=>!S.done.has(r)):false);
   });
-  const data = await res.json();
-  if (!data.success) throw new Error(data.error || '오류 발생');
-  return data;
+  const pct=Math.round((S.done.size/10)*100);
+  document.getElementById('pT').textContent=pct+'%';
+  document.getElementById('pB').style.width=pct+'%';
 }
 
-function setLoading(btnId, loading, text) {
-  const btn = document.getElementById(btnId);
-  if (loading) {
-    btn.disabled = true;
-    btn._orig = btn.innerHTML;
-    btn.innerHTML = `<span class="spinner"></span> ${text || '생성 중...'}`;
-  } else {
-    btn.disabled = false;
-    btn.innerHTML = btn._orig || btn.innerHTML;
-  }
+// === Utils ===
+function toast(m,t='ok'){const e=document.getElementById('toast');e.textContent=m;e.className=`toast ${t} show`;setTimeout(()=>e.classList.remove('show'),3000)}
+function cp(t){navigator.clipboard.writeText(t).then(()=>toast('복사 완료'))}
+function esc(s){return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function togLang(e){e.classList.toggle('sel');S.langs=[...document.querySelectorAll('#langTags .tag.sel')].map(t=>t.dataset.l)}
+
+async function api(url,body){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,projectId:S.pid})});
+  const d=await r.json();
+  if(!d.success)throw new Error(d.error||'오류');
+  return d;
 }
 
-function togLang(el) {
-  el.classList.toggle('selected');
-  S.langs = [...document.querySelectorAll('#langTags .tag.selected')].map(t => t.dataset.l);
+function loading(id,on,txt){
+  const b=document.getElementById(id);
+  if(on){b.disabled=true;b._o=b.innerHTML;b.innerHTML=`<span class="sp"></span> ${txt||'처리 중...'}`}
+  else{b.disabled=false;if(b._o)b.innerHTML=b._o}
 }
 
-function escHtml(s) { return s.replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function save(){try{localStorage.setItem('yt_agent',JSON.stringify({topic:S.topic,target:S.target,plan:S.plan,script:S.script,done:[...S.done],meta:S.meta}))}catch(e){}}
+function load(){try{const d=JSON.parse(localStorage.getItem('yt_agent')||'{}');if(d.topic){S.topic=d.topic;S.target=d.target||'';S.plan=d.plan||'';S.script=d.script||'';S.meta=d.meta||{};(d.done||[]).forEach(s=>S.done.add(s));document.getElementById('directTopic').value=S.topic;updateNav()}}catch(e){}}
 
-// ========================
-// 1. 주제 추천
-// ========================
-async function doTopics() {
-  setLoading('topBtn', true, 'Claude AI 분석 중...');
-  try {
-    const data = await api('/api/topics/suggest', {
-      category: document.getElementById('topCat').value,
-      target: document.getElementById('topTarget').value,
-      keyword: document.getElementById('topKw').value
+// === 1. 주제 추천 ===
+async function doTopics(){
+  loading('topBtn',true,'Claude AI 분석 중...');
+  try{
+    const d=await api('/api/topics/suggest',{category:document.getElementById('topCat').value,target:document.getElementById('topTar').value,keyword:document.getElementById('topKw').value});
+    let h='<div class="g2">';
+    d.topics.forEach(t=>{h+=`<div class="tc" onclick="pickTopic('${t.title.replace(/'/g,"\\'")}')"><div class="tc-cat">${esc(t.category)}</div><h3>${esc(t.title)}</h3><p>${esc(t.description)}</p><div class="tc-m"><span>👁️ ${t.estimatedViews}</span><span>📊 ${t.difficulty}</span></div></div>`});
+    h+='</div>';
+    document.getElementById('topOut').innerHTML=h;
+  }catch(e){toast(e.message,'err')}
+  loading('topBtn',false);
+}
+
+function pickTopic(t){S.topic=t;document.getElementById('directTopic').value=t;markOk('topic');save();go('plan')}
+
+// === 2. 대본 기획 ===
+async function doPlan(){
+  const topic=document.getElementById('planTopic').value;
+  if(!topic){toast('주제 입력 필요','err');return}
+  S.topic=topic;S.target=document.getElementById('planTarget').value;
+  loading('planBtn',true,'Claude AI 기획 중...');
+  try{
+    const d=await api('/api/plan/generate',{topic,target:S.target,length:document.getElementById('planLen').value,tone:document.getElementById('planTone').value,style:document.getElementById('planStyle').value,notes:document.getElementById('planNotes').value});
+    S.plan=d.plan;
+    document.getElementById('planOut').innerHTML=`<div class="cd">
+      <div class="otb"><button class="b bs" onclick="cp(S.plan)">📋 복사</button><button class="b bp" onclick="S.plan=document.getElementById('planEdit').value;markOk('plan');save();go('script')">✅ 확정 → 대본 생성</button><span class="wc">${S.plan.length}자</span></div>
+      <textarea class="out-edit" id="planEdit" oninput="S.plan=this.value">${esc(d.plan)}</textarea></div>`;
+    markOk('plan');save();
+  }catch(e){toast(e.message,'err')}
+  loading('planBtn',false);
+}
+
+// === 3. 대본 생성 ===
+async function doScript(){
+  loading('scriptBtn',true,'Claude AI 대본 작성 중...');
+  try{
+    const d=await api('/api/script/generate',{topic:S.topic,target:S.target,plan:S.plan,wordCount:document.getElementById('scriptWc').value,narration:document.getElementById('scriptNar').value});
+    S.script=d.script;
+    document.getElementById('scriptOut').innerHTML=`<div class="cd">
+      <div class="otb"><button class="b bs" onclick="cp(S.script)">📋 복사</button><button class="b bp" onclick="S.script=document.getElementById('scriptEdit').value;markOk('script');save();go('image')">✅ 확정 → 이미지 생성</button><span class="wc">${S.script.length}자 | 장면 ${d.sceneCount}개</span></div>
+      <textarea class="out-edit" id="scriptEdit" style="min-height:400px" oninput="S.script=this.value">${esc(d.script)}</textarea></div>`;
+    markOk('script');save();
+  }catch(e){toast(e.message,'err')}
+  loading('scriptBtn',false);
+}
+
+// === 4. 이미지 ===
+async function doImgPrompts(){
+  if(!S.script){toast('대본 먼저 생성하세요','err');return}
+  loading('imgPBtn',true,'프롬프트 생성 중...');
+  try{
+    const d=await api('/api/images/generate-prompts',{script:S.script,style:document.getElementById('imgStyle').value,count:document.getElementById('imgCnt').value});
+    S.imgPrompts=d.prompts;
+    let h='<div class="cd"><div class="cd-t" style="margin-bottom:10px">📝 이미지 프롬프트 — 수정 후 이미지 생성하세요</div>';
+    d.prompts.forEach((p,i)=>{
+      h+=`<div class="sc" id="sc${i}"><div class="sc-h"><span class="sc-n">${i+1}</span><span class="sc-nm">${esc(p.name)}</span></div>
+        <textarea class="sc-p" id="scP${i}" style="width:100%;border:1px solid var(--bd);resize:vertical;min-height:60px;background:var(--bgi);color:var(--info);font-family:Consolas,monospace;font-size:10.5px;padding:7px 10px;border-radius:var(--rs)" oninput="S.imgPrompts[${i}].prompt=this.value">${esc(p.prompt)}</textarea>
+        <div class="sc-act"><button class="b bs" onclick="cp(S.imgPrompts[${i}].prompt)" style="font-size:9px">📋</button><button class="b bp" onclick="genOneImg(${i})" style="font-size:9px">🎨 생성</button><button class="b bg" onclick="regenOneImg(${i})" style="font-size:9px">🔄 재생성</button><span class="sc-st" id="imgSt${i}"></span></div></div>`;
     });
-    let html = '<div class="grid-2">';
-    data.topics.forEach(t => {
-      html += `<div class="topic-card" onclick="pickTopic('${t.title.replace(/'/g,"\\'")}')">
-        <div class="topic-cat">${t.category || ''}</div>
-        <h3>${escHtml(t.title)}</h3><p>${escHtml(t.description)}</p>
-        <div class="topic-meta"><span>👁️ ${t.estimatedViews}</span><span>📊 난이도 ${t.difficulty}</span></div>
-      </div>`;
-    });
-    html += '</div>';
-    document.getElementById('topOut').innerHTML = html;
-    markDone('topic');
-  } catch(e) { toast(e.message, 'error'); }
-  setLoading('topBtn', false);
+    h+='</div>';
+    document.getElementById('imgPOut').innerHTML=h;
+    document.getElementById('imgGBtn').disabled=false;
+  }catch(e){toast(e.message,'err')}
+  loading('imgPBtn',false);
 }
 
-function pickTopic(title) {
-  S.topic = title;
-  document.getElementById('planTopic').value = title;
-  go('plan');
+async function genOneImg(i){
+  const p=S.imgPrompts[i];const st=document.getElementById('imgSt'+i);
+  st.innerHTML='<span class="sp"></span> 생성 중...';
+  try{
+    const d=await api('/api/images/generate',{prompt:p.prompt,style:document.getElementById('imgStyle').value,ratio:document.getElementById('imgRatio').value,index:i+1});
+    st.innerHTML='✅ 완료';
+    const g=document.getElementById('imgOut');
+    const existing=document.getElementById('imgCard'+i);
+    const card=`<div class="ic" id="imgCard${i}"><img src="${d.imageUrl}" alt="Scene ${i+1}"><div class="ic-i">장면 ${i+1}: ${esc(p.name)}</div></div>`;
+    if(existing)existing.outerHTML=card;else g.innerHTML+=card;
+  }catch(e){st.innerHTML='❌ '+e.message}
 }
 
-// ========================
-// 2. 대본 기획
-// ========================
-async function doPlan() {
-  const topic = document.getElementById('planTopic').value;
-  if (!topic) { toast('주제를 입력하세요', 'error'); return; }
-  S.topic = topic;
-  S.target = document.getElementById('planTarget').value;
-  setLoading('planBtn', true, 'Claude AI 기획 중...');
-  try {
-    const data = await api('/api/plan/generate', {
-      topic, target: S.target,
-      length: document.getElementById('planLen').value,
-      tone: document.getElementById('planTone').value,
-      style: document.getElementById('planStyle').value,
-      notes: document.getElementById('planNotes').value
-    });
-    S.plan = data.plan;
-    document.getElementById('planOut').innerHTML = `<div class="card">
-      <div class="output-toolbar">
-        <button class="btn btn-secondary btn-sm" onclick="copyText(S.plan)">📋 복사</button>
-        <button class="btn btn-primary btn-sm" onclick="go('script')">→ 대본 생성</button>
-      </div>
-      <div class="output-area">${escHtml(data.plan)}</div></div>`;
-    markDone('plan');
-  } catch(e) { toast(e.message, 'error'); }
-  setLoading('planBtn', false);
-}
+async function regenOneImg(i){await genOneImg(i)}
 
-// ========================
-// 3. 대본 생성
-// ========================
-async function doScript() {
-  setLoading('scriptBtn', true, 'Claude AI 대본 작성 중...');
-  try {
-    const data = await api('/api/script/generate', {
-      topic: S.topic, target: S.target, plan: S.plan,
-      wordCount: document.getElementById('scriptWc').value,
-      narration: document.getElementById('scriptNar').value
-    });
-    S.script = data.script;
-    document.getElementById('scriptOut').innerHTML = `<div class="card">
-      <div class="output-toolbar">
-        <button class="btn btn-secondary btn-sm" onclick="copyText(S.script)">📋 복사</button>
-        <button class="btn btn-primary btn-sm" onclick="go('image')">→ 이미지 생성</button>
-        <button class="btn btn-secondary btn-sm" onclick="go('tts')">→ TTS</button>
-      </div>
-      <div class="output-area">${escHtml(data.script)}</div>
-      <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">장면 수: ${data.sceneCount}개</div></div>`;
-    markDone('script');
-  } catch(e) { toast(e.message, 'error'); }
-  setLoading('scriptBtn', false);
-}
-
-// ========================
-// 4. 이미지 생성
-// ========================
-async function doImgPrompts() {
-  setLoading('imgPromptBtn', true, 'Claude AI 프롬프트 생성 중...');
-  try {
-    const data = await api('/api/images/generate-prompts', {
-      script: S.script,
-      style: document.getElementById('imgStyle').value,
-      count: document.getElementById('imgCount').value
-    });
-    S.imagePrompts = data.prompts;
-    let html = '';
-    data.prompts.forEach((p, i) => {
-      html += `<div class="scene-card">
-        <div class="scene-header"><span class="scene-num">${p.scene || i+1}</span><span class="scene-name">${escHtml(p.name)}</span></div>
-        <div class="scene-prompt-text">${escHtml(p.prompt)}</div>
-        <div class="scene-actions">
-          <button class="btn btn-ghost btn-sm" onclick="copyText(S.imagePrompts[${i}].prompt)">📋</button>
-          <button class="btn btn-primary btn-sm" onclick="genOneImg(${i})">🎨 생성</button>
-          <span id="imgStatus${i}" style="font-size:10px;color:var(--text-muted);margin-left:4px"></span>
-        </div></div>`;
-    });
-    document.getElementById('imgPromptOut').innerHTML = `<div class="card"><div class="card-title" style="margin-bottom:12px">📝 이미지 프롬프트 (${data.prompts.length}개)</div>${html}</div>`;
-    document.getElementById('imgGenBtn').disabled = false;
-    markDone('image');
-  } catch(e) { toast(e.message, 'error'); }
-  setLoading('imgPromptBtn', false);
-}
-
-async function genOneImg(idx) {
-  const p = S.imagePrompts[idx];
-  const st = document.getElementById(`imgStatus${idx}`);
-  st.innerHTML = '<span class="spinner"></span> 생성 중...';
-  try {
-    const data = await api('/api/images/generate', {
-      prompt: p.prompt,
-      style: document.getElementById('imgStyle').value,
-      ratio: document.getElementById('imgRatio').value,
-      index: idx + 1
-    });
-    st.innerHTML = '✅ 완료';
-    const grid = document.getElementById('imgOut');
-    grid.innerHTML += `<div class="img-card">
-      <img src="${data.imageUrl}" alt="Scene ${idx+1}" loading="lazy">
-      <div class="img-card-info"><div class="img-card-title">장면 ${idx+1}: ${escHtml(p.name)}</div></div></div>`;
-  } catch(e) { st.innerHTML = '❌ ' + e.message; }
-}
-
-async function doImgGenAll() {
-  setLoading('imgGenBtn', true, 'DALL-E 3 이미지 생성 중...');
-  document.getElementById('imgOut').innerHTML = '';
-  for (let i = 0; i < S.imagePrompts.length; i++) {
+async function doImgGenAll(){
+  loading('imgGBtn',true,'DALL-E 3 이미지 생성...');
+  const pg=document.getElementById('imgPg');const pgf=document.getElementById('imgPgF');const pgt=document.getElementById('imgPgT');
+  pg.style.display='block';pgt.style.display='block';
+  document.getElementById('imgOut').innerHTML='';
+  const total=S.imgPrompts.length;
+  for(let i=0;i<total;i++){
+    pgf.style.width=((i+1)/total*100)+'%';
+    pgt.textContent=`${i+1}/${total} 생성 중...`;
     await genOneImg(i);
-    if (i < S.imagePrompts.length - 1) await new Promise(r => setTimeout(r, 1000));
+    if(i<total-1)await new Promise(r=>setTimeout(r,1500));
   }
-  setLoading('imgGenBtn', false);
-  toast(`${S.imagePrompts.length}개 이미지 생성 완료`);
+  pgt.textContent=`${total}개 이미지 생성 완료 ✅`;
+  markOk('image');save();
+  loading('imgGBtn',false);
+  toast(`${total}개 이미지 생성 완료`);
 }
 
-// ========================
-// 5. TTS
-// ========================
-async function doTTS() {
-  if (!S.script) { toast('먼저 대본을 생성하세요', 'error'); return; }
-  setLoading('ttsBtn', true, 'ElevenLabs TTS 변환 중...');
-  try {
-    const data = await api('/api/tts/full-script', {
-      script: S.script,
-      voiceId: document.getElementById('ttsVoice').value,
-      stability: parseFloat(document.getElementById('ttsSt').value),
-      similarity: parseFloat(document.getElementById('ttsSim').value)
-    });
-    document.getElementById('ttsOut').innerHTML = `<div class="card">
-      <div class="card-title" style="margin-bottom:12px">🎙️ 나레이션 생성 완료</div>
-      <div class="audio-player">
-        <span style="font-size:20px">🔊</span>
-        <audio controls src="${data.audioUrl}" style="flex:1"></audio>
-      </div>
-      <div style="margin-top:8px;font-size:11px;color:var(--text-muted)">
-        파일: ${data.filename} | 글자 수: ${data.charCount}자
-      </div>
-      <div style="margin-top:8px">
-        <button class="btn btn-primary btn-sm" onclick="go('render')">→ 영상 렌더링</button>
+// === 5. TTS ===
+function prepareTTS(){
+  if(S.script&&!document.getElementById('ttsText').value){
+    const clean=S.script.replace(/\[장면[^\]]*\]/g,'').replace(/[━═─▶■●•🎙️🎬📌🔹✅☐]/g,'').replace(/\n{3,}/g,'\n\n').trim();
+    document.getElementById('ttsText').value=clean;
+    S.ttsText=clean;
+  }
+  document.getElementById('ttsCharCnt').textContent=document.getElementById('ttsText').value.length;
+  document.getElementById('ttsText').oninput=function(){document.getElementById('ttsCharCnt').textContent=this.value.length;S.ttsText=this.value};
+}
+
+async function doTTS(){
+  const text=document.getElementById('ttsText').value;
+  if(!text){toast('텍스트 입력 필요','err');return}
+  if(text.length>5000){toast(`텍스트가 ${text.length}자입니다. 5,000자 이하로 줄여주세요.`,'err');return}
+  loading('ttsBtn',true,'ElevenLabs TTS 변환 중...');
+  try{
+    const d=await api('/api/tts/full-script',{script:text,voiceId:document.getElementById('ttsVoice').value,stability:parseFloat(document.getElementById('ttsSt').value),similarity:parseFloat(document.getElementById('ttsSim').value)});
+    S.audioFile=d.filename;
+    document.getElementById('ttsOut').innerHTML=`<div class="cd">
+      <div class="cd-t" style="margin-bottom:10px">🔊 나레이션 완료</div>
+      <div class="ap"><span style="font-size:18px">🔊</span><audio controls src="${d.audioUrl}" style="flex:1"></audio></div>
+      <div style="margin-top:8px;font-size:10px;color:var(--t3)">파일: ${d.filename} | ${d.charCount}자 변환</div>
+      <div style="margin-top:8px"><button class="b bp" onclick="markOk('tts');save();go('render')">→ 영상 합성</button></div></div>`;
+    markOk('tts');save();
+    // Auto-get audio duration
+    try{const dr=await fetch('/api/audio/duration/'+d.filename).then(r=>r.json());if(dr.duration>0)document.getElementById('renderDur').value=Math.ceil(dr.duration)}catch(e){}
+  }catch(e){toast(e.message,'err')}
+  loading('ttsBtn',false);
+}
+
+async function loadVoices(){
+  try{
+    const r=await fetch('/api/tts/voices');const d=await r.json();
+    if(!d.success)throw new Error(d.error);
+    const sel=document.getElementById('ttsVoice');sel.innerHTML='';
+    d.voices.forEach(v=>{const o=document.createElement('option');o.value=v.id;o.textContent=`${v.name} (${v.category||'custom'})`;sel.appendChild(o)});
+    toast(`${d.voices.length}개 음성 로드 완료`);
+  }catch(e){toast(e.message,'err')}
+}
+
+// === 6. 렌더링 ===
+async function prepareRender(){
+  // FFmpeg check
+  try{
+    const r=await fetch('/api/system/ffmpeg').then(r=>r.json());
+    document.getElementById('ffmpegStatus').innerHTML=r.installed
+      ?`<div class="alert alert-ok">✅ FFmpeg 설치됨: ${esc(r.version)}</div>`
+      :`<div class="alert alert-warn">⚠️ FFmpeg 미설치. <a href="https://ffmpeg.org/download.html" target="_blank" style="color:var(--warn)">설치 가이드</a></div>`;
+  }catch(e){document.getElementById('ffmpegStatus').innerHTML='<div class="alert alert-warn">⚠️ FFmpeg 상태 확인 불가</div>'}
+  // Asset check
+  try{
+    const r=await fetch('/api/files/list').then(r=>r.json());
+    const imgs=r.files.images?.length||0;const auds=r.files.audio?.length||0;const vids=r.files.video?.length||0;
+    document.getElementById('renderAssets').innerHTML=`이미지: <strong>${imgs}장</strong><br>오디오: <strong>${auds}개</strong><br>영상: <strong>${vids}개</strong>`;
+  }catch(e){}
+}
+
+async function doRender(){
+  loading('renderBtn',true,'FFmpeg 렌더링 중... (수 분 소요)');
+  try{
+    const d=await api('/api/render/video',{duration:parseInt(document.getElementById('renderDur').value)});
+    document.getElementById('renderOut').innerHTML=`<div class="cd">
+      <div class="cd-t" style="margin-bottom:10px;color:var(--ok)">✅ 영상 합성 완료</div>
+      <div class="vc"><video controls src="${d.videoUrl}"></video></div>
+      <div style="font-size:11px;color:var(--t2)">파일: ${d.filename} | ${d.fileSize} | 이미지 ${d.imageCount}장</div>
+      <div style="margin-top:10px;display:flex;gap:6px">
+        <button class="b bok" onclick="markOk('render');save();go('meta')">→ 메타데이터 생성</button>
+        <button class="b bok" onclick="markOk('render');save();go('upload')">→ YouTube 업로드</button>
+        <a href="${d.videoUrl}" download class="b bs">💾 다운로드</a>
       </div></div>`;
-    markDone('tts');
-  } catch(e) { toast(e.message, 'error'); }
-  setLoading('ttsBtn', false);
+    markOk('render');save();
+  }catch(e){toast(e.message,'err')}
+  loading('renderBtn',false);
 }
 
-async function loadVoices() {
-  try {
-    const res = await fetch('/api/tts/voices');
-    const data = await res.json();
-    if (!data.success) throw new Error(data.error);
-    let html = '<div class="card"><div class="card-title" style="margin-bottom:10px">🎤 사용 가능한 음성</div>';
-    data.voices.forEach(v => {
-      html += `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px">
-        <strong>${v.name}</strong>
-        <span style="color:var(--text-muted)">${v.category}</span>
-        <code style="color:var(--info);font-size:10px;margin-left:auto">${v.id}</code>
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('ttsVoice').value='${v.id}'">선택</button></div>`;
-    });
-    html += '</div>';
-    document.getElementById('ttsOut').innerHTML = html;
-  } catch(e) { toast(e.message, 'error'); }
-}
-
-// ========================
-// 6. 영상 렌더링
-// ========================
-async function doRender() {
-  setLoading('renderBtn', true, 'FFmpeg 렌더링 중... (수 분 소요)');
-  try {
-    const data = await api('/api/render/video', {
-      duration: parseInt(document.getElementById('renderDur').value)
-    });
-    document.getElementById('renderOut').innerHTML = `<div class="card">
-      <div class="card-title" style="margin-bottom:12px">🎬 렌더링 완료</div>
-      <div class="video-container"><video controls src="${data.videoUrl}"></video></div>
-      <div style="font-size:12px;color:var(--text-secondary)">
-        파일: ${data.filename} | 크기: ${data.fileSize} | 이미지: ${data.imageCount}장 | 오디오: ${data.audioFile}
-      </div>
-      <div style="margin-top:10px"><button class="btn btn-success btn-sm" onclick="go('upload')">→ YouTube 업로드</button></div></div>`;
-    markDone('render');
-  } catch(e) { toast(e.message, 'error'); }
-  setLoading('renderBtn', false);
-}
-
-// ========================
-// 7. 메타데이터
-// ========================
-async function doMeta() {
-  setLoading('metaBtn', true, 'Claude AI 메타데이터 생성 중...');
-  try {
-    const data = await api('/api/meta/generate', {
-      topic: S.topic, script: S.script, languages: S.langs
-    });
-    S.meta = data.meta;
-    let html = '<div class="card"><div class="card-title" style="margin-bottom:14px">🏷️ 생성된 메타데이터</div>';
-
-    if (data.meta.titles) {
-      html += '<h4 style="font-size:13px;margin-bottom:8px">📌 제목 후보</h4>';
-      data.meta.titles.forEach(group => {
-        html += `<div style="margin-bottom:8px;font-size:10px;color:var(--text-muted)">${group.lang?.toUpperCase()}</div>`;
-        group.options?.forEach((t, i) => {
-          html += `<div class="title-option" onclick="pickTitle(this,'${escHtml(t).replace(/'/g,"\\'")}')"><span class="title-rank">${i+1}</span><span class="title-text">${escHtml(t)}</span><button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();copyText('${escHtml(t).replace(/'/g,"\\'")}')">📋</button></div>`;
-        });
+// === 7. 메타 ===
+async function doMeta(){
+  loading('metaBtn',true,'Claude AI 메타데이터 생성...');
+  try{
+    const d=await api('/api/meta/generate',{topic:S.topic,script:S.script,languages:S.langs});
+    S.meta=d.meta;save();
+    let h='<div class="cd">';
+    if(d.meta.titles){
+      h+='<div class="cd-t" style="margin-bottom:8px">📌 제목 후보</div>';
+      d.meta.titles.forEach(g=>{
+        h+=`<div style="font-size:9px;color:var(--t3);margin:6px 0 3px">${(g.lang||'').toUpperCase()}</div>`;
+        (g.options||[]).forEach((t,i)=>{h+=`<div class="topt" onclick="this.classList.toggle('sel');document.getElementById('upTitle').value='${esc(t).replace(/'/g,"\\'")}';"><span class="topt-r">${i+1}</span><span class="topt-t">${esc(t)}</span><button class="b bg" onclick="event.stopPropagation();cp('${esc(t).replace(/'/g,"\\'")}')" style="font-size:9px">📋</button></div>`});
       });
     }
-
-    if (data.meta.description) {
-      html += '<div style="margin-top:16px"><h4 style="font-size:13px;margin-bottom:8px">📝 설명</h4>';
-      Object.entries(data.meta.description).forEach(([lang, desc]) => {
-        html += `<div style="font-size:10px;color:var(--text-muted);margin-bottom:4px">${lang.toUpperCase()}</div>
-          <div class="output-area" style="min-height:auto;max-height:200px;margin-bottom:10px;font-size:12px">${escHtml(desc)}</div>`;
+    if(d.meta.description){
+      h+='<div class="divider"></div><div class="cd-t" style="margin-bottom:8px">📝 설명</div>';
+      Object.entries(d.meta.description).forEach(([l,desc])=>{
+        h+=`<div style="font-size:9px;color:var(--t3);margin-bottom:3px">${l.toUpperCase()}</div>
+          <textarea class="out-edit" style="min-height:100px;max-height:200px;margin-bottom:8px;font-size:11px" id="metaDesc_${l}">${esc(desc)}</textarea>`;
       });
-      html += '</div>';
     }
-
-    if (data.meta.tags) {
-      html += `<div style="margin-top:12px"><h4 style="font-size:13px;margin-bottom:6px">🏷️ 태그</h4>
-        <div class="tag-list">${data.meta.tags.map(t => `<span class="tag">${escHtml(t)}</span>`).join('')}</div></div>`;
+    if(d.meta.tags){
+      h+=`<div class="divider"></div><div class="cd-t" style="margin-bottom:6px">🏷️ 태그 (${d.meta.tags.length}개)</div>
+        <div class="tl">${d.meta.tags.map(t=>`<span class="tag">${esc(t)}</span>`).join('')}</div>`;
     }
-
-    if (data.meta.pinnedComment) {
-      html += `<div style="margin-top:14px"><h4 style="font-size:13px;margin-bottom:6px">📌 고정 댓글</h4>
-        <div class="output-area" style="min-height:auto;font-size:12px">${escHtml(data.meta.pinnedComment)}</div></div>`;
+    if(d.meta.pinnedComment){
+      h+=`<div class="divider"></div><div class="cd-t" style="margin-bottom:6px">📌 고정 댓글</div>
+        <div class="out" style="min-height:auto;font-size:11px">${esc(d.meta.pinnedComment)}</div>`;
     }
-
-    html += `<div style="margin-top:12px">
-      <button class="btn btn-secondary btn-sm" onclick="copyText(JSON.stringify(S.meta,null,2))">📋 전체 JSON 복사</button>
-      <button class="btn btn-primary btn-sm" onclick="applyMeta()">→ 업로드에 적용</button></div></div>`;
-
-    document.getElementById('metaOut').innerHTML = html;
-    markDone('meta');
-  } catch(e) { toast(e.message, 'error'); }
-  setLoading('metaBtn', false);
+    h+=`<div class="divider"></div><div style="display:flex;gap:6px">
+      <button class="b bs" onclick="cp(JSON.stringify(S.meta,null,2))">📋 JSON 복사</button>
+      <button class="b bp" onclick="applyMeta()">→ 업로드에 적용</button></div></div>`;
+    document.getElementById('metaOut').innerHTML=h;
+    markOk('meta');save();
+  }catch(e){toast(e.message,'err')}
+  loading('metaBtn',false);
 }
 
-function pickTitle(el, title) {
-  document.querySelectorAll('.title-option').forEach(o => o.classList.remove('selected'));
-  el.classList.add('selected');
-  document.getElementById('upTitle').value = title;
+function applyMeta(){
+  if(S.meta.titles?.[0]?.options?.[0])document.getElementById('upTitle').value=S.meta.titles[0].options[0];
+  const descEl=document.getElementById('metaDesc_ko');
+  if(descEl)document.getElementById('upDesc').value=descEl.value;
+  else if(S.meta.description?.ko)document.getElementById('upDesc').value=S.meta.description.ko;
+  if(S.meta.tags)document.getElementById('upTags').value=S.meta.tags.join(', ');
+  go('upload');toast('업로드 양식에 적용됨');
 }
 
-function applyMeta() {
-  if (S.meta.titles?.[0]?.options?.[0]) document.getElementById('upTitle').value = S.meta.titles[0].options[0];
-  if (S.meta.description?.ko) document.getElementById('upDesc').value = S.meta.description.ko;
-  if (S.meta.tags) document.getElementById('upTags').value = S.meta.tags.join(', ');
-  go('upload');
-  toast('업로드 양식에 적용됨');
-}
-
-// ========================
-// 8. 썸네일
-// ========================
-async function doThumb() {
-  setLoading('thumbBtn', true, 'DALL-E 3 썸네일 생성 중...');
-  try {
-    const data = await api('/api/thumbnail/generate', {
-      topic: S.topic,
-      style: document.getElementById('thumbStyle').value,
-      text: document.getElementById('thumbText').value
-    });
-    document.getElementById('thumbOut').innerHTML = `<div class="card">
-      <div class="card-title" style="margin-bottom:12px">🖼️ 썸네일 생성 완료</div>
-      <div style="border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)">
-        <img src="${data.imageUrl}" style="width:100%;display:block" alt="Thumbnail">
-      </div>
-      <div style="margin-top:10px;font-size:11px;color:var(--text-muted)">파일: ${data.filename}</div>
-      <div style="margin-top:8px"><button class="btn btn-secondary btn-sm" onclick="doThumb()">🔄 다시 생성</button></div></div>`;
-    markDone('thumbnail');
-  } catch(e) { toast(e.message, 'error'); }
-  setLoading('thumbBtn', false);
-}
-
-// ========================
-// 9. 쇼츠
-// ========================
-async function doShorts() {
-  if (!S.script) { toast('먼저 대본을 생성하세요', 'error'); return; }
-  setLoading('shortsBtn', true, 'Claude AI 쇼츠 생성 중...');
-  try {
-    const data = await api('/api/shorts/generate', {
-      script: S.script,
-      count: document.getElementById('shortsCnt').value,
-      length: document.getElementById('shortsLen').value
-    });
-    let html = '';
-    data.shorts.forEach(s => {
-      html += `<div class="card">
-        <div class="card-header"><div><div class="card-title">📱 쇼츠 #${s.number}: ${escHtml(s.title)}</div>
-          <div class="card-sub">후킹: "${escHtml(s.hook)}" | ${s.duration}초</div></div>
-          <button class="btn btn-secondary btn-sm" onclick="copyText(\`${s.script.replace(/`/g,"'")}\`)">📋</button></div>
-        <div class="output-area" style="font-size:12px">${escHtml(s.script)}</div>
-        ${s.visualGuide ? `<div style="margin-top:8px;font-size:11px;color:var(--text-muted)">🎬 ${escHtml(s.visualGuide)}</div>` : ''}</div>`;
-    });
-    document.getElementById('shortsOut').innerHTML = html;
-    markDone('shorts');
-  } catch(e) { toast(e.message, 'error'); }
-  setLoading('shortsBtn', false);
-}
-
-// ========================
-// 10. 인트로
-// ========================
-async function doIntro() {
-  setLoading('introBtn', true, 'Claude AI 인트로 생성 중...');
-  try {
-    const data = await api('/api/intro/generate', {
-      topic: S.topic, script: S.script,
-      type: document.getElementById('introType').value,
-      length: document.getElementById('introLen').value
-    });
-    document.getElementById('introOut').innerHTML = `<div class="card">
-      <div class="output-toolbar"><button class="btn btn-secondary btn-sm" onclick="copyText(document.querySelector('#introOut .output-area').textContent)">📋 복사</button></div>
-      <div class="output-area">${escHtml(data.intro)}</div></div>`;
-    markDone('intro');
-  } catch(e) { toast(e.message, 'error'); }
-  setLoading('introBtn', false);
-}
-
-// ========================
-// YouTube Upload
-// ========================
-async function ytAuth() {
-  try {
-    const res = await fetch('/api/youtube/auth');
-    const data = await res.json();
-    if (data.authUrl) window.open(data.authUrl, '_blank', 'width=600,height=700');
-    setTimeout(checkYtStatus, 5000);
-  } catch(e) { toast(e.message, 'error'); }
-}
-
-async function checkYtStatus() {
-  try {
-    const res = await fetch('/api/youtube/status');
-    const data = await res.json();
-    const el = document.getElementById('ytStatus');
-    if (data.authenticated) {
-      el.innerHTML = '<div class="dot green"></div><span style="font-size:12px;color:var(--success)">YouTube 연동 완료</span>';
-      document.getElementById('upBtn').disabled = false;
-    }
-  } catch(e) {}
-}
-
-async function doUpload() {
-  setLoading('upBtn', true, 'YouTube 업로드 중...');
-  try {
-    const tags = document.getElementById('upTags').value.split(',').map(t => t.trim()).filter(Boolean);
-    const data = await api('/api/youtube/upload', {
-      title: document.getElementById('upTitle').value,
-      description: document.getElementById('upDesc').value,
-      tags,
-      privacyStatus: document.getElementById('upPrivacy').value,
-      categoryId: document.getElementById('upCat').value
-    });
-    document.getElementById('uploadOut').innerHTML = `<div class="card">
-      <div class="card-title" style="margin-bottom:12px;color:var(--success)">✅ 업로드 완료!</div>
-      <div style="font-size:13px;line-height:2">
-        <div>📹 Video ID: <code>${data.videoId}</code></div>
-        <div>🔗 <a href="${data.videoUrl}" target="_blank" style="color:var(--info)">${data.videoUrl}</a></div>
-        <div>🎬 <a href="${data.studioUrl}" target="_blank" style="color:var(--info)">YouTube Studio에서 편집</a></div>
+// === 8. 썸네일 ===
+async function doThumb(){
+  loading('thBtn',true,'DALL-E 3 썸네일 생성...');
+  try{
+    const d=await api('/api/thumbnail/generate',{topic:S.topic,style:document.getElementById('thStyle').value,text:document.getElementById('thText').value});
+    S.thumbFile=d.filename;
+    document.getElementById('thumbOut').innerHTML=`<div class="cd">
+      <div class="cd-t" style="margin-bottom:10px">🖼️ 썸네일 완료</div>
+      <div style="border-radius:var(--r);overflow:hidden;border:1px solid var(--bd)"><img src="${d.imageUrl}" style="width:100%;display:block"></div>
+      <div style="margin-top:8px;font-size:10px;color:var(--t3)">파일: ${d.filename}</div>
+      <div style="margin-top:8px;display:flex;gap:6px">
+        <button class="b bs" onclick="doThumb()">🔄 다시 생성</button>
+        <a href="${d.imageUrl}" download class="b bs">💾 다운로드</a>
       </div></div>`;
-    markDone('upload');
-    toast('YouTube 업로드 성공!');
-  } catch(e) { toast(e.message, 'error'); }
-  setLoading('upBtn', false);
+    markOk('thumb');save();
+  }catch(e){toast(e.message,'err')}
+  loading('thBtn',false);
 }
 
-// ========================
-// Files / Export
-// ========================
-async function viewFiles() {
-  const modal = document.getElementById('filesModal');
-  modal.style.display = 'flex';
-  try {
-    const res = await fetch('/api/files/list');
-    const data = await res.json();
-    let html = '';
-    Object.entries(data.files).forEach(([dir, files]) => {
-      html += `<h4 style="font-size:12px;color:var(--text-muted);margin:12px 0 6px">📁 ${dir} (${files.length})</h4>`;
-      files.forEach(f => {
-        html += `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;border-bottom:1px solid var(--border)">
-          <span style="flex:1">${f.name}</span><span style="color:var(--text-muted)">${f.size}</span>
-          <a href="${f.url}" target="_blank" class="btn btn-ghost btn-sm">열기</a></div>`;
-      });
+// === 9. 쇼츠 ===
+async function doShorts(){
+  if(!S.script){toast('대본 먼저 생성','err');return}
+  loading('shBtn',true,'쇼츠 생성 중...');
+  try{
+    const d=await api('/api/shorts/generate',{script:S.script,count:document.getElementById('shCnt').value,length:document.getElementById('shLen').value});
+    let h='';
+    d.shorts.forEach(s=>{
+      h+=`<div class="cd"><div class="cd-h"><div><div class="cd-t">📱 #${s.number}: ${esc(s.title)}</div><div class="cd-s">후킹: "${esc(s.hook)}" | ${s.duration}초</div></div><button class="b bs" onclick="cp(document.getElementById('sh${s.number}').value)" style="font-size:9px">📋</button></div>
+        <textarea class="out-edit" id="sh${s.number}" style="min-height:150px;font-size:11px">${esc(s.script)}</textarea>
+        ${s.visualGuide?`<div style="margin-top:6px;font-size:10px;color:var(--t3)">🎬 ${esc(s.visualGuide)}</div>`:''}</div>`;
     });
-    document.getElementById('filesContent').innerHTML = html || '<p style="color:var(--text-muted)">생성된 파일 없음</p>';
-  } catch(e) { document.getElementById('filesContent').innerHTML = `<p style="color:#ff3b3b">${e.message}</p>`; }
+    document.getElementById('shortsOut').innerHTML=h;
+    markOk('shorts');save();
+  }catch(e){toast(e.message,'err')}
+  loading('shBtn',false);
 }
 
-function exportAll() {
-  const data = JSON.stringify(S, null, 2);
-  const blob = new Blob([data], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = `youtube_project_${S.topic || 'untitled'}.json`;
-  a.click();
+// === 10. 인트로 ===
+async function doIntro(){
+  loading('intBtn',true,'인트로 생성 중...');
+  try{
+    const d=await api('/api/intro/generate',{topic:S.topic,script:S.script,type:document.getElementById('intType').value,length:document.getElementById('intLen').value});
+    document.getElementById('introOut').innerHTML=`<div class="cd">
+      <div class="otb"><button class="b bs" onclick="cp(document.getElementById('introEdit').value)">📋 복사</button></div>
+      <textarea class="out-edit" id="introEdit" style="min-height:200px">${esc(d.intro)}</textarea></div>`;
+    markOk('intro');save();
+  }catch(e){toast(e.message,'err')}
+  loading('intBtn',false);
 }
 
-// ========================
-// Init
-// ========================
-async function init() {
-  try {
-    const res = await fetch('/api/health');
-    const data = await res.json();
-    const el = document.getElementById('apiStatus');
-    el.innerHTML = Object.entries(data.apis).map(([k, v]) =>
-      `<span class="api-badge ${v ? 'on' : 'off'}">${v ? '●' : '○'} ${k}</span>`
-    ).join('');
-  } catch(e) {}
+// === 11. 업로드 ===
+function prepareUpload(){
   checkYtStatus();
+  let preview='';
+  // Show video/thumb preview
+  fetch('/api/files/list').then(r=>r.json()).then(d=>{
+    const vids=d.files.video||[];const thumbs=d.files.thumbnails||[];
+    if(vids.length)preview+=`<div style="font-size:11px;color:var(--t2);margin-bottom:4px">📹 영상: ${vids[vids.length-1].name} (${vids[vids.length-1].size})</div>`;
+    if(thumbs.length)preview+=`<div style="font-size:11px;color:var(--t2)">🖼️ 썸네일: ${thumbs[thumbs.length-1].name}</div>`;
+    if(!vids.length)preview='<div class="alert alert-warn">⚠️ 업로드할 영상이 없습니다. 먼저 영상을 합성하세요.</div>';
+    document.getElementById('upPreview').innerHTML=preview;
+  }).catch(()=>{});
 }
 
+async function ytAuth(){
+  try{const r=await fetch('/api/youtube/auth').then(r=>r.json());if(r.authUrl)window.open(r.authUrl,'_blank','width=600,height=700');setTimeout(checkYtStatus,5000)}catch(e){toast(e.message,'err')}
+}
+
+async function checkYtStatus(){
+  try{
+    const r=await fetch('/api/youtube/status').then(r=>r.json());
+    const el=document.getElementById('ytSt');
+    if(r.authenticated){el.innerHTML='<div class="dot g"></div><span style="color:var(--ok)">YouTube 연동 완료 ✅</span>';document.getElementById('upBtn').disabled=false}
+    else if(r.hasClientId){el.innerHTML='<div class="dot r"></div><span>YouTube 미인증</span><button class="b bs" style="margin-left:auto" onclick="ytAuth()">🔗 인증</button>'}
+  }catch(e){}
+}
+
+async function doUpload(){
+  const title=document.getElementById('upTitle').value;
+  if(!title){toast('제목 입력 필요','err');return}
+  loading('upBtn',true,'YouTube 업로드 중...');
+  try{
+    const tags=document.getElementById('upTags').value.split(',').map(t=>t.trim()).filter(Boolean);
+    const d=await api('/api/youtube/upload',{title,description:document.getElementById('upDesc').value,tags,privacyStatus:document.getElementById('upPriv').value,categoryId:document.getElementById('upCat').value,thumbnailFile:S.thumbFile||null});
+    document.getElementById('uploadOut').innerHTML=`<div class="cd">
+      <div class="cd-t" style="color:var(--ok);margin-bottom:10px">🎉 업로드 완료!</div>
+      <div style="font-size:12px;line-height:2">
+        <div>📹 Video ID: <code>${d.videoId}</code></div>
+        <div>🔗 <a href="${d.videoUrl}" target="_blank" style="color:var(--info)">${d.videoUrl}</a></div>
+        <div>🎬 <a href="${d.studioUrl}" target="_blank" style="color:var(--info)">YouTube Studio</a></div>
+      </div></div>`;
+    markOk('upload');save();toast('업로드 성공! 🎉');
+  }catch(e){toast(e.message,'err')}
+  loading('upBtn',false);
+}
+
+// === Files ===
+async function viewFiles(){
+  try{
+    const r=await fetch('/api/files/list').then(r=>r.json());
+    let h='<div class="cd"><div class="cd-t" style="margin-bottom:10px">📂 생성된 파일</div>';
+    Object.entries(r.files).forEach(([dir,files])=>{
+      h+=`<div style="font-size:10px;color:var(--t3);margin:10px 0 4px">📁 ${dir} (${files.length})</div>`;
+      files.forEach(f=>{h+=`<div style="display:flex;align-items:center;gap:6px;padding:3px 0;font-size:11px;border-bottom:1px solid var(--bd)"><span style="flex:1">${f.name}</span><span style="color:var(--t3)">${f.size}</span><a href="${f.url}" target="_blank" class="b bg" style="font-size:9px">열기</a></div>`});
+    });
+    h+='</div>';
+    // Replace current section content temporarily
+    const sec=document.querySelector('.sec.act');
+    const orig=sec.innerHTML;
+    sec.innerHTML=h+`<button class="b bs" onclick="this.parentElement.innerHTML=\`${orig.replace(/`/g,'\\`').replace(/\$/g,'\\$')}\`">← 돌아가기</button>`;
+  }catch(e){toast(e.message,'err')}
+}
+
+async function cleanFiles(){
+  if(!confirm('모든 생성 파일을 삭제하시겠습니까?'))return;
+  try{
+    const r=await api('/api/files/clean',{});
+    toast(`${r.deleted}개 파일 삭제`);
+    S.done.clear();S.topic='';S.plan='';S.script='';S.meta={};S.imgPrompts=[];
+    localStorage.removeItem('yt_agent');
+    document.getElementById('directTopic').value='';
+    updateNav();go('topic');
+  }catch(e){toast(e.message,'err')}
+}
+
+function exportAll(){
+  const d={...S,exportDate:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`yt_project_${(S.topic||'untitled').replace(/\s/g,'_')}.json`;a.click();
+}
+
+// === Init ===
+async function init(){
+  load();
+  try{
+    const r=await fetch('/api/health').then(r=>r.json());
+    document.getElementById('apiSt').innerHTML=Object.entries(r.apis).map(([k,v])=>`<span class="api-b ${v?'on':'off'}">${v?'●':'○'} ${k}</span>`).join('');
+  }catch(e){}
+  checkYtStatus();
+  updateNav();
+}
 init();
 </script>
 </body>

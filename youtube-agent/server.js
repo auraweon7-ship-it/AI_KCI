@@ -825,6 +825,53 @@ app.get('/api/files/list', (req, res) => {
 });
 
 // ========================
+// FFmpeg Check
+// ========================
+app.get('/api/system/ffmpeg', (req, res) => {
+  execFile('ffmpeg', ['-version'], { timeout: 5000 }, (error, stdout) => {
+    if (error) {
+      res.json({ success: true, installed: false, error: error.message });
+    } else {
+      const version = stdout.split('\n')[0] || 'unknown';
+      res.json({ success: true, installed: true, version });
+    }
+  });
+});
+
+// ========================
+// Audio Duration (via ffprobe)
+// ========================
+app.get('/api/audio/duration/:filename', (req, res) => {
+  const filepath = path.join(OUTPUT_DIR, 'audio', req.params.filename);
+  if (!fs.existsSync(filepath)) return res.json({ success: false, error: 'File not found' });
+
+  execFile('ffprobe', ['-v', 'quiet', '-print_format', 'json', '-show_format', filepath],
+    { timeout: 10000 }, (error, stdout) => {
+      if (error) return res.json({ success: true, duration: 0 });
+      try {
+        const info = JSON.parse(stdout);
+        res.json({ success: true, duration: parseFloat(info.format.duration || 0) });
+      } catch(e) { res.json({ success: true, duration: 0 }); }
+    });
+});
+
+// ========================
+// File Cleanup
+// ========================
+app.post('/api/files/clean', (req, res) => {
+  let deleted = 0;
+  ['images', 'audio', 'video', 'thumbnails'].forEach(dir => {
+    const dirPath = path.join(OUTPUT_DIR, dir);
+    fs.readdirSync(dirPath).forEach(f => {
+      if (f === '.gitkeep' || f === 'concat.txt') return;
+      fs.unlinkSync(path.join(dirPath, f));
+      deleted++;
+    });
+  });
+  res.json({ success: true, deleted });
+});
+
+// ========================
 // Start
 // ========================
 app.listen(PORT, () => {
