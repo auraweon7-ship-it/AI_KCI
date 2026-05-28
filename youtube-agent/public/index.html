@@ -151,6 +151,58 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
 .topt-t{font-size:12px;font-weight:500;flex:1}
 
 .divider{height:1px;background:var(--bd);margin:16px 0}
+
+/* Landing */
+.land{display:none;animation:fadeUp .6s ease}
+.land.act{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+.hero{text-align:center;padding:54px 20px 36px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(255,59,59,.08) 0%,transparent 70%);pointer-events:none}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:var(--accd);border:1px solid rgba(255,59,59,.2);padding:5px 14px;border-radius:20px;font-size:10px;color:var(--acc);font-weight:600;margin-bottom:16px}
+.hero h2{font-size:32px;font-weight:900;line-height:1.3;margin-bottom:10px;background:linear-gradient(135deg,#fff 0%,#ccc 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero h2 em{font-style:normal;background:linear-gradient(135deg,#ff3b3b,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:13.5px;color:var(--t2);max-width:550px;margin:0 auto 22px;line-height:1.7}
+.hero-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.hero-btns .b{padding:10px 26px;font-size:13px;border-radius:24px}
+
+.feat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-bottom:24px}
+.feat{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r);padding:18px;transition:all .2s;position:relative;overflow:hidden}
+.feat:hover{border-color:var(--acc);transform:translateY(-2px)}
+.feat::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--acc),transparent);opacity:0;transition:opacity .2s}
+.feat:hover::after{opacity:1}
+.feat-ico{font-size:22px;margin-bottom:8px}
+.feat h4{font-size:12.5px;font-weight:600;margin-bottom:4px}
+.feat p{font-size:10.5px;color:var(--t2);line-height:1.5}
+.feat-tag{display:inline-block;font-size:8px;padding:2px 6px;border-radius:8px;margin-top:6px;font-weight:600}
+.feat-tag.ai{background:rgba(139,92,246,.15);color:#a78bfa}
+.feat-tag.api{background:rgba(52,211,153,.15);color:var(--ok)}
+.feat-tag.tool{background:rgba(96,165,250,.15);color:var(--info)}
+
+.pipe-sec{margin-bottom:24px}
+.pipe-title{font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.pipe-line{position:relative;padding-left:28px}
+.pipe-line::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--acc),var(--acc2),var(--warn),var(--ok),var(--info))}
+.pipe-step{position:relative;margin-bottom:14px;display:flex;gap:12px;align-items:flex-start}
+.pipe-dot{position:absolute;left:-28px;top:2px;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;z-index:1}
+.pipe-dot.s1{background:var(--acc)}.pipe-dot.s2{background:#ff6b35}.pipe-dot.s3{background:var(--warn)}.pipe-dot.s4{background:var(--ok)}.pipe-dot.s5{background:var(--info)}
+.pipe-body h5{font-size:12px;font-weight:600;margin-bottom:2px}
+.pipe-body p{font-size:10.5px;color:var(--t2);line-height:1.4}
+.pipe-body .pipe-api{font-size:8.5px;color:var(--t3);margin-top:3px;font-family:Consolas,monospace}
+
+.spec-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:24px}
+.spec{background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);padding:14px;text-align:center}
+.spec-val{font-size:22px;font-weight:900;background:linear-gradient(135deg,var(--acc),#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.spec-lbl{font-size:9.5px;color:var(--t2);margin-top:2px}
+
+.land-footer{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:28px;text-align:center;margin-top:16px}
+.land-footer .prof-name{font-size:15px;font-weight:700;margin-bottom:4px;letter-spacing:1px}
+.land-footer .prof-sub{font-size:11px;color:var(--t2);line-height:1.9}
+.land-footer .prof-links{margin-top:10px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.land-footer .prof-links a{font-size:10.5px;color:var(--info);text-decoration:none;padding:3px 10px;border:1px solid rgba(96,165,250,.2);border-radius:12px;transition:all .15s}
+.land-footer .prof-links a:hover{background:rgba(96,165,250,.1);border-color:var(--info)}
+.land-footer .prof-divider{height:1px;background:var(--bd);margin:14px auto;max-width:300px}
+.land-footer .prof-roles{display:flex;flex-direction:column;gap:3px;margin-top:6px}
+.land-footer .prof-roles span{font-size:10px;color:var(--t3);letter-spacing:.3px}
 </style>
 </head>
 <body>
@@ -161,8 +213,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     <div class="sb-t"><h1>YouTube Agent</h1><span>풀스택 영상 제작 v2.0</span></div>
   </div>
   <nav class="sb-nav">
+    <div class="ni act" data-s="home" onclick="goHome()" style="margin:4px 0 2px;font-weight:600;color:var(--t1)"><span>🏠</span> 홈</div>
     <div class="sb-lbl">기획</div>
-    <div class="ni act" data-s="topic" onclick="go('topic')"><span>💡</span> 주제 선정 <span class="n">1</span></div>
+    <div class="ni" data-s="topic" onclick="go('topic')"><span>💡</span> 주제 선정 <span class="n">1</span></div>
     <div class="ni" data-s="plan" onclick="go('plan')"><span>📋</span> 대본 기획 <span class="req"></span><span class="n">2</span></div>
     <div class="ni" data-s="script" onclick="go('script')"><span>✍️</span> 대본 작성 <span class="req"></span><span class="n">3</span></div>
     <div class="sb-lbl">제작</div>
@@ -187,7 +240,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
 
 <div class="mn">
   <div class="top">
-    <div class="top-t" id="topT">💡 주제 선정 <span class="badge">STEP 1</span></div>
+    <div class="top-t" id="topT">🏠 YouTube 롱폼 제작 에이전트</div>
     <div class="top-a">
       <button class="b bs" onclick="viewFiles()">📂 파일</button>
       <button class="b bs" onclick="cleanFiles()">🗑️ 초기화</button>
@@ -196,6 +249,75 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
   </div>
   <div class="ct">
     <div class="ban" id="ban" style="display:none"><div class="pdot"></div><span>프로젝트: <strong id="banN"></strong></span></div>
+
+    <!-- ===== Landing ===== -->
+    <div class="land act" id="sec-home">
+      <div class="hero">
+        <div class="hero-badge"><span class="pdot"></span> AI-Powered Full Production Pipeline</div>
+        <h2>YouTube 롱폼 영상<br><em>원클릭 제작 에이전트</em></h2>
+        <p>주제 선정부터 대본 작성, 이미지·음성 생성, 영상 합성, 메타데이터 최적화, YouTube 업로드까지 — AI가 전 과정을 자동화합니다.</p>
+        <div class="hero-btns">
+          <button class="b bp" onclick="go('topic')">🚀 영상 제작 시작</button>
+          <button class="b bs" onclick="document.getElementById('landFeats').scrollIntoView({behavior:'smooth'})">📖 기능 살펴보기</button>
+        </div>
+      </div>
+
+      <div class="spec-grid">
+        <div class="spec"><div class="spec-val">4</div><div class="spec-lbl">AI API 통합</div></div>
+        <div class="spec"><div class="spec-val">11</div><div class="spec-lbl">제작 단계</div></div>
+        <div class="spec"><div class="spec-val">E2E</div><div class="spec-lbl">End-to-End 자동화</div></div>
+        <div class="spec"><div class="spec-val">1080p</div><div class="spec-lbl">HD 영상 출력</div></div>
+      </div>
+
+      <div id="landFeats">
+        <div class="pipe-title">🎯 핵심 기능</div>
+        <div class="feat-grid">
+          <div class="feat"><div class="feat-ico">💡</div><h4>AI 주제 추천</h4><p>카테고리·타겟·키워드 기반으로 조회수 높은 주제를 AI가 분석·추천</p><span class="feat-tag ai">Claude AI</span></div>
+          <div class="feat"><div class="feat-ico">📋</div><h4>대본 기획</h4><p>영상 구조, 장면 구성, 타임라인을 자동 설계하는 프리프로덕션</p><span class="feat-tag ai">Claude AI</span></div>
+          <div class="feat"><div class="feat-ico">✍️</div><h4>대본 작성</h4><p>팩트체크 기반 전문 나레이션 대본을 원하는 분량·톤으로 생성</p><span class="feat-tag ai">Claude AI</span></div>
+          <div class="feat"><div class="feat-ico">🎨</div><h4>이미지 생성</h4><p>장면별 고품질 이미지를 DALL-E 3로 실제 생성 (HD 1792×1024)</p><span class="feat-tag api">DALL-E 3</span></div>
+          <div class="feat"><div class="feat-ico">🎙️</div><h4>TTS 음성</h4><p>대본을 자연스러운 나레이션으로 변환, 다국어 음성 지원</p><span class="feat-tag api">ElevenLabs</span></div>
+          <div class="feat"><div class="feat-ico">🎬</div><h4>영상 합성</h4><p>이미지+음성을 Ken Burns 효과와 함께 MP4 영상으로 렌더링</p><span class="feat-tag tool">FFmpeg</span></div>
+          <div class="feat"><div class="feat-ico">🏷️</div><h4>SEO 메타데이터</h4><p>클릭률 최적화 제목, 설명, 태그, 고정 댓글을 다국어로 생성</p><span class="feat-tag ai">Claude AI</span></div>
+          <div class="feat"><div class="feat-ico">🖼️</div><h4>썸네일 생성</h4><p>시선을 사로잡는 유튜브 썸네일을 AI로 자동 디자인</p><span class="feat-tag api">DALL-E 3</span></div>
+          <div class="feat"><div class="feat-ico">📱</div><h4>쇼츠 변환</h4><p>롱폼 대본에서 핵심을 추출해 30~60초 쇼츠 대본 생성</p><span class="feat-tag ai">Claude AI</span></div>
+          <div class="feat"><div class="feat-ico">🚀</div><h4>인트로 생성</h4><p>시청자 이탈 방지를 위한 후킹 오프닝 자동 작성</p><span class="feat-tag ai">Claude AI</span></div>
+          <div class="feat"><div class="feat-ico">📤</div><h4>YouTube 업로드</h4><p>완성된 영상을 YouTube에 직접 업로드, 썸네일 자동 설정</p><span class="feat-tag api">YouTube API</span></div>
+          <div class="feat"><div class="feat-ico">💾</div><h4>프로젝트 저장</h4><p>작업 상태 자동 저장, 이어하기, JSON 내보내기 지원</p><span class="feat-tag tool">localStorage</span></div>
+        </div>
+      </div>
+
+      <div class="pipe-sec">
+        <div class="pipe-title">⚡ 단계별 제작 파이프라인</div>
+        <div class="pipe-line">
+          <div class="pipe-step"><div class="pipe-dot s1">1</div><div class="pipe-body"><h5>기획 (Pre-Production)</h5><p>주제 선정 → 대본 기획 → 대본 작성<br>Claude AI가 주제 분석, 구조 설계, 나레이션 대본까지 자동 생성</p><div class="pipe-api">Claude API (claude-sonnet-4-20250514)</div></div></div>
+          <div class="pipe-step"><div class="pipe-dot s2">2</div><div class="pipe-body"><h5>시각 소재 (Visual Assets)</h5><p>대본의 장면 지시에 따라 DALL-E 3가 고해상도 일러스트를 배치 생성<br>프롬프트 자동 생성 → 개별 검토/수정 → 일괄 또는 개별 이미지 생성</p><div class="pipe-api">DALL-E 3 API (hd, 1792×1024)</div></div></div>
+          <div class="pipe-step"><div class="pipe-dot s3">3</div><div class="pipe-body"><h5>음성 제작 (Audio Production)</h5><p>대본 텍스트를 ElevenLabs TTS로 자연스러운 나레이션 음성 변환<br>음성 선택, 안정성/유사도 파라미터 조절 가능</p><div class="pipe-api">ElevenLabs API (eleven_multilingual_v2)</div></div></div>
+          <div class="pipe-step"><div class="pipe-dot s4">4</div><div class="pipe-body"><h5>영상 합성 (Video Rendering)</h5><p>이미지 + 음성 → Ken Burns 줌팬 효과 적용 MP4 영상으로 합성<br>오디오 길이 기반 자동 타이밍, 1080p 렌더링</p><div class="pipe-api">FFmpeg (zoompan, concat)</div></div></div>
+          <div class="pipe-step"><div class="pipe-dot s5">5</div><div class="pipe-body"><h5>퍼블리싱 (Publishing)</h5><p>SEO 최적화 메타데이터 생성 → 썸네일 디자인 → YouTube 직접 업로드<br>쇼츠 변환, 인트로 생성까지 원스톱 완료</p><div class="pipe-api">YouTube Data API v3 + OAuth 2.0</div></div></div>
+        </div>
+      </div>
+
+      <div class="land-footer">
+        <div class="prof-name">박정원 | 朴正元 | Park Jeong Weon</div>
+        <div class="prof-sub">교수 · Professor</div>
+        <div class="prof-divider"></div>
+        <div class="prof-sub">
+          한국외국어대학교 중국학대학 중국언어문화학부<br>
+          Division of Chinese Language, Literature and Culture
+        </div>
+        <div class="prof-divider"></div>
+        <div class="prof-roles">
+          <span>국가교육위원회 AI특별위원회 위원</span>
+          <span>교육부 AI인재양성추진단</span>
+          <span>K-AI 교육네트워크</span>
+        </div>
+        <div class="prof-links">
+          <a href="https://kletter.kr" target="_blank">kletter.kr</a>
+          <a href="https://kteacher.kr" target="_blank">kteacher.kr</a>
+        </div>
+      </div>
+    </div>
 
     <!-- ===== 1. 주제 ===== -->
     <div class="sec act" id="sec-topic">
@@ -404,8 +526,18 @@ const NAMES = {topic:'💡 주제 선정',plan:'📋 대본 기획',script:'✍�
 const PREREQS = {plan:['topic'],script:['plan'],image:['script'],tts:['script'],render:['image','tts'],meta:['script'],shorts:['script'],upload:['render']};
 
 // === Nav ===
+function goHome() {
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('act'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('act'));
+  document.getElementById('sec-home').classList.add('act');
+  document.querySelector('[data-s="home"]').classList.add('act');
+  document.getElementById('topT').innerHTML='🏠 YouTube 롱폼 제작 에이전트';
+  document.getElementById('ban').style.display='none';
+}
+
 function go(id) {
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('act'));
+  document.getElementById('sec-home').classList.remove('act');
   document.querySelectorAll('.ni').forEach(n=>n.classList.remove('act'));
   document.getElementById('sec-'+id)?.classList.add('act');
   document.querySelector(`[data-s="${id}"]`)?.classList.add('act');
