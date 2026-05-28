@@ -959,26 +959,38 @@ app.post('/api/thumbnail/generate', async (req, res) => {
     if (!hookText && topic) {
       const hookMsg = await anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 100,
-        messages: [{ role: 'user', content: `유튜브 썸네일에 들어갈 짧고 강렬한 관심 유발 문구를 1개만 만들어주세요.
+        max_tokens: 200,
+        messages: [{ role: 'user', content: `유튜브 썸네일에 들어갈 강렬한 관심 유발 문구를 만들어주세요.
 주제: "${topic}"
 규칙:
-- 한국어, 8자 이내
-- 충격/호기심/긴박감을 자극
-- 예: "충격 진실", "결국 터졌다", "이게 실화?", "절대 몰랐던", "소름 주의"
-문구만 출력하세요. 따옴표 없이.` }]
+- 한국어
+- 메인 문구: 8자 이내 (충격/호기심/긴박감 자극)
+- 서브 문구: 15자 이내 (영상 내용을 어필하는 보조 설명)
+- 예: "충격 진실" + "역사가 감춘 7가지 비밀"
+JSON으로 출력: {"main":"메인문구","sub":"서브문구"}` }]
       });
-      hookText = hookMsg.content[0].text.trim().replace(/["""]/g, '');
+      try {
+        const parsed = JSON.parse(hookMsg.content[0].text.trim().match(/\{[\s\S]*\}/)?.[0] || '{}');
+        hookText = parsed.main || hookMsg.content[0].text.trim().replace(/["""]/g, '');
+        var subText = parsed.sub || '';
+      } catch(e) {
+        hookText = hookMsg.content[0].text.trim().replace(/["""]/g, '');
+        var subText = '';
+      }
     }
 
     const styleGuide = {
-      dramatic: 'dramatic lighting, high contrast, dark background, cinematic, powerful imagery',
-      clean: 'clean minimal design, modern, professional, white space, sharp typography',
-      clickbait: 'vibrant colors, shocked expression, red highlights, bold arrows, attention-grabbing',
-      cinematic: 'cinematic wide shot, film-like, teal and orange grading, atmospheric'
+      dramatic: 'dramatic lighting, high contrast, dark background, cinematic, powerful imagery, depth of field',
+      clean: 'clean minimal design, modern, professional, white space, sharp typography, gradient background',
+      clickbait: 'vibrant colors, shocked expression, red highlights, bold arrows, attention-grabbing, neon accents',
+      cinematic: 'cinematic wide shot, film-like, teal and orange grading, atmospheric, lens flare'
     };
 
-    const thumbPrompt = `YouTube video thumbnail, ${styleGuide[style] || styleGuide.dramatic}, topic: "${topic}", with large bold Korean text overlay "${hookText}" in eye-catching font, 1280x720 resolution, eye-catching, professional quality, 16:9 aspect ratio`;
+    const textOverlay = subText
+      ? `with large bold Korean main title text "${hookText}" at center in huge eye-catching white font with black outline, and smaller subtitle "${subText}" below it`
+      : `with large bold Korean text overlay "${hookText}" in huge eye-catching white font with thick black outline at center`;
+
+    const thumbPrompt = `YouTube video thumbnail in exact 16:9 aspect ratio (1280x720), ${styleGuide[style] || styleGuide.dramatic}, topic: "${topic}", ${textOverlay}, background image related to the topic with dramatic composition, professional YouTube thumbnail design, high impact visual`;
 
     const image = await openai.images.generate({
       model: 'gpt-image-1',
@@ -990,15 +1002,32 @@ app.post('/api/thumbnail/generate', async (req, res) => {
 
     const b64 = image.data[0].b64_json;
     const buffer = Buffer.from(b64, 'base64');
+    const rawFile = `thumbnail_raw_${Date.now()}.png`;
+    const rawPath = path.join(OUTPUT_DIR, 'thumbnails', rawFile);
+    fs.writeFileSync(rawPath, buffer);
+
     const filename = `thumbnail_${Date.now()}.png`;
     const filepath = path.join(OUTPUT_DIR, 'thumbnails', filename);
-    fs.writeFileSync(filepath, buffer);
+    await new Promise((resolve, reject) => {
+      execFile('ffmpeg', [
+        '-i', rawPath,
+        '-vf', 'crop=ih*16/9:ih,scale=1280:720',
+        '-y', filepath
+      ], { timeout: 30000 }, (error) => {
+        if (error) {
+          fs.copyFileSync(rawPath, filepath);
+          resolve();
+        } else resolve();
+      });
+    });
+    try { fs.unlinkSync(rawPath); } catch(e) {}
 
     res.json({
       success: true,
       imageUrl: `/output/thumbnails/${filename}`,
       filename,
-      hookText
+      hookText,
+      subText: subText || ''
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
