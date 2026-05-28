@@ -591,7 +591,20 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         <div class="fg"><label class="fl">🎯 영상 주제 직접 입력</label>
           <input type="text" class="fi" id="directTopic" placeholder="예: 베트남 전쟁 속 병사들의 고독과 연대" oninput="S.topic=this.value">
           <div class="fh">직접 입력 후 '다음 단계' 클릭, 또는 아래에서 인기 주제를 선택하세요</div></div>
-        <button class="b bp" onclick="if(S.topic){markOk('topic');go('plan')}else{toast('주제를 입력하세요','err')}">→ 다음 단계 (대본 기획)</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="b bp" onclick="if(S.topic){saveRecentTopic(S.topic);markOk('topic');go('plan')}else{toast('주제를 입력하세요','err')}">→ 다음 단계 (대본 기획)</button>
+          <button class="b bok" onclick="if(S.topic){saveRecentTopic(S.topic);document.getElementById('autoTopic').value=S.topic;go('auto');toast('자동 제작으로 이동')}else{toast('주제를 입력하세요','err')}">🚀 이 주제로 자동 제작</button>
+        </div>
+        <div id="recentTopicsArea" style="display:none;margin-top:12px">
+          <div class="cd-s" style="margin-bottom:6px">🕐 최근 사용한 주제</div>
+          <div id="recentTopics" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+        </div>
+        <div class="divider"></div>
+        <div class="cd-t" style="margin-bottom:6px">📺 YouTube 실시간 트렌드</div>
+        <div class="cd-s" style="margin-bottom:10px">현재 인기 급상승 영상에서 주제 아이디어를 얻으세요</div>
+        <div id="ytTrendArea" style="margin-bottom:14px">
+          <button class="b bs" id="trendBtn" onclick="loadYtTrends()">📡 트렌드 불러오기</button>
+        </div>
         <div class="divider"></div>
         <div class="cd-t" style="margin-bottom:10px">🔥 인기 주제 추천</div>
         <div class="cd-s" style="margin-bottom:12px">카테고리별 트렌드 주제를 클릭하면 자동 입력됩니다</div>
@@ -940,6 +953,47 @@ const PREREQS = {plan:['topic'],script:['plan'],image:['script'],tts:['script'],
 // === Nav ===
 function toggleSb(){document.querySelector('.sb').classList.toggle('open');document.getElementById('sbOverlay').classList.toggle('open')}
 function closeSb(){document.querySelector('.sb').classList.remove('open');document.getElementById('sbOverlay').classList.remove('open')}
+const RECENT_KEY='yt-recent-topics';
+function saveRecentTopic(t){
+  if(!t)return;
+  let list=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]');
+  list=list.filter(x=>x!==t);
+  list.unshift(t);
+  if(list.length>5)list=list.slice(0,5);
+  localStorage.setItem(RECENT_KEY,JSON.stringify(list));
+  renderRecentTopics();
+}
+function renderRecentTopics(){
+  const list=JSON.parse(localStorage.getItem(RECENT_KEY)||'[]');
+  const area=document.getElementById('recentTopicsArea');
+  const el=document.getElementById('recentTopics');
+  if(!list.length){area.style.display='none';return}
+  area.style.display='block';
+  el.innerHTML=list.map(t=>`<button class="b bs" style="font-size:10px" onclick="document.getElementById('directTopic').value='${t.replace(/'/g,"\\'")}';S.topic='${t.replace(/'/g,"\\'")}';toast('주제 선택됨')">${t}</button>`).join('');
+}
+async function loadYtTrends(){
+  const btn=document.getElementById('trendBtn');
+  btn.innerHTML='<span class="sp"></span> 불러오는 중...';btn.disabled=true;
+  try{
+    const d=await fetch('/api/youtube/trending').then(r=>r.json());
+    if(!d.success)throw new Error(d.error);
+    const area=document.getElementById('ytTrendArea');
+    area.innerHTML=`<div class="g2">${d.trends.map(t=>{
+      const vk=t.views>=10000?(t.views/10000).toFixed(0)+'만':t.views.toLocaleString();
+      return `<div class="pop-card" onclick="document.getElementById('directTopic').value='${t.title.replace(/'/g,"\\'")}';S.topic='${t.title.replace(/'/g,"\\'")}';this.classList.add('selected');toast('주제 선택됨')">
+        <div style="display:flex;gap:8px;align-items:center">
+          ${t.thumbnail?`<img src="${t.thumbnail}" style="width:80px;height:45px;object-fit:cover;border-radius:4px;flex-shrink:0">`:''}
+          <div>
+            <h4 style="font-size:11px;line-height:1.3;margin-bottom:2px">${t.title}</h4>
+            <div class="pop-card-meta"><span>📺 ${t.channel}</span><span>👁️ ${vk}</span></div>
+          </div>
+        </div>
+      </div>`}).join('')}</div>`;
+  }catch(e){
+    document.getElementById('ytTrendArea').innerHTML=`<div class="alert alert-warn">트렌드 로드 실패: ${e.message} <button class="b bs" onclick="loadYtTrends()" style="font-size:10px;margin-left:8px">재시도</button></div>`;
+  }
+}
+
 const POPULAR_TOPICS=[
 {cat:'history',icon:'🏛️',title:'로마 제국 멸망의 숨겨진 진실',desc:'역사학자들이 새롭게 밝힌 로마 붕괴의 7가지 내부 요인',views:'100만+',diff:'중'},
 {cat:'history',icon:'⚔️',title:'조선시대 암살 조직의 비밀',desc:'조선왕조실록에 기록된 비밀 첩보 조직과 암살 작전',views:'80만+',diff:'중'},
@@ -978,6 +1032,7 @@ function selectPopular(idx){
   S.topic=t.title;
   document.querySelectorAll('.pop-card').forEach(c=>c.classList.remove('selected'));
   event.currentTarget.classList.add('selected');
+  saveRecentTopic(t.title);
   toast('주제 선택: '+t.title);
 }
 
@@ -1986,6 +2041,7 @@ async function init(){
   checkYtStatus();
   updateNav();
   showPopular('all',document.querySelector('.pop-cat'));
+  renderRecentTopics();
 }
 init();
 </script>

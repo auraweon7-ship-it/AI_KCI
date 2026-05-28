@@ -96,6 +96,34 @@ app.get('/api/health', (req, res) => {
 });
 
 // ========================
+// 0. YouTube 트렌드
+// ========================
+app.get('/api/youtube/trending', async (req, res) => {
+  try {
+    const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
+
+    const response = await youtube.videos.list({
+      part: 'snippet,statistics',
+      chart: 'mostPopular',
+      regionCode: 'KR',
+      maxResults: 12
+    });
+
+    const trends = response.data.items.map(v => ({
+      title: v.snippet.title,
+      channel: v.snippet.channelTitle,
+      views: parseInt(v.statistics.viewCount || 0),
+      category: v.snippet.categoryId,
+      thumbnail: v.snippet.thumbnails?.medium?.url
+    }));
+
+    res.json({ success: true, trends });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ========================
 // 1. 주제 추천 (Claude)
 // ========================
 app.post('/api/topics/suggest', async (req, res) => {
