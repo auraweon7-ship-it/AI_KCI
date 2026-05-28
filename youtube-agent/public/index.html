@@ -282,6 +282,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
 .bgm-drop{border:2px dashed var(--bd);border-radius:var(--r);padding:24px;text-align:center;cursor:pointer;transition:all .2s;color:var(--t3);font-size:11px}
 .bgm-drop:hover,.bgm-drop.dragover{border-color:var(--acc);color:var(--acc);background:var(--accd)}
 
+.pop-cat.act{background:var(--acc);color:#fff;border-color:var(--acc)}
+.pop-card{background:var(--bg2);border:1px solid var(--bd);border-radius:var(--rs);padding:12px;cursor:pointer;transition:all .2s}
+.pop-card:hover{border-color:var(--acc);transform:translateY(-1px)}
+.pop-card.selected{border-color:var(--acc);background:var(--accd)}
+.pop-card-cat{font-size:8px;text-transform:uppercase;letter-spacing:1px;color:var(--acc);font-weight:600;margin-bottom:4px}
+.pop-card h4{font-size:12px;font-weight:600;margin-bottom:3px;line-height:1.4}
+.pop-card p{font-size:10px;color:var(--t2);line-height:1.4}
+.pop-card-meta{display:flex;gap:6px;margin-top:6px;font-size:9px;color:var(--t3)}
+
 /* Hamburger */
 .ham{display:none;background:none;border:none;color:var(--t1);font-size:22px;cursor:pointer;padding:4px 8px;margin-right:8px;line-height:1}
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
@@ -581,8 +590,21 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         <div class="cd-h"><div><div class="cd-t">💡 주제 선정</div><div class="cd-s">직접 입력하거나 AI 추천을 받으세요</div></div></div>
         <div class="fg"><label class="fl">🎯 영상 주제 직접 입력</label>
           <input type="text" class="fi" id="directTopic" placeholder="예: 베트남 전쟁 속 병사들의 고독과 연대" oninput="S.topic=this.value">
-          <div class="fh">직접 입력 후 '다음 단계' 클릭, 또는 아래에서 AI 추천을 받으세요</div></div>
+          <div class="fh">직접 입력 후 '다음 단계' 클릭, 또는 아래에서 인기 주제를 선택하세요</div></div>
         <button class="b bp" onclick="if(S.topic){markOk('topic');go('plan')}else{toast('주제를 입력하세요','err')}">→ 다음 단계 (대본 기획)</button>
+        <div class="divider"></div>
+        <div class="cd-t" style="margin-bottom:10px">🔥 인기 주제 추천</div>
+        <div class="cd-s" style="margin-bottom:12px">카테고리별 트렌드 주제를 클릭하면 자동 입력됩니다</div>
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:12px">
+          <button class="b bs pop-cat act" onclick="showPopular('all',this)">전체</button>
+          <button class="b bs pop-cat" onclick="showPopular('history',this)">🏛️ 역사</button>
+          <button class="b bs pop-cat" onclick="showPopular('science',this)">🔬 과학</button>
+          <button class="b bs pop-cat" onclick="showPopular('mystery',this)">🔮 미스터리</button>
+          <button class="b bs pop-cat" onclick="showPopular('economy',this)">💰 경제</button>
+          <button class="b bs pop-cat" onclick="showPopular('psychology',this)">🧠 심리</button>
+          <button class="b bs pop-cat" onclick="showPopular('nature',this)">🌿 자연</button>
+        </div>
+        <div class="g2" id="popularGrid"></div>
         <div class="divider"></div>
         <div class="cd-t" style="margin-bottom:12px">🤖 AI 주제 추천</div>
         <div class="fr">
@@ -918,6 +940,47 @@ const PREREQS = {plan:['topic'],script:['plan'],image:['script'],tts:['script'],
 // === Nav ===
 function toggleSb(){document.querySelector('.sb').classList.toggle('open');document.getElementById('sbOverlay').classList.toggle('open')}
 function closeSb(){document.querySelector('.sb').classList.remove('open');document.getElementById('sbOverlay').classList.remove('open')}
+const POPULAR_TOPICS=[
+{cat:'history',icon:'🏛️',title:'로마 제국 멸망의 숨겨진 진실',desc:'역사학자들이 새롭게 밝힌 로마 붕괴의 7가지 내부 요인',views:'100만+',diff:'중'},
+{cat:'history',icon:'⚔️',title:'조선시대 암살 조직의 비밀',desc:'조선왕조실록에 기록된 비밀 첩보 조직과 암살 작전',views:'80만+',diff:'중'},
+{cat:'history',icon:'🏯',title:'일본 전국시대 최강의 사무라이',desc:'전국 3영걸과 그들을 둘러싼 권력 암투의 전말',views:'120만+',diff:'하'},
+{cat:'science',icon:'🧬',title:'인간 수명 150세 시대가 온다',desc:'텔로미어 연구와 노화 역전 기술의 최신 돌파구',views:'200만+',diff:'상'},
+{cat:'science',icon:'🚀',title:'화성 이주 프로젝트의 현실',desc:'SpaceX 스타십과 NASA의 화성 거주지 건설 계획',views:'150만+',diff:'중'},
+{cat:'science',icon:'🤖',title:'AI가 인간을 대체하는 직업 TOP 10',desc:'2025년 기준 AI 자동화로 사라지는 일자리와 생존 전략',views:'300만+',diff:'하'},
+{cat:'mystery',icon:'👻',title:'세계 7대 미제 사건의 새로운 단서',desc:'과학 수사 기술로 재조명되는 풀리지 않은 사건들',views:'250만+',diff:'중'},
+{cat:'mystery',icon:'🛸',title:'정부가 숨기는 UFO 기밀 파일',desc:'미 국방부 공식 해제 문서로 본 UAP 목격 사례 분석',views:'180만+',diff:'하'},
+{cat:'mystery',icon:'🏚️',title:'전 세계 폐허가 된 도시들의 비밀',desc:'체르노빌부터 해저 도시까지, 버려진 도시의 충격적 이유',views:'90만+',diff:'중'},
+{cat:'economy',icon:'📈',title:'2025 부동산 대폭락 시나리오',desc:'인구 감소와 금리 변동이 만드는 부동산 시장의 미래',views:'400만+',diff:'중'},
+{cat:'economy',icon:'💎',title:'워렌 버핏의 투자 비밀 7가지',desc:'90세 투자의 신이 절대 공개하지 않는 핵심 원칙',views:'200만+',diff:'하'},
+{cat:'economy',icon:'🪙',title:'비트코인 1억 시대, 지금 사도 될까?',desc:'온체인 데이터와 반감기 사이클로 분석하는 암호화폐 전망',views:'350만+',diff:'중'},
+{cat:'psychology',icon:'🧠',title:'무의식이 지배하는 당신의 선택',desc:'행동경제학으로 밝혀진 인간의 비합리적 의사결정 패턴',views:'120만+',diff:'중'},
+{cat:'psychology',icon:'😈',title:'사이코패스를 구별하는 7가지 신호',desc:'FBI 프로파일러가 공개하는 반사회적 인격의 숨겨진 징후',views:'500만+',diff:'하'},
+{cat:'psychology',icon:'💤',title:'꿈이 알려주는 당신의 깊은 욕망',desc:'프로이트와 융의 꿈 해석 이론으로 읽는 무의식 메시지',views:'80만+',diff:'중'},
+{cat:'nature',icon:'🦈',title:'심해 1만m에서 발견된 미지의 생물',desc:'마리아나 해구 탐사에서 촬영된 충격적인 심해 생명체',views:'300만+',diff:'하'},
+{cat:'nature',icon:'🌋',title:'지구 최대 규모 화산 폭발이 임박했다',desc:'옐로스톤 슈퍼볼케이노의 최신 관측 데이터와 시뮬레이션',views:'250만+',diff:'중'},
+{cat:'nature',icon:'🐺',title:'늑대가 강의 흐름을 바꾸다',desc:'옐로스톤 늑대 재도입이 만든 놀라운 생태계 연쇄 반응',views:'150만+',diff:'하'}
+];
+function showPopular(cat,btn){
+  document.querySelectorAll('.pop-cat').forEach(b=>b.classList.remove('act'));
+  if(btn)btn.classList.add('act');
+  const filtered=cat==='all'?POPULAR_TOPICS:POPULAR_TOPICS.filter(t=>t.cat===cat);
+  const grid=document.getElementById('popularGrid');
+  grid.innerHTML=filtered.map((t,i)=>`<div class="pop-card" onclick="selectPopular(${cat==='all'?POPULAR_TOPICS.indexOf(t):POPULAR_TOPICS.indexOf(t)})">
+    <div class="pop-card-cat">${t.icon} ${t.cat}</div>
+    <h4>${t.title}</h4>
+    <p>${t.desc}</p>
+    <div class="pop-card-meta"><span>👁️ ${t.views}</span><span>📊 난이도: ${t.diff}</span></div>
+  </div>`).join('');
+}
+function selectPopular(idx){
+  const t=POPULAR_TOPICS[idx];
+  document.getElementById('directTopic').value=t.title;
+  S.topic=t.title;
+  document.querySelectorAll('.pop-card').forEach(c=>c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  toast('주제 선택: '+t.title);
+}
+
 function toggleTheme(){const isLight=document.documentElement.classList.toggle('light');localStorage.setItem('yt-theme',isLight?'light':'dark');document.getElementById('themeBtn').textContent=isLight?'☀️':'🌙'}
 (function(){if(localStorage.getItem('yt-theme')==='light'){document.documentElement.classList.add('light');document.addEventListener('DOMContentLoaded',()=>{document.getElementById('themeBtn').textContent='☀️'})}})()
 
@@ -1922,6 +1985,7 @@ async function init(){
   }catch(e){}
   checkYtStatus();
   updateNav();
+  showPopular('all',document.querySelector('.pop-cat'));
 }
 init();
 </script>
