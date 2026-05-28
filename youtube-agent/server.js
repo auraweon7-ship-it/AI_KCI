@@ -1,8 +1,12 @@
-import 'dotenv/config';
+import dotenv from 'dotenv';
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
+const __filename_init = fileURLToPath(import.meta.url);
+const __dirname_init = path.dirname(__filename_init);
+dotenv.config({ path: path.join(__dirname_init, '.env') });
 import { execFile } from 'child_process';
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
@@ -40,7 +44,11 @@ const oauth2Client = new google.auth.OAuth2(
 
 let youtubeTokens = null;
 const TOKEN_PATH = path.join(__dirname, '.youtube-tokens.json');
-if (fs.existsSync(TOKEN_PATH)) {
+
+if (process.env.YOUTUBE_REFRESH_TOKEN) {
+  youtubeTokens = { refresh_token: process.env.YOUTUBE_REFRESH_TOKEN };
+  oauth2Client.setCredentials(youtubeTokens);
+} else if (fs.existsSync(TOKEN_PATH)) {
   try {
     youtubeTokens = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf-8'));
     oauth2Client.setCredentials(youtubeTokens);
