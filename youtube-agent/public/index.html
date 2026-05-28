@@ -178,6 +178,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
 .feat-tag.api{background:rgba(52,211,153,.15);color:var(--ok)}
 .feat-tag.tool{background:rgba(96,165,250,.15);color:var(--info)}
 
+.sec-header{background:linear-gradient(135deg,var(--bg3) 0%,rgba(255,59,59,.06) 50%,var(--bg3) 100%);border:1px solid var(--bd);border-radius:var(--r);padding:28px 24px;margin-bottom:16px;position:relative;overflow:hidden}
+.sec-header::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--acc),var(--acc2),transparent)}
+.sec-header::after{content:'';position:absolute;bottom:0;right:0;width:200px;height:200px;background:radial-gradient(circle,rgba(255,59,59,.04) 0%,transparent 70%);pointer-events:none}
+.sec-header-top{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.sec-header-ico{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;background:linear-gradient(135deg,var(--accd),rgba(255,107,53,.15));border:1px solid rgba(255,59,59,.2)}
+.sec-header h3{font-size:16px;font-weight:800;letter-spacing:-.3px}
+.sec-header h3 em{font-style:normal;background:linear-gradient(135deg,var(--acc),#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.sec-header p{font-size:11.5px;color:var(--t2);line-height:1.6;max-width:600px}
+.sec-header-tags{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.sec-header-tags span{font-size:9px;padding:3px 10px;border-radius:12px;border:1px solid var(--bd);color:var(--t3);background:var(--bg2)}
+
 .pipe-sec{margin-bottom:24px;max-width:600px;margin-left:auto;margin-right:auto}
 .pipe-title{font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;justify-content:center}
 .pipe-line{position:relative;padding-left:28px}
@@ -292,6 +303,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
   .g3{grid-template-columns:1fr}
   .ig{grid-template-columns:1fr}
   .an-grid{grid-template-columns:repeat(2,1fr)}
+  .sec-header{padding:20px 16px}
+  .sec-header h3{font-size:14px}
+  .sec-header p{font-size:10.5px}
   .cd{padding:14px}
   .out{max-height:350px;font-size:11.5px}
   .out-edit{min-height:150px;max-height:400px;font-size:11.5px}
@@ -386,7 +400,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       </div>
 
       <div id="landFeats">
-        <div class="pipe-title">🎯 핵심 기능</div>
+        <div class="sec-header">
+          <div class="sec-header-top"><div class="sec-header-ico">🎯</div><h3><em>핵심 기능</em> 12가지</h3></div>
+          <p>AI 기획부터 영상 렌더링, YouTube 업로드까지 — 4개 API가 유기적으로 연결된 End-to-End 자동화 파이프라인</p>
+          <div class="sec-header-tags"><span>Claude AI</span><span>DALL-E 3</span><span>ElevenLabs</span><span>FFmpeg</span><span>YouTube API</span></div>
+        </div>
         <div class="feat-grid">
           <div class="feat"><div class="feat-ico">💡</div><h4>AI 주제 추천</h4><p>카테고리·타겟·키워드 기반으로 조회수 높은 주제를 AI가 분석·추천</p><span class="feat-tag ai">Claude AI</span></div>
           <div class="feat"><div class="feat-ico">📋</div><h4>대본 기획</h4><p>영상 구조, 장면 구성, 타임라인을 자동 설계하는 프리프로덕션</p><span class="feat-tag ai">Claude AI</span></div>
@@ -404,7 +422,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       </div>
 
       <div class="pipe-sec">
-        <div class="pipe-title">⚡ 단계별 제작 파이프라인</div>
+        <div class="sec-header">
+          <div class="sec-header-top"><div class="sec-header-ico">⚡</div><h3><em>단계별</em> 제작 파이프라인</h3></div>
+          <p>주제 선정에서 YouTube 업로드까지, 5단계 자동화 워크플로우가 순차적으로 실행됩니다</p>
+        </div>
         <div class="pipe-line">
           <div class="pipe-step"><div class="pipe-dot s1">1</div><div class="pipe-body"><h5>기획 (Pre-Production)</h5><p>주제 선정 → 대본 기획 → 대본 작성<br>Claude AI가 주제 분석, 구조 설계, 나레이션 대본까지 자동 생성</p><div class="pipe-api">Claude API (claude-sonnet-4-20250514)</div></div></div>
           <div class="pipe-step"><div class="pipe-dot s2">2</div><div class="pipe-body"><h5>시각 소재 (Visual Assets)</h5><p>대본의 장면 지시에 따라 DALL-E 3가 고해상도 일러스트를 배치 생성<br>프롬프트 자동 생성 → 개별 검토/수정 → 일괄 또는 개별 이미지 생성</p><div class="pipe-api">DALL-E 3 API (hd, 1792×1024)</div></div></div>
