@@ -22,9 +22,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
 .ni:hover{background:var(--bg4);color:var(--t1)}
 .ni.act{background:var(--accd);color:var(--acc);font-weight:500}
 .ni.act::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:16px;background:var(--acc);border-radius:0 3px 3px 0}
-.ni .n{font-size:8px;background:var(--bg);color:var(--t3);width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-left:auto;font-weight:600}
-.ni.act .n{background:var(--acc);color:#fff}
-.ni.ok .n{background:var(--ok);color:#000}
+.ni .sn{font-size:15px;font-weight:800;min-width:22px;text-align:center;color:var(--t3);opacity:.5;font-family:Consolas,monospace;line-height:1}
+.ni.act .sn{color:var(--acc);opacity:1}
+.ni.ok .sn{color:var(--ok);opacity:.8}
+.ni .n{display:none}
 .ni .req{width:6px;height:6px;border-radius:50%;background:var(--warn);margin-left:auto;margin-right:4px;display:none}
 .ni.need .req{display:block}
 
@@ -337,19 +338,19 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     <div class="ni act" data-s="home" onclick="goHome()" style="margin:4px 0 2px;font-weight:600;color:var(--t1)"><span>🏠</span> 홈</div>
     <div class="ni" data-s="auto" onclick="go('auto')" style="margin:2px 0 4px;background:linear-gradient(135deg,rgba(255,59,59,.08),rgba(255,107,53,.08));border:1px solid rgba(255,59,59,.15);border-radius:var(--rs)"><span>🤖</span> <strong>자동 제작</strong></div>
     <div class="sb-lbl">📝 기획</div>
-    <div class="ni" data-s="topic" onclick="go('topic')"><span>💡</span> 주제 선정 <span class="n">1</span></div>
-    <div class="ni" data-s="plan" onclick="go('plan')"><span>📋</span> 대본 기획 <span class="req"></span><span class="n">2</span></div>
-    <div class="ni" data-s="script" onclick="go('script')"><span>✍️</span> 대본 작성 <span class="req"></span><span class="n">3</span></div>
+    <div class="ni" data-s="topic" onclick="go('topic')"><span class="sn">1</span><span>💡</span> 주제 선정 <span class="req"></span></div>
+    <div class="ni" data-s="plan" onclick="go('plan')"><span class="sn">2</span><span>📋</span> 대본 기획 <span class="req"></span></div>
+    <div class="ni" data-s="script" onclick="go('script')"><span class="sn">3</span><span>✍️</span> 대본 작성 <span class="req"></span></div>
     <div class="sb-lbl">🎬 제작</div>
-    <div class="ni" data-s="image" onclick="go('image')"><span>🎨</span> 이미지 생성 <span class="req"></span><span class="n">4</span></div>
-    <div class="ni" data-s="tts" onclick="go('tts')"><span>🎙️</span> TTS 음성 <span class="req"></span><span class="n">5</span></div>
-    <div class="ni" data-s="render" onclick="go('render')"><span>🎬</span> 영상 합성 <span class="req"></span><span class="n">6</span></div>
+    <div class="ni" data-s="image" onclick="go('image')"><span class="sn">4</span><span>🎨</span> 이미지 생성 <span class="req"></span></div>
+    <div class="ni" data-s="tts" onclick="go('tts')"><span class="sn">5</span><span>🎙️</span> TTS 음성 <span class="req"></span></div>
+    <div class="ni" data-s="render" onclick="go('render')"><span class="sn">6</span><span>🎬</span> 영상 합성 <span class="req"></span></div>
     <div class="sb-lbl">📢 퍼블리싱</div>
-    <div class="ni" data-s="meta" onclick="go('meta')"><span>🏷️</span> 제목/설명 <span class="req"></span><span class="n">7</span></div>
-    <div class="ni" data-s="thumb" onclick="go('thumb')"><span>🖼️</span> 썸네일 <span class="n">8</span></div>
+    <div class="ni" data-s="meta" onclick="go('meta')"><span class="sn">7</span><span>🏷️</span> 제목/설명 <span class="req"></span></div>
+    <div class="ni" data-s="thumb" onclick="go('thumb')"><span class="sn">8</span><span>🖼️</span> 썸네일</div>
     <div class="sb-lbl">🔧 확장</div>
-    <div class="ni" data-s="shorts" onclick="go('shorts')"><span>📱</span> 쇼츠 <span class="req"></span><span class="n">9</span></div>
-    <div class="ni" data-s="intro" onclick="go('intro')"><span>🚀</span> 인트로 <span class="n">10</span></div>
+    <div class="ni" data-s="shorts" onclick="go('shorts')"><span class="sn">9</span><span>📱</span> 쇼츠 <span class="req"></span></div>
+    <div class="ni" data-s="intro" onclick="go('intro')"><span class="sn">10</span><span>🚀</span> 인트로</div>
     <div class="sb-lbl">✂️ 편집</div>
     <div class="ni" data-s="timeline" onclick="go('timeline')"><span>🎞️</span> 타임라인</div>
     <div class="ni" data-s="srt" onclick="go('srt')"><span>📝</span> SRT 자막</div>
