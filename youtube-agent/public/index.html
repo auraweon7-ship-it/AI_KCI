@@ -7,6 +7,12 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap');
 :root{--bg:#0f0f13;--bg2:#16161d;--bg3:#1c1c26;--bg4:#22222e;--bgi:#12121a;--acc:#ff3b3b;--acc2:#ff5252;--accd:rgba(255,59,59,.15);--t1:#f0f0f5;--t2:#9898a8;--t3:#5e5e70;--bd:#2a2a38;--ok:#34d399;--warn:#fbbf24;--info:#60a5fa;--r:12px;--rs:8px}
+html.light{--bg:#f5f5f7;--bg2:#ffffff;--bg3:#f0f0f3;--bg4:#e8e8ed;--bgi:#fafafa;--t1:#1a1a2e;--t2:#5a5a72;--t3:#9898a8;--bd:#d8d8e0;--accd:rgba(255,59,59,.1)}
+html.light ::-webkit-scrollbar-thumb{background:#ccc}
+html.light .hero h2{background:linear-gradient(135deg,#1a1a2e,#333);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+html.light .spec-val{background:linear-gradient(135deg,var(--acc),#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+html.light .fs option{background:var(--bg2)}
+html.light .sec-header{background:linear-gradient(135deg,var(--bg3) 0%,rgba(255,59,59,.04) 50%,var(--bg3) 100%)}
 *{margin:0;padding:0;box-sizing:border-box}
 body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;display:flex}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-thumb{background:var(--bd);border-radius:3px}
@@ -373,6 +379,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     <button class="ham" onclick="toggleSb()">☰</button>
     <div class="top-t" id="topT">🏠 YouTube 롱폼 제작 에이전트</div>
     <div class="top-a">
+      <button class="b bs" id="themeBtn" onclick="toggleTheme()" title="다크/라이트 모드">🌙</button>
       <button class="b bs" onclick="viewFiles()">📂 파일</button>
       <button class="b bs" onclick="cleanFiles()">🗑️ 초기화</button>
       <button class="b bs" onclick="exportAll()">📥 내보내기</button>
@@ -911,6 +918,8 @@ const PREREQS = {plan:['topic'],script:['plan'],image:['script'],tts:['script'],
 // === Nav ===
 function toggleSb(){document.querySelector('.sb').classList.toggle('open');document.getElementById('sbOverlay').classList.toggle('open')}
 function closeSb(){document.querySelector('.sb').classList.remove('open');document.getElementById('sbOverlay').classList.remove('open')}
+function toggleTheme(){const isLight=document.documentElement.classList.toggle('light');localStorage.setItem('yt-theme',isLight?'light':'dark');document.getElementById('themeBtn').textContent=isLight?'☀️':'🌙'}
+(function(){if(localStorage.getItem('yt-theme')==='light'){document.documentElement.classList.add('light');document.addEventListener('DOMContentLoaded',()=>{document.getElementById('themeBtn').textContent='☀️'})}})()
 
 function goHome() {
   closeSb();
