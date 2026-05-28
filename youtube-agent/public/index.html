@@ -612,10 +612,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
           <button class="b bs pop-cat act" onclick="showPopular('all',this)">전체</button>
           <button class="b bs pop-cat" onclick="showPopular('history',this)">🏛️ 역사</button>
           <button class="b bs pop-cat" onclick="showPopular('science',this)">🔬 과학</button>
+          <button class="b bs pop-cat" onclick="showPopular('ai',this)">🤖 AI</button>
           <button class="b bs pop-cat" onclick="showPopular('mystery',this)">🔮 미스터리</button>
           <button class="b bs pop-cat" onclick="showPopular('economy',this)">💰 경제</button>
           <button class="b bs pop-cat" onclick="showPopular('psychology',this)">🧠 심리</button>
           <button class="b bs pop-cat" onclick="showPopular('nature',this)">🌿 자연</button>
+          <button class="b bs pop-cat" onclick="showPopular('crime',this)">🔍 범죄</button>
+          <button class="b bs pop-cat" onclick="showPopular('culture',this)">🌍 문화</button>
+          <button class="b bs pop-cat" onclick="showPopular('philosophy',this)">📖 철학</button>
+          <button class="b bs pop-cat" onclick="showPopular('health',this)">💪 건강</button>
         </div>
         <div class="g2" id="popularGrid"></div>
         <div class="divider"></div>
@@ -1012,15 +1017,30 @@ const POPULAR_TOPICS=[
 {cat:'psychology',icon:'💤',title:'꿈이 알려주는 당신의 깊은 욕망',desc:'프로이트와 융의 꿈 해석 이론으로 읽는 무의식 메시지',views:'80만+',diff:'중'},
 {cat:'nature',icon:'🦈',title:'심해 1만m에서 발견된 미지의 생물',desc:'마리아나 해구 탐사에서 촬영된 충격적인 심해 생명체',views:'300만+',diff:'하'},
 {cat:'nature',icon:'🌋',title:'지구 최대 규모 화산 폭발이 임박했다',desc:'옐로스톤 슈퍼볼케이노의 최신 관측 데이터와 시뮬레이션',views:'250만+',diff:'중'},
-{cat:'nature',icon:'🐺',title:'늑대가 강의 흐름을 바꾸다',desc:'옐로스톤 늑대 재도입이 만든 놀라운 생태계 연쇄 반응',views:'150만+',diff:'하'}
+{cat:'nature',icon:'🐺',title:'늑대가 강의 흐름을 바꾸다',desc:'옐로스톤 늑대 재도입이 만든 놀라운 생태계 연쇄 반응',views:'150만+',diff:'하'},
+{cat:'ai',icon:'🤖',title:'GPT-5가 바꿀 세상, 준비됐나?',desc:'차세대 AI 모델이 가져올 산업 혁명과 일자리 변화 전망',views:'500만+',diff:'하'},
+{cat:'ai',icon:'🧠',title:'AI가 작곡한 음악, 인간을 넘었다',desc:'Suno, Udio 등 AI 음악 생성 기술의 현재와 미래',views:'200만+',diff:'중'},
+{cat:'ai',icon:'🎨',title:'AI 그림 vs 인간 화가, 누가 이길까',desc:'Midjourney, DALL-E 등 이미지 생성 AI의 예술적 한계와 가능성',views:'300만+',diff:'하'},
+{cat:'crime',icon:'🔪',title:'한국 미제 사건 TOP 5의 새로운 단서',desc:'최신 과학수사 기법으로 재조명되는 한국의 미해결 사건들',views:'400만+',diff:'중'},
+{cat:'crime',icon:'🕵️',title:'역사상 가장 완벽한 범죄 계획',desc:'FBI도 감탄한 세계적 범죄 천재들의 놀라운 수법 분석',views:'350만+',diff:'하'},
+{cat:'crime',icon:'⚖️',title:'무죄 판결 뒤집힌 충격 사건들',desc:'DNA 재감정으로 밝혀진 억울한 수감자들의 진실',views:'180만+',diff:'중'},
+{cat:'culture',icon:'🌍',title:'세계에서 가장 이상한 축제 TOP 10',desc:'토마토 전쟁부터 시체 세탁 의식까지, 충격적인 문화 체험',views:'250만+',diff:'하'},
+{cat:'culture',icon:'🍜',title:'한국 음식이 세계를 정복한 비밀',desc:'김치, 불고기를 넘어 K-푸드가 글로벌 트렌드가 된 이유',views:'200만+',diff:'하'},
+{cat:'culture',icon:'🏯',title:'일본 vs 한국, 문화 전쟁의 진실',desc:'역사적 갈등부터 현대 문화 경쟁까지 객관적 분석',views:'500만+',diff:'중'},
+{cat:'philosophy',icon:'📖',title:'니체가 예언한 현대 사회의 몰락',desc:'초인 사상과 허무주의로 읽는 21세기 인류의 위기',views:'150만+',diff:'상'},
+{cat:'philosophy',icon:'🤔',title:'우리는 시뮬레이션 속에 살고 있다?',desc:'일론 머스크도 믿는 시뮬레이션 가설의 과학적 근거',views:'300만+',diff:'중'},
+{cat:'philosophy',icon:'⏳',title:'시간은 정말 존재하는가',desc:'아인슈타인부터 양자역학까지, 시간의 본질에 대한 철학적 탐구',views:'120만+',diff:'상'},
+{cat:'health',icon:'💪',title:'하루 5분으로 10년 젊어지는 운동법',desc:'하버드 의대 연구진이 발표한 노화 역전 운동 프로토콜',views:'600만+',diff:'하'},
+{cat:'health',icon:'🧘',title:'명상이 뇌를 물리적으로 바꾼다',desc:'fMRI로 증명된 명상의 신경과학적 효과와 실전 가이드',views:'200만+',diff:'중'},
+{cat:'health',icon:'🥗',title:'간헐적 단식의 숨겨진 위험성',desc:'16:8 다이어트의 과학적 진실과 주의해야 할 부작용',views:'400만+',diff:'하'}
 ];
 function showPopular(cat,btn){
   document.querySelectorAll('.pop-cat').forEach(b=>b.classList.remove('act'));
   if(btn)btn.classList.add('act');
   const filtered=cat==='all'?POPULAR_TOPICS:POPULAR_TOPICS.filter(t=>t.cat===cat);
   const grid=document.getElementById('popularGrid');
-  grid.innerHTML=filtered.map((t,i)=>`<div class="pop-card" onclick="selectPopular(${cat==='all'?POPULAR_TOPICS.indexOf(t):POPULAR_TOPICS.indexOf(t)})">
-    <div class="pop-card-cat">${t.icon} ${t.cat}</div>
+  grid.innerHTML=filtered.map((t,i)=>`<div class="pop-card" onclick="selectPopular(${POPULAR_TOPICS.indexOf(t)})">
+    <div class="pop-card-cat">${t.icon} ${t.cat}${t.ai?' <span style="background:#ff4040;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;margin-left:4px">AI</span>':''}</div>
     <h4>${t.title}</h4>
     <p>${t.desc}</p>
     <div class="pop-card-meta"><span>👁️ ${t.views}</span><span>📊 난이도: ${t.diff}</span></div>
@@ -1124,16 +1144,21 @@ function save(){try{localStorage.setItem('yt_agent',JSON.stringify({topic:S.topi
 function load(){try{const d=JSON.parse(localStorage.getItem('yt_agent')||'{}');if(d.topic){S.topic=d.topic;S.target=d.target||'';S.plan=d.plan||'';S.script=d.script||'';S.meta=d.meta||{};(d.done||[]).forEach(s=>S.done.add(s));document.getElementById('directTopic').value=S.topic;updateNav()}}catch(e){}}
 
 // === 1. 주제 추천 ===
+const CAT_ICONS={history:'🏛️',science:'🔬',ai:'🤖',mystery:'🔮',economy:'💰',psychology:'🧠',nature:'🌿',crime:'🔍',culture:'🌍',philosophy:'📖',health:'💪',general:'💡'};
+const CAT_KEYS=Object.keys(CAT_ICONS);
 async function doTopics(){
-  loading('topBtn',true,'Claude AI 분석 중...');
+  const aiBtn=document.querySelector('[onclick="doTopics()"]');
+  if(aiBtn){aiBtn.disabled=true;aiBtn.textContent='⏳ 생성 중...';}
   try{
-    const d=await api('/api/topics/suggest',{category:document.getElementById('topCat').value,target:document.getElementById('topTar').value,keyword:document.getElementById('topKw').value});
-    let h='<div class="g2">';
-    d.topics.forEach(t=>{h+=`<div class="tc" onclick="pickTopic('${t.title.replace(/'/g,"\\'")}')"><div class="tc-cat">${esc(t.category)}</div><h3>${esc(t.title)}</h3><p>${esc(t.description)}</p><div class="tc-m"><span>👁️ ${t.estimatedViews}</span><span>📊 ${t.difficulty}</span></div></div>`});
-    h+='</div>';
-    document.getElementById('topOut').innerHTML=h;
+    const d=await api('/api/topics/suggest',{category:document.getElementById('topCat').value,target:document.getElementById('topTar').value,keyword:document.getElementById('topKw').value,categories:CAT_KEYS.join(',')});
+    d.topics.forEach(t=>{
+      const cat=CAT_KEYS.includes(t.category)?t.category:'general';
+      POPULAR_TOPICS.push({cat,icon:CAT_ICONS[cat]||'💡',title:t.title,desc:t.description,views:t.estimatedViews||'AI추천',diff:t.difficulty||'중',ai:true});
+    });
+    showPopular('all',document.querySelector('.pop-cat'));
+    toast(`AI 주제 ${d.topics.length}개 추가됨`);
   }catch(e){toast(e.message,'err')}
-  loading('topBtn',false);
+  if(aiBtn){aiBtn.disabled=false;aiBtn.textContent='✨ AI 생성';}
 }
 
 function pickTopic(t){S.topic=t;document.getElementById('directTopic').value=t;markOk('topic');save();go('plan')}

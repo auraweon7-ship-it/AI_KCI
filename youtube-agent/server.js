@@ -128,23 +128,26 @@ app.get('/api/youtube/trending', async (req, res) => {
 // ========================
 app.post('/api/topics/suggest', async (req, res) => {
   try {
-    const { category, target, keyword } = req.body;
+    const { category, target, keyword, categories } = req.body;
+    const catList = categories || 'history,science,ai,mystery,economy,psychology,nature,crime,culture,philosophy,health';
 
     const prompt = `당신은 100만 구독자를 보유한 전문 유튜브 채널 기획자입니다.
 
 다음 조건에 맞는 유튜브 롱폼 영상 주제 6개를 추천해주세요:
-- 카테고리: ${category || '자유'}
+- 카테고리: ${category || '자유 (다양한 카테고리에서 골고루)'}
 - 타겟 시청자: ${target || '전 연령'}
 ${keyword ? `- 관련 키워드: ${keyword}` : ''}
+
+category 필드는 반드시 다음 중 하나를 사용하세요: ${catList}
 
 각 주제마다 다음 JSON 형식으로 작성해주세요:
 [
   {
-    "title": "영상 제목",
+    "title": "영상 제목 (클릭을 유도하는 매력적인 제목)",
     "description": "2줄 설명",
     "estimatedViews": "예상 조회수 (예: 50만+)",
     "difficulty": "하/중/상",
-    "category": "${category || 'general'}",
+    "category": "위 카테고리 목록 중 하나",
     "keywords": ["키워드1", "키워드2", "키워드3"]
   }
 ]
