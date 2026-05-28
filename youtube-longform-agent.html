@@ -1,0 +1,2449 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube 롱폼 제작 에이전트</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap');
+
+:root {
+  --bg-primary: #0f0f13;
+  --bg-secondary: #16161d;
+  --bg-card: #1c1c26;
+  --bg-hover: #22222e;
+  --bg-input: #12121a;
+  --accent: #ff3b3b;
+  --accent-hover: #ff5252;
+  --accent-dim: rgba(255,59,59,0.15);
+  --text-primary: #f0f0f5;
+  --text-secondary: #9898a8;
+  --text-muted: #5e5e70;
+  --border: #2a2a38;
+  --success: #34d399;
+  --warning: #fbbf24;
+  --info: #60a5fa;
+  --gradient-1: linear-gradient(135deg, #ff3b3b 0%, #ff6b35 100%);
+  --gradient-2: linear-gradient(135deg, #7c3aed 0%, #2563eb 100%);
+  --gradient-3: linear-gradient(135deg, #059669 0%, #34d399 100%);
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* Sidebar */
+.sidebar {
+  width: 280px;
+  min-height: 100vh;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  z-index: 100;
+  overflow-y: auto;
+}
+
+.sidebar-header {
+  padding: 24px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo-icon {
+  width: 42px;
+  height: 42px;
+  background: var(--gradient-1);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.logo-text h1 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.logo-text span {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.sidebar-nav {
+  padding: 12px 10px;
+  flex: 1;
+}
+
+.nav-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  padding: 16px 12px 8px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 13.5px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  position: relative;
+}
+
+.nav-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.nav-item.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 20px;
+  background: var(--accent);
+  border-radius: 0 3px 3px 0;
+}
+
+.nav-icon {
+  font-size: 18px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.nav-number {
+  font-size: 10px;
+  background: var(--bg-primary);
+  color: var(--text-muted);
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  font-weight: 600;
+}
+
+.nav-item.active .nav-number {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Workflow progress */
+.sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.workflow-progress {
+  margin-bottom: 8px;
+}
+
+.workflow-progress-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.progress-bar {
+  height: 4px;
+  background: var(--bg-primary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--gradient-1);
+  border-radius: 2px;
+  transition: width 0.5s ease;
+  width: 0%;
+}
+
+/* Main */
+.main {
+  margin-left: 280px;
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top Bar */
+.topbar {
+  height: 60px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  background: var(--bg-secondary);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.topbar-title {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.topbar-title .step-badge {
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.topbar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn {
+  padding: 8px 18px;
+  border-radius: var(--radius-sm);
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+}
+
+.btn-primary:hover { background: var(--accent-hover); }
+
+.btn-secondary {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover { background: var(--border); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.btn-lg {
+  padding: 12px 28px;
+  font-size: 15px;
+}
+
+/* Content */
+.content {
+  padding: 32px;
+  flex: 1;
+  max-width: 1200px;
+}
+
+.section { display: none; }
+.section.active { display: block; }
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.card-title {
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Form */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.form-input, .form-textarea, .form-select {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  outline: none;
+}
+
+.form-input:focus, .form-textarea:focus, .form-select:focus {
+  border-color: var(--accent);
+}
+
+.form-textarea {
+  min-height: 120px;
+  resize: vertical;
+  line-height: 1.7;
+}
+
+.form-select option { background: var(--bg-card); }
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.form-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Tags */
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tag {
+  background: var(--bg-hover);
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+
+.tag:hover, .tag.selected {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Output Area */
+.output-area {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  min-height: 200px;
+  font-size: 14px;
+  line-height: 1.8;
+  white-space: pre-wrap;
+  color: var(--text-primary);
+  position: relative;
+  overflow-y: auto;
+  max-height: 600px;
+}
+
+.output-area.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  min-height: 200px;
+}
+
+.output-toolbar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+/* Scene cards */
+.scene-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.scene-card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.scene-number {
+  background: var(--accent);
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.scene-title {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.scene-content {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.scene-prompt {
+  background: var(--bg-input);
+  border-left: 3px solid var(--info);
+  padding: 10px 14px;
+  margin-top: 10px;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-size: 12px;
+  color: var(--info);
+  font-family: 'Consolas', monospace;
+}
+
+/* Grid layouts */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+/* Stat card */
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+}
+
+.stat-icon { font-size: 28px; margin-bottom: 8px; }
+.stat-value { font-size: 22px; font-weight: 700; }
+.stat-label { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+/* Topic suggestion cards */
+.topic-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.topic-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.topic-card .topic-category {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.topic-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.topic-card p {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.topic-card .topic-meta {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.topic-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Timeline */
+.timeline-item {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.timeline-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.timeline-dot {
+  width: 32px;
+  height: 32px;
+  background: var(--accent-dim);
+  border: 2px solid var(--accent);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.timeline-line {
+  width: 2px;
+  flex: 1;
+  background: var(--border);
+  min-height: 20px;
+}
+
+.timeline-content {
+  flex: 1;
+  padding-bottom: 8px;
+}
+
+.timeline-content h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.timeline-content p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* TTS guide */
+.tts-segment {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+}
+
+.tts-emotion {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.tts-emotion.calm { background: rgba(96,165,250,0.15); color: #60a5fa; }
+.tts-emotion.dramatic { background: rgba(255,59,59,0.15); color: #ff5252; }
+.tts-emotion.warm { background: rgba(251,191,36,0.15); color: #fbbf24; }
+.tts-emotion.serious { background: rgba(139,92,246,0.15); color: #a78bfa; }
+
+.tts-text {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+
+/* Loading */
+.loading-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.generating-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15,15,19,0.85);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  border-radius: var(--radius);
+  z-index: 10;
+}
+
+.generating-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Tab component */
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-input);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 16px;
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+/* Shorts layout */
+.shorts-preview {
+  width: 240px;
+  height: 426px;
+  background: var(--bg-input);
+  border: 2px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+}
+
+.shorts-preview-content {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.shorts-preview-bar {
+  height: 3px;
+  background: var(--accent);
+  border-radius: 2px;
+  margin: 8px 20px 16px;
+}
+
+/* Copy notification */
+.copy-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--success);
+  color: #000;
+  padding: 10px 20px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  transform: translateY(60px);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 999;
+}
+
+.copy-toast.show {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Project data banner */
+.project-banner {
+  background: linear-gradient(135deg, rgba(255,59,59,0.08) 0%, rgba(139,92,246,0.08) 100%);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.project-info .dot {
+  width: 8px;
+  height: 8px;
+  background: var(--success);
+  border-radius: 50%;
+  animation: pulse 2s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.project-info span {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.project-info strong {
+  color: var(--text-primary);
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .sidebar { width: 240px; }
+  .main { margin-left: 240px; }
+  .content { padding: 20px; }
+  .grid-3 { grid-template-columns: 1fr 1fr; }
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+
+/* Checklist */
+.checklist-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.checklist-check {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.checklist-check.done {
+  background: var(--success);
+  border-color: var(--success);
+  color: #000;
+}
+
+/* Word count */
+.word-count {
+  position: absolute;
+  bottom: 8px;
+  right: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-input);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">
+      <div class="logo-icon">YT</div>
+      <div class="logo-text">
+        <h1>YouTube Agent</h1>
+        <span>롱폼 제작 에이전트 v1.0</span>
+      </div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">기획 단계</div>
+    <div class="nav-item active" data-section="topic" onclick="switchSection('topic')">
+      <span class="nav-icon">💡</span> 주제 추천
+      <span class="nav-number">1</span>
+    </div>
+    <div class="nav-item" data-section="plan" onclick="switchSection('plan')">
+      <span class="nav-icon">📋</span> 대본 기획
+      <span class="nav-number">2</span>
+    </div>
+    <div class="nav-item" data-section="script" onclick="switchSection('script')">
+      <span class="nav-icon">✍️</span> 대본 생성
+      <span class="nav-number">3</span>
+    </div>
+
+    <div class="nav-section-label">제작 단계</div>
+    <div class="nav-item" data-section="image" onclick="switchSection('image')">
+      <span class="nav-icon">🎨</span> 이미지 생성
+      <span class="nav-number">4</span>
+    </div>
+    <div class="nav-item" data-section="tts" onclick="switchSection('tts')">
+      <span class="nav-icon">🎙️</span> TTS 생성
+      <span class="nav-number">5</span>
+    </div>
+    <div class="nav-item" data-section="render" onclick="switchSection('render')">
+      <span class="nav-icon">🎬</span> 영상 렌더링
+      <span class="nav-number">6</span>
+    </div>
+
+    <div class="nav-section-label">퍼블리싱</div>
+    <div class="nav-item" data-section="meta" onclick="switchSection('meta')">
+      <span class="nav-icon">🏷️</span> 제목/설명 생성
+      <span class="nav-number">7</span>
+    </div>
+    <div class="nav-item" data-section="thumbnail" onclick="switchSection('thumbnail')">
+      <span class="nav-icon">🖼️</span> 썸네일 생성기
+      <span class="nav-number">8</span>
+    </div>
+
+    <div class="nav-section-label">확장</div>
+    <div class="nav-item" data-section="shorts" onclick="switchSection('shorts')">
+      <span class="nav-icon">📱</span> 쇼츠 생성기
+      <span class="nav-number">9</span>
+    </div>
+    <div class="nav-item" data-section="intro" onclick="switchSection('intro')">
+      <span class="nav-icon">🚀</span> 인트로 생성기
+      <span class="nav-number">10</span>
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="workflow-progress">
+      <div class="workflow-progress-label">
+        <span>워크플로우 진행</span>
+        <span id="progressPercent">0%</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="progressBar"></div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Main Content -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbarTitle">
+      💡 주제 추천 <span class="step-badge">STEP 1/10</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-secondary btn-sm" onclick="exportProject()">📥 프로젝트 내보내기</button>
+      <button class="btn btn-secondary btn-sm" onclick="resetProject()">🔄 초기화</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- 프로젝트 배너 -->
+    <div class="project-banner" id="projectBanner" style="display:none">
+      <div class="project-info">
+        <div class="dot"></div>
+        <span>현재 프로젝트: <strong id="projectName">-</strong></span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="scrollToTop()">설정 변경 →</button>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SECTION 1: 주제 추천 -->
+    <!-- ============================================ -->
+    <div class="section active" id="sec-topic">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">💡 주제 추천 엔진</div>
+            <div class="card-subtitle">트렌드 기반 유튜브 주제를 추천받으세요</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">채널 카테고리</label>
+            <select class="form-select" id="topicCategory">
+              <option value="">카테고리 선택...</option>
+              <option value="history">역사/다큐</option>
+              <option value="science">과학/기술</option>
+              <option value="mystery">미스터리/괴담</option>
+              <option value="economy">경제/재테크</option>
+              <option value="psychology">심리/자기계발</option>
+              <option value="world">세계문화/여행</option>
+              <option value="food">음식/맛집</option>
+              <option value="crime">범죄/사건</option>
+              <option value="philosophy">철학/인문학</option>
+              <option value="nature">자연/동물</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">타겟 시청자</label>
+            <select class="form-select" id="topicTarget">
+              <option value="">타겟 선택...</option>
+              <option value="teen">10대 청소년</option>
+              <option value="young">20~30대 청년</option>
+              <option value="middle">30~40대 직장인</option>
+              <option value="senior">40~60대 중장년</option>
+              <option value="all">전 연령</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">관심 키워드 (선택)</label>
+          <input type="text" class="form-input" id="topicKeyword" placeholder="예: 전쟁, 고대문명, AI, 우주...">
+        </div>
+
+        <button class="btn btn-primary" onclick="generateTopics()">🔍 주제 추천받기</button>
+      </div>
+
+      <div id="topicResults"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SECTION 2: 대본 기획 -->
+    <!-- ============================================ -->
+    <div class="section" id="sec-plan">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">📋 대본 기획</div>
+            <div class="card-subtitle">영상의 구조와 흐름을 설계합니다</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">영상 주제 *</label>
+          <input type="text" class="form-input" id="planTopic" placeholder="예: 베트남 전쟁 속 병사들의 고독과 연대">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">타겟 시청자</label>
+            <input type="text" class="form-input" id="planTarget" placeholder="예: 역사에 관심 많은 중장년층">
+          </div>
+          <div class="form-group">
+            <label class="form-label">영상 길이</label>
+            <select class="form-select" id="planLength">
+              <option value="10">10분 내외</option>
+              <option value="15" selected>15분 내외</option>
+              <option value="20">20분 내외</option>
+              <option value="30">30분 이상</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">영상 톤</label>
+            <select class="form-select" id="planTone">
+              <option value="serious">진지하고 무게감 있는</option>
+              <option value="warm">따뜻하고 감성적인</option>
+              <option value="exciting">긴박하고 흥미진진한</option>
+              <option value="educational">교육적이고 차분한</option>
+              <option value="humorous">유머러스하고 가벼운</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">이미지 스타일</label>
+            <select class="form-select" id="planStyle">
+              <option value="european-animation">유럽풍 애니메이션</option>
+              <option value="realistic">실사화/포토리얼</option>
+              <option value="watercolor">수채화풍</option>
+              <option value="cinematic">시네마틱</option>
+              <option value="manga">만화/일러스트</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">특별 요청 (선택)</label>
+          <textarea class="form-textarea" id="planNotes" rows="3" placeholder="추가 참고사항, 포함해야 할 내용, 주의사항 등..."></textarea>
+        </div>
+
+        <button class="btn btn-primary btn-lg" onclick="generatePlan()">📋 기획안 생성</button>
+      </div>
+
+      <div id="planOutput" style="position:relative"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SECTION 3: 대본 생성 -->
+    <!-- ============================================ -->
+    <div class="section" id="sec-script">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">✍️ 대본 생성</div>
+            <div class="card-subtitle">기획안 기반 전체 대본을 작성합니다 (Fact-Check 포함)</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">기획안 요약 (자동 입력됨)</label>
+          <textarea class="form-textarea" id="scriptPlanSummary" rows="4" placeholder="2단계 '대본 기획'에서 자동으로 채워집니다. 또는 직접 입력하세요."></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">대본 분량</label>
+            <select class="form-select" id="scriptWordCount">
+              <option value="2000">~2,000자 (10분)</option>
+              <option value="3000" selected>~3,000자 (15분)</option>
+              <option value="4500">~4,500자 (20분)</option>
+              <option value="6000">~6,000자 (30분)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">나레이션 스타일</label>
+            <select class="form-select" id="scriptNarration">
+              <option value="narrator">3인칭 나레이터</option>
+              <option value="storyteller">이야기꾼 (구연)</option>
+              <option value="reporter">리포터 스타일</option>
+              <option value="conversational">대화체</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" onclick="generateScript()">✍️ 대본 생성</button>
+      </div>
+
+      <div id="scriptOutput" style="position:relative"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SECTION 4: 이미지 생성 -->
+    <!-- ============================================ -->
+    <div class="section" id="sec-image">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🎨 이미지 생성 프롬프트</div>
+            <div class="card-subtitle">대본 각 장면별 이미지 생성 프롬프트를 작성합니다</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">이미지 스타일</label>
+            <select class="form-select" id="imageStyle">
+              <option value="european-animation">유럽풍 애니메이션</option>
+              <option value="realistic">실사/포토리얼</option>
+              <option value="watercolor">수채화풍</option>
+              <option value="cinematic">시네마틱 컨셉아트</option>
+              <option value="oil-painting">유화풍</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">이미지 비율</label>
+            <select class="form-select" id="imageRatio">
+              <option value="16:9" selected>16:9 (유튜브)</option>
+              <option value="9:16">9:16 (쇼츠)</option>
+              <option value="1:1">1:1 (정사각형)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">장면 수</label>
+          <select class="form-select" id="imageCount">
+            <option value="5">5개 장면</option>
+            <option value="8" selected>8개 장면</option>
+            <option value="10">10개 장면</option>
+            <option value="15">15개 장면</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary btn-lg" onclick="generateImagePrompts()">🎨 이미지 프롬프트 생성</button>
+      </div>
+
+      <div id="imageOutput"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SECTION 5: TTS 생성 -->
+    <!-- ============================================ -->
+    <div class="section" id="sec-tts">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🎙️ TTS 톤 가이드</div>
+            <div class="card-subtitle">대본에 감정/톤 지문을 표기합니다</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">음성 캐릭터</label>
+            <select class="form-select" id="ttsVoice">
+              <option value="elder-male">중후하고 차분한 남성 (어르신)</option>
+              <option value="deep-male">낮고 깊은 남성</option>
+              <option value="warm-female">따뜻한 여성</option>
+              <option value="young-male">젊고 에너지 넘치는 남성</option>
+              <option value="neutral">중성적/뉴스 앵커</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">TTS 엔진</label>
+            <select class="form-select" id="ttsEngine">
+              <option value="elevenlabs">ElevenLabs</option>
+              <option value="google">Google Cloud TTS</option>
+              <option value="typecast">Typecast</option>
+              <option value="naver-clova">NAVER CLOVA</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" onclick="generateTTS()">🎙️ TTS 가이드 생성</button>
+      </div>
+
+      <div id="ttsOutput"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SECTION 6: 영상 렌더링 -->
+    <!-- ============================================ -->
+    <div class="section" id="sec-render">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🎬 영상 렌더링 가이드</div>
+            <div class="card-subtitle">편집 타임라인과 렌더링 설정을 구성합니다</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">편집 도구</label>
+            <select class="form-select" id="renderTool">
+              <option value="capcut">CapCut</option>
+              <option value="premiere">Adobe Premiere Pro</option>
+              <option value="davinci">DaVinci Resolve</option>
+              <option value="finalcut">Final Cut Pro</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">해상도</label>
+            <select class="form-select" id="renderResolution">
+              <option value="1080p" selected>1080p (Full HD)</option>
+              <option value="4k">4K (Ultra HD)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">배경 음악 분위기</label>
+          <select class="form-select" id="renderBGM">
+            <option value="cinematic-epic">시네마틱/웅장한</option>
+            <option value="emotional">감성적/잔잔한</option>
+            <option value="tense">긴장감/서스펜스</option>
+            <option value="upbeat">밝고 경쾌한</option>
+            <option value="ambient">앰비언트/배경적</option>
+          </select>
+        </div>
+
+        <button class="btn btn-primary btn-lg" onclick="generateRenderGuide()">🎬 렌더링 가이드 생성</button>
+      </div>
+
+      <div id="renderOutput"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SECTION 7: 제목/설명 생성 -->
+    <!-- ============================================ -->
+    <div class="section" id="sec-meta">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🏷️ 제목 / 설명 / 태그</div>
+            <div class="card-subtitle">클릭률을 높이는 메타데이터를 생성합니다</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">다국어 지원</label>
+          <div class="tag-list" id="langTags">
+            <span class="tag selected" data-lang="ko" onclick="toggleLangTag(this)">🇰🇷 한국어</span>
+            <span class="tag" data-lang="en" onclick="toggleLangTag(this)">🇺🇸 영어</span>
+            <span class="tag" data-lang="ja" onclick="toggleLangTag(this)">🇯🇵 일본어</span>
+            <span class="tag" data-lang="zh" onclick="toggleLangTag(this)">🇨🇳 중국어</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" onclick="generateMeta()">🏷️ 메타데이터 생성</button>
+      </div>
+
+      <div id="metaOutput"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SECTION 8: 썸네일 생성기 -->
+    <!-- ============================================ -->
+    <div class="section" id="sec-thumbnail">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🖼️ 썸네일 생성기</div>
+            <div class="card-subtitle">클릭을 유도하는 썸네일 프롬프트를 생성합니다</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">썸네일 스타일</label>
+            <select class="form-select" id="thumbStyle">
+              <option value="dramatic">드라마틱/강렬한</option>
+              <option value="clean">깔끔/미니멀</option>
+              <option value="clickbait">호기심 자극형</option>
+              <option value="cinematic">시네마틱</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">텍스트 오버레이</label>
+            <input type="text" class="form-input" id="thumbText" placeholder="썸네일에 들어갈 텍스트 (선택)">
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" onclick="generateThumbnail()">🖼️ 썸네일 프롬프트 생성</button>
+      </div>
+
+      <div id="thumbnailOutput"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SECTION 9: 쇼츠 생성기 -->
+    <!-- ============================================ -->
+    <div class="section" id="sec-shorts">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">📱 쇼츠 대본 생성기</div>
+            <div class="card-subtitle">롱폼 대본에서 핵심을 추출하여 30초~1분 쇼츠를 만듭니다</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">쇼츠 길이</label>
+            <select class="form-select" id="shortsLength">
+              <option value="30">30초</option>
+              <option value="45">45초</option>
+              <option value="60" selected>60초</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">쇼츠 수량</label>
+            <select class="form-select" id="shortsCount">
+              <option value="1">1개</option>
+              <option value="2">2개</option>
+              <option value="3" selected>3개</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" onclick="generateShorts()">📱 쇼츠 대본 생성</button>
+      </div>
+
+      <div id="shortsOutput"></div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- SECTION 10: 인트로 생성기 -->
+    <!-- ============================================ -->
+    <div class="section" id="sec-intro">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🚀 인트로 생성기</div>
+            <div class="card-subtitle">시청자를 사로잡는 강력한 오프닝을 만듭니다</div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">인트로 길이</label>
+            <select class="form-select" id="introLength">
+              <option value="15">15초 (임팩트형)</option>
+              <option value="30" selected>30초 (표준)</option>
+              <option value="45">45초 (스토리형)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">인트로 유형</label>
+            <select class="form-select" id="introType">
+              <option value="question">질문형 (호기심 유발)</option>
+              <option value="shocking">충격적 사실 제시</option>
+              <option value="story">미니 스토리텔링</option>
+              <option value="statistic">통계/데이터 시작</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" onclick="generateIntro()">🚀 인트로 생성</button>
+      </div>
+
+      <div id="introOutput"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Copy Toast -->
+<div class="copy-toast" id="copyToast">복사되었습니다!</div>
+
+<script>
+// ========================
+// Global State
+// ========================
+const state = {
+  currentSection: 'topic',
+  topic: '',
+  target: '',
+  plan: '',
+  script: '',
+  scenes: [],
+  completedSteps: new Set(),
+  selectedLangs: ['ko']
+};
+
+const sectionNames = {
+  topic: '💡 주제 추천',
+  plan: '📋 대본 기획',
+  script: '✍️ 대본 생성',
+  image: '🎨 이미지 생성',
+  tts: '🎙️ TTS 생성',
+  render: '🎬 영상 렌더링',
+  meta: '🏷️ 제목/설명 생성',
+  thumbnail: '🖼️ 썸네일 생성기',
+  shorts: '📱 쇼츠 생성기',
+  intro: '🚀 인트로 생성기'
+};
+
+const sectionOrder = ['topic','plan','script','image','tts','render','meta','thumbnail','shorts','intro'];
+
+// ========================
+// Navigation
+// ========================
+function switchSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  document.getElementById('sec-' + id).classList.add('active');
+  document.querySelector(`.nav-item[data-section="${id}"]`).classList.add('active');
+
+  const idx = sectionOrder.indexOf(id) + 1;
+  document.getElementById('topbarTitle').innerHTML =
+    `${sectionNames[id]} <span class="step-badge">STEP ${idx}/10</span>`;
+
+  state.currentSection = id;
+
+  if (id !== 'topic' && state.topic) {
+    document.getElementById('projectBanner').style.display = 'flex';
+    document.getElementById('projectName').textContent = state.topic;
+  } else {
+    document.getElementById('projectBanner').style.display = 'none';
+  }
+}
+
+function markStepComplete(section) {
+  state.completedSteps.add(section);
+  const pct = Math.round((state.completedSteps.size / 10) * 100);
+  document.getElementById('progressPercent').textContent = pct + '%';
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+function scrollToTop() {
+  document.querySelector('.content').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ========================
+// Clipboard & Toast
+// ========================
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => {
+    const toast = document.getElementById('copyToast');
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2000);
+  });
+}
+
+function toggleLangTag(el) {
+  el.classList.toggle('selected');
+  const lang = el.dataset.lang;
+  if (el.classList.contains('selected')) {
+    if (!state.selectedLangs.includes(lang)) state.selectedLangs.push(lang);
+  } else {
+    state.selectedLangs = state.selectedLangs.filter(l => l !== lang);
+  }
+}
+
+// ========================
+// Section 1: 주제 추천
+// ========================
+function generateTopics() {
+  const category = document.getElementById('topicCategory').value;
+  const target = document.getElementById('topicTarget').value;
+  const keyword = document.getElementById('topicKeyword').value;
+
+  const topicDB = {
+    history: [
+      { title: '베트남 전쟁 속 병사들의 고독과 연대', desc: '전쟁터에서 피어난 우정과 인간 본연의 모습을 다룹니다. 실제 참전 용사들의 증언을 바탕으로 구성.', views: '50만+', difficulty: '중' },
+      { title: '조선시대 가장 잔혹했던 형벌 TOP 10', desc: '역사 기록에 남아있는 형벌 제도를 통해 당시 사회상을 분석합니다.', views: '100만+', difficulty: '하' },
+      { title: '아무도 몰랐던 임진왜란의 비밀 전투들', desc: '교과서에 나오지 않는 소규모 전투와 숨겨진 영웅들의 이야기.', views: '70만+', difficulty: '중' },
+      { title: '로마 제국이 멸망한 진짜 이유', desc: '경제, 군사, 문화적 관점에서 복합적으로 분석하는 로마 제국의 몰락.', views: '80만+', difficulty: '상' },
+    ],
+    science: [
+      { title: '인류가 아직 풀지 못한 우주의 7가지 미스터리', desc: '암흑물질부터 페르미 역설까지, 과학이 답하지 못한 질문들.', views: '120만+', difficulty: '중' },
+      { title: 'AI가 인간의 직업을 대체하는 현실적인 타임라인', desc: '2025년 현재 AI 기술 수준과 향후 10년 전망을 분석합니다.', views: '200만+', difficulty: '중' },
+      { title: '양자컴퓨터가 세상을 바꾸는 5가지 방법', desc: '양자컴퓨팅의 원리부터 실제 응용 분야까지 쉽게 설명합니다.', views: '60만+', difficulty: '상' },
+    ],
+    mystery: [
+      { title: '절대 풀리지 않는 세계 10대 미제사건', desc: '수십 년간 미해결로 남아있는 사건들의 전말과 추리.', views: '300만+', difficulty: '하' },
+      { title: '실제로 촬영된 설명 불가능한 영상들', desc: '과학으로 설명할 수 없는 실제 기록 영상들을 분석합니다.', views: '500만+', difficulty: '하' },
+      { title: '사라진 문명들의 공통점 - 우연의 일치인가', desc: '마야, 수메르, 인더스 문명의 놀라운 공통점을 추적합니다.', views: '150만+', difficulty: '중' },
+    ],
+    economy: [
+      { title: '2026년 부동산 시장, 전문가들의 예측', desc: '금리, 인구구조, 정책 변화를 종합 분석한 부동산 전망.', views: '100만+', difficulty: '중' },
+      { title: '월급 200만원으로 1억 모으는 현실적인 방법', desc: '실제 성공 사례를 바탕으로 한 구체적인 재테크 로드맵.', views: '80만+', difficulty: '하' },
+    ],
+    psychology: [
+      { title: '상대방의 거짓말을 100% 알아채는 심리학 기술', desc: '심리학 연구에 기반한 거짓말 탐지 기법을 소개합니다.', views: '200만+', difficulty: '하' },
+      { title: '성공하는 사람들의 뇌는 무엇이 다른가', desc: '신경과학 연구로 밝혀진 성공하는 사람들의 사고 패턴.', views: '150만+', difficulty: '중' },
+    ],
+    world: [
+      { title: '한국인이 가면 충격받는 나라 TOP 5', desc: '문화적 차이가 극명한 국가들의 일상을 생생하게 전달합니다.', views: '300만+', difficulty: '하' },
+    ],
+    food: [
+      { title: '한국인은 모르는 세계 각국의 기이한 음식들', desc: '각 나라의 독특한 식문화와 그 배경 이야기를 탐구합니다.', views: '200만+', difficulty: '하' },
+    ],
+    crime: [
+      { title: '역사상 가장 완벽했던 범죄 계획들', desc: '실제 사건을 바탕으로 범죄 수사과정을 추적합니다.', views: '400만+', difficulty: '중' },
+    ],
+    philosophy: [
+      { title: '죽음 이후에는 무엇이 있을까 - 철학자들의 답변', desc: '동서양 철학에서 바라본 죽음과 사후세계에 대한 사유.', views: '100만+', difficulty: '상' },
+    ],
+    nature: [
+      { title: '지구에서 가장 위험한 장소 TOP 10', desc: '실제로 접근이 금지된 극한의 장소들을 소개합니다.', views: '250만+', difficulty: '하' },
+    ]
+  };
+
+  const topics = topicDB[category] || topicDB.history;
+  let html = '<div class="grid-2" style="margin-top:4px">';
+
+  topics.forEach(t => {
+    html += `
+      <div class="topic-card" onclick="selectTopic('${t.title.replace(/'/g, "\\'")}')">
+        <div class="topic-category">${category ? category.toUpperCase() : 'HISTORY'}</div>
+        <h3>${t.title}</h3>
+        <p>${t.desc}</p>
+        <div class="topic-meta">
+          <span class="topic-meta-item">👁️ 예상 조회수 ${t.views}</span>
+          <span class="topic-meta-item">📊 난이도 ${t.difficulty}</span>
+        </div>
+      </div>`;
+  });
+
+  html += '</div>';
+  document.getElementById('topicResults').innerHTML = html;
+  markStepComplete('topic');
+}
+
+function selectTopic(title) {
+  state.topic = title;
+  document.getElementById('planTopic').value = title;
+
+  const target = document.getElementById('topicTarget');
+  if (target.value) {
+    const targetMap = { teen: '10대 청소년', young: '20~30대 청년', middle: '30~40대 직장인', senior: '40~60대 중장년', all: '전 연령' };
+    state.target = targetMap[target.value] || '';
+    document.getElementById('planTarget').value = state.target;
+  }
+
+  switchSection('plan');
+}
+
+// ========================
+// Section 2: 대본 기획
+// ========================
+function generatePlan() {
+  const topic = document.getElementById('planTopic').value;
+  const target = document.getElementById('planTarget').value;
+  const length = document.getElementById('planLength').value;
+  const tone = document.getElementById('planTone');
+  const style = document.getElementById('planStyle');
+  const notes = document.getElementById('planNotes').value;
+
+  if (!topic) { alert('주제를 입력해주세요.'); return; }
+
+  state.topic = topic;
+  state.target = target;
+
+  const toneText = tone.options[tone.selectedIndex].text;
+  const styleText = style.options[style.selectedIndex].text;
+
+  const planContent = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 유튜브 롱폼 기획안
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+■ 주제: ${topic}
+■ 타겟 시청자: ${target || '미지정'}
+■ 영상 길이: 약 ${length}분
+■ 톤앤매너: ${toneText}
+■ 비주얼 스타일: ${styleText}
+${notes ? '■ 특별 요청: ' + notes : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📌 영상 구조 (기승전결)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🔹 [오프닝 / 후킹] (0:00 ~ 0:30)
+   - 강렬한 질문 또는 충격적인 사실로 시작
+   - 시청자가 "이건 봐야 해"라고 느낄 수 있는 후크
+   - 예: "만약 당신이 그 순간 그 자리에 있었다면..."
+
+🔹 [서론 / 배경 설명] (0:30 ~ 3:00)
+   - 주제의 배경과 맥락을 설명
+   - 시청자가 이해하기 쉬운 언어로 핵심 개념 전달
+   - 왜 이 주제가 중요한지 동기 부여
+
+🔹 [본론 1 / 전개] (3:00 ~ 7:00)
+   - 핵심 스토리의 시작
+   - 구체적인 사실, 인물, 사건을 중심으로 전개
+   - 시청자 몰입을 위한 서스펜스 요소 배치
+
+🔹 [본론 2 / 심화] (7:00 ~ ${length - 4}:00)
+   - 이야기의 깊이를 더하는 추가 사실과 분석
+   - 반전 요소 또는 숨겨진 진실 공개
+   - 시청자 참여 유도 (댓글 질문 삽입)
+
+🔹 [클라이맥스] (${length - 4}:00 ~ ${length - 2}:00)
+   - 가장 극적인 순간 또는 핵심 메시지
+   - 감정적 절정 → 여운
+
+🔹 [결론 / CTA] (${length - 2}:00 ~ ${length}:00)
+   - 핵심 메시지 요약
+   - 시청자 공감 유도
+   - 자연스러운 좋아요/구독 요청
+   - 다음 영상 예고 (시리즈물일 경우)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔍 Fact-Check 체크리스트
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+☐ 주요 사건/날짜/인물 교차 검증
+☐ 출처 명시 가능한 데이터만 사용
+☐ 논쟁적 주장은 다양한 시각 제시
+☐ 저작권 이슈 확인 (이미지/음악)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎬 장면 구성 (${Math.min(parseInt(length), 15)}개 예상)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. 오프닝 비주얼 - 주제를 상징하는 인상적인 이미지
+2. 배경 설명 - 시대/장소/인물 소개
+3. 핵심 사건 1 - 이야기의 시작
+4. 전환 장면 - 분위기 변화
+5. 핵심 사건 2 - 갈등/위기
+6. 클라이맥스 장면 - 절정
+7. 여운 장면 - 감정적 마무리
+8. 엔딩 / 구독 유도 화면
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+
+  document.getElementById('planOutput').innerHTML = `
+    <div class="card">
+      <div class="output-toolbar">
+        <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('planText').textContent)">📋 복사</button>
+        <button class="btn btn-primary btn-sm" onclick="applyPlanToScript()">→ 대본 생성으로 이동</button>
+      </div>
+      <div class="output-area" id="planText">${planContent}</div>
+    </div>`;
+
+  state.plan = planContent;
+  markStepComplete('plan');
+}
+
+function applyPlanToScript() {
+  document.getElementById('scriptPlanSummary').value = `주제: ${state.topic}\n타겟: ${state.target}\n${state.plan.substring(0, 500)}...`;
+  switchSection('script');
+}
+
+// ========================
+// Section 3: 대본 생성
+// ========================
+function generateScript() {
+  const topic = state.topic || document.getElementById('planTopic').value || '주제 미지정';
+  const wordCount = document.getElementById('scriptWordCount').value;
+  const narration = document.getElementById('scriptNarration');
+  const narrationText = narration.options[narration.selectedIndex].text;
+
+  const scriptContent = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✍️ 유튜브 롱폼 대본
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 주제: ${topic}
+■ 나레이션: ${narrationText}
+■ 목표 분량: ~${wordCount}자
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[장면 1: 오프닝 / 후킹]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎙️ (차분하지만 무게감 있는 톤으로)
+
+"만약... 당신이 그 순간, 그 자리에 있었다면
+과연 어떤 선택을 했을까요?"
+
+(1초 침묵)
+
+"오늘 이야기할 주제는 '${topic}'입니다.
+이 이야기를 끝까지 들으시면,
+당신이 알고 있던 상식이 완전히 뒤바뀔 수도 있습니다."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[장면 2: 서론 / 배경 설명]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎙️ (설명적이고 차분한 톤)
+
+"이 이야기를 제대로 이해하려면,
+먼저 그 시대의 배경을 알아야 합니다."
+
+[이곳에 주제에 맞는 역사적/과학적 배경 설명]
+[검증된 사실과 데이터를 기반으로 서술]
+
+"많은 사람들이 이 부분을 간과하지만,
+사실 이것이야말로 모든 것의 시작이었습니다."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[장면 3: 본론 1 - 핵심 전개]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎙️ (이야기에 빠져들게 하는 서사적 톤)
+
+[핵심 사건/정보를 스토리텔링 형식으로 전달]
+[구체적 인물, 장소, 날짜를 포함하여 사실감 부여]
+
+"여기서 놀라운 점은..."
+
+[반전 요소 또는 충격적 사실 제시]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[장면 4: 본론 2 - 심화]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎙️ (점점 긴장감을 높이며)
+
+[추가적인 맥락과 분석]
+[전문가 의견이나 연구 결과 인용]
+
+"여러분은 어떻게 생각하시나요?
+댓글로 의견을 남겨주세요."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[장면 5: 클라이맥스]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎙️ (감정의 최고조, 약간 떨리는 듯한 톤)
+
+[가장 극적인 순간]
+[핵심 메시지의 절정]
+
+"바로 이 순간이었습니다.
+모든 것이 변하기 시작한..."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[장면 6: 결론 / CTA]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎙️ (따뜻하고 여운 있는 톤으로)
+
+"이 이야기가 우리에게 남기는 교훈은 분명합니다."
+
+[핵심 메시지 요약 - 1~2문장]
+
+"이 영상이 도움이 되셨다면,
+좋아요와 구독으로 응원해주세요.
+여러분의 작은 응원이
+더 좋은 콘텐츠를 만드는 원동력이 됩니다."
+
+"다음 영상에서는 더 흥미로운 이야기로
+찾아뵙겠습니다. 감사합니다."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[END]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+※ Fact-Check 완료 항목:
+✅ 주요 사실관계 검증 필요
+✅ 출처 표기 준비
+✅ 허위 콘텐츠 위험 요소 점검`;
+
+  state.script = scriptContent;
+
+  document.getElementById('scriptOutput').innerHTML = `
+    <div class="card">
+      <div class="output-toolbar">
+        <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('scriptText').textContent)">📋 전체 복사</button>
+        <button class="btn btn-secondary btn-sm" onclick="switchSection('image')">→ 이미지 생성</button>
+        <button class="btn btn-secondary btn-sm" onclick="switchSection('tts')">→ TTS 생성</button>
+      </div>
+      <div class="output-area" id="scriptText">${scriptContent}</div>
+    </div>`;
+
+  markStepComplete('script');
+}
+
+// ========================
+// Section 4: 이미지 생성
+// ========================
+function generateImagePrompts() {
+  const style = document.getElementById('imageStyle');
+  const styleText = style.options[style.selectedIndex].text;
+  const styleVal = style.value;
+  const ratio = document.getElementById('imageRatio').value;
+  const count = parseInt(document.getElementById('imageCount').value);
+  const topic = state.topic || '주제 미지정';
+
+  const styleMap = {
+    'european-animation': 'European animation style, Ghibli-inspired, soft lighting, painterly textures',
+    'realistic': 'photorealistic, hyper-detailed, 8K resolution, cinematic lighting',
+    'watercolor': 'watercolor painting style, soft edges, flowing colors, artistic',
+    'cinematic': 'cinematic concept art, dramatic lighting, film grain, wide angle',
+    'oil-painting': 'classical oil painting style, rich colors, Renaissance-inspired'
+  };
+
+  const baseStyle = styleMap[styleVal] || styleMap['european-animation'];
+
+  const sceneTemplates = [
+    { name: '오프닝 / 타이틀', prompt: `A dramatic wide establishing shot representing "${topic}", ${baseStyle}, moody atmosphere, golden hour lighting, aspect ratio ${ratio}` },
+    { name: '시대적 배경', prompt: `Historical scene showing the era and setting of "${topic}", ${baseStyle}, detailed environment, atmospheric perspective, aspect ratio ${ratio}` },
+    { name: '주인공/핵심 인물', prompt: `Close-up portrait of a central figure in the story of "${topic}", ${baseStyle}, emotional expression, dramatic rim lighting, aspect ratio ${ratio}` },
+    { name: '갈등의 시작', prompt: `A tense scene depicting the beginning of conflict in "${topic}", ${baseStyle}, dynamic composition, contrasting shadows, aspect ratio ${ratio}` },
+    { name: '전환점', prompt: `A pivotal turning point scene in "${topic}", ${baseStyle}, symbolic imagery, split lighting representing duality, aspect ratio ${ratio}` },
+    { name: '위기/절정', prompt: `The climactic moment of "${topic}", ${baseStyle}, intense atmosphere, extreme dramatic lighting, powerful composition, aspect ratio ${ratio}` },
+    { name: '감정적 장면', prompt: `An emotionally charged scene from "${topic}", ${baseStyle}, warm tones, intimate framing, tears or determination visible, aspect ratio ${ratio}` },
+    { name: '결말/여운', prompt: `The aftermath and resolution of "${topic}", ${baseStyle}, peaceful yet melancholic atmosphere, sunset/dawn lighting, aspect ratio ${ratio}` },
+    { name: '상징적 이미지', prompt: `A symbolic still-life or landscape representing the core theme of "${topic}", ${baseStyle}, metaphorical composition, aspect ratio ${ratio}` },
+    { name: '엔딩 비주얼', prompt: `A hopeful or reflective closing image for "${topic}", ${baseStyle}, silhouette against sky, sense of closure and reflection, aspect ratio ${ratio}` },
+    { name: '보조 장면 A', prompt: `Supplementary scene showing daily life context in "${topic}", ${baseStyle}, environmental storytelling, aspect ratio ${ratio}` },
+    { name: '보조 장면 B', prompt: `A group scene or crowd moment in "${topic}", ${baseStyle}, wide shot, many figures, aspect ratio ${ratio}` },
+    { name: '디테일 컷', prompt: `A close-up detail shot of a significant object or element in "${topic}", ${baseStyle}, macro perspective, aspect ratio ${ratio}` },
+    { name: '대비 장면', prompt: `A before-and-after or contrast scene in "${topic}", ${baseStyle}, split composition showing change, aspect ratio ${ratio}` },
+    { name: '추가 장면', prompt: `An additional atmospheric scene from "${topic}", ${baseStyle}, unique angle, artistic composition, aspect ratio ${ratio}` },
+  ];
+
+  const scenes = sceneTemplates.slice(0, count);
+  let html = '';
+
+  scenes.forEach((scene, i) => {
+    html += `
+      <div class="scene-card">
+        <div class="scene-card-header">
+          <span class="scene-number">${i + 1}</span>
+          <span class="scene-title">${scene.name}</span>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="copyText(\`${scene.prompt.replace(/`/g, '\\`')}\`)">📋 복사</button>
+        </div>
+        <div class="scene-prompt">${scene.prompt}</div>
+      </div>`;
+  });
+
+  document.getElementById('imageOutput').innerHTML = `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🎨 이미지 프롬프트 (${count}개 장면)</div>
+        <button class="btn btn-secondary btn-sm" onclick="copyAllImagePrompts()">📋 전체 복사</button>
+      </div>
+      <div id="imagePromptList">${html}</div>
+    </div>`;
+
+  state.scenes = scenes;
+  markStepComplete('image');
+}
+
+function copyAllImagePrompts() {
+  const all = state.scenes.map((s, i) => `[장면 ${i+1}: ${s.name}]\n${s.prompt}`).join('\n\n');
+  copyText(all);
+}
+
+// ========================
+// Section 5: TTS
+// ========================
+function generateTTS() {
+  const voice = document.getElementById('ttsVoice');
+  const voiceText = voice.options[voice.selectedIndex].text;
+  const engine = document.getElementById('ttsEngine');
+  const engineText = engine.options[engine.selectedIndex].text;
+
+  const segments = [
+    { emotion: 'calm', emotionText: '차분', text: '[오프닝] "만약... 당신이 그 순간, 그 자리에 있었다면 과연 어떤 선택을 했을까요?" — 속도: 느리게 (0.85x), 간격: 문장 사이 1.5초 정지' },
+    { emotion: 'calm', emotionText: '설명', text: '[서론] 배경 설명 파트 — 속도: 보통 (1.0x), 톤: 교사가 설명하듯 또박또박, 핵심 단어에서 약간의 강세' },
+    { emotion: 'dramatic', emotionText: '긴장', text: '[본론 1] 핵심 사건 전개 — 속도: 점진적 가속 (1.0x → 1.1x), 톤: 점점 고조되는 긴장감, 중요 대사에서 살짝 힘을 줌' },
+    { emotion: 'serious', emotionText: '심각', text: '[본론 2] 심화 분석 — 속도: 보통 (1.0x), 톤: 무게감 있게, 통계나 수치를 말할 때 또렷하게 발음' },
+    { emotion: 'dramatic', emotionText: '절정', text: '[클라이맥스] "바로 이 순간이었습니다..." — 속도: 가장 느리게 (0.8x), 톤: 감정의 최고조, 약간 떨림 섞인 목소리, 2초 정지 후 핵심 한 문장' },
+    { emotion: 'warm', emotionText: '따뜻', text: '[결론/CTA] "이 영상이 도움이 되셨다면..." — 속도: 보통 (1.0x), 톤: 따뜻하고 감사하는 느낌, 미소 짓는 듯한 목소리' },
+  ];
+
+  let html = `
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-title">🎙️ TTS 톤 가이드</div>
+          <div class="card-subtitle">음성: ${voiceText} | 엔진: ${engineText}</div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="copyTTSGuide()">📋 전체 복사</button>
+      </div>`;
+
+  segments.forEach(seg => {
+    html += `
+      <div class="tts-segment">
+        <span class="tts-emotion ${seg.emotion}">${seg.emotionText}</span>
+        <div class="tts-text">${seg.text}</div>
+      </div>`;
+  });
+
+  html += `
+      <div class="divider"></div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.8">
+        <strong>🎯 전체 가이드라인:</strong><br>
+        • 전체적으로 '중후하고 차분한 남성 어르신'의 느낌 유지<br>
+        • 너무 기계적인 AI 느낌이 나지 않도록 자연스러운 호흡 삽입<br>
+        • 문장 끝에서 미세하게 톤 내리기 (한국어 나레이션 특성)<br>
+        • 강조 단어에서 0.1초 정도 살짝 끊어 읽기<br>
+        • 감정 전환 시 2~3초 무음 구간 삽입
+      </div>
+    </div>`;
+
+  document.getElementById('ttsOutput').innerHTML = html;
+  markStepComplete('tts');
+}
+
+function copyTTSGuide() {
+  const el = document.getElementById('ttsOutput');
+  copyText(el.textContent);
+}
+
+// ========================
+// Section 6: 영상 렌더링
+// ========================
+function generateRenderGuide() {
+  const tool = document.getElementById('renderTool');
+  const toolText = tool.options[tool.selectedIndex].text;
+  const resolution = document.getElementById('renderResolution').value;
+  const bgm = document.getElementById('renderBGM');
+  const bgmText = bgm.options[bgm.selectedIndex].text;
+  const topic = state.topic || '프로젝트';
+
+  const html = `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🎬 영상 렌더링 가이드</div>
+        <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('renderText').textContent)">📋 복사</button>
+      </div>
+      <div class="output-area" id="renderText">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎬 렌더링 설정 가이드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+■ 프로젝트: ${topic}
+■ 편집 도구: ${toolText}
+■ 해상도: ${resolution}
+■ 프레임 레이트: 30fps (표준)
+■ 비율: 16:9 (가로형)
+■ 코덱: H.264 (YouTube 최적화)
+■ 비트레이트: ${resolution === '4k' ? '35-45 Mbps' : '16-20 Mbps'}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎵 배경 음악 (BGM) 가이드
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+■ 분위기: ${bgmText}
+■ 볼륨: 나레이션 대비 15~20% 수준
+■ 추천 검색 키워드:
+  - YouTube Audio Library: "${bgmText} no copyright"
+  - Artlist / Epidemic Sound: "${bgm.value}"
+  - 오프닝: 강렬한 임팩트 사운드
+  - 본론: 잔잔한 배경 루프
+  - 클라이맥스: 고조되는 빌드업
+  - 엔딩: 잔잔하게 페이드아웃
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📐 편집 타임라인 구성
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Track 1 (비디오): 이미지/영상 소스
+Track 2 (비디오): 자막/텍스트 오버레이
+Track 3 (오디오): TTS 나레이션
+Track 4 (오디오): BGM
+Track 5 (오디오): 효과음 (SFX)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ 편집 효과 권장 사항
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• 이미지 전환: 크로스 디졸브 (0.5초)
+• 켄 번즈 효과: 정적 이미지에 미세한 줌/패닝
+• 자막 스타일: 하단 중앙, 반투명 배경
+  - 폰트: Noto Sans KR Bold
+  - 크기: 화면의 4~5%
+  - 색상: #FFFFFF (그림자 추가)
+• 키프레임: 중요 장면에서 줌인 효과
+• 컬러 그레이딩: 주제에 맞는 톤 (따뜻한/차가운)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📤 업로드 설정
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• 파일 형식: MP4
+• 인코딩: H.264
+• 오디오: AAC, 48kHz
+• 최종 파일명: ${topic.replace(/\s/g, '_')}_final.mp4</div>
+    </div>`;
+
+  document.getElementById('renderOutput').innerHTML = html;
+  markStepComplete('render');
+}
+
+// ========================
+// Section 7: 제목/설명
+// ========================
+function generateMeta() {
+  const topic = state.topic || '주제 미지정';
+  const langs = state.selectedLangs;
+
+  let metaContent = `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏷️ 메타데이터 세팅
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📌 제목 추천 (클릭률 최적화)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🥇 제목 1: "${topic}" - 아무도 몰랐던 충격적 진실
+🥈 제목 2: ${topic}... 이것만 알면 세상이 달라 보입니다
+🥉 제목 3: [${topic}] 전문가도 놀란 숨겨진 이야기
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📝 영상 설명
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${topic}에 대한 깊이 있는 이야기를 준비했습니다.
+
+이 영상에서 다루는 내용:
+00:00 인트로
+00:30 배경 설명
+03:00 핵심 이야기 시작
+07:00 충격적 사실
+12:00 결론
+
+📌 이 채널은 검증된 사실을 바탕으로
+깊이 있는 이야기를 전달합니다.
+
+✅ 좋아요와 구독은 큰 힘이 됩니다!
+🔔 알림 설정으로 새 영상을 놓치지 마세요!
+
+#${topic.replace(/\s/g, '')} #유튜브 #다큐멘터리
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏷️ 업로드용 태그
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${topic}, ${topic} 이야기, ${topic} 진실, 다큐멘터리, 역사, 교양, 지식채널, 스토리텔링, 흥미로운 이야기
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📌 고정 댓글
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+"영상이 유익하셨다면 좋아요 부탁드립니다! 🙏
+여러분은 이 이야기에 대해 어떻게 생각하시나요?
+댓글로 의견을 남겨주세요! 💬"`;
+
+  if (langs.includes('en')) {
+    metaContent += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🇺🇸 English Version
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Title: "The Untold Truth About ${topic}"
+Description: A deep dive into ${topic}. Verified facts and storytelling.
+Tags: ${topic}, documentary, history, storytelling, knowledge`;
+  }
+
+  if (langs.includes('ja')) {
+    metaContent += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🇯🇵 日本語版
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+タイトル: 「${topic}」誰も知らなかった衝撃の真実
+説明: ${topic}についての深い物語をお届けします。`;
+  }
+
+  if (langs.includes('zh')) {
+    metaContent += `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🇨🇳 中文版
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+标题: "${topic}" - 无人知晓的震惊真相
+描述: 关于${topic}的深度故事。`;
+  }
+
+  document.getElementById('metaOutput').innerHTML = `
+    <div class="card">
+      <div class="output-toolbar">
+        <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('metaText').textContent)">📋 전체 복사</button>
+      </div>
+      <div class="output-area" id="metaText">${metaContent}</div>
+    </div>`;
+
+  markStepComplete('meta');
+}
+
+// ========================
+// Section 8: 썸네일
+// ========================
+function generateThumbnail() {
+  const style = document.getElementById('thumbStyle');
+  const styleVal = style.value;
+  const text = document.getElementById('thumbText').value;
+  const topic = state.topic || '주제 미지정';
+
+  const styleGuide = {
+    dramatic: 'dramatic lighting, high contrast, dark moody background, cinematic color grading, lens flare',
+    clean: 'clean minimal design, white space, modern typography, flat colors, professional look',
+    clickbait: 'vibrant saturated colors, shocked expression, red circle highlight, arrow pointing, bold text',
+    cinematic: 'film-like composition, letterbox framing, anamorphic lens effect, color graded teal and orange'
+  };
+
+  const thumbPrompts = [
+    `YouTube thumbnail, ${styleGuide[styleVal]}, representing "${topic}", 1280x720 resolution, bold Korean text overlay "${text || topic}", eye-catching composition, high detail`,
+    `Alternative YouTube thumbnail, ${styleGuide[styleVal]}, symbolic image for "${topic}", extreme close-up of key element, ${text ? `text overlay "${text}"` : 'minimal text'}, 16:9 aspect ratio`,
+    `Third option YouTube thumbnail, ${styleGuide[styleVal]}, split composition showing contrast/before-after for "${topic}", vibrant colors, 1280x720`
+  ];
+
+  let html = `
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">🖼️ 썸네일 프롬프트 (3가지 옵션)</div>
+      </div>`;
+
+  thumbPrompts.forEach((p, i) => {
+    html += `
+      <div class="scene-card">
+        <div class="scene-card-header">
+          <span class="scene-number">${i + 1}</span>
+          <span class="scene-title">썸네일 옵션 ${i + 1}</span>
+          <button class="btn btn-ghost btn-sm" style="margin-left:auto" onclick="copyText(\`${p.replace(/`/g, '\\`')}\`)">📋 복사</button>
+        </div>
+        <div class="scene-prompt">${p}</div>
+      </div>`;
+  });
+
+  html += `
+      <div class="divider"></div>
+      <div style="font-size:13px;color:var(--text-secondary);line-height:1.8">
+        <strong>📐 썸네일 제작 가이드:</strong><br>
+        • 해상도: 1280 x 720px (최소)<br>
+        • 파일 형식: JPG/PNG<br>
+        • 파일 크기: 2MB 이하<br>
+        • 텍스트는 3~5단어 이내<br>
+        • 모바일에서도 잘 보이는 큰 글씨<br>
+        • 채널 브랜드 색상 통일
+      </div>
+    </div>`;
+
+  document.getElementById('thumbnailOutput').innerHTML = html;
+  markStepComplete('thumbnail');
+}
+
+// ========================
+// Section 9: 쇼츠
+// ========================
+function generateShorts() {
+  const length = document.getElementById('shortsLength').value;
+  const count = parseInt(document.getElementById('shortsCount').value);
+  const topic = state.topic || '주제 미지정';
+
+  let html = '';
+
+  for (let i = 0; i < count; i++) {
+    const shortsScript = i === 0 ?
+`🎬 쇼츠 #${i + 1} — 후킹 포인트 추출
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[0초] 🎙️ (긴박한 톤)
+"${topic}에서 가장 충격적인 사실,
+알고 계셨나요?"
+
+[5초] (핵심 이미지 전환)
+"대부분의 사람들은 이것을
+완전히 잘못 알고 있습니다."
+
+[15초] (반전 포인트)
+"사실은... [핵심 반전 내용]"
+
+[25초] (임팩트)
+"이 사실을 알고 나면,
+다시는 예전처럼 볼 수 없습니다."
+
+[${length - 5}초] 🎙️ (마무리)
+"전체 이야기가 궁금하시다면
+프로필에서 풀영상을 확인하세요!"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 세로 9:16 | ${length}초 | 자막 필수` :
+
+i === 1 ?
+`🎬 쇼츠 #${i + 1} — 핵심 장면 압축
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[0초] 🎙️ (질문형 시작)
+"왜 ${topic}이 지금까지도
+사람들의 마음을 사로잡을까요?"
+
+[8초] (빠른 장면 전환)
+"첫 번째 이유는..."
+[핵심 팩트 #1]
+
+[18초]
+"두 번째는 더 놀랍습니다."
+[핵심 팩트 #2]
+
+[28초] (결론)
+"결국 이것이 의미하는 것은..."
+
+[${length - 8}초] 🎙️
+"풀영상 링크는 프로필에!
+좋아요와 팔로우 부탁드립니다 🙏"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 세로 9:16 | ${length}초 | 자막 필수` :
+
+`🎬 쇼츠 #${i + 1} — 감성/여운 편
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+[0초] 🎙️ (차분하고 감성적으로)
+"${topic}에 대해
+한 가지만 기억하세요."
+
+[8초] (여운 있는 이미지)
+"[핵심 메시지를 감성적으로 전달]"
+
+[20초] (감정적 클로징)
+"이것이 바로 우리가
+잊지 말아야 할 이야기입니다."
+
+[${length - 10}초] 🎙️ (부드러운 마무리)
+"이 이야기에 공감하셨다면
+좋아요 한 번만 눌러주세요 ❤️"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 세로 9:16 | ${length}초 | 자막 필수`;
+
+    html += `
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📱 쇼츠 #${i + 1}</div>
+          <button class="btn btn-secondary btn-sm" onclick="copyText(document.querySelectorAll('.shorts-script')[${i}].textContent)">📋 복사</button>
+        </div>
+        <div class="output-area shorts-script">${shortsScript}</div>
+      </div>`;
+  }
+
+  document.getElementById('shortsOutput').innerHTML = html;
+  markStepComplete('shorts');
+}
+
+// ========================
+// Section 10: 인트로
+// ========================
+function generateIntro() {
+  const length = document.getElementById('introLength').value;
+  const type = document.getElementById('introType');
+  const typeText = type.options[type.selectedIndex].text;
+  const typeVal = type.value;
+  const topic = state.topic || '주제 미지정';
+
+  const introTemplates = {
+    question: `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 인트로 대본 — 질문형 (${length}초)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎙️ [톤: 호기심을 자극하는 낮은 목소리]
+
+(0초 - 강렬한 비주얼과 함께)
+"만약... 여러분이 이 사실을
+진작 알고 있었다면,
+세상을 보는 눈이 완전히 달라졌을 겁니다."
+
+(5초 - 잠시 침묵, 긴장감 조성)
+
+"${topic}..."
+
+(8초 - 톤 변화, 설명적으로)
+"오늘, 이 이야기의 처음부터 끝까지
+빠짐없이 들려드리겠습니다."
+
+(${length - 3}초)
+"끝까지 보시면, 여러분도 분명
+'이걸 왜 이제야 알았지?'라고
+생각하시게 될 겁니다."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎨 비주얼 가이드:
+- 어두운 배경에서 서서히 밝아지는 장면
+- 주제를 상징하는 이미지 빠르게 전환
+- 타이틀 텍스트 드라마틱하게 등장`,
+
+    shocking: `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 인트로 대본 — 충격적 사실형 (${length}초)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎙️ [톤: 단호하고 확신에 찬 목소리]
+
+(0초 - 충격적인 통계/사실과 함께)
+"[충격적인 사실 또는 통계]"
+
+(3초 - 강조)
+"네, 맞습니다.
+이것은 검증된 사실입니다."
+
+(7초 - 맥락 제공)
+"${topic}에 대해
+우리가 몰랐던 진실이 있습니다."
+
+(${length - 5}초 - 유인)
+"오늘 이 영상에서
+그 전체 이야기를 공개합니다."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎨 비주얼 가이드:
+- 빨간색 경고 느낌의 텍스트 애니메이션
+- 숫자/통계가 크게 표시되는 타이포그래피
+- 빠른 컷 전환으로 긴박감 조성`,
+
+    story: `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 인트로 대본 — 스토리텔링형 (${length}초)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎙️ [톤: 이야기꾼처럼 몰입감 있게]
+
+(0초 - 분위기 있는 BGM과 함께)
+"그날은 평범한 하루였습니다.
+아무도 예상하지 못했죠..."
+
+(5초 - 스토리 전개)
+"하지만 바로 그 순간,
+역사를 바꿀 일이 벌어졌습니다."
+
+(10초 - 주제 연결)
+"${topic}..."
+
+(${length - 5}초)
+"지금부터 그 이야기가 시작됩니다."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎨 비주얼 가이드:
+- 시네마틱한 슬로우 모션
+- 앰비언트한 배경 음악
+- 장면 하나하나에 여운을 주는 전환`,
+
+    statistic: `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 인트로 대본 — 통계/데이터형 (${length}초)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎙️ [톤: 뉴스 앵커처럼 신뢰감 있게]
+
+(0초 - 큰 숫자가 화면에 등장)
+"[관련 통계 수치]"
+
+(3초)
+"이 숫자가 의미하는 것은
+생각보다 훨씬 심각합니다."
+
+(8초 - 맥락 설명)
+"${topic}에 대한
+데이터를 분석해보면..."
+
+(${length - 5}초)
+"오늘 이 영상에서
+데이터가 말해주는 진실을
+낱낱이 파헤쳐 보겠습니다."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎨 비주얼 가이드:
+- 인포그래픽 스타일 숫자 애니메이션
+- 그래프/차트가 역동적으로 채워지는 모션
+- 깔끔한 데이터 비주얼라이제이션`
+  };
+
+  const introContent = introTemplates[typeVal] || introTemplates.question;
+
+  document.getElementById('introOutput').innerHTML = `
+    <div class="card">
+      <div class="output-toolbar">
+        <button class="btn btn-secondary btn-sm" onclick="copyText(document.getElementById('introText').textContent)">📋 복사</button>
+      </div>
+      <div class="output-area" id="introText">${introContent}</div>
+    </div>`;
+
+  markStepComplete('intro');
+}
+
+// ========================
+// Export / Reset
+// ========================
+function exportProject() {
+  const data = {
+    topic: state.topic,
+    target: state.target,
+    plan: state.plan,
+    script: state.script,
+    scenes: state.scenes,
+    exportDate: new Date().toISOString()
+  };
+
+  let exportText = `YouTube 롱폼 프로젝트 — ${state.topic || '미지정'}\n`;
+  exportText += `내보내기: ${new Date().toLocaleString('ko-KR')}\n`;
+  exportText += '='.repeat(50) + '\n\n';
+
+  document.querySelectorAll('.output-area').forEach(el => {
+    if (el.textContent.trim()) {
+      exportText += el.textContent + '\n\n' + '='.repeat(50) + '\n\n';
+    }
+  });
+
+  const blob = new Blob([exportText], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `youtube_project_${(state.topic || 'untitled').replace(/\s/g, '_')}.txt`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function resetProject() {
+  if (!confirm('프로젝트를 초기화하시겠습니까?')) return;
+
+  state.topic = '';
+  state.target = '';
+  state.plan = '';
+  state.script = '';
+  state.scenes = [];
+  state.completedSteps.clear();
+
+  document.querySelectorAll('.form-input, .form-textarea').forEach(el => el.value = '');
+  document.querySelectorAll('[id$="Output"], [id$="Results"]').forEach(el => el.innerHTML = '');
+
+  document.getElementById('progressPercent').textContent = '0%';
+  document.getElementById('progressBar').style.width = '0%';
+  document.getElementById('projectBanner').style.display = 'none';
+
+  switchSection('topic');
+}
+
+// Init
+document.addEventListener('DOMContentLoaded', () => {
+  switchSection('topic');
+});
+</script>
+</body>
+</html>

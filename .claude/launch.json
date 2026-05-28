@@ -16,6 +16,12 @@
         "PORT": "3001",
         "DATABASE_URL": "postgresql://localhost:5432/hanzi"
       }
+    },
+    {
+      "name": "youtube-agent",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["youtube-agent/server.js"],
+      "port": 3003
     }
   ]
 }

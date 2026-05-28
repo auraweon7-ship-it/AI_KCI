@@ -1,0 +1,19 @@
+{
+  "name": "youtube-longform-agent",
+  "version": "1.0.0",
+  "description": "YouTube 롱폼 영상 제작 자동화 에이전트",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
+    "openai": "^4.78.0",
+    "googleapis": "^144.0.0",
+    "express": "^4.21.0",
+    "dotenv": "^16.4.5",
+    "open": "^10.1.0"
+  }
+}
