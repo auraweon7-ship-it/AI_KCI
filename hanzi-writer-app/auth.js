@@ -297,7 +297,11 @@
                     + '<td data-label="이름">' + (d.name || '-') + '</td>'
                     + '<td data-label="이메일">' + (d.email || '-') + '</td>'
                     + '<td data-label="최근활동">' + lastActive + '</td>'
-                    + '<td data-label=""><button class="btn btn-sm btn-outline" onclick="viewLearnerDetail(' + d.id + ', this)">상세보기</button></td>'
+                    + '<td data-label="">'
+                    + '<button class="btn btn-sm btn-outline" onclick="viewLearnerDetail(' + d.id + ', this)">상세보기</button> '
+                    + '<button class="btn btn-sm btn-outline" style="color:var(--accent);" onclick="editLearner(' + d.id + ',\'' + (d.name||'').replace(/'/g,"\\'") + '\',\'' + (d.email||'').replace(/'/g,"\\'") + '\')">수정</button> '
+                    + '<button class="btn btn-sm btn-outline" style="color:var(--danger);" onclick="deleteLearner(' + d.id + ',\'' + (d.name||'').replace(/'/g,"\\'") + '\')">삭제</button>'
+                    + '</td>'
                     + '</tr>';
             });
             listEl.innerHTML = html;
@@ -505,6 +509,68 @@
             panel.innerHTML = '<div style="color:var(--danger);padding:20px;">로딩 실패: ' + e.message
                 + '<br><button class="btn btn-sm btn-outline" style="margin-top:10px;" onclick="var r=document.getElementById(\'learnerDetailRow\');if(r)r.remove();">닫기</button></div>';
         });
+    };
+
+    // ===== EDIT / DELETE LEARNER =====
+    window.editLearner = function(uid, currentName, currentEmail) {
+        var overlay = document.createElement('div');
+        overlay.id = 'editLearnerOverlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;';
+        overlay.innerHTML = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:28px;max-width:400px;width:90%;">'
+            + '<h3 style="margin-bottom:16px;font-size:18px;font-weight:700;">회원정보 수정</h3>'
+            + '<label style="font-size:13px;color:var(--text-dim);display:block;margin-bottom:4px;">이름</label>'
+            + '<input id="editName" type="text" value="' + currentName.replace(/"/g,'&quot;') + '" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;margin-bottom:12px;box-sizing:border-box;">'
+            + '<label style="font-size:13px;color:var(--text-dim);display:block;margin-bottom:4px;">이메일</label>'
+            + '<input id="editEmail" type="email" value="' + currentEmail.replace(/"/g,'&quot;') + '" style="width:100%;padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;margin-bottom:20px;box-sizing:border-box;">'
+            + '<div style="display:flex;gap:8px;justify-content:flex-end;">'
+            + '<button class="btn btn-sm btn-outline" onclick="document.getElementById(\'editLearnerOverlay\').remove()">취소</button>'
+            + '<button class="btn btn-sm btn-primary" onclick="submitEditLearner(' + uid + ')">저장</button>'
+            + '</div></div>';
+        overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+        document.body.appendChild(overlay);
+        document.getElementById('editName').focus();
+    };
+
+    window.submitEditLearner = function(uid) {
+        var name = document.getElementById('editName').value.trim();
+        var email = document.getElementById('editEmail').value.trim();
+        if (!name) { alert('이름을 입력하세요'); return; }
+
+        fetch(API_BASE + '/admin/learners/' + uid, {
+            method: 'PUT',
+            headers: Object.assign({'Content-Type':'application/json'}, getAdminHeaders()),
+            body: JSON.stringify({ name: name, email: email })
+        })
+        .then(function(r) {
+            if (!r.ok) throw new Error('수정 실패');
+            return r.json();
+        })
+        .then(function() {
+            document.getElementById('editLearnerOverlay').remove();
+            showToast('회원정보가 수정되었습니다');
+            loadAllLearners();
+        })
+        .catch(function(e) { alert(e.message); });
+    };
+
+    window.deleteLearner = function(uid, name) {
+        if (!confirm('"' + name + '" 회원을 삭제하시겠습니까?\n\n학습 기록도 모두 삭제됩니다. 이 작업은 되돌릴 수 없습니다.')) return;
+
+        fetch(API_BASE + '/admin/learners/' + uid, {
+            method: 'DELETE',
+            headers: getAdminHeaders()
+        })
+        .then(function(r) {
+            if (!r.ok) throw new Error('삭제 실패');
+            return r.json();
+        })
+        .then(function() {
+            var detailRow = document.getElementById('learnerDetailRow');
+            if (detailRow) detailRow.remove();
+            showToast('"' + name + '" 회원이 삭제되었습니다');
+            loadAllLearners();
+        })
+        .catch(function(e) { alert(e.message); });
     };
 
     // ===== UI UPDATE =====

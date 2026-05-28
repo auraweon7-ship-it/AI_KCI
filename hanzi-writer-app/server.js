@@ -214,6 +214,34 @@ app.get('/api/admin/stats', auth, async function (req, res) {
     }
 });
 
+// --- Admin: Update User ---
+app.put('/api/admin/learners/:id', auth, async function (req, res) {
+    if (!req.user.admin) return res.status(403).json({ error: 'Forbidden' });
+    try {
+        var { name, email } = req.body;
+        var result = await pool.query(
+            'UPDATE users SET name = COALESCE($1, name), email = COALESCE($2, email) WHERE id = $3 RETURNING id, name, email',
+            [name || null, email || null, req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
+    } catch (e) {
+        res.status(500).json({ error: 'Update failed' });
+    }
+});
+
+// --- Admin: Delete User ---
+app.delete('/api/admin/learners/:id', auth, async function (req, res) {
+    if (!req.user.admin) return res.status(403).json({ error: 'Forbidden' });
+    try {
+        var result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id', [req.params.id]);
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json({ deleted: true });
+    } catch (e) {
+        res.status(500).json({ error: 'Delete failed' });
+    }
+});
+
 // --- Visitor Counter ---
 app.post('/api/visit', async function (req, res) {
     try {
