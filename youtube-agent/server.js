@@ -865,6 +865,22 @@ app.post('/api/thumbnail/generate', async (req, res) => {
   try {
     const { projectId, topic, style, text } = req.body;
 
+    let hookText = text;
+    if (!hookText && topic) {
+      const hookMsg = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 100,
+        messages: [{ role: 'user', content: `유튜브 썸네일에 들어갈 짧고 강렬한 관심 유발 문구를 1개만 만들어주세요.
+주제: "${topic}"
+규칙:
+- 한국어, 8자 이내
+- 충격/호기심/긴박감을 자극
+- 예: "충격 진실", "결국 터졌다", "이게 실화?", "절대 몰랐던", "소름 주의"
+문구만 출력하세요. 따옴표 없이.` }]
+      });
+      hookText = hookMsg.content[0].text.trim().replace(/["""]/g, '');
+    }
+
     const styleGuide = {
       dramatic: 'dramatic lighting, high contrast, dark background, cinematic, powerful imagery',
       clean: 'clean minimal design, modern, professional, white space, sharp typography',
@@ -872,7 +888,7 @@ app.post('/api/thumbnail/generate', async (req, res) => {
       cinematic: 'cinematic wide shot, film-like, teal and orange grading, atmospheric'
     };
 
-    const thumbPrompt = `YouTube video thumbnail, ${styleGuide[style] || styleGuide.dramatic}, topic: "${topic}", ${text ? `with text overlay "${text}"` : 'visually striking without text'}, 1280x720 resolution, eye-catching, professional quality, 16:9 aspect ratio`;
+    const thumbPrompt = `YouTube video thumbnail, ${styleGuide[style] || styleGuide.dramatic}, topic: "${topic}", with large bold Korean text overlay "${hookText}" in eye-catching font, 1280x720 resolution, eye-catching, professional quality, 16:9 aspect ratio`;
 
     const image = await openai.images.generate({
       model: 'gpt-image-1',
@@ -891,7 +907,8 @@ app.post('/api/thumbnail/generate', async (req, res) => {
     res.json({
       success: true,
       imageUrl: `/output/thumbnails/${filename}`,
-      filename
+      filename,
+      hookText
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
