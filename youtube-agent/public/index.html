@@ -275,27 +275,27 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
   <nav class="sb-nav">
     <div class="ni act" data-s="home" onclick="goHome()" style="margin:4px 0 2px;font-weight:600;color:var(--t1)"><span>🏠</span> 홈</div>
     <div class="ni" data-s="auto" onclick="go('auto')" style="margin:2px 0 4px;background:linear-gradient(135deg,rgba(255,59,59,.08),rgba(255,107,53,.08));border:1px solid rgba(255,59,59,.15);border-radius:var(--rs)"><span>🤖</span> <strong>자동 제작</strong></div>
-    <div class="sb-lbl">기획</div>
+    <div class="sb-lbl">📝 기획</div>
     <div class="ni" data-s="topic" onclick="go('topic')"><span>💡</span> 주제 선정 <span class="n">1</span></div>
     <div class="ni" data-s="plan" onclick="go('plan')"><span>📋</span> 대본 기획 <span class="req"></span><span class="n">2</span></div>
     <div class="ni" data-s="script" onclick="go('script')"><span>✍️</span> 대본 작성 <span class="req"></span><span class="n">3</span></div>
-    <div class="sb-lbl">제작</div>
+    <div class="sb-lbl">🎬 제작</div>
     <div class="ni" data-s="image" onclick="go('image')"><span>🎨</span> 이미지 생성 <span class="req"></span><span class="n">4</span></div>
     <div class="ni" data-s="tts" onclick="go('tts')"><span>🎙️</span> TTS 음성 <span class="req"></span><span class="n">5</span></div>
     <div class="ni" data-s="render" onclick="go('render')"><span>🎬</span> 영상 합성 <span class="req"></span><span class="n">6</span></div>
-    <div class="sb-lbl">퍼블리싱</div>
+    <div class="sb-lbl">📢 퍼블리싱</div>
     <div class="ni" data-s="meta" onclick="go('meta')"><span>🏷️</span> 제목/설명 <span class="req"></span><span class="n">7</span></div>
     <div class="ni" data-s="thumb" onclick="go('thumb')"><span>🖼️</span> 썸네일 <span class="n">8</span></div>
-    <div class="sb-lbl">확장</div>
+    <div class="sb-lbl">🔧 확장</div>
     <div class="ni" data-s="shorts" onclick="go('shorts')"><span>📱</span> 쇼츠 <span class="req"></span><span class="n">9</span></div>
     <div class="ni" data-s="intro" onclick="go('intro')"><span>🚀</span> 인트로 <span class="n">10</span></div>
-    <div class="sb-lbl">편집</div>
+    <div class="sb-lbl">✂️ 편집</div>
     <div class="ni" data-s="timeline" onclick="go('timeline')"><span>🎞️</span> 타임라인</div>
     <div class="ni" data-s="srt" onclick="go('srt')"><span>📝</span> SRT 자막</div>
-    <div class="sb-lbl">관리</div>
+    <div class="sb-lbl">⚙️ 관리</div>
     <div class="ni" data-s="projmgr" onclick="go('projmgr')"><span>📁</span> 프로젝트</div>
     <div class="ni" data-s="analytics" onclick="go('analytics')"><span>📊</span> Analytics</div>
-    <div class="sb-lbl">업로드</div>
+    <div class="sb-lbl">☁️ 업로드</div>
     <div class="ni" data-s="upload" onclick="go('upload')"><span>📤</span> YouTube <span class="req"></span><span class="n">⬆</span></div>
   </nav>
   <div class="sb-ft">
@@ -394,11 +394,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
           <p>주제·시간·언어만 선택하면 대본→이미지→음성→영상→메타데이터→썸네일까지 자동 완료</p>
         </div>
         <div class="cd">
-          <div class="fg"><label class="fl">영상 주제 *</label>
+          <div class="fg"><label class="fl">🎯 영상 주제 *</label>
             <input type="text" class="fi" id="autoTopic" placeholder="예: 베트남 전쟁 속 병사들의 고독과 연대">
           </div>
           <div class="fr3">
-            <div class="fg"><label class="fl">영상 길이</label>
+            <div class="fg"><label class="fl">⏱️ 영상 길이</label>
               <select class="fs" id="autoLen">
                 <option value="10">10분</option>
                 <option value="15" selected>15분</option>
@@ -406,14 +406,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
                 <option value="30">30분+</option>
               </select>
             </div>
-            <div class="fg"><label class="fl">영상 언어</label>
+            <div class="fg"><label class="fl">🌐 영상 언어</label>
               <select class="fs" id="autoLang">
                 <option value="ko" selected>🇰🇷 한국어</option>
                 <option value="en">🇺🇸 영어</option>
                 <option value="zh">🇨🇳 중국어</option>
               </select>
             </div>
-            <div class="fg"><label class="fl">이미지 스타일</label>
+            <div class="fg"><label class="fl">🎨 이미지 스타일</label>
               <select class="fs" id="autoStyle">
                 <option value="european-animation">유럽풍 애니메이션</option>
                 <option value="realistic">실사/포토리얼</option>
@@ -423,14 +423,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
             </div>
           </div>
           <div class="fr">
-            <div class="fg"><label class="fl">이미지 수</label>
+            <div class="fg"><label class="fl">🖼️ 이미지 수</label>
               <select class="fs" id="autoImgCnt">
                 <option value="5">5장</option>
                 <option value="8" selected>8장</option>
                 <option value="10">10장</option>
               </select>
             </div>
-            <div class="fg"><label class="fl">음성</label>
+            <div class="fg"><label class="fl">🎙️ 음성</label>
               <select class="fs" id="autoVoice">
                 <option value="21m00Tcm4TlvDq8ikWAM">Rachel (여성)</option>
                 <option value="TxGEqnHWrfWFTfGW9XjX">Josh (남성)</option>
@@ -462,17 +462,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     <div class="sec act" id="sec-topic">
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">💡 주제 선정</div><div class="cd-s">직접 입력하거나 AI 추천을 받으세요</div></div></div>
-        <div class="fg"><label class="fl">영상 주제 직접 입력</label>
+        <div class="fg"><label class="fl">🎯 영상 주제 직접 입력</label>
           <input type="text" class="fi" id="directTopic" placeholder="예: 베트남 전쟁 속 병사들의 고독과 연대" oninput="S.topic=this.value">
           <div class="fh">직접 입력 후 '다음 단계' 클릭, 또는 아래에서 AI 추천을 받으세요</div></div>
         <button class="b bp" onclick="if(S.topic){markOk('topic');go('plan')}else{toast('주제를 입력하세요','err')}">→ 다음 단계 (대본 기획)</button>
         <div class="divider"></div>
         <div class="cd-t" style="margin-bottom:12px">🤖 AI 주제 추천</div>
         <div class="fr">
-          <div class="fg"><label class="fl">카테고리</label><select class="fs" id="topCat"><option value="">선택...</option><option>역사/다큐</option><option>과학/기술</option><option>미스터리/괴담</option><option>경제/재테크</option><option>심리/자기계발</option><option>세계문화/여행</option><option>범죄/사건</option><option>자연/동물</option><option>철학/인문학</option></select></div>
-          <div class="fg"><label class="fl">타겟</label><select class="fs" id="topTar"><option value="">선택...</option><option>10대 청소년</option><option>20~30대</option><option>30~40대 직장인</option><option>40~60대 중장년</option><option>전 연령</option></select></div>
+          <div class="fg"><label class="fl">📂 카테고리</label><select class="fs" id="topCat"><option value="">선택...</option><option>역사/다큐</option><option>과학/기술</option><option>미스터리/괴담</option><option>경제/재테크</option><option>심리/자기계발</option><option>세계문화/여행</option><option>범죄/사건</option><option>자연/동물</option><option>철학/인문학</option></select></div>
+          <div class="fg"><label class="fl">👥 타겟</label><select class="fs" id="topTar"><option value="">선택...</option><option>10대 청소년</option><option>20~30대</option><option>30~40대 직장인</option><option>40~60대 중장년</option><option>전 연령</option></select></div>
         </div>
-        <div class="fg"><label class="fl">키워드 (선택)</label><input type="text" class="fi" id="topKw" placeholder="예: 전쟁, AI, 우주..."></div>
+        <div class="fg"><label class="fl">🔑 키워드 (선택)</label><input type="text" class="fi" id="topKw" placeholder="예: 전쟁, AI, 우주..."></div>
         <button class="b bs blg" id="topBtn" onclick="doTopics()">🔍 AI 주제 추천받기</button>
       </div>
       <div id="topOut"></div>
@@ -483,16 +483,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div id="planReq"></div>
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">📋 대본 기획 (Claude AI)</div><div class="cd-s">영상 구조를 설계합니다</div></div></div>
-        <div class="fg"><label class="fl">영상 주제 *</label><input type="text" class="fi" id="planTopic" placeholder="주제"></div>
+        <div class="fg"><label class="fl">🎯 영상 주제 *</label><input type="text" class="fi" id="planTopic" placeholder="주제"></div>
         <div class="fr">
-          <div class="fg"><label class="fl">타겟 시청자</label><input type="text" class="fi" id="planTarget" placeholder="예: 역사 관심 중장년층"></div>
-          <div class="fg"><label class="fl">영상 길이</label><select class="fs" id="planLen"><option value="10">10분</option><option value="15" selected>15분</option><option value="20">20분</option><option value="30">30분+</option></select></div>
+          <div class="fg"><label class="fl">👥 타겟 시청자</label><input type="text" class="fi" id="planTarget" placeholder="예: 역사 관심 중장년층"></div>
+          <div class="fg"><label class="fl">⏱️ 영상 길이</label><select class="fs" id="planLen"><option value="10">10분</option><option value="15" selected>15분</option><option value="20">20분</option><option value="30">30분+</option></select></div>
         </div>
         <div class="fr">
-          <div class="fg"><label class="fl">톤</label><select class="fs" id="planTone"><option value="진지하고 무게감 있는">진지/무게감</option><option value="따뜻하고 감성적인">따뜻/감성</option><option value="긴박하고 흥미진진한">긴박/흥미</option><option value="교육적이고 차분한">교육/차분</option></select></div>
-          <div class="fg"><label class="fl">이미지 스타일</label><select class="fs" id="planStyle"><option value="european-animation">유럽풍 애니메이션</option><option value="realistic">실사/포토리얼</option><option value="cinematic">시네마틱</option><option value="watercolor">수채화풍</option></select></div>
+          <div class="fg"><label class="fl">🎭 톤</label><select class="fs" id="planTone"><option value="진지하고 무게감 있는">진지/무게감</option><option value="따뜻하고 감성적인">따뜻/감성</option><option value="긴박하고 흥미진진한">긴박/흥미</option><option value="교육적이고 차분한">교육/차분</option></select></div>
+          <div class="fg"><label class="fl">🎨 이미지 스타일</label><select class="fs" id="planStyle"><option value="european-animation">유럽풍 애니메이션</option><option value="realistic">실사/포토리얼</option><option value="cinematic">시네마틱</option><option value="watercolor">수채화풍</option></select></div>
         </div>
-        <div class="fg"><label class="fl">특별 요청</label><textarea class="ft" id="planNotes" rows="2" placeholder="추가 참고사항..."></textarea></div>
+        <div class="fg"><label class="fl">💬 특별 요청</label><textarea class="ft" id="planNotes" rows="2" placeholder="추가 참고사항..."></textarea></div>
         <button class="b bp blg" id="planBtn" onclick="doPlan()">📋 기획안 생성 (Claude AI)</button>
       </div>
       <div id="planOut"></div>
@@ -504,8 +504,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">✍️ 대본 생성 (Claude AI)</div><div class="cd-s">Fact-Check 기반 전체 대본 작성</div></div></div>
         <div class="fr">
-          <div class="fg"><label class="fl">분량</label><select class="fs" id="scriptWc"><option value="2000">~2,000자 (10분)</option><option value="3000" selected>~3,000자 (15분)</option><option value="4500">~4,500자 (20분)</option><option value="6000">~6,000자 (30분)</option></select></div>
-          <div class="fg"><label class="fl">나레이션</label><select class="fs" id="scriptNar"><option value="3인칭 나레이터">3인칭 나레이터</option><option value="이야기꾼">이야기꾼 (구연)</option><option value="리포터">리포터</option><option value="대화체">대화체</option></select></div>
+          <div class="fg"><label class="fl">📏 분량</label><select class="fs" id="scriptWc"><option value="2000">~2,000자 (10분)</option><option value="3000" selected>~3,000자 (15분)</option><option value="4500">~4,500자 (20분)</option><option value="6000">~6,000자 (30분)</option></select></div>
+          <div class="fg"><label class="fl">🎤 나레이션</label><select class="fs" id="scriptNar"><option value="3인칭 나레이터">3인칭 나레이터</option><option value="이야기꾼">이야기꾼 (구연)</option><option value="리포터">리포터</option><option value="대화체">대화체</option></select></div>
         </div>
         <button class="b bp blg" id="scriptBtn" onclick="doScript()">✍️ 대본 생성 (Claude AI)</button>
       </div>
@@ -518,9 +518,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">🎨 이미지 생성 (DALL-E 3)</div><div class="cd-s">대본 기반 장면별 이미지 실제 생성</div></div></div>
         <div class="fr3">
-          <div class="fg"><label class="fl">스타일</label><select class="fs" id="imgStyle"><option value="european-animation">유럽풍 애니메이션</option><option value="realistic">실사</option><option value="cinematic">시네마틱</option><option value="watercolor">수채화</option><option value="oil-painting">유화</option></select></div>
-          <div class="fg"><label class="fl">비율</label><select class="fs" id="imgRatio"><option value="16:9" selected>16:9</option><option value="9:16">9:16 (쇼츠)</option><option value="1:1">1:1</option></select></div>
-          <div class="fg"><label class="fl">장면 수</label><select class="fs" id="imgCnt"><option value="5">5개</option><option value="8" selected>8개</option><option value="10">10개</option><option value="12">12개</option></select></div>
+          <div class="fg"><label class="fl">🎨 스타일</label><select class="fs" id="imgStyle"><option value="european-animation">유럽풍 애니메이션</option><option value="realistic">실사</option><option value="cinematic">시네마틱</option><option value="watercolor">수채화</option><option value="oil-painting">유화</option></select></div>
+          <div class="fg"><label class="fl">📐 비율</label><select class="fs" id="imgRatio"><option value="16:9" selected>16:9</option><option value="9:16">9:16 (쇼츠)</option><option value="1:1">1:1</option></select></div>
+          <div class="fg"><label class="fl">🔢 장면 수</label><select class="fs" id="imgCnt"><option value="5">5개</option><option value="8" selected>8개</option><option value="10">10개</option><option value="12">12개</option></select></div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="b bs blg" id="imgPBtn" onclick="doImgPrompts()">① 프롬프트 생성 (Claude)</button>
@@ -539,14 +539,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div id="ttsReq"></div>
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">🎙️ TTS 음성 생성 (ElevenLabs)</div><div class="cd-s">대본을 음성으로 변환합니다</div></div></div>
-        <div class="fg"><label class="fl">언어 선택</label>
+        <div class="fg"><label class="fl">🌐 언어 선택</label>
           <div class="tl" id="ttsLangTags" style="margin-top:4px">
             <span class="tag sel" data-lang="ko" onclick="setTTSLang('ko')">🇰🇷 한국어</span>
             <span class="tag" data-lang="en" onclick="setTTSLang('en')">🇺🇸 영어</span>
             <span class="tag" data-lang="zh" onclick="setTTSLang('zh')">🇨🇳 중국어</span>
           </div>
         </div>
-        <div class="fg"><label class="fl">음성 선택 — <span id="ttsLangLabel">한국어</span></label>
+        <div class="fg"><label class="fl">🎙️ 음성 선택 — <span id="ttsLangLabel">한국어</span></label>
           <div class="g3" id="voiceCards" style="margin-top:6px"></div>
           <div style="margin-top:8px;display:flex;gap:6px;align-items:center">
             <select class="fs" id="ttsVoice" style="flex:1" onchange="onVoiceSelect()"></select>
@@ -559,13 +559,13 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
             <span id="voicePreviewStatus" style="font-size:9px;color:var(--t3)"></span>
           </div>
         </div>
-        <div class="fg"><label class="fl">음성 설정</label>
+        <div class="fg"><label class="fl">⚙️ 음성 설정</label>
           <div class="fr">
-            <div class="fg"><label class="fl">안정성</label><input type="number" class="fi" id="ttsSt" value="0.5" min="0" max="1" step="0.1"></div>
-            <div class="fg"><label class="fl">유사도</label><input type="number" class="fi" id="ttsSim" value="0.75" min="0" max="1" step="0.1"></div>
+            <div class="fg"><label class="fl">📊 안정성</label><input type="number" class="fi" id="ttsSt" value="0.5" min="0" max="1" step="0.1"></div>
+            <div class="fg"><label class="fl">🔗 유사도</label><input type="number" class="fi" id="ttsSim" value="0.75" min="0" max="1" step="0.1"></div>
           </div>
         </div>
-        <div class="fg"><label class="fl">TTS 변환 텍스트 (편집 가능 — 대본에서 자동 추출됨)</label>
+        <div class="fg"><label class="fl">📝 TTS 변환 텍스트 (편집 가능 — 대본에서 자동 추출됨)</label>
           <textarea class="out-edit" id="ttsText" rows="8" placeholder="대본 생성 후 자동으로 채워집니다..."></textarea>
           <div class="fh"><span id="ttsCharCnt">0</span>자 | 5,000자 초과 시 자동 청크 분할</div>
         </div>
@@ -581,9 +581,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         <div class="cd-h"><div><div class="cd-t">🎬 영상 합성 (FFmpeg)</div><div class="cd-s">이미지 + 음성 → MP4 영상</div></div></div>
         <div id="ffmpegStatus"></div>
         <div class="fr">
-          <div class="fg"><label class="fl">총 영상 길이 (분)</label><input type="number" class="fi" id="renderDur" value="2" min="0.5" step="0.5">
+          <div class="fg"><label class="fl">⏱️ 총 영상 길이 (분)</label><input type="number" class="fi" id="renderDur" value="2" min="0.5" step="0.5">
             <div class="fh" id="renderDurHint">오디오 길이 기반 자동 설정됨</div></div>
-          <div class="fg"><label class="fl">자료 현황</label>
+          <div class="fg"><label class="fl">📦 자료 현황</label>
             <div id="renderAssets" style="font-size:11px;color:var(--t2);line-height:1.8"></div></div>
         </div>
         <div class="divider"></div>
@@ -593,11 +593,11 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
           <div id="bgmCurrent" style="margin-top:6px;font-size:10px;color:var(--ok);display:none"></div>
         </div>
         <div class="fr" style="margin-top:8px">
-          <div class="fg"><label class="fl">BGM 볼륨</label>
+          <div class="fg"><label class="fl">🔊 BGM 볼륨</label>
             <input type="range" id="bgmVol" min="0.05" max="0.5" step="0.05" value="0.15" style="width:100%" oninput="document.getElementById('bgmVolLabel').textContent=Math.round(this.value*100)+'%'">
             <div class="fh">나레이션 대비 <span id="bgmVolLabel">15</span>%</div>
           </div>
-          <div class="fg"><label class="fl">BGM 파일 목록</label>
+          <div class="fg"><label class="fl">📂 BGM 파일 목록</label>
             <select class="fs" id="bgmSelect"><option value="">BGM 없음</option></select>
             <button class="b bg" onclick="loadBgmList()" style="font-size:9px;margin-top:4px">🔄 새로고침</button>
           </div>
@@ -605,7 +605,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         <div class="divider"></div>
         <div class="cd-t" style="margin-bottom:10px">✨ 장면 전환 효과</div>
         <div class="fr">
-          <div class="fg"><label class="fl">전환 스타일</label>
+          <div class="fg"><label class="fl">✨ 전환 스타일</label>
             <select class="fs" id="renderTrans">
               <option value="none">없음 (컷 편집)</option>
               <option value="fade" selected>페이드 (Fade)</option>
@@ -620,7 +620,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
               <option value="smoothright">스무스 우</option>
             </select>
           </div>
-          <div class="fg"><label class="fl">전환 시간 (초)</label>
+          <div class="fg"><label class="fl">⏱️ 전환 시간 (초)</label>
             <input type="number" class="fi" id="renderTransDur" value="0.8" min="0.3" max="3" step="0.1">
             <div class="fh">장면 간 전환에 사용되는 시간</div>
           </div>
@@ -635,7 +635,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div id="metaReq"></div>
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">🏷️ 제목 / 설명 / 태그 (Claude AI)</div><div class="cd-s">클릭률 최적화된 메타데이터 생성</div></div></div>
-        <div class="fg"><label class="fl">다국어 지원</label>
+        <div class="fg"><label class="fl">🌍 다국어 지원</label>
           <div class="tl" id="langTags">
             <span class="tag sel" data-l="ko" onclick="togLang(this)">🇰🇷 한국어</span>
             <span class="tag" data-l="en" onclick="togLang(this)">🇺🇸 영어</span>
@@ -651,8 +651,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">🖼️ 썸네일 생성 (DALL-E 3)</div><div class="cd-s">클릭 유도 썸네일 이미지 생성</div></div></div>
         <div class="fr">
-          <div class="fg"><label class="fl">스타일</label><select class="fs" id="thStyle"><option value="dramatic">드라마틱</option><option value="clean">미니멀</option><option value="clickbait">호기심 자극</option><option value="cinematic">시네마틱</option></select></div>
-          <div class="fg"><label class="fl">텍스트 오버레이</label><input type="text" class="fi" id="thText" placeholder="썸네일 텍스트 (선택)"></div>
+          <div class="fg"><label class="fl">🎨 스타일</label><select class="fs" id="thStyle"><option value="dramatic">드라마틱</option><option value="clean">미니멀</option><option value="clickbait">호기심 자극</option><option value="cinematic">시네마틱</option></select></div>
+          <div class="fg"><label class="fl">✏️ 텍스트 오버레이</label><input type="text" class="fi" id="thText" placeholder="썸네일 텍스트 (선택)"></div>
         </div>
         <button class="b bp blg" id="thBtn" onclick="doThumb()">🖼️ 썸네일 생성</button>
       </div>
@@ -665,8 +665,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">📱 쇼츠 대본 (Claude AI)</div><div class="cd-s">롱폼에서 핵심 추출 → 30~60초 쇼츠</div></div></div>
         <div class="fr">
-          <div class="fg"><label class="fl">길이</label><select class="fs" id="shLen"><option value="30">30초</option><option value="45">45초</option><option value="60" selected>60초</option></select></div>
-          <div class="fg"><label class="fl">수량</label><select class="fs" id="shCnt"><option value="1">1개</option><option value="2">2개</option><option value="3" selected>3개</option></select></div>
+          <div class="fg"><label class="fl">⏱️ 길이</label><select class="fs" id="shLen"><option value="30">30초</option><option value="45">45초</option><option value="60" selected>60초</option></select></div>
+          <div class="fg"><label class="fl">🔢 수량</label><select class="fs" id="shCnt"><option value="1">1개</option><option value="2">2개</option><option value="3" selected>3개</option></select></div>
         </div>
         <button class="b bp blg" id="shBtn" onclick="doShorts()">📱 쇼츠 대본 생성</button>
       </div>
@@ -678,8 +678,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">🚀 인트로 생성 (Claude AI)</div><div class="cd-s">시청자를 사로잡는 오프닝</div></div></div>
         <div class="fr">
-          <div class="fg"><label class="fl">길이</label><select class="fs" id="intLen"><option value="15">15초</option><option value="30" selected>30초</option><option value="45">45초</option></select></div>
-          <div class="fg"><label class="fl">유형</label><select class="fs" id="intType"><option value="질문형">질문형</option><option value="충격적 사실">충격적 사실</option><option value="미니 스토리">스토리텔링</option><option value="통계/데이터">통계/데이터</option></select></div>
+          <div class="fg"><label class="fl">⏱️ 길이</label><select class="fs" id="intLen"><option value="15">15초</option><option value="30" selected>30초</option><option value="45">45초</option></select></div>
+          <div class="fg"><label class="fl">🎭 유형</label><select class="fs" id="intType"><option value="질문형">질문형</option><option value="충격적 사실">충격적 사실</option><option value="미니 스토리">스토리텔링</option><option value="통계/데이터">통계/데이터</option></select></div>
         </div>
         <button class="b bp blg" id="intBtn" onclick="doIntro()">🚀 인트로 생성</button>
       </div>
@@ -692,12 +692,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">📤 YouTube 업로드</div><div class="cd-s">영상을 YouTube에 바로 업로드</div></div></div>
         <div class="yt-st" id="ytSt"><div class="dot r"></div><span>YouTube 미연동</span><button class="b bs" style="margin-left:auto" onclick="ytAuth()">🔗 연동</button></div>
-        <div class="fg"><label class="fl">제목 *</label><input type="text" class="fi" id="upTitle" placeholder="영상 제목"></div>
-        <div class="fg"><label class="fl">설명</label><textarea class="ft" id="upDesc" rows="4" placeholder="영상 설명 (타임스탬프 포함)"></textarea></div>
-        <div class="fg"><label class="fl">태그 (쉼표 구분)</label><input type="text" class="fi" id="upTags" placeholder="태그1, 태그2"></div>
+        <div class="fg"><label class="fl">📌 제목 *</label><input type="text" class="fi" id="upTitle" placeholder="영상 제목"></div>
+        <div class="fg"><label class="fl">📝 설명</label><textarea class="ft" id="upDesc" rows="4" placeholder="영상 설명 (타임스탬프 포함)"></textarea></div>
+        <div class="fg"><label class="fl">🏷️ 태그 (쉼표 구분)</label><input type="text" class="fi" id="upTags" placeholder="태그1, 태그2"></div>
         <div class="fr">
-          <div class="fg"><label class="fl">공개 상태</label><select class="fs" id="upPriv"><option value="private" selected>비공개</option><option value="unlisted">일부공개</option><option value="public">공개</option></select></div>
-          <div class="fg"><label class="fl">카테고리</label><select class="fs" id="upCat"><option value="27">교육</option><option value="24">엔터테인먼트</option><option value="28">과학기술</option><option value="22">인물/블로그</option></select></div>
+          <div class="fg"><label class="fl">🔒 공개 상태</label><select class="fs" id="upPriv"><option value="private" selected>비공개</option><option value="unlisted">일부공개</option><option value="public">공개</option></select></div>
+          <div class="fg"><label class="fl">📂 카테고리</label><select class="fs" id="upCat"><option value="27">교육</option><option value="24">엔터테인먼트</option><option value="28">과학기술</option><option value="22">인물/블로그</option></select></div>
         </div>
         <div id="upPreview" style="margin-bottom:12px"></div>
         <button class="b bok blg" id="upBtn" onclick="doUpload()" disabled>📤 YouTube 업로드</button>
@@ -732,7 +732,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     <div class="sec" id="sec-srt">
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">📝 SRT 자막 생성</div><div class="cd-s">대본에서 자동으로 타임스탬프 자막 생성</div></div></div>
-        <div class="fg"><label class="fl">기준 영상 길이 (초)</label>
+        <div class="fg"><label class="fl">⏱️ 기준 영상 길이 (초)</label>
           <input type="number" class="fi" id="srtDuration" value="120" min="30">
           <div class="fh">영상 합성 시 사용한 시간과 동일하게 설정하세요</div>
         </div>
@@ -747,7 +747,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         <div class="cd-h"><div><div class="cd-t">📁 프로젝트 관리</div><div class="cd-s">여러 프로젝트를 저장·불러오기·삭제</div></div>
           <button class="b bp" onclick="saveCurrentProject()">💾 현재 프로젝트 저장</button>
         </div>
-        <div class="fg"><label class="fl">프로젝트 이름</label>
+        <div class="fg"><label class="fl">📁 프로젝트 이름</label>
           <input type="text" class="fi" id="projName" placeholder="프로젝트 이름 입력">
         </div>
       </div>
