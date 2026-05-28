@@ -400,13 +400,31 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div id="ttsReq"></div>
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">🎙️ TTS 음성 생성 (ElevenLabs)</div><div class="cd-s">대본을 음성으로 변환합니다</div></div></div>
-        <div class="fr">
-          <div class="fg"><label class="fl">음성 선택</label>
-            <select class="fs" id="ttsVoice"><option value="pNInz6obpgDQGcFmaJgB">Adam (기본)</option></select>
-            <div class="fh"><button class="b bg" onclick="loadVoices()" style="padding:2px 6px;font-size:9px">🔄 음성 목록 새로고침</button></div></div>
-          <div class="fg"><label class="fl">설정</label>
-            <div class="fr"><div class="fg"><label class="fl">안정성</label><input type="number" class="fi" id="ttsSt" value="0.5" min="0" max="1" step="0.1"></div>
-            <div class="fg"><label class="fl">유사도</label><input type="number" class="fi" id="ttsSim" value="0.75" min="0" max="1" step="0.1"></div></div></div>
+        <div class="fg"><label class="fl">음성 선택</label>
+          <div class="g3" id="voiceCards" style="margin-top:6px"></div>
+          <div style="margin-top:8px;display:flex;gap:6px;align-items:center">
+            <select class="fs" id="ttsVoice" style="flex:1" onchange="onVoiceSelect()">
+              <option value="pNInz6obpgDQGcFmaJgB" data-label="남성 · 깊고 따뜻한 톤" data-preview="">Adam (기본)</option>
+              <option value="21m00Tcm4TlvDq8ikWAM" data-label="여성 · 차분하고 명확한" data-preview="">Rachel</option>
+              <option value="ErXwobaYiN019PkySvjV" data-label="남성 · 부드럽고 친근한" data-preview="">Antoni</option>
+              <option value="EXAVITQu4vr4xnSDxMaL" data-label="여성 · 부드럽고 감성적" data-preview="">Bella</option>
+              <option value="TxGEqnHWrfWFTfGW9XjX" data-label="남성 · 깊고 나레이션형" data-preview="">Josh</option>
+              <option value="MF3mGyEYCl7XYWbV9V6O" data-label="여성 · 젊고 활기찬" data-preview="">Elli</option>
+            </select>
+            <button class="b bg" onclick="loadVoices()" style="padding:4px 8px;font-size:9px;white-space:nowrap">🔄 전체 목록</button>
+          </div>
+          <div id="voiceInfo" style="margin-top:6px;font-size:10px;color:var(--t3)">남성 · 깊고 따뜻한 톤</div>
+          <div id="voicePreview" style="margin-top:6px;display:flex;align-items:center;gap:8px">
+            <button class="b bs" onclick="previewVoice()" style="font-size:10px">🔊 샘플 듣기</button>
+            <audio id="voiceSampleAudio" style="display:none"></audio>
+            <span id="voicePreviewStatus" style="font-size:9px;color:var(--t3)"></span>
+          </div>
+        </div>
+        <div class="fg"><label class="fl">음성 설정</label>
+          <div class="fr">
+            <div class="fg"><label class="fl">안정성</label><input type="number" class="fi" id="ttsSt" value="0.5" min="0" max="1" step="0.1"></div>
+            <div class="fg"><label class="fl">유사도</label><input type="number" class="fi" id="ttsSim" value="0.75" min="0" max="1" step="0.1"></div>
+          </div>
         </div>
         <div class="fg"><label class="fl">TTS 변환 텍스트 (편집 가능 — 대본에서 자동 추출됨)</label>
           <textarea class="out-edit" id="ttsText" rows="8" placeholder="대본 생성 후 자동으로 채워집니다..."></textarea>
@@ -703,6 +721,75 @@ async function doImgGenAll(){
 }
 
 // === 5. TTS ===
+const VOICE_PRESETS = [
+  {id:'pNInz6obpgDQGcFmaJgB',name:'Adam',gender:'남성',desc:'깊고 따뜻한 톤',icon:'🎙️',color:'#ff3b3b'},
+  {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',gender:'여성',desc:'차분하고 명확한',icon:'👩',color:'#a78bfa'},
+  {id:'ErXwobaYiN019PkySvjV',name:'Antoni',gender:'남성',desc:'부드럽고 친근한',icon:'🧑',color:'#60a5fa'},
+  {id:'EXAVITQu4vr4xnSDxMaL',name:'Bella',gender:'여성',desc:'부드럽고 감성적',icon:'👩‍🎤',color:'#f472b6'},
+  {id:'TxGEqnHWrfWFTfGW9XjX',name:'Josh',gender:'남성',desc:'깊고 나레이션형',icon:'🎤',color:'#34d399'},
+  {id:'MF3mGyEYCl7XYWbV9V6O',name:'Elli',gender:'여성',desc:'젊고 활기찬',icon:'🎵',color:'#fbbf24'}
+];
+let voicePreviewUrls = {};
+
+function renderVoiceCards(){
+  const sel=document.getElementById('ttsVoice');
+  const grid=document.getElementById('voiceCards');
+  grid.innerHTML=VOICE_PRESETS.map(v=>`
+    <div class="tc" style="padding:12px;cursor:pointer;${sel.value===v.id?'border-color:var(--acc);background:var(--accd)':''}" onclick="selectVoice('${v.id}')" id="vc_${v.id}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <span style="font-size:20px;width:32px;height:32px;background:${v.color}22;border-radius:8px;display:flex;align-items:center;justify-content:center">${v.icon}</span>
+        <div><div style="font-size:12px;font-weight:600">${v.name}</div><div style="font-size:9px;color:var(--t3)">${v.gender}</div></div>
+      </div>
+      <div style="font-size:10px;color:var(--t2)">${v.desc}</div>
+      <button class="b bg" onclick="event.stopPropagation();previewVoiceById('${v.id}')" style="font-size:9px;margin-top:6px;width:100%">🔊 샘플 듣기</button>
+    </div>`).join('');
+}
+
+function selectVoice(id){
+  document.getElementById('ttsVoice').value=id;
+  onVoiceSelect();
+  renderVoiceCards();
+}
+
+function onVoiceSelect(){
+  const sel=document.getElementById('ttsVoice');
+  const opt=sel.options[sel.selectedIndex];
+  document.getElementById('voiceInfo').textContent=opt.dataset.label||'';
+  renderVoiceCards();
+}
+
+async function previewVoice(){
+  previewVoiceById(document.getElementById('ttsVoice').value);
+}
+
+async function previewVoiceById(voiceId){
+  const statusEl=document.getElementById('voicePreviewStatus');
+  const audioEl=document.getElementById('voiceSampleAudio');
+  if(audioEl._playing===voiceId){audioEl.pause();audioEl.currentTime=0;audioEl._playing=null;statusEl.textContent='';return}
+
+  if(voicePreviewUrls[voiceId]){
+    audioEl.src=voicePreviewUrls[voiceId];audioEl.style.display='none';audioEl._playing=voiceId;audioEl.play();
+    statusEl.textContent='▶ 재생 중...';
+    audioEl.onended=()=>{statusEl.textContent='';audioEl._playing=null};
+    return;
+  }
+
+  statusEl.innerHTML='<span class="sp"></span> 샘플 로딩...';
+  try{
+    const r=await fetch('/api/tts/voices').then(r=>r.json());
+    if(r.success){
+      r.voices.forEach(v=>{if(v.previewUrl)voicePreviewUrls[v.id]=v.previewUrl});
+      if(voicePreviewUrls[voiceId]){
+        audioEl.src=voicePreviewUrls[voiceId];audioEl._playing=voiceId;audioEl.play();
+        statusEl.textContent='▶ 재생 중...';
+        audioEl.onended=()=>{statusEl.textContent='';audioEl._playing=null};
+      } else {
+        statusEl.textContent='샘플 없음';
+      }
+    }
+  }catch(e){statusEl.textContent='로드 실패'}
+}
+
 function prepareTTS(){
   if(S.script&&!document.getElementById('ttsText').value){
     const clean=S.script.replace(/\[장면[^\]]*\]/g,'').replace(/[━═─▶■●•🎙️🎬📌🔹✅☐]/g,'').replace(/\n{3,}/g,'\n\n').trim();
@@ -711,6 +798,7 @@ function prepareTTS(){
   }
   document.getElementById('ttsCharCnt').textContent=document.getElementById('ttsText').value.length;
   document.getElementById('ttsText').oninput=function(){document.getElementById('ttsCharCnt').textContent=this.value.length;S.ttsText=this.value};
+  renderVoiceCards();
 }
 
 async function doTTS(){
@@ -737,8 +825,21 @@ async function loadVoices(){
   try{
     const r=await fetch('/api/tts/voices');const d=await r.json();
     if(!d.success)throw new Error(d.error);
-    const sel=document.getElementById('ttsVoice');sel.innerHTML='';
-    d.voices.forEach(v=>{const o=document.createElement('option');o.value=v.id;o.textContent=`${v.name} (${v.category||'custom'})`;sel.appendChild(o)});
+    const sel=document.getElementById('ttsVoice');
+    const curVal=sel.value;
+    sel.innerHTML='';
+    d.voices.forEach(v=>{
+      const o=document.createElement('option');
+      o.value=v.id;
+      o.textContent=`${v.name} (${v.category||'custom'})`;
+      const lbl=v.labels?Object.values(v.labels).join(' · '):'';
+      o.dataset.label=lbl;
+      o.dataset.preview=v.previewUrl||'';
+      if(v.previewUrl)voicePreviewUrls[v.id]=v.previewUrl;
+      sel.appendChild(o);
+    });
+    if(curVal&&sel.querySelector(`option[value="${curVal}"]`))sel.value=curVal;
+    onVoiceSelect();
     toast(`${d.voices.length}개 음성 로드 완료`);
   }catch(e){toast(e.message,'err')}
 }

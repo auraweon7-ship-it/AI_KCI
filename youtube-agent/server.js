@@ -446,7 +446,8 @@ app.get('/api/tts/voices', async (req, res) => {
       id: v.voice_id,
       name: v.name,
       category: v.category,
-      labels: v.labels
+      labels: v.labels,
+      previewUrl: v.preview_url || null
     }));
     res.json({ success: true, voices });
   } catch (error) {
