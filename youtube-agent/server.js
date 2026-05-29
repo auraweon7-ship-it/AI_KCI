@@ -571,6 +571,23 @@ app.post('/api/srt/generate', async (req, res) => {
     const text = script || project.script || '';
     if (!text) throw new Error('대본이 없습니다');
 
+    // 실제 오디오 길이 프로빙 (SRT 싱크 핵심)
+    let audioDuration = 0;
+    try {
+      const audioFiles = fs.readdirSync(path.join(OUTPUT_DIR, 'audio')).filter(f => f.endsWith('.mp3')).sort();
+      const audioFile = audioFiles.find(f => f.startsWith('full_')) || audioFiles[0];
+      if (audioFile) {
+        const audioPath = path.join(OUTPUT_DIR, 'audio', audioFile);
+        audioDuration = await new Promise((resolve) => {
+          execFile('ffmpeg', ['-i', audioPath, '-hide_banner'], { timeout: 10000 }, (error, stdout, stderr) => {
+            const match = (stderr || '').match(/Duration:\s*(\d+):(\d+):(\d+)\.(\d+)/);
+            if (match) resolve(parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]) + parseInt(match[4])/100);
+            else resolve(0);
+          });
+        });
+      }
+    } catch(e) {}
+
     const sceneRegex = /\[장면\s*(\d+)[^\]]*\]([\s\S]*?)(?=\[장면|\s*$)/g;
     const scenes = [];
     let match;
@@ -584,7 +601,8 @@ app.post('/api/srt/generate', async (req, res) => {
       scenes.push(...paragraphs);
     }
 
-    const totalDur = duration || 120;
+    // 오디오 길이 우선, 없으면 UI 입력값 fallback
+    const totalDur = audioDuration > 0 ? Math.ceil(audioDuration) : (duration || 120);
     const totalChars = scenes.reduce((a, s) => a + s.length, 0);
     let currentTime = 0;
     let srtContent = '';
@@ -654,7 +672,20 @@ app.post('/api/render/video', async (req, res) => {
     const audioFile = audioFiles.find(f => f.startsWith('full_')) || audioFiles[0];
     const audioPath = path.join(OUTPUT_DIR, 'audio', audioFile);
 
-    const totalDuration = duration || 120;
+    // 실제 오디오 길이를 FFmpeg probe로 측정 (싱크 핵심)
+    let audioDuration = 0;
+    try {
+      audioDuration = await new Promise((resolve, reject) => {
+        execFile('ffmpeg', ['-i', audioPath, '-hide_banner'], { timeout: 10000 }, (error, stdout, stderr) => {
+          const match = (stderr || '').match(/Duration:\s*(\d+):(\d+):(\d+)\.(\d+)/);
+          if (match) resolve(parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]) + parseInt(match[4])/100);
+          else resolve(0);
+        });
+      });
+    } catch(e) {}
+
+    // 오디오 길이 우선 사용, 없으면 UI 입력값 fallback
+    const totalDuration = audioDuration > 0 ? Math.ceil(audioDuration) : (duration || 120);
     const durationPerImage = totalDuration / images.length;
     const transDur = Math.min(parseFloat(transitionDuration) || 0.8, durationPerImage * 0.4);
     const transType = transition || 'none';
@@ -1030,21 +1061,44 @@ JSON으로 출력: {"main":"메인문구","sub":"서브문구"}` }]
     const rawPath = path.join(OUTPUT_DIR, 'thumbnails', rawFile);
     fs.writeFileSync(rawPath, buffer);
 
-    const filename = `thumbnail_${Date.now()}.png`;
-    const filepath = path.join(OUTPUT_DIR, 'thumbnails', filename);
-    await new Promise((resolve, reject) => {
+    // 1단계: 16:9 크롭
+    const croppedFile = `thumbnail_cropped_${Date.now()}.png`;
+    const croppedPath = path.join(OUTPUT_DIR, 'thumbnails', croppedFile);
+    await new Promise((resolve) => {
       execFile('ffmpeg', [
         '-i', rawPath,
         '-vf', 'crop=ih*16/9:ih,scale=1280:720',
+        '-y', croppedPath
+      ], { timeout: 30000 }, (error) => {
+        if (error) { fs.copyFileSync(rawPath, croppedPath); }
+        resolve();
+      });
+    });
+
+    // 2단계: FFmpeg drawtext로 한글 텍스트 확실히 오버레이
+    const filename = `thumbnail_${Date.now()}.png`;
+    const filepath = path.join(OUTPUT_DIR, 'thumbnails', filename);
+    const mainEsc = (hookText || '').replace(/'/g, "'\\''").replace(/:/g, '\\:');
+    const subEsc = (subText || '').replace(/'/g, "'\\''").replace(/:/g, '\\:');
+    const fontPath = 'C\\:/Windows/Fonts/malgunbd.ttf';
+
+    let drawFilters = `drawtext=text='${mainEsc}':fontfile='${fontPath}':fontsize=72:fontcolor=white:borderw=4:bordercolor=black:shadowcolor=black@0.6:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h/2)-60`;
+    if (subText) {
+      drawFilters += `,drawtext=text='${subEsc}':fontfile='${fontPath}':fontsize=36:fontcolor=#FFDD00:borderw=2:bordercolor=black:shadowcolor=black@0.5:shadowx=2:shadowy=2:x=(w-text_w)/2:y=(h/2)+30`;
+    }
+
+    await new Promise((resolve) => {
+      execFile('ffmpeg', [
+        '-i', croppedPath,
+        '-vf', drawFilters,
         '-y', filepath
       ], { timeout: 30000 }, (error) => {
-        if (error) {
-          fs.copyFileSync(rawPath, filepath);
-          resolve();
-        } else resolve();
+        if (error) { fs.copyFileSync(croppedPath, filepath); }
+        resolve();
       });
     });
     try { fs.unlinkSync(rawPath); } catch(e) {}
+    try { fs.unlinkSync(croppedPath); } catch(e) {}
 
     res.json({
       success: true,
