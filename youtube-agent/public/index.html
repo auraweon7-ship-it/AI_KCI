@@ -595,13 +595,14 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
             </div>
             <div class="fg"><label class="fl">🎙️ 음성</label>
               <select class="fs" id="autoVoice">
-                <option value="21m00Tcm4TlvDq8ikWAM">Rachel (여성)</option>
-                <option value="TxGEqnHWrfWFTfGW9XjX">Josh (남성)</option>
-                <option value="pNInz6obpgDQGcFmaJgB">Adam (남성)</option>
-                <option value="EXAVITQu4vr4xnSDxMaL">Bella (여성)</option>
-                <option value="ErXwobaYiN019PkySvjV">Antoni (남성)</option>
-                <option value="MF3mGyEYCl7XYWbV9V6O">Elli (여성)</option>
+                <option value="21m00Tcm4TlvDq8ikWAM">🇺🇸 Rachel (미국 여성 · 차분)</option>
+                <option value="TxGEqnHWrfWFTfGW9XjX">🇺🇸 Josh (미국 남성 · 활기)</option>
+                <option value="pNInz6obpgDQGcFmaJgB">🇺🇸 Adam (미국 남성 · 깊은 톤)</option>
+                <option value="EXAVITQu4vr4xnSDxMaL">🇺🇸 Bella (미국 여성 · 친근)</option>
+                <option value="ErXwobaYiN019PkySvjV">🇵🇱 Antoni (폴란드 남성 · 진중)</option>
+                <option value="MF3mGyEYCl7XYWbV9V6O">🇺🇸 Elli (미국 여성 · 어린 톤)</option>
               </select>
+              <div class="fh">다국어 모델로 한국어 합성 가능 · 국기는 원어민 출신지</div>
             </div>
           </div>
           <div class="fr">
@@ -1424,16 +1425,16 @@ let ttsLang = 'ko';
 const LANG_NAMES = {ko:'한국어',en:'영어',zh:'중국어'};
 const VOICE_PRESETS = {
   ko:[
-    {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',gender:'여성',desc:'차분하고 명확한 나레이션',sample:'안녕하세요. 오늘 여러분과 함께할 이야기를 시작하겠습니다.',icon:'👩',color:'#a78bfa'},
-    {id:'TxGEqnHWrfWFTfGW9XjX',name:'Josh',gender:'남성',desc:'깊고 무게감 있는 다큐 톤',sample:'역사 속에 숨겨진 진실, 지금부터 그 이야기를 풀어보겠습니다.',icon:'🎤',color:'#34d399'}
+    {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',gender:'여성',country:'🇺🇸 미국',desc:'차분하고 명확한 나레이션',sample:'안녕하세요. 오늘 여러분과 함께할 이야기를 시작하겠습니다.',icon:'👩',color:'#a78bfa'},
+    {id:'TxGEqnHWrfWFTfGW9XjX',name:'Josh',gender:'남성',country:'🇺🇸 미국',desc:'깊고 무게감 있는 다큐 톤',sample:'역사 속에 숨겨진 진실, 지금부터 그 이야기를 풀어보겠습니다.',icon:'🎤',color:'#34d399'}
   ],
   en:[
-    {id:'pNInz6obpgDQGcFmaJgB',name:'Adam',gender:'Male',desc:'Deep, warm narrator voice',sample:'Welcome to today\'s episode. Let me take you on a journey through history.',icon:'🎙️',color:'#ff3b3b'},
-    {id:'EXAVITQu4vr4xnSDxMaL',name:'Bella',gender:'Female',desc:'Soft, engaging storyteller',sample:'Have you ever wondered what lies beneath the surface of the ocean?',icon:'👩‍🎤',color:'#f472b6'}
+    {id:'pNInz6obpgDQGcFmaJgB',name:'Adam',gender:'Male',country:'🇺🇸 US',desc:'Deep, warm narrator voice',sample:'Welcome to today\'s episode. Let me take you on a journey through history.',icon:'🎙️',color:'#ff3b3b'},
+    {id:'EXAVITQu4vr4xnSDxMaL',name:'Bella',gender:'Female',country:'🇺🇸 US',desc:'Soft, engaging storyteller',sample:'Have you ever wondered what lies beneath the surface of the ocean?',icon:'👩‍🎤',color:'#f472b6'}
   ],
   zh:[
-    {id:'ErXwobaYiN019PkySvjV',name:'Antoni',gender:'男',desc:'温和清晰的叙述风格',sample:'大家好，欢迎收看今天的节目。让我们一起探索历史的奥秘。',icon:'🧑',color:'#60a5fa'},
-    {id:'MF3mGyEYCl7XYWbV9V6O',name:'Elli',gender:'女',desc:'活力自然的讲解风格',sample:'你有没有想过，宇宙中还隐藏着多少我们不知道的秘密？',icon:'🎵',color:'#fbbf24'}
+    {id:'ErXwobaYiN019PkySvjV',name:'Antoni',gender:'男',country:'🇵🇱 波兰',desc:'温和清晰的叙述风格',sample:'大家好，欢迎收看今天的节目。让我们一起探索历史的奥秘。',icon:'🧑',color:'#60a5fa'},
+    {id:'MF3mGyEYCl7XYWbV9V6O',name:'Elli',gender:'女',country:'🇺🇸 美国',desc:'活力自然的讲解风格',sample:'你有没有想过，宇宙中还隐藏着多少我们不知道的秘密？',icon:'🎵',color:'#fbbf24'}
   ]
 };
 let voicePreviewUrls = {};
@@ -1444,7 +1445,7 @@ function setTTSLang(lang){
   document.getElementById('ttsLangLabel').textContent=LANG_NAMES[lang];
   const voices=VOICE_PRESETS[lang];
   const sel=document.getElementById('ttsVoice');
-  sel.innerHTML=voices.map(v=>`<option value="${v.id}" data-label="${v.gender} · ${v.desc}">${v.name}</option>`).join('');
+  sel.innerHTML=voices.map(v=>`<option value="${v.id}" data-label="${v.gender} · ${v.country||''} · ${v.desc}">${v.country?v.country+' ':''}${v.name} (${v.gender})</option>`).join('');
   sel.selectedIndex=0;
   onVoiceSelect();
   renderVoiceCards();
@@ -1458,7 +1459,7 @@ function renderVoiceCards(){
     <div class="tc" style="padding:12px;cursor:pointer;${sel.value===v.id?'border-color:var(--acc);background:var(--accd)':''}" onclick="selectVoice('${v.id}')" id="vc_${v.id}">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
         <span style="font-size:20px;width:32px;height:32px;background:${v.color}22;border-radius:8px;display:flex;align-items:center;justify-content:center">${v.icon}</span>
-        <div><div style="font-size:12px;font-weight:600">${v.name}</div><div style="font-size:9px;color:var(--t3)">${v.gender}</div></div>
+        <div><div style="font-size:12px;font-weight:600">${v.name}</div><div style="font-size:9px;color:var(--t3)">${v.country||''} · ${v.gender}</div></div>
       </div>
       <div style="font-size:10px;color:var(--t2);margin-bottom:4px">${v.desc}</div>
       <div style="font-size:9px;color:var(--t3);background:var(--bgi);padding:4px 7px;border-radius:4px;margin-bottom:6px;font-style:italic;line-height:1.4">"${v.sample}"</div>
