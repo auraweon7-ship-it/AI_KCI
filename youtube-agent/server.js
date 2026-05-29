@@ -553,9 +553,47 @@ app.post('/api/tts/full-script', async (req, res) => {
     const filename = `full_narration_${timestamp}.mp3`;
     const outputPath = path.join(OUTPUT_DIR, 'audio', filename);
 
+    // 청크 사이 잡음(글리치/팝) 방지: stream copy 대신 재인코딩으로 정규화
+    // + concat filter로 무음 패딩(250ms) 자동 삽입하여 청크 경계 잡음 차단
+    const inputArgs = [];
+    chunkFiles.forEach(f => { inputArgs.push('-i', path.join(OUTPUT_DIR, 'audio', f)); });
+
+    // 각 청크 양 끝에 5ms 페이드 적용 후 250ms 무음 패딩 추가
+    const filterParts = [];
+    chunkFiles.forEach((_, i) => {
+      filterParts.push(`[${i}:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,afade=t=in:st=0:d=0.005,afade=t=out:st=0:d=0.005:curve=tri[a${i}]`);
+    });
+    // 청크 사이에 250ms silence 삽입
+    const concatInputs = [];
+    chunkFiles.forEach((_, i) => {
+      concatInputs.push(`[a${i}]`);
+      if (i < chunkFiles.length - 1) {
+        filterParts.push(`aevalsrc=0:d=0.25:s=44100:c=stereo[s${i}]`);
+        concatInputs.push(`[s${i}]`);
+      }
+    });
+    const concatN = concatInputs.length;
+    filterParts.push(`${concatInputs.join('')}concat=n=${concatN}:v=0:a=1[out]`);
+    const filterComplex = filterParts.join(';');
+
     await new Promise((resolve, reject) => {
-      execFile('ffmpeg', ['-f', 'concat', '-safe', '0', '-i', concatFile, '-c', 'copy', '-y', outputPath],
-        { timeout: 60000 }, (error) => { if (error) reject(error); else resolve(); });
+      execFile('ffmpeg', [
+        ...inputArgs,
+        '-filter_complex', filterComplex,
+        '-map', '[out]',
+        '-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100',
+        '-y', outputPath
+      ], { timeout: 180000 }, (error, stdout, stderr) => {
+        if (error) {
+          // Fallback: concat demuxer + re-encode (필터 실패 시)
+          console.error('[TTS concat filter 실패, fallback]', error.message);
+          execFile('ffmpeg', [
+            '-f', 'concat', '-safe', '0', '-i', concatFile,
+            '-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100',
+            '-y', outputPath
+          ], { timeout: 120000 }, (e2) => { if (e2) reject(e2); else resolve(); });
+        } else resolve();
+      });
     });
 
     chunkFiles.forEach(f => { try { fs.unlinkSync(path.join(OUTPUT_DIR, 'audio', f)); } catch(e) {} });
