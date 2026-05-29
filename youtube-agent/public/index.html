@@ -527,10 +527,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
               </select>
             </div>
             <div class="fg"><label class="fl">🌐 영상 언어</label>
-              <select class="fs" id="autoLang">
+              <select class="fs" id="autoLang" onchange="updateAutoVoiceOptions()">
                 <option value="ko" selected>🇰🇷 한국어</option>
                 <option value="en">🇺🇸 영어</option>
                 <option value="zh">🇨🇳 중국어</option>
+                <option value="ja">🇯🇵 일본어</option>
+                <option value="es">🇪🇸 스페인어</option>
               </select>
             </div>
             <div class="fg"><label class="fl">🎨 이미지 스타일</label>
@@ -593,16 +595,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
                 <option value="30">30장</option>
               </select>
             </div>
-            <div class="fg"><label class="fl">🎙️ 음성</label>
-              <select class="fs" id="autoVoice">
-                <option value="21m00Tcm4TlvDq8ikWAM">🇺🇸 Rachel (미국 여성 · 차분)</option>
-                <option value="TxGEqnHWrfWFTfGW9XjX">🇺🇸 Josh (미국 남성 · 활기)</option>
-                <option value="pNInz6obpgDQGcFmaJgB">🇺🇸 Adam (미국 남성 · 깊은 톤)</option>
-                <option value="EXAVITQu4vr4xnSDxMaL">🇺🇸 Bella (미국 여성 · 친근)</option>
-                <option value="ErXwobaYiN019PkySvjV">🇵🇱 Antoni (폴란드 남성 · 진중)</option>
-                <option value="MF3mGyEYCl7XYWbV9V6O">🇺🇸 Elli (미국 여성 · 어린 톤)</option>
-              </select>
-              <div class="fh">다국어 모델로 한국어 합성 가능 · 국기는 원어민 출신지</div>
+            <div class="fg"><label class="fl">🎙️ 음성 <span style="font-size:9px;color:var(--t3);font-weight:400">(영상 언어에 맞춰 자동 추천)</span></label>
+              <select class="fs" id="autoVoice"></select>
+              <div class="fh" id="autoVoiceHint">선택한 언어에 가장 자연스러운 음성을 추천합니다</div>
             </div>
           </div>
           <div class="fr">
@@ -1814,6 +1809,76 @@ function autoTime(step,sec){
   document.getElementById('ast-'+step).textContent=sec>=60?`${Math.floor(sec/60)}분 ${sec%60}초`:sec+'초';
 }
 
+// 영상 언어별 추천 음성 (추천 순서대로)
+// ElevenLabs multilingual_v2는 모든 언어 합성 가능, 단 언어와 어울리는 톤 우선 추천
+const VOICE_BY_LANG={
+  ko:[
+    {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',flag:'🇺🇸',country:'미국 여성',tone:'차분/뉴스 톤',recommended:true},
+    {id:'pNInz6obpgDQGcFmaJgB',name:'Adam',flag:'🇺🇸',country:'미국 남성',tone:'깊은 다큐 톤',recommended:true},
+    {id:'ErXwobaYiN019PkySvjV',name:'Antoni',flag:'🇵🇱',country:'폴란드 남성',tone:'진중한 톤'},
+    {id:'EXAVITQu4vr4xnSDxMaL',name:'Bella',flag:'🇺🇸',country:'미국 여성',tone:'친근한 스토리텔링'},
+    {id:'TxGEqnHWrfWFTfGW9XjX',name:'Josh',flag:'🇺🇸',country:'미국 남성',tone:'활기찬 톤'},
+    {id:'MF3mGyEYCl7XYWbV9V6O',name:'Elli',flag:'🇺🇸',country:'미국 여성',tone:'어린 톤'}
+  ],
+  en:[
+    {id:'pNInz6obpgDQGcFmaJgB',name:'Adam',flag:'🇺🇸',country:'US Male',tone:'Deep narrator',recommended:true},
+    {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',flag:'🇺🇸',country:'US Female',tone:'Calm anchor',recommended:true},
+    {id:'EXAVITQu4vr4xnSDxMaL',name:'Bella',flag:'🇺🇸',country:'US Female',tone:'Engaging storyteller'},
+    {id:'TxGEqnHWrfWFTfGW9XjX',name:'Josh',flag:'🇺🇸',country:'US Male',tone:'Energetic'},
+    {id:'ErXwobaYiN019PkySvjV',name:'Antoni',flag:'🇵🇱',country:'Polish Male',tone:'Serious'},
+    {id:'MF3mGyEYCl7XYWbV9V6O',name:'Elli',flag:'🇺🇸',country:'US Female',tone:'Young'}
+  ],
+  zh:[
+    {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',flag:'🇺🇸',country:'女声',tone:'平静叙述',recommended:true},
+    {id:'pNInz6obpgDQGcFmaJgB',name:'Adam',flag:'🇺🇸',country:'男声',tone:'低沉旁白',recommended:true},
+    {id:'EXAVITQu4vr4xnSDxMaL',name:'Bella',flag:'🇺🇸',country:'女声',tone:'温和讲解'},
+    {id:'ErXwobaYiN019PkySvjV',name:'Antoni',flag:'🇵🇱',country:'男声',tone:'稳重'},
+    {id:'TxGEqnHWrfWFTfGW9XjX',name:'Josh',flag:'🇺🇸',country:'男声',tone:'活力'},
+    {id:'MF3mGyEYCl7XYWbV9V6O',name:'Elli',flag:'🇺🇸',country:'女声',tone:'年轻'}
+  ],
+  ja:[
+    {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',flag:'🇺🇸',country:'女性',tone:'落ち着いたナレーション',recommended:true},
+    {id:'pNInz6obpgDQGcFmaJgB',name:'Adam',flag:'🇺🇸',country:'男性',tone:'深い語り',recommended:true},
+    {id:'EXAVITQu4vr4xnSDxMaL',name:'Bella',flag:'🇺🇸',country:'女性',tone:'親しみやすい'},
+    {id:'ErXwobaYiN019PkySvjV',name:'Antoni',flag:'🇵🇱',country:'男性',tone:'重厚'},
+    {id:'TxGEqnHWrfWFTfGW9XjX',name:'Josh',flag:'🇺🇸',country:'男性',tone:'活発'},
+    {id:'MF3mGyEYCl7XYWbV9V6O',name:'Elli',flag:'🇺🇸',country:'女性',tone:'若い'}
+  ],
+  es:[
+    {id:'ErXwobaYiN019PkySvjV',name:'Antoni',flag:'🇵🇱',country:'Hombre',tone:'Narrador serio',recommended:true},
+    {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',flag:'🇺🇸',country:'Mujer',tone:'Voz calmada',recommended:true},
+    {id:'pNInz6obpgDQGcFmaJgB',name:'Adam',flag:'🇺🇸',country:'Hombre',tone:'Profunda'},
+    {id:'EXAVITQu4vr4xnSDxMaL',name:'Bella',flag:'🇺🇸',country:'Mujer',tone:'Cercana'},
+    {id:'TxGEqnHWrfWFTfGW9XjX',name:'Josh',flag:'🇺🇸',country:'Hombre',tone:'Enérgico'},
+    {id:'MF3mGyEYCl7XYWbV9V6O',name:'Elli',flag:'🇺🇸',country:'Mujer',tone:'Joven'}
+  ]
+};
+
+const LANG_HINTS={
+  ko:'한국어 음성에 가장 자연스러운 차분한 톤 우선 추천',
+  en:'네이티브 미국 영어 톤 우선 추천',
+  zh:'중국어 합성에 자연스러운 평탄한 톤 우선 추천',
+  ja:'일본어 합성에 어울리는 부드러운 톤 우선 추천',
+  es:'스페인어 발음에 적합한 진중한 톤 우선 추천'
+};
+
+function updateAutoVoiceOptions(){
+  const lang=document.getElementById('autoLang')?.value||'ko';
+  const voices=VOICE_BY_LANG[lang]||VOICE_BY_LANG.ko;
+  const sel=document.getElementById('autoVoice');
+  const hint=document.getElementById('autoVoiceHint');
+  if(!sel)return;
+  const prev=sel.value;
+  sel.innerHTML=voices.map(v=>{
+    const star=v.recommended?'⭐ ':'';
+    return `<option value="${v.id}">${star}${v.flag} ${v.name} (${v.country} · ${v.tone})</option>`;
+  }).join('');
+  // 이전 선택값 유지 시도, 없으면 첫 번째(추천)
+  const keep=voices.find(v=>v.id===prev);
+  sel.value=keep?prev:voices[0].id;
+  if(hint)hint.textContent=LANG_HINTS[lang]||'';
+}
+
 // API 영문 카테고리 → 한글 select 옵션 매핑
 const CAT_MAP={
   history:'역사',science:'과학',ai:'AI',mystery:'미스터리',economy:'경제',
@@ -2382,6 +2447,7 @@ async function init(){
   updateNav();
   showPopular('all',document.querySelector('.pop-cat'));
   renderRecentTopics();
+  updateAutoVoiceOptions();
 }
 init();
 </script>
