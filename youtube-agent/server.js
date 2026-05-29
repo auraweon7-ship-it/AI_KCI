@@ -1503,22 +1503,31 @@ app.post('/api/thumbnail/generate', async (req, res) => {
     if (!hookText && topic) {
       const hookMsg = await anthropic.messages.create({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 200,
-        messages: [{ role: 'user', content: `유튜브 썸네일에 들어갈 강렬한 관심 유발 문구를 만들어주세요.
+        max_tokens: 150,
+        messages: [{ role: 'user', content: `유튜브 썸네일 문구를 JSON 한 줄만 출력하세요. 다른 설명·옵션·마크다운 절대 금지.
+
 주제: "${topic}"
+
 규칙:
 - 한국어
-- 메인 문구: 8자 이내 (충격/호기심/긴박감 자극)
-- 서브 문구: 15자 이내 (영상 내용을 어필하는 보조 설명)
-- 예: "충격 진실" + "역사가 감춘 7가지 비밀"
-JSON으로 출력: {"main":"메인문구","sub":"서브문구"}` }]
+- main: 8자 이내 (충격/호기심/긴박감)
+- sub: 15자 이내 (보조 설명)
+- 예: {"main":"충격 진실","sub":"역사가 감춘 7가지 비밀"}
+
+출력 형식 (이것만, 다른 텍스트 0): {"main":"...","sub":"..."}` }]
       });
       try {
-        const parsed = JSON.parse(hookMsg.content[0].text.trim().match(/\{[\s\S]*\}/)?.[0] || '{}');
-        hookText = parsed.main || hookMsg.content[0].text.trim().replace(/["""]/g, '');
-        var subText = parsed.sub || '';
+        const raw = hookMsg.content[0].text.trim();
+        // 첫 번째 완성된 JSON 객체만 비탐욕 매칭
+        const match = raw.match(/\{[^{}]*"main"[^{}]*"sub"[^{}]*\}/);
+        if (!match) throw new Error('no JSON');
+        const parsed = JSON.parse(match[0]);
+        hookText = (parsed.main || '').toString().substring(0, 20);
+        var subText = (parsed.sub || '').toString().substring(0, 30);
       } catch(e) {
-        hookText = hookMsg.content[0].text.trim().replace(/["""]/g, '');
+        // 실패 시 raw text에서 첫 줄만 + 길이 제한
+        const fallback = hookMsg.content[0].text.trim().split('\n')[0].replace(/["""`{}\[\]:,]/g, '').trim();
+        hookText = fallback.substring(0, 12);
         var subText = '';
       }
     }
@@ -1609,85 +1618,100 @@ JSON으로 출력: {"main":"메인문구","sub":"서브문구"}` }]
     const mainText = (hookText || '').trim();
     const subTxt = (subText || '').trim();
 
-    // === 파격적 디자인 — 최대 임팩트 ===
-    // 메인 폰트 110pt까지 확대 (더 큰 임팩트)
-    const mainFontSize = pickFontSize(mainText, 110, 56);
+    // === 시네마틱 사이버펑크 디자인 — 파격적 + 세련됨 ===
+    // 컨셉: 영화 포스터 + RGB 스플릿 + 시네마 바 + 코너 마크
+    // - 위/아래 시네마 바 (16:9 → 2.35:1 cinema feel)
+    // - 메인: RGB 스플릿(시안+마젠타) + 흰색 본체 + 검정 외곽선
+    // - 서브: 하단 네온 바 안에 흰 텍스트 + 노란 underline
+    // - 코너: 카메라 뷰파인더 스타일 ㄱㄴㅁㅇ 마크
+    // - 좌측: 세로 노란 액센트 바
+    const mainFontSize = pickFontSize(mainText, 115, 60);
     const mainLines = wrapLines(mainText, mainFontSize);
 
-    const subFontSize = subTxt ? pickFontSize(subTxt, 50, 32) : 0;
+    const subFontSize = subTxt ? pickFontSize(subTxt, 48, 32) : 0;
     const subLines = subTxt ? wrapLines(subTxt, subFontSize) : [];
 
     const escapeText = (s) => s.replace(/\\/g, '\\\\').replace(/'/g, "'\\''").replace(/:/g, '\\:').replace(/%/g, '\\%');
 
-    // 텍스트 블록 높이 (라인 간격 1.2)
-    const mainLineH = Math.round(mainFontSize * 1.2);
-    const subLineH = Math.round(subFontSize * 1.2);
+    const mainLineH = Math.round(mainFontSize * 1.15);
+    const subLineH = Math.round(subFontSize * 1.25);
     const mainTotalH = mainLines.length * mainLineH;
     const subTotalH = subLines.length * subLineH;
-    const gap = subTxt ? 60 : 0;
-    const totalH = mainTotalH + gap + subTotalH;
 
-    // 세로 중앙 정렬
-    const startY = Math.round((720 - totalH) / 2);
+    // 시네마 바 영역 제외한 가용 영역에서 메인 텍스트 중앙 정렬
+    const CINEMA_BAR_H = 70;
+    const usableTop = CINEMA_BAR_H + 30;
+    const usableBottom = 720 - CINEMA_BAR_H - 30;
+    const usableH = usableBottom - usableTop;
+    const startY = usableTop + Math.round((usableH - mainTotalH) / 2);
 
-    // === 파격적 다층 효과 ===
-    // 1. 어두운 비네트 (반투명 검정 그라데이션) — 텍스트 가독성 + 영화관 느낌
-    // 2. 빨간 사선 액센트 바 (drawbox로 좌측 상단)
-    // 3. 노란 가로 액센트 바 (메인 텍스트 위/아래)
-    // 4. 메인 텍스트: 5겹 그림자 (붉은 외광 → 검정 그림자 → 노란 메인)
-    // 5. 서브 텍스트: 노란 테두리 빨간 박스 (이중 박스)
     const filters = [];
 
-    // 비네트 효과 (좌우 어두운 페이드) — 텍스트 영역 강조
-    filters.push(`drawbox=x=0:y=0:w=1280:h=720:color=black@0.35:t=fill`);
+    // 1) 비네트 — 어두운 페이드 (텍스트 가독성)
+    filters.push(`drawbox=x=0:y=0:w=1280:h=720:color=black@0.4:t=fill`);
 
-    // 좌측 상단 빨간 액센트 바 (사선 느낌)
-    filters.push(`drawbox=x=0:y=0:w=180:h=8:color=#FF1744:t=fill`);
-    filters.push(`drawbox=x=0:y=8:w=120:h=6:color=#FFEB3B:t=fill`);
-    // 우측 하단 미러
-    filters.push(`drawbox=x=1100:y=706:w=180:h=8:color=#FF1744:t=fill`);
-    filters.push(`drawbox=x=1160:y=700:w=120:h=6:color=#FFEB3B:t=fill`);
+    // 2) 시네마 바 — 위/아래 검정 70px (영화관 느낌)
+    filters.push(`drawbox=x=0:y=0:w=1280:h=${CINEMA_BAR_H}:color=black:t=fill`);
+    filters.push(`drawbox=x=0:y=${720-CINEMA_BAR_H}:w=1280:h=${CINEMA_BAR_H}:color=black:t=fill`);
 
-    // 메인 텍스트 위쪽 노란 가로 액센트 바 (5px 두께)
-    if (mainLines.length > 0) {
-      const barY = startY - 18;
-      filters.push(`drawbox=x=(iw-280)/2:y=${barY}:w=280:h=6:color=#FFEB3B:t=fill`);
-      filters.push(`drawbox=x=(iw-280)/2-3:y=${barY-3}:w=6:h=12:color=#FF1744:t=fill`);
-      filters.push(`drawbox=x=(iw-280)/2+277:y=${barY-3}:w=6:h=12:color=#FF1744:t=fill`);
-      // (이미 drawbox 표현식 수정됨)
-    }
+    // 3) 좌측 수직 네온 액센트 바 (사이버펑크)
+    filters.push(`drawbox=x=40:y=${CINEMA_BAR_H+20}:w=6:h=${720-2*CINEMA_BAR_H-40}:color=#00E5FF:t=fill`);
+    filters.push(`drawbox=x=40:y=${CINEMA_BAR_H+20}:w=6:h=80:color=#FF00C8:t=fill`);
 
-    // 메인 텍스트 — 5겹 임팩트
+    // 4) 코너 뷰파인더 마크 — 4 모서리 ㄱㄴㅁㅇ 스타일 (시네마 코너)
+    const CM = 30; // corner mark length
+    const CT = 4;  // corner thickness
+    const CO = 25; // offset from edge
+    // 좌상단 ㄱ
+    filters.push(`drawbox=x=${CO}:y=${CINEMA_BAR_H+CO}:w=${CM}:h=${CT}:color=white:t=fill`);
+    filters.push(`drawbox=x=${CO}:y=${CINEMA_BAR_H+CO}:w=${CT}:h=${CM}:color=white:t=fill`);
+    // 우상단
+    filters.push(`drawbox=x=${1280-CO-CM}:y=${CINEMA_BAR_H+CO}:w=${CM}:h=${CT}:color=white:t=fill`);
+    filters.push(`drawbox=x=${1280-CO-CT}:y=${CINEMA_BAR_H+CO}:w=${CT}:h=${CM}:color=white:t=fill`);
+    // 좌하단
+    filters.push(`drawbox=x=${CO}:y=${720-CINEMA_BAR_H-CO-CT}:w=${CM}:h=${CT}:color=white:t=fill`);
+    filters.push(`drawbox=x=${CO}:y=${720-CINEMA_BAR_H-CO-CM}:w=${CT}:h=${CM}:color=white:t=fill`);
+    // 우하단
+    filters.push(`drawbox=x=${1280-CO-CM}:y=${720-CINEMA_BAR_H-CO-CT}:w=${CM}:h=${CT}:color=white:t=fill`);
+    filters.push(`drawbox=x=${1280-CO-CT}:y=${720-CINEMA_BAR_H-CO-CM}:w=${CT}:h=${CM}:color=white:t=fill`);
+
+    // 5) 상단 시네마 바 — REC 인디케이터 (좌측) + 텍스트 (우측)
+    filters.push(`drawbox=x=70:y=28:w=14:h=14:color=#FF1744:t=fill`); // 빨간 점
+    filters.push(`drawtext=text='● REC':fontfile='${fontPath}':fontsize=22:fontcolor=white:x=95:y=24`);
+    filters.push(`drawtext=text='4K / HDR':fontfile='${fontPath}':fontsize=22:fontcolor=#00E5FF:x=(w-text_w)-70:y=24`);
+
+    // 6) 메인 텍스트 — RGB 스플릿 (시안 + 마젠타 오프셋) + 흰색 본체
     mainLines.forEach((line, i) => {
       const y = startY + i * mainLineH;
       const esc = escapeText(line);
-      // 1) 외광 효과 — 빨간 그림자 (12px 오프셋, 큰 블러 느낌)
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=#FF1744@0.5:x=(w-text_w)/2+12:y=${y}+12`);
-      // 2) 빨간 그림자 (8px)
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=#FF1744@0.85:x=(w-text_w)/2+8:y=${y}+8`);
-      // 3) 검정 그림자 (4px) — 깊이감
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=black:x=(w-text_w)/2+4:y=${y}+4`);
-      // 4) 메인 — 노란색 + 두꺼운 검정 외곽선 (12px)
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=#FFEB3B:borderw=12:bordercolor=black:x=(w-text_w)/2:y=${y}`);
-      // 5) 하이라이트 — 옅은 흰색 위 (위쪽 1/3에 흰빛)
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=white@0.0:x=(w-text_w)/2:y=${y}`);
+      // 1) 시안 그림자 (-6, -6)
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=#00E5FF@0.85:x=(w-text_w)/2-6:y=${y}-6`);
+      // 2) 마젠타 그림자 (+6, +6)
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=#FF00C8@0.85:x=(w-text_w)/2+6:y=${y}+6`);
+      // 3) 검정 깊은 그림자 (+12, +12) — 입체감
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=black@0.7:x=(w-text_w)/2+12:y=${y}+12`);
+      // 4) 메인 흰색 + 두꺼운 검정 외곽선 + 옅은 검정 그림자
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=white:borderw=10:bordercolor=black:shadowcolor=black@0.6:shadowx=3:shadowy=3:x=(w-text_w)/2:y=${y}`);
     });
 
-    // 메인 텍스트 아래 노란 가로 액센트 바
-    if (mainLines.length > 0 && subLines.length === 0) {
-      const barY = startY + mainTotalH + 14;
-      filters.push(`drawbox=x=(iw-280)/2:y=${barY}:w=280:h=6:color=#FFEB3B:t=fill`);
+    // 7) 서브 텍스트 — 하단 시네마 바 안에 빛나는 네온 노란 텍스트
+    if (subLines.length > 0) {
+      // 하단 시네마 바 강조 (좌우 노란 라인)
+      const subBarY = 720 - CINEMA_BAR_H + 18;
+      filters.push(`drawbox=x=0:y=${720-CINEMA_BAR_H-3}:w=1280:h=3:color=#FFEB3B:t=fill`);
+      subLines.forEach((line, i) => {
+        const y = subBarY + i * subLineH;
+        const esc = escapeText(line);
+        // 글로우 효과 (옅은 노란 외광)
+        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=#FFEB3B@0.6:x=(w-text_w)/2-2:y=${y}-2`);
+        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=#FFEB3B@0.6:x=(w-text_w)/2+2:y=${y}+2`);
+        // 본체 흰색
+        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=white:borderw=3:bordercolor=black:x=(w-text_w)/2:y=${y}`);
+      });
+    } else {
+      // 서브 없으면 하단 바에 메타 라벨 (필독/SPOILER 등)
+      filters.push(`drawtext=text='● 본편 시청':fontfile='${fontPath}':fontsize=26:fontcolor=#FFEB3B:x=(w-text_w)/2:y=${720-CINEMA_BAR_H+22}`);
     }
-
-    // 서브 텍스트 — 이중 박스 (노란 테두리 + 빨간 본체) + 큰 그림자
-    subLines.forEach((line, i) => {
-      const y = startY + mainTotalH + gap + i * subLineH;
-      const esc = escapeText(line);
-      // 외곽 노란 박스 효과 (text_w 추정 위해 노란 박스 먼저 그리고 그 위에 빨간 박스 + 텍스트)
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=#FFEB3B@0:box=1:boxcolor=#FFEB3B@1:boxborderw=22:x=(w-text_w)/2:y=${y}`);
-      // 그 위에 빨간 박스 + 흰 텍스트
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=white:borderw=4:bordercolor=black:shadowcolor=black@0.9:shadowx=5:shadowy=5:box=1:boxcolor=#D50000@1:boxborderw=15:x=(w-text_w)/2:y=${y}`);
-    });
 
     const drawFilters = filters.join(',');
 
