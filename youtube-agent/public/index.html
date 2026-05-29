@@ -1836,13 +1836,15 @@ async function doAutoTopicAi(){
     const top=topics[0];
     const topicText=top.title||top.topic||top;
     document.getElementById('autoTopic').value=topicText;
-    // 나머지는 hint에 줄바꿈으로 표시
+    // 나머지는 hint에 행별 분리 카드로 표시
     if(topics.length>1){
       const others=topics.slice(1).map((t,i)=>{
-        const tt=(t.title||t.topic||t).replace(/'/g,"\\'");
-        return `<div style="padding:4px 0;cursor:pointer;color:var(--acc);" onclick="document.getElementById('autoTopic').value='${tt}'" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">${i+2}. ${t.title||t.topic||t}</div>`;
+        const tt=(t.title||t.topic||t).replace(/'/g,"\\'").replace(/"/g,'&quot;');
+        const label=t.title||t.topic||t;
+        const desc=t.description?` <span style="font-size:9px;color:var(--t3);font-weight:400">${t.description.replace(/"/g,'&quot;')}</span>`:'';
+        return `<div style="display:block;padding:8px 10px;margin:4px 0;border:1px solid var(--bd);border-radius:6px;background:rgba(255,255,255,0.02);cursor:pointer;color:var(--t1);font-size:11px;line-height:1.5" onclick="document.getElementById('autoTopic').value='${tt}';this.style.borderColor='var(--acc)'" onmouseover="this.style.background='rgba(255,107,53,0.08)';this.style.borderColor='var(--acc)'" onmouseout="this.style.background='rgba(255,255,255,0.02)';this.style.borderColor='var(--bd)'"><strong style="color:var(--acc)">${i+2}.</strong> ${label}${desc}</div>`;
       }).join('');
-      document.getElementById('autoTopicHint').innerHTML='<div style="font-weight:600;margin-bottom:4px">💡 다른 추천 (클릭하여 선택):</div>'+others;
+      document.getElementById('autoTopicHint').innerHTML='<div style="font-weight:600;margin:8px 0 4px;font-size:11px;color:var(--t2)">💡 다른 추천 (클릭하여 선택):</div><div style="display:flex;flex-direction:column;gap:0">'+others+'</div>';
     }
     toast('AI가 주제를 추천했습니다 ✨','ok');
   }catch(e){toast('AI 생성 실패: '+e.message,'err')}
