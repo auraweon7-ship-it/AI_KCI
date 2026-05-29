@@ -371,13 +371,14 @@ ${fullScript.substring(0, 8000)}
 2. 대본에 언급된 구체적인 인물, 장소, 사건, 시대를 프롬프트에 포함하세요.
 3. 대본 순서대로 장면을 배치하세요 (오프닝 → 본론 → 클라이맥스 → 엔딩).
 4. 각 프롬프트는 50단어 이상, 배경/조명/분위기/구도를 구체적으로 묘사하세요.
-5. 반드시 ${sceneCount}개를 모두 생성하세요.
+5. search_keywords: Pexels 스톡 영상 검색에 최적화된 짧은 영문 키워드 2~3단어 (구체적이고 일반적인 명사 위주). 너무 추상적이거나 한국 고유명사 금지. 예: "ancient temple", "city night skyline", "ocean waves", "businessman office"
+6. 반드시 ${sceneCount}개를 모두 생성하세요.
 
 스타일: ${style || 'european-animation'}
 모든 이미지가 일관된 스타일을 유지하도록 프롬프트를 작성하세요.
 
 JSON 배열 형식으로만 반환:
-[{"scene":1,"name":"장면 이름 (한국어)","prompt":"영어 이미지 프롬프트"}]`;
+[{"scene":1,"name":"장면 이름 (한국어)","prompt":"영어 이미지 프롬프트","search_keywords":"english search terms"}]`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
@@ -510,6 +511,24 @@ app.post('/api/tts/full-script', async (req, res) => {
       return Buffer.from(await response.arrayBuffer());
     }
 
+    // with-timestamps: 각 글자별 실제 시작/끝 시각 받아 SRT 정확도 향상
+    async function generateTTSChunkWithTimestamps(text) {
+      const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}/with-timestamps`, {
+        method: 'POST',
+        headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: voiceSettings })
+      });
+      if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`ElevenLabs with-timestamps 오류: ${response.status} - ${err}`);
+      }
+      const data = await response.json();
+      // data: { audio_base64, alignment: { characters: [...], character_start_times_seconds: [...], character_end_times_seconds: [...] } }
+      const audio = Buffer.from(data.audio_base64, 'base64');
+      const alignment = data.alignment || data.normalized_alignment || null;
+      return { audio, alignment };
+    }
+
     function splitTextIntoChunks(text, limit) {
       if (text.length <= limit) return [text];
       const chunks = [];
@@ -530,22 +549,48 @@ app.post('/api/tts/full-script', async (req, res) => {
     const chunks = splitTextIntoChunks(cleanScript, CHUNK_LIMIT);
     const timestamp = Date.now();
 
+    // 글자별 정확한 timing 누적 (with-timestamps API 결과)
+    const globalAlignment = { characters: [], starts: [], ends: [] };
+    let cumulativeOffset = 0;
+
     if (chunks.length === 1) {
-      const audioBuffer = await generateTTSChunk(chunks[0]);
+      const { audio, alignment } = await generateTTSChunkWithTimestamps(chunks[0]);
       const filename = `full_narration_${timestamp}.mp3`;
-      fs.writeFileSync(path.join(OUTPUT_DIR, 'audio', filename), audioBuffer);
+      fs.writeFileSync(path.join(OUTPUT_DIR, 'audio', filename), audio);
+      if (alignment && alignment.characters) {
+        globalAlignment.characters = alignment.characters;
+        globalAlignment.starts = alignment.character_start_times_seconds || [];
+        globalAlignment.ends = alignment.character_end_times_seconds || [];
+      }
       project.audioFiles = [{ index: 0, filename, filepath: path.join(OUTPUT_DIR, 'audio', filename), full: true }];
-      return res.json({ success: true, audioUrl: `/output/audio/${filename}`, filename, charCount: cleanScript.length, chunks: 1 });
+      project.ttsAlignment = globalAlignment.characters.length > 0 ? globalAlignment : null;
+      return res.json({ success: true, audioUrl: `/output/audio/${filename}`, filename, charCount: cleanScript.length, chunks: 1, hasTimestamps: !!project.ttsAlignment });
     }
 
     const chunkFiles = [];
     for (let i = 0; i < chunks.length; i++) {
-      const buf = await generateTTSChunk(chunks[i]);
+      const { audio, alignment } = await generateTTSChunkWithTimestamps(chunks[i]);
       const chunkFile = `chunk_${timestamp}_${i}.mp3`;
-      fs.writeFileSync(path.join(OUTPUT_DIR, 'audio', chunkFile), buf);
+      fs.writeFileSync(path.join(OUTPUT_DIR, 'audio', chunkFile), audio);
       chunkFiles.push(chunkFile);
+
+      // alignment 누적: 청크별 시작 offset 적용
+      if (alignment && alignment.characters) {
+        const chars = alignment.characters || [];
+        const starts = alignment.character_start_times_seconds || [];
+        const ends = alignment.character_end_times_seconds || [];
+        for (let j = 0; j < chars.length; j++) {
+          globalAlignment.characters.push(chars[j]);
+          globalAlignment.starts.push(starts[j] + cumulativeOffset);
+          globalAlignment.ends.push(ends[j] + cumulativeOffset);
+        }
+        // 청크 끝 시간 = 마지막 글자 종료 + 약간 buffer (concat 시 이어 붙음)
+        cumulativeOffset += ends[ends.length - 1] || 0;
+      }
+
       if (i < chunks.length - 1) await new Promise(r => setTimeout(r, 500));
     }
+    console.log(`[TTS] 누적 alignment ${globalAlignment.characters.length}자, 총 ${cumulativeOffset.toFixed(2)}초`);
 
     const concatList = chunkFiles.map(f => `file '${path.join(OUTPUT_DIR, 'audio', f).replace(/\\/g, '/')}'`).join('\n');
     const concatFile = path.join(OUTPUT_DIR, 'audio', `concat_${timestamp}.txt`);
@@ -597,8 +642,13 @@ app.post('/api/tts/full-script', async (req, res) => {
     try { fs.unlinkSync(concatFile); } catch(e) {}
 
     project.audioFiles = [{ index: 0, filename, filepath: outputPath, full: true }];
+    project.ttsAlignment = globalAlignment.characters.length > 0 ? globalAlignment : null;
 
-    res.json({ success: true, audioUrl: `/output/audio/${filename}`, filename, charCount: cleanScript.length, chunks: chunks.length });
+    res.json({
+      success: true, audioUrl: `/output/audio/${filename}`, filename,
+      charCount: cleanScript.length, chunks: chunks.length,
+      hasTimestamps: !!project.ttsAlignment
+    });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -673,7 +723,7 @@ app.post('/api/srt/generate', async (req, res) => {
     }
 
     const totalDur = audioDuration > 0 ? audioDuration : (duration || 120);
-    const srtContent = scriptToSrt(text, totalDur, 0);
+    const srtContent = scriptToSrt(text, totalDur, 0, project.ttsAlignment);
 
     const filename = `subtitles_${Date.now()}.srt`;
     fs.writeFileSync(path.join(OUTPUT_DIR, 'srt', filename), srtContent, 'utf-8');
@@ -718,8 +768,17 @@ app.post('/api/clips/generate', async (req, res) => {
 
     for (let i = 0; i < prompts.length; i++) {
       const p = prompts[i];
-      // 영문 prompt에서 핵심 키워드 추출 (앞 30자 또는 name)
-      const query = (p.name || p.prompt || '').replace(/[^a-zA-Z가-힣\s]/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 80);
+      // search_keywords 우선, 없으면 prompt 앞부분 영문만 추출
+      let query;
+      if (p.search_keywords && typeof p.search_keywords === 'string') {
+        query = p.search_keywords.trim().substring(0, 60);
+      } else {
+        // 영문 단어만 추출 (한글 제거), 첫 3~5단어
+        const englishWords = (p.prompt || '').match(/[a-zA-Z]+/g) || [];
+        query = englishWords.slice(0, 4).join(' ').substring(0, 60);
+        if (!query) query = (p.name || 'nature landscape').replace(/[^a-zA-Z\s]/g, ' ').trim();
+      }
+      console.log(`[Pexels] 장면 ${i+1} 검색: "${query}"`);
       try {
         const searchUrl = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=3&orientation=landscape`;
         const r = await fetch(searchUrl, { headers: { Authorization: apiKey } });
@@ -860,8 +919,13 @@ function splitForSubtitle(sentence, maxLen = 33) {
   return parts.filter(p => p.length > 0);
 }
 
-function scriptToSrt(scriptText, audioDur, offset = 0) {
+// alignment 기반 SRT (정확): TTS 글자별 실제 timing 사용
+// fallback: 글자 비례 분배 (alignment 없을 때)
+function scriptToSrt(scriptText, audioDur, offset = 0, alignment = null) {
   const cleaned = stripMetaLabels(scriptText);
+
+  // 자막 단위 추출 (30~35자 청크)
+  const subtitleChunks = [];
   const sceneRegex = /\[장면\s*(\d+)[^\]]*\]([\s\S]*?)(?=\[장면|\s*$)/g;
   const scenes = [];
   let m;
@@ -874,28 +938,83 @@ function scriptToSrt(scriptText, audioDur, offset = 0) {
       .split(/\n{2,}/).map(p => p.trim()).filter(p => p.length > 10);
     scenes.push(...ps);
   }
-  const totalChars = scenes.reduce((a, s) => a + s.length, 0) || 1;
-  let cur = offset;
-  let srt = '';
-  let idx = 1;
+
   scenes.forEach((scene) => {
-    const sceneDur = (scene.length / totalChars) * audioDur;
     const sentences = scene.match(/[^.!?。！？\n]+[.!?。！？]?/g) || [scene];
-    const sentChars = sentences.reduce((a, s) => a + s.length, 0) || 1;
     sentences.forEach((sent) => {
       const t = sent.trim();
       if (!t || t.length < 3) return;
-      const sentDur = Math.max(1, (t.length / sentChars) * sceneDur);
-      // 30~35자 단위로 분할 (1행 표시용)
       const chunks = splitForSubtitle(t, 33);
-      const chunkChars = chunks.reduce((a, c) => a + c.length, 0) || 1;
-      chunks.forEach((chunk) => {
-        const dur = Math.max(0.8, (chunk.length / chunkChars) * sentDur);
-        srt += `${idx}\n${formatSrtTime(cur)} --> ${formatSrtTime(cur + dur)}\n${chunk}\n\n`;
-        cur += dur;
-        idx++;
-      });
+      chunks.forEach(c => subtitleChunks.push(c));
     });
+  });
+
+  let srt = '';
+
+  // === alignment 기반 정확 매칭 ===
+  if (alignment && alignment.characters && alignment.characters.length > 0) {
+    const alignChars = alignment.characters;
+    const alignStarts = alignment.starts;
+    const alignEnds = alignment.ends;
+    // alignment의 char 시퀀스를 하나 합친 문자열
+    const alignText = alignChars.join('');
+
+    let alignPos = 0; // alignment 안에서 현재 검색 시작 위치
+    let idx = 1;
+
+    for (const chunk of subtitleChunks) {
+      // chunk 텍스트를 alignment 안에서 위치 찾기
+      // 공백·문장부호 무시한 정규화 매칭으로 robust
+      const target = chunk.replace(/\s+/g, '').replace(/[.,!?。！？，、:：;；]/g, '');
+      if (target.length === 0) continue;
+
+      // alignment text에서 정규화된 위치 찾기
+      let normalizedIdx = 0;
+      let realStartIdx = -1;
+      let realEndIdx = -1;
+      let matchedCount = 0;
+
+      for (let i = alignPos; i < alignText.length && matchedCount < target.length; i++) {
+        const ch = alignText[i];
+        if (/[\s.,!?。！？，、:：;；]/.test(ch)) continue;
+        if (ch === target[matchedCount]) {
+          if (matchedCount === 0) realStartIdx = i;
+          realEndIdx = i;
+          matchedCount++;
+        } else if (matchedCount > 0) {
+          // 매칭 깨짐 → 다시 시작
+          matchedCount = 0;
+          realStartIdx = -1;
+          // i 다시 이전 위치 시도하지 않음 (단순 forward)
+        }
+      }
+
+      if (realStartIdx >= 0 && realEndIdx >= 0 && realEndIdx < alignStarts.length) {
+        const startTime = alignStarts[realStartIdx] + offset;
+        const endTime = alignEnds[realEndIdx] + offset;
+        const dur = Math.max(0.5, endTime - startTime);
+        srt += `${idx}\n${formatSrtTime(startTime)} --> ${formatSrtTime(startTime + dur)}\n${chunk}\n\n`;
+        alignPos = realEndIdx + 1;
+        idx++;
+      } else {
+        // 매칭 실패: skip (희귀 케이스)
+        console.warn(`[SRT] alignment 매칭 실패: "${chunk.substring(0, 20)}..."`);
+      }
+    }
+
+    if (srt.length > 0) return srt;
+    console.warn('[SRT] alignment 매칭 결과 없음, fallback');
+  }
+
+  // === Fallback: 글자 비례 분배 ===
+  const totalChars = subtitleChunks.reduce((a, c) => a + c.length, 0) || 1;
+  let cur = offset;
+  let idx = 1;
+  subtitleChunks.forEach((chunk) => {
+    const dur = Math.max(0.8, (chunk.length / totalChars) * audioDur);
+    srt += `${idx}\n${formatSrtTime(cur)} --> ${formatSrtTime(cur + dur)}\n${chunk}\n\n`;
+    cur += dur;
+    idx++;
   });
   return srt;
 }
@@ -1141,7 +1260,7 @@ app.post('/api/render/video', async (req, res) => {
       const scriptText = project.script || '';
       if (scriptText) {
         console.log(`[Render] 4. SRT 자동 생성 (오프셋 ${srtOffset}초) → burn`);
-        const freshSrtContent = scriptToSrt(scriptText, audioDuration, srtOffset);
+        const freshSrtContent = scriptToSrt(scriptText, audioDuration, srtOffset, project.ttsAlignment);
         const freshSrtFile = `render_${Date.now()}.srt`;
         const freshSrtPath = path.join(OUTPUT_DIR, 'srt', freshSrtFile);
         fs.writeFileSync(freshSrtPath, freshSrtContent, 'utf-8');
