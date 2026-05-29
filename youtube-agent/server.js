@@ -1578,47 +1578,84 @@ JSON으로 출력: {"main":"메인문구","sub":"서브문구"}` }]
     const mainText = (hookText || '').trim();
     const subTxt = (subText || '').trim();
 
-    // 메인: 80pt 시작, 최대 2줄 들어가도록 축소
-    const mainFontSize = pickFontSize(mainText, 90, 48);
+    // === 파격적 디자인 — 최대 임팩트 ===
+    // 메인 폰트 110pt까지 확대 (더 큰 임팩트)
+    const mainFontSize = pickFontSize(mainText, 110, 56);
     const mainLines = wrapLines(mainText, mainFontSize);
 
-    const subFontSize = subTxt ? pickFontSize(subTxt, 44, 28) : 0;
+    const subFontSize = subTxt ? pickFontSize(subTxt, 50, 32) : 0;
     const subLines = subTxt ? wrapLines(subTxt, subFontSize) : [];
 
     const escapeText = (s) => s.replace(/\\/g, '\\\\').replace(/'/g, "'\\''").replace(/:/g, '\\:').replace(/%/g, '\\%');
 
-    // 메인 텍스트 블록 전체 높이 계산 (라인 간격 1.15)
-    const mainLineH = Math.round(mainFontSize * 1.15);
-    const subLineH = Math.round(subFontSize * 1.15);
+    // 텍스트 블록 높이 (라인 간격 1.2)
+    const mainLineH = Math.round(mainFontSize * 1.2);
+    const subLineH = Math.round(subFontSize * 1.2);
     const mainTotalH = mainLines.length * mainLineH;
     const subTotalH = subLines.length * subLineH;
-    const gap = subTxt ? 40 : 0;
+    const gap = subTxt ? 60 : 0;
     const totalH = mainTotalH + gap + subTotalH;
 
-    // 세로 중앙 정렬 (y 시작 위치)
+    // 세로 중앙 정렬
     const startY = Math.round((720 - totalH) / 2);
 
-    // === 시각 효과 강화: 호기심·주의 환기 ===
-    // 메인: 진노란색(#FFEB3B) + 검정 외곽선 8px + 깊은 그림자 + 빨간색 그림자 레이어
-    // 서브: 흰색 + 빨간 box 배경 + 검정 외곽선
-    // 좌측에 ⚠️ 또는 ▶ 아이콘 효과를 위해 메인 텍스트 좌우 박스
+    // === 파격적 다층 효과 ===
+    // 1. 어두운 비네트 (반투명 검정 그라데이션) — 텍스트 가독성 + 영화관 느낌
+    // 2. 빨간 사선 액센트 바 (drawbox로 좌측 상단)
+    // 3. 노란 가로 액센트 바 (메인 텍스트 위/아래)
+    // 4. 메인 텍스트: 5겹 그림자 (붉은 외광 → 검정 그림자 → 노란 메인)
+    // 5. 서브 텍스트: 노란 테두리 빨간 박스 (이중 박스)
     const filters = [];
 
-    // 메인 텍스트 — 노란색(눈에 띔) + 두꺼운 검정 외곽선 + 빨간 그림자(임팩트)
+    // 비네트 효과 (좌우 어두운 페이드) — 텍스트 영역 강조
+    filters.push(`drawbox=x=0:y=0:w=1280:h=720:color=black@0.35:t=fill`);
+
+    // 좌측 상단 빨간 액센트 바 (사선 느낌)
+    filters.push(`drawbox=x=0:y=0:w=180:h=8:color=#FF1744:t=fill`);
+    filters.push(`drawbox=x=0:y=8:w=120:h=6:color=#FFEB3B:t=fill`);
+    // 우측 하단 미러
+    filters.push(`drawbox=x=1100:y=706:w=180:h=8:color=#FF1744:t=fill`);
+    filters.push(`drawbox=x=1160:y=700:w=120:h=6:color=#FFEB3B:t=fill`);
+
+    // 메인 텍스트 위쪽 노란 가로 액센트 바 (5px 두께)
+    if (mainLines.length > 0) {
+      const barY = startY - 18;
+      filters.push(`drawbox=x=(iw-280)/2:y=${barY}:w=280:h=6:color=#FFEB3B:t=fill`);
+      filters.push(`drawbox=x=(iw-280)/2-3:y=${barY-3}:w=6:h=12:color=#FF1744:t=fill`);
+      filters.push(`drawbox=x=(iw-280)/2+277:y=${barY-3}:w=6:h=12:color=#FF1744:t=fill`);
+      // (이미 drawbox 표현식 수정됨)
+    }
+
+    // 메인 텍스트 — 5겹 임팩트
     mainLines.forEach((line, i) => {
       const y = startY + i * mainLineH;
       const esc = escapeText(line);
-      // 1차: 빨간 그림자 (5px 오프셋)
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=#FF1744@0.7:x=(w-text_w)/2+6:y=${y}+6`);
-      // 2차: 메인 노란색 + 검정 외곽선 + 그림자
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=#FFEB3B:borderw=8:bordercolor=black:shadowcolor=black@0.85:shadowx=5:shadowy=5:x=(w-text_w)/2:y=${y}`);
+      // 1) 외광 효과 — 빨간 그림자 (12px 오프셋, 큰 블러 느낌)
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=#FF1744@0.5:x=(w-text_w)/2+12:y=${y}+12`);
+      // 2) 빨간 그림자 (8px)
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=#FF1744@0.85:x=(w-text_w)/2+8:y=${y}+8`);
+      // 3) 검정 그림자 (4px) — 깊이감
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=black:x=(w-text_w)/2+4:y=${y}+4`);
+      // 4) 메인 — 노란색 + 두꺼운 검정 외곽선 (12px)
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=#FFEB3B:borderw=12:bordercolor=black:x=(w-text_w)/2:y=${y}`);
+      // 5) 하이라이트 — 옅은 흰색 위 (위쪽 1/3에 흰빛)
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=white@0.0:x=(w-text_w)/2:y=${y}`);
     });
 
-    // 서브 텍스트 — 빨간 박스 배경 + 흰색 텍스트
+    // 메인 텍스트 아래 노란 가로 액센트 바
+    if (mainLines.length > 0 && subLines.length === 0) {
+      const barY = startY + mainTotalH + 14;
+      filters.push(`drawbox=x=(iw-280)/2:y=${barY}:w=280:h=6:color=#FFEB3B:t=fill`);
+    }
+
+    // 서브 텍스트 — 이중 박스 (노란 테두리 + 빨간 본체) + 큰 그림자
     subLines.forEach((line, i) => {
       const y = startY + mainTotalH + gap + i * subLineH;
       const esc = escapeText(line);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=white:borderw=4:bordercolor=black:shadowcolor=black@0.7:shadowx=3:shadowy=3:box=1:boxcolor=#D50000@0.85:boxborderw=15:x=(w-text_w)/2:y=${y}`);
+      // 외곽 노란 박스 효과 (text_w 추정 위해 노란 박스 먼저 그리고 그 위에 빨간 박스 + 텍스트)
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=#FFEB3B@0:box=1:boxcolor=#FFEB3B@1:boxborderw=22:x=(w-text_w)/2:y=${y}`);
+      // 그 위에 빨간 박스 + 흰 텍스트
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=white:borderw=4:bordercolor=black:shadowcolor=black@0.9:shadowx=5:shadowy=5:box=1:boxcolor=#D50000@1:boxborderw=15:x=(w-text_w)/2:y=${y}`);
     });
 
     const drawFilters = filters.join(',');
