@@ -978,7 +978,7 @@ app.post('/api/render/video', async (req, res) => {
         await new Promise((resolve, reject) => {
           execFile('ffmpeg', [
             '-i', outputPath,
-            '-vf', `subtitles='${srtPathEscaped}':force_style='FontName=Malgun Gothic,FontSize=16,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=1.5,Shadow=0.8,MarginV=35,Bold=0'`,
+            '-vf', `subtitles='${srtPathEscaped}':force_style='FontName=Malgun Gothic,Fontname=Malgun Gothic,FontSize=16,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=40,Bold=1,Italic=0,Alignment=2'`,
             '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
             '-movflags', '+faststart', '-y', srtOutput
           ], { timeout: 600000 }, (error, stdout, stderr) => {
@@ -1176,11 +1176,8 @@ JSON으로 출력: {"main":"메인문구","sub":"서브문구"}` }]
       cinematic: 'cinematic wide shot, film-like, teal and orange grading, atmospheric, lens flare'
     };
 
-    const textOverlay = subText
-      ? `with large bold Korean main title text "${hookText}" at center in huge eye-catching white font with black outline, and smaller subtitle "${subText}" below it`
-      : `with large bold Korean text overlay "${hookText}" in huge eye-catching white font with thick black outline at center`;
-
-    const thumbPrompt = `YouTube video thumbnail in exact 16:9 aspect ratio (1280x720), ${styleGuide[style] || styleGuide.dramatic}, topic: "${topic}", ${textOverlay}, background image related to the topic with dramatic composition, professional YouTube thumbnail design, high impact visual`;
+    // gpt-image-1이 텍스트를 그리지 않도록 명시 — drawtext로만 텍스트 오버레이
+    const thumbPrompt = `YouTube video thumbnail in exact 16:9 aspect ratio (1280x720), ${styleGuide[style] || styleGuide.dramatic}, topic: "${topic}", background image related to the topic with dramatic composition, professional YouTube thumbnail design, high impact visual, cinematic composition with empty space in the upper-left and lower-center area for text overlay. IMPORTANT: NO TEXT, NO LETTERS, NO WORDS, NO TYPOGRAPHY, NO CAPTIONS, NO WRITTEN CONTENT of any kind in the image — pure visual scene only.`;
 
     const image = await openai.images.generate({
       model: 'gpt-image-1',
@@ -1210,25 +1207,93 @@ JSON으로 출력: {"main":"메인문구","sub":"서브문구"}` }]
       });
     });
 
-    // 2단계: FFmpeg drawtext로 한글 텍스트 확실히 오버레이
+    // 2단계: FFmpeg drawtext로 한글 텍스트 오버레이 — 화면 안에 들어가도록 동적 사이즈/줄바꿈
     const filename = `thumbnail_${Date.now()}.png`;
     const filepath = path.join(OUTPUT_DIR, 'thumbnails', filename);
-    const mainEsc = (hookText || '').replace(/'/g, "'\\''").replace(/:/g, '\\:');
-    const subEsc = (subText || '').replace(/'/g, "'\\''").replace(/:/g, '\\:');
     const fontPath = 'C\\:/Windows/Fonts/malgunbd.ttf';
 
-    let drawFilters = `drawtext=text='${mainEsc}':fontfile='${fontPath}':fontsize=72:fontcolor=white:borderw=4:bordercolor=black:shadowcolor=black@0.6:shadowx=3:shadowy=3:x=(w-text_w)/2:y=(h/2)-60`;
-    if (subText) {
-      drawFilters += `,drawtext=text='${subEsc}':fontfile='${fontPath}':fontsize=36:fontcolor=#FFDD00:borderw=2:bordercolor=black:shadowcolor=black@0.5:shadowx=2:shadowy=2:x=(w-text_w)/2:y=(h/2)+30`;
+    // 한글 1글자 = 약 fontSize px 폭 차지 (고딕 굵게)
+    // 가용 폭 1280 - 좌우 여백 80 × 2 = 1120
+    const SAFE_W = 1120;
+
+    function wrapLines(text, fontSize) {
+      const maxChars = Math.floor(SAFE_W / (fontSize * 0.95));
+      const chars = [...text];
+      const lines = [];
+      let cur = '';
+      for (const ch of chars) {
+        if ((cur + ch).length > maxChars && cur.length > 0) {
+          // 공백/쉼표에서 자르기 우선
+          const cutIdx = Math.max(cur.lastIndexOf(' '), cur.lastIndexOf(','), cur.lastIndexOf('，'));
+          if (cutIdx > maxChars * 0.5) {
+            lines.push(cur.substring(0, cutIdx).trim());
+            cur = cur.substring(cutIdx).trim() + ch;
+          } else {
+            lines.push(cur);
+            cur = ch;
+          }
+        } else {
+          cur += ch;
+        }
+      }
+      if (cur) lines.push(cur);
+      return lines;
     }
+
+    function pickFontSize(text, baseSize, minSize) {
+      const len = [...text].length;
+      // 글자 수가 많으면 폰트 줄임
+      let size = baseSize;
+      while (size > minSize) {
+        const maxCharsPerLine = Math.floor(SAFE_W / (size * 0.95));
+        if (len <= maxCharsPerLine * 2) break; // 2줄 이내 가능
+        size -= 4;
+      }
+      return size;
+    }
+
+    const mainText = (hookText || '').trim();
+    const subTxt = (subText || '').trim();
+
+    // 메인: 80pt 시작, 최대 2줄 들어가도록 축소
+    const mainFontSize = pickFontSize(mainText, 90, 48);
+    const mainLines = wrapLines(mainText, mainFontSize);
+
+    const subFontSize = subTxt ? pickFontSize(subTxt, 44, 28) : 0;
+    const subLines = subTxt ? wrapLines(subTxt, subFontSize) : [];
+
+    const escapeText = (s) => s.replace(/\\/g, '\\\\').replace(/'/g, "'\\''").replace(/:/g, '\\:').replace(/%/g, '\\%');
+
+    // 메인 텍스트 블록 전체 높이 계산 (라인 간격 1.15)
+    const mainLineH = Math.round(mainFontSize * 1.15);
+    const subLineH = Math.round(subFontSize * 1.15);
+    const mainTotalH = mainLines.length * mainLineH;
+    const subTotalH = subLines.length * subLineH;
+    const gap = subTxt ? 40 : 0;
+    const totalH = mainTotalH + gap + subTotalH;
+
+    // 세로 중앙 정렬 (y 시작 위치)
+    const startY = Math.round((720 - totalH) / 2);
+
+    const filters = [];
+    mainLines.forEach((line, i) => {
+      const y = startY + i * mainLineH;
+      filters.push(`drawtext=text='${escapeText(line)}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=white:borderw=5:bordercolor=black:shadowcolor=black@0.7:shadowx=4:shadowy=4:x=(w-text_w)/2:y=${y}`);
+    });
+    subLines.forEach((line, i) => {
+      const y = startY + mainTotalH + gap + i * subLineH;
+      filters.push(`drawtext=text='${escapeText(line)}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=#FFDD00:borderw=3:bordercolor=black:shadowcolor=black@0.6:shadowx=3:shadowy=3:x=(w-text_w)/2:y=${y}`);
+    });
+
+    const drawFilters = filters.join(',');
 
     await new Promise((resolve) => {
       execFile('ffmpeg', [
         '-i', croppedPath,
         '-vf', drawFilters,
         '-y', filepath
-      ], { timeout: 30000 }, (error) => {
-        if (error) { fs.copyFileSync(croppedPath, filepath); }
+      ], { timeout: 30000 }, (error, stdout, stderr) => {
+        if (error) { console.error('[Thumbnail drawtext]', stderr); fs.copyFileSync(croppedPath, filepath); }
         resolve();
       });
     });
