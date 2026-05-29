@@ -357,7 +357,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     <div class="ni" data-s="plan" onclick="go('plan')"><span class="sn">2</span><span>📋</span> 대본 기획 <span class="req"></span></div>
     <div class="ni" data-s="script" onclick="go('script')"><span class="sn">3</span><span>✍️</span> 대본 작성 <span class="req"></span></div>
     <div class="sb-lbl">🎬 제작</div>
-    <div class="ni" data-s="image" onclick="go('image')"><span class="sn">4</span><span>🎨</span> 이미지 생성 <span class="req"></span></div>
+    <div class="ni" data-s="image" onclick="go('image')"><span class="sn">4</span><span>🎨</span> 이미지, 영상 생성 <span class="req"></span></div>
     <div class="ni" data-s="tts" onclick="go('tts')"><span class="sn">5</span><span>🎙️</span> TTS 음성 <span class="req"></span></div>
     <div class="ni" data-s="render" onclick="go('render')"><span class="sn">6</span><span>🎬</span> 영상 합성 <span class="req"></span></div>
     <div class="sb-lbl">📢 퍼블리싱</div>
@@ -798,11 +798,20 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div id="scriptOut"></div>
     </div>
 
-    <!-- ===== 4. 이미지 생성 ===== -->
+    <!-- ===== 4. 이미지, 영상 생성 ===== -->
     <div class="sec" id="sec-image">
       <div id="imageReq"></div>
       <div class="cd">
-        <div class="cd-h"><div><div class="cd-t">🎨 이미지 생성 (ChatGPT Images 2.0)</div><div class="cd-s">대본 기반 장면별 이미지 실제 생성</div></div></div>
+        <div class="cd-h"><div><div class="cd-t">🎨 이미지, 영상 생성</div><div class="cd-s">대본 기반 장면별 이미지(GPT Image) 또는 영상(Pexels 스톡) 생성</div></div></div>
+        <div class="fr" style="margin-bottom:10px">
+          <div class="fg"><label class="fl">🎞️ 소스 모드</label>
+            <select class="fs" id="imgSourceMode" onchange="updateImgSourceMode()">
+              <option value="image" selected>🖼️ 이미지 기반 (GPT Image-1)</option>
+              <option value="video">🎬 영상 기반 (Pexels 스톡)</option>
+            </select>
+            <div class="fh" id="imgSourceModeHint">AI 생성 이미지 + Ken Burns 효과로 영상에 사용됩니다</div>
+          </div>
+        </div>
         <div class="fr3">
           <div class="fg"><label class="fl">🎨 스타일</label><select class="fs" id="imgStyle">
             <optgroup label="🎬 시네마틱·포토리얼">
@@ -853,9 +862,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="b bs blg" id="imgPBtn" onclick="doImgPrompts()">① 프롬프트 생성 (Claude)</button>
-          <button class="b bp blg" id="imgGBtn" onclick="doImgGenAll()" disabled>② 전체 이미지 생성 (ChatGPT Images 2.0)</button>
+          <button class="b bp blg" id="imgGBtn" onclick="doImgGenAll()" disabled>② 전체 이미지 생성 (GPT Image-1)</button>
+          <button class="b bp blg" id="clipGBtn" onclick="doClipGenAll()" disabled style="display:none">② 전체 영상 클립 다운로드 (Pexels)</button>
         </div>
-        <div class="fh">① 프롬프트 생성 → 검토/수정 → ② 이미지 생성. 개별 이미지도 생성/재생성 가능합니다.</div>
+        <div class="fh" id="imgGenHint">① 프롬프트 생성 → 검토/수정 → ② 이미지/영상 생성</div>
       </div>
       <div id="imgPOut"></div>
       <div class="pgb" id="imgPg" style="display:none"><div class="pgf" id="imgPgF"></div></div>
@@ -1137,7 +1147,7 @@ const S = {
 };
 
 const SECS = ['auto','topic','plan','script','image','tts','render','meta','thumb','intro','timeline','srt','projmgr','analytics','upload'];
-const NAMES = {auto:'🤖 자동 제작',topic:'💡 주제 선정',plan:'📋 대본 기획',script:'✍️ 대본 작성',image:'🎨 이미지 생성',tts:'🎙️ TTS 음성',render:'🎬 영상 합성',meta:'🏷️ 제목/설명',thumb:'🖼️ 썸네일',intro:'🚀 인트로',timeline:'🎞️ 타임라인',srt:'📝 SRT 자막',projmgr:'📁 프로젝트',analytics:'📊 Analytics',upload:'📤 업로드'};
+const NAMES = {auto:'🤖 자동 제작',topic:'💡 주제 선정',plan:'📋 대본 기획',script:'✍️ 대본 작성',image:'🎨 이미지, 영상 생성',tts:'🎙️ TTS 음성',render:'🎬 영상 합성',meta:'🏷️ 제목/설명',thumb:'🖼️ 썸네일',intro:'🚀 인트로',timeline:'🎞️ 타임라인',srt:'📝 SRT 자막',projmgr:'📁 프로젝트',analytics:'📊 Analytics',upload:'📤 업로드'};
 const PREREQS = {plan:['topic'],script:['plan'],image:['script'],tts:['script'],render:['image','tts'],meta:['script'],upload:['render'],srt:['script'],timeline:['image']};
 
 // === Nav ===
@@ -1267,6 +1277,7 @@ function go(id) {
   checkPrereqs(id);
   if(id==='plan') { document.getElementById('planTopic').value=S.topic; const tv=document.getElementById('topTar').value; if(tv) document.getElementById('planTarget').value=tv; }
   if(id==='auto') { loadAutoBgmList(); updateSourceModeHint(); }
+  if(id==='image') updateImgSourceMode();
   if(id==='tts') prepareTTS();
   if(id==='render') { prepareRender(); loadBgmList(); }
   if(id==='upload') prepareUpload();
@@ -1396,6 +1407,7 @@ async function doImgPrompts(){
     h+='</div>';
     document.getElementById('imgPOut').innerHTML=h;
     document.getElementById('imgGBtn').disabled=false;
+    const cb=document.getElementById('clipGBtn');if(cb)cb.disabled=false;
   }catch(e){toast(e.message,'err')}
   loading('imgPBtn',false);
 }
@@ -1432,6 +1444,69 @@ async function doImgGenAll(){
   markOk('image');save();
   loading('imgGBtn',false);
   toast(`${total}개 이미지 생성 완료`);
+}
+
+// 영상 클립 일괄 다운로드 (Pexels)
+async function doClipGenAll(){
+  if(!S.imgPrompts||!S.imgPrompts.length){toast('먼저 프롬프트를 생성하세요','err');return}
+  loading('clipGBtn',true,'Pexels 영상 검색·다운로드 중...');
+  const pg=document.getElementById('imgPg');const pgf=document.getElementById('imgPgF');const pgt=document.getElementById('imgPgT');
+  pg.style.display='block';pgt.style.display='block';pgf.style.width='30%';
+  pgt.textContent='Pexels 검색 중...';
+  document.getElementById('imgOut').innerHTML='';
+  try{
+    const d=await api('/api/clips/generate',{scenePrompts:S.imgPrompts,perSceneDuration:10});
+    pgf.style.width='100%';
+    const ok=d.clips.filter(c=>c.filename).length;
+    const fail=d.clips.length-ok;
+    pgt.textContent=`${ok}/${d.clips.length} 영상 클립 다운로드 완료${fail>0?` (실패 ${fail})`:''}`;
+    // 결과 표시
+    const out=document.getElementById('imgOut');
+    out.innerHTML='<div class="ig">'+d.clips.map((c,i)=>{
+      if(c.filename){
+        return `<div class="ic"><video src="${c.url}" controls muted style="width:100%;display:block"></video>
+          <div class="ic-l">장면 ${i+1} | ${c.size} | 출처: <a href="${c.authorUrl}" target="_blank" style="color:var(--acc)">${c.author}</a><br>검색어: "${esc(c.query||'')}"</div></div>`;
+      } else {
+        return `<div class="ic" style="border-color:var(--err)"><div class="ic-l" style="padding:20px;color:var(--err)">장면 ${i+1} 실패: ${esc(c.error||'')}<br>검색어: "${esc(c.query||'')}"</div></div>`;
+      }
+    }).join('')+'</div>';
+    markOk('image');save();
+    toast(`${ok}/${d.clips.length} 영상 클립 다운로드 완료`);
+  }catch(e){toast(e.message,'err');pgt.textContent='실패: '+e.message}
+  loading('clipGBtn',false);
+}
+
+// 소스 모드 토글 — 이미지/영상 UI 분기
+function updateImgSourceMode(){
+  const mode=document.getElementById('imgSourceMode')?.value||'image';
+  const isVideo=mode==='video';
+  const hint=document.getElementById('imgSourceModeHint');
+  const genHint=document.getElementById('imgGenHint');
+  if(hint){
+    hint.innerHTML=isVideo
+      ?'⚠️ Pexels API 키 필요 (.env에 PEXELS_API_KEY). <a href="https://www.pexels.com/api/" target="_blank" style="color:var(--acc)">무료 발급</a>'
+      :'AI 생성 이미지 + Ken Burns 효과로 영상에 사용됩니다';
+  }
+  if(genHint){
+    genHint.textContent=isVideo
+      ?'① 프롬프트 생성 → ② 영상 클립 다운로드 (Pexels search_keywords 사용)'
+      :'① 프롬프트 생성 → 검토/수정 → ② 이미지 생성';
+  }
+  // 버튼 전환
+  const imgBtn=document.getElementById('imgGBtn');
+  const clipBtn=document.getElementById('clipGBtn');
+  if(imgBtn)imgBtn.style.display=isVideo?'none':'';
+  if(clipBtn)clipBtn.style.display=isVideo?'':'none';
+  // 이미지 전용 옵션 비활성화 (스타일, 비율)
+  const imageOnly=['imgStyle','imgRatio'];
+  imageOnly.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.disabled=isVideo;
+    el.style.opacity=isVideo?'0.4':'1';
+    const parent=el.closest('.fg');
+    if(parent)parent.style.opacity=isVideo?'0.5':'1';
+  });
 }
 
 // === 5. TTS ===
