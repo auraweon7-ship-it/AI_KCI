@@ -788,63 +788,79 @@ app.post('/api/clips/generate', async (req, res) => {
     const targetDur = perSceneDuration || 10;
     const clips = [];
 
-    // 사용된 video id 추적 — 중복 방지
-    const usedVideoIds = new Set();
-    // 최신 사회 반영 키워드 풀 (랜덤 변형)
-    const MODERN_MODIFIERS = ['modern', 'contemporary', '2024', 'urban', 'cinematic', 'professional'];
+    // 사용된 video id 추적 — 프로젝트 단위 (재호출 시도에도 중복 방지)
+    const usedVideoIds = new Set(project.usedClipVideoIds || []);
+    const MODERN_MODIFIERS = ['modern', 'contemporary', '2024', 'urban', 'cinematic', 'professional', 'lifestyle', 'business'];
+    const FALLBACK_GENERIC = ['city street', 'nature landscape', 'people working', 'abstract pattern', 'sky timelapse', 'ocean waves', 'forest sunlight', 'urban night'];
+
+    // Pexels 검색 + 사용 안 된 결과 반환 헬퍼
+    async function searchAvailable(query) {
+      const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=15&orientation=landscape`;
+      const r = await fetch(url, { headers: { Authorization: apiKey } });
+      if (!r.ok) return [];
+      const data = await r.json();
+      return (data.videos || []).filter(v => !usedVideoIds.has(v.id));
+    }
 
     for (let i = 0; i < prompts.length; i++) {
       const p = prompts[i];
-      // search_keywords 우선, 없으면 prompt 앞부분 영문만 추출
       let baseQuery;
       if (p.search_keywords && typeof p.search_keywords === 'string') {
         baseQuery = p.search_keywords.trim().substring(0, 50);
       } else {
-        // 영문 단어만 추출 (한글 제거), 첫 3~5단어
         const englishWords = (p.prompt || '').match(/[a-zA-Z]+/g) || [];
         baseQuery = englishWords.slice(0, 4).join(' ').substring(0, 50);
         if (!baseQuery) baseQuery = (p.name || 'nature landscape').replace(/[^a-zA-Z\s]/g, ' ').trim();
       }
-      // 최신 사회 반영: 장면 index 기반 modifier 추가 (다양성 + 중복 방지)
-      const modifier = MODERN_MODIFIERS[i % MODERN_MODIFIERS.length];
-      const query = `${baseQuery} ${modifier}`.substring(0, 70);
-      console.log(`[Pexels] 장면 ${i+1} 검색: "${query}"`);
+
+      let video = null;
+      const triedQueries = [];
+
+      // 1차: baseQuery + index-based modifier
+      const primaryQuery = `${baseQuery} ${MODERN_MODIFIERS[i % MODERN_MODIFIERS.length]}`.substring(0, 70);
+      triedQueries.push(primaryQuery);
+      console.log(`[Pexels] 장면 ${i+1} 검색: "${primaryQuery}"`);
+      let videos = await searchAvailable(primaryQuery);
+
+      // 2차: 모든 modifier 순회 (8개)
+      if (!videos.length) {
+        for (let m = 0; m < MODERN_MODIFIERS.length && !videos.length; m++) {
+          if (m === (i % MODERN_MODIFIERS.length)) continue; // primary 중복 스킵
+          const altQuery = `${baseQuery} ${MODERN_MODIFIERS[m]}`.substring(0, 70);
+          triedQueries.push(altQuery);
+          videos = await searchAvailable(altQuery);
+          if (videos.length) console.log(`[Pexels] 장면 ${i+1} ${m+1}차 시도 성공: "${altQuery}"`);
+        }
+      }
+
+      // 3차: baseQuery만 (modifier 없이)
+      if (!videos.length) {
+        triedQueries.push(baseQuery);
+        videos = await searchAvailable(baseQuery);
+      }
+
+      // 4차: 일반 키워드 fallback (장면 index별 다른 키워드)
+      if (!videos.length) {
+        const generic = FALLBACK_GENERIC[i % FALLBACK_GENERIC.length];
+        triedQueries.push(generic);
+        console.log(`[Pexels] 장면 ${i+1} generic fallback: "${generic}"`);
+        videos = await searchAvailable(generic);
+      }
+
+      if (!videos.length) {
+        clips.push({ index: i + 1, error: 'no unique result after all fallbacks', triedQueries });
+        continue;
+      }
+
       try {
-        // per_page 15로 늘려 중복 회피 여지 확보
-        const searchUrl = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=15&orientation=landscape`;
-        const r = await fetch(searchUrl, { headers: { Authorization: apiKey } });
-        if (!r.ok) throw new Error(`Pexels API ${r.status}`);
-        const data = await r.json();
-        let videos = data.videos || [];
-
-        // 이미 사용된 video id 제외
-        videos = videos.filter(v => !usedVideoIds.has(v.id));
-
-        // 다 사용됐으면 modifier 다른 걸로 fallback 검색
-        if (!videos.length) {
-          const altModifier = MODERN_MODIFIERS[(i + 3) % MODERN_MODIFIERS.length];
-          const altQuery = `${baseQuery} ${altModifier}`.substring(0, 70);
-          console.log(`[Pexels] 장면 ${i+1} 재검색(중복 회피): "${altQuery}"`);
-          const r2 = await fetch(`https://api.pexels.com/videos/search?query=${encodeURIComponent(altQuery)}&per_page=15&orientation=landscape`, { headers: { Authorization: apiKey } });
-          if (r2.ok) {
-            const d2 = await r2.json();
-            videos = (d2.videos || []).filter(v => !usedVideoIds.has(v.id));
-          }
-        }
-        if (!videos.length) {
-          clips.push({ index: i + 1, error: 'no result', query });
-          continue;
-        }
-
-        // HD 720p~1080p 우선
-        const video = videos[0];
+        video = videos[0];
         usedVideoIds.add(video.id);
         const files = video.video_files || [];
         const hd = files.find(f => f.width >= 1280 && f.width <= 1920 && f.file_type === 'video/mp4')
                 || files.find(f => f.file_type === 'video/mp4')
                 || files[0];
         if (!hd?.link) {
-          clips.push({ index: i + 1, error: 'no mp4 file' });
+          clips.push({ index: i + 1, error: 'no mp4 file', videoId: video.id });
           continue;
         }
         const vRes = await fetch(hd.link);
@@ -859,7 +875,8 @@ app.post('/api/clips/generate', async (req, res) => {
           filename,
           url: `/output/clips/${filename}`,
           size: `${(buffer.length / 1024 / 1024).toFixed(1)}MB`,
-          query,
+          query: triedQueries[triedQueries.length - 1],
+          videoId: video.id,
           source: 'pexels',
           author: video.user?.name || 'Unknown',
           authorUrl: video.user?.url || ''
@@ -867,12 +884,19 @@ app.post('/api/clips/generate', async (req, res) => {
         // Rate limit 보호
         await new Promise(r => setTimeout(r, 800));
       } catch(e) {
-        clips.push({ index: i + 1, error: e.message, query });
+        clips.push({ index: i + 1, error: e.message, triedQueries });
       }
     }
 
+    // 프로젝트에 사용된 video id 저장 (재호출 시 누적 추적)
+    project.usedClipVideoIds = Array.from(usedVideoIds);
     project.clipFiles = clips.filter(c => c.filename);
-    res.json({ success: true, clips });
+
+    // 검증: 모든 clip이 unique한지 (videoId 중복 체크)
+    const uniqueCheck = new Set(clips.filter(c => c.videoId).map(c => c.videoId));
+    const allUnique = uniqueCheck.size === clips.filter(c => c.videoId).length;
+
+    res.json({ success: true, clips, allUnique, totalUsedIds: usedVideoIds.size });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
