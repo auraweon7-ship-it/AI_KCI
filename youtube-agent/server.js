@@ -376,7 +376,12 @@ ${fullScript.substring(0, 8000)}
 2. 대본에 언급된 구체적인 인물, 장소, 사건, 시대를 프롬프트에 포함하세요.
 3. 대본 순서대로 장면을 배치하세요 (오프닝 → 본론 → 클라이맥스 → 엔딩).
 4. 각 프롬프트는 50단어 이상, 배경/조명/분위기/구도를 구체적으로 묘사하세요.
-5. search_keywords: Pexels 스톡 영상 검색에 최적화된 짧은 영문 키워드 2~3단어 (구체적이고 일반적인 명사 위주). 너무 추상적이거나 한국 고유명사 금지. 예: "ancient temple", "city night skyline", "ocean waves", "businessman office"
+5. search_keywords: Pexels 스톡 영상 검색에 최적화된 짧은 영문 키워드 2~3단어. 다음 규칙 준수:
+   - 구체적이고 일반적인 명사 위주
+   - 한국 고유명사·추상명사 금지
+   - 가능하면 최신 사회 반영 (현대 도시·기술·라이프스타일·소셜미디어·디지털 환경 등)
+   - 각 장면마다 서로 다른 키워드 사용 (중복 영상 회피)
+   - 예: "modern city skyline", "smartphone user", "remote work laptop", "diverse team meeting", "AI technology lab", "young professional cafe", "drone city aerial", "neon street night"
 6. 반드시 ${sceneCount}개를 모두 생성하세요.
 
 스타일: ${style || 'european-animation'}
@@ -783,31 +788,57 @@ app.post('/api/clips/generate', async (req, res) => {
     const targetDur = perSceneDuration || 10;
     const clips = [];
 
+    // 사용된 video id 추적 — 중복 방지
+    const usedVideoIds = new Set();
+    // 최신 사회 반영 키워드 풀 (랜덤 변형)
+    const MODERN_MODIFIERS = ['modern', 'contemporary', '2024', 'urban', 'cinematic', 'professional'];
+
     for (let i = 0; i < prompts.length; i++) {
       const p = prompts[i];
       // search_keywords 우선, 없으면 prompt 앞부분 영문만 추출
-      let query;
+      let baseQuery;
       if (p.search_keywords && typeof p.search_keywords === 'string') {
-        query = p.search_keywords.trim().substring(0, 60);
+        baseQuery = p.search_keywords.trim().substring(0, 50);
       } else {
         // 영문 단어만 추출 (한글 제거), 첫 3~5단어
         const englishWords = (p.prompt || '').match(/[a-zA-Z]+/g) || [];
-        query = englishWords.slice(0, 4).join(' ').substring(0, 60);
-        if (!query) query = (p.name || 'nature landscape').replace(/[^a-zA-Z\s]/g, ' ').trim();
+        baseQuery = englishWords.slice(0, 4).join(' ').substring(0, 50);
+        if (!baseQuery) baseQuery = (p.name || 'nature landscape').replace(/[^a-zA-Z\s]/g, ' ').trim();
       }
+      // 최신 사회 반영: 장면 index 기반 modifier 추가 (다양성 + 중복 방지)
+      const modifier = MODERN_MODIFIERS[i % MODERN_MODIFIERS.length];
+      const query = `${baseQuery} ${modifier}`.substring(0, 70);
       console.log(`[Pexels] 장면 ${i+1} 검색: "${query}"`);
       try {
-        const searchUrl = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=3&orientation=landscape`;
+        // per_page 15로 늘려 중복 회피 여지 확보
+        const searchUrl = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=15&orientation=landscape`;
         const r = await fetch(searchUrl, { headers: { Authorization: apiKey } });
         if (!r.ok) throw new Error(`Pexels API ${r.status}`);
         const data = await r.json();
-        const videos = data.videos || [];
+        let videos = data.videos || [];
+
+        // 이미 사용된 video id 제외
+        videos = videos.filter(v => !usedVideoIds.has(v.id));
+
+        // 다 사용됐으면 modifier 다른 걸로 fallback 검색
+        if (!videos.length) {
+          const altModifier = MODERN_MODIFIERS[(i + 3) % MODERN_MODIFIERS.length];
+          const altQuery = `${baseQuery} ${altModifier}`.substring(0, 70);
+          console.log(`[Pexels] 장면 ${i+1} 재검색(중복 회피): "${altQuery}"`);
+          const r2 = await fetch(`https://api.pexels.com/videos/search?query=${encodeURIComponent(altQuery)}&per_page=15&orientation=landscape`, { headers: { Authorization: apiKey } });
+          if (r2.ok) {
+            const d2 = await r2.json();
+            videos = (d2.videos || []).filter(v => !usedVideoIds.has(v.id));
+          }
+        }
         if (!videos.length) {
           clips.push({ index: i + 1, error: 'no result', query });
           continue;
         }
-        // HD 화질 720p~1080p 우선
+
+        // HD 720p~1080p 우선
         const video = videos[0];
+        usedVideoIds.add(video.id);
         const files = video.video_files || [];
         const hd = files.find(f => f.width >= 1280 && f.width <= 1920 && f.file_type === 'video/mp4')
                 || files.find(f => f.file_type === 'video/mp4')
