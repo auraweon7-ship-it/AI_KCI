@@ -1606,30 +1606,53 @@ async function previewVoiceById(voiceId){
   }catch(e){statusEl.textContent='샘플 생성 실패'}
 }
 
+// 공용 cleanup — 메타 라벨 + 톤/감정 지시문 + 진행/연출 지시문 제거
+function cleanTTSScript(src){
+  if(!src)return '';
+  const MK='(?:이미지|배경|장면|효과음|음악|BGM|bgm|배경음악|자막|화면|카메라|컷|전환|샷|shot|비주얼|visual|영상|화면설명|시각효과|VFX|sfx|SFX)';
+  return src
+    .replace(/\[장면[^\]]*\]/g,'')
+    .replace(/\[영상[^\]]*\]/g,'')
+    .replace(/\[(?:오프닝|엔딩|인트로|아웃트로|마무리|시작|종료|끝)[^\]]*\]/gi,'')
+    // 메타 라벨
+    .replace(new RegExp(`(?:\\*{1,2}|_{1,2})\\s*${MK}\\s*(?:\\*{1,2}|_{1,2})\\s*[:：][^\\n]*`,'gim'),'')
+    .replace(new RegExp(`^\\s*[▶▷►▪■◆◇★☆◎●○•\\-\\*]?\\s*[<\\[\\(]?\\s*${MK}\\s*[>\\]\\)]?\\s*[:：].*$`,'gim'),'')
+    .replace(new RegExp(`[▶▷►▪■◆◇★☆◎●○]\\s*${MK}\\s*[:：][^\\n]*`,'gi'),'')
+    // 나레이터 라벨
+    .replace(/\*{0,2}나레이터\*{0,2}\s*\([^)]*\)\s*[:：]\s*/g,'')
+    .replace(/\*{0,2}(?:나레이터|내레이터|해설|화자)\*{0,2}\s*[:：]\s*/g,'')
+    // 톤/감정 지시문
+    .replace(/\([^)]*(?:톤|tone|하게|으로|있게|이듯|하며|차분|진지|긴장|단호|침착|격앙|흥분|밝게|어둡게|천천히|빠르게|강하게|부드럽게)[^)]*\)/gi,'')
+    .replace(/\[[^\]]*(?:톤|tone|차분|진지|긴장|단호|침착|격앙|흥분)[^\]]*\]/gi,'')
+    // 진행/연출 지시문 (괄호/대괄호)
+    .replace(/\([^)]*(?:잠시|잠깐|짧은|긴)\s*(?:멈춤|침묵|정적|호흡|쉼|쉬다)[^)]*\)/gi,'')
+    .replace(/\([^)]*(?:정적이?\s*흐른다|침묵이?\s*흐른다|한\s*박자|호흡\s*가다듬|숨\s*고르)[^)]*\)/gi,'')
+    .replace(/\([^)]*(?:pause|silence|beat)[^)]*\)/gi,'')
+    .replace(/\[[^\]]*(?:잠시|잠깐|짧은|긴)\s*(?:멈춤|침묵|정적|호흡|쉼)[^\]]*\]/gi,'')
+    .replace(/\[[^\]]*(?:pause|silence|beat)[^\]]*\]/gi,'')
+    // 본문 단독 진행 지시문
+    .replace(/(?:^|[\s.,!?。！？\n])\s*(?:잠시|잠깐)\s*(?:멈춤|멈춥니다|정적|침묵|쉼|쉬어|쉬고)\.?(?=\s|$|[.,!?。！？\n])/g,' ')
+    .replace(/(?:^|[\s.,!?。！？\n])\s*(?:짧은|긴)\s*(?:정적|침묵|호흡)이?\s*(?:흐른다|흐릅니다)?\.?(?=\s|$|[.,!?。！？\n])/g,' ')
+    .replace(/(?:^|[\s.,!?。！？\n])\s*(?:한\s*박자\s*쉼|호흡\s*가다듬|숨\s*고르기|숨\s*고르고)\.?(?=\s|$|[.,!?。！？\n])/g,' ')
+    .replace(/(?:^|[\s.,!?。！？\n])\s*(?:화면\s*전환|컷\s*전환|다음\s*장면(?:으로|에서))\.?(?=\s|$|[.,!?。！？\n])/g,' ')
+    // 메타 정보 / 구분선
+    .replace(/^.*총\s*글자\s*수\s*[:：].*$/gm,'')
+    .replace(/^.*총\s*분량\s*[:：].*$/gm,'')
+    .replace(/^.*예상\s*시간\s*[:：].*$/gm,'')
+    .replace(/^---+$/gm,'')
+    .replace(/^===+$/gm,'')
+    .replace(/^#+\s.*$/gm,'')
+    .replace(/^[-*]\s/gm,'')
+    .replace(/\*{2,}/g,'')
+    .replace(/[━═─▶▷►■●•🎙️🎬📌🔹✅☐🎵🎶⚡⏩]/g,'')
+    .replace(/\n{3,}/g,'\n\n')
+    .replace(/\s{2,}/g,' ')
+    .trim();
+}
+
 function prepareTTS(){
   if(S.script&&!document.getElementById('ttsText').value){
-    const MK='(?:이미지|배경|장면|효과음|음악|BGM|bgm|배경음악|자막|화면|카메라|컷|전환|샷|shot|비주얼|visual|영상|화면설명|시각효과|VFX|sfx|SFX)';
-    const clean=S.script
-      .replace(/\[장면[^\]]*\]/g,'')
-      .replace(/\[영상[^\]]*\]/g,'')
-      .replace(/\[(?:오프닝|엔딩|인트로|아웃트로|마무리|시작|종료|끝)[^\]]*\]/gi,'')
-      .replace(new RegExp(`(?:\\*{1,2}|_{1,2})\\s*${MK}\\s*(?:\\*{1,2}|_{1,2})\\s*[:：][^\\n]*`,'gim'),'')
-      .replace(new RegExp(`^\\s*[▶▷►▪■◆◇★☆◎●○•\\-\\*]?\\s*[<\\[\\(]?\\s*${MK}\\s*[>\\]\\)]?\\s*[:：].*$`,'gim'),'')
-      .replace(new RegExp(`[▶▷►▪■◆◇★☆◎●○]\\s*${MK}\\s*[:：][^\\n]*`,'gi'),'')
-      .replace(/\*{0,2}나레이터\*{0,2}\s*\([^)]*\)\s*[:：]\s*/g,'')
-      .replace(/\*{0,2}(?:나레이터|내레이터|해설|화자)\*{0,2}\s*[:：]\s*/g,'')
-      .replace(/\([^)]*(?:톤|tone|하게|으로|있게|이듯|하며)[^)]*\)/gi,'')
-      .replace(/^.*총\s*글자\s*수\s*[:：].*$/gm,'')
-      .replace(/^.*총\s*분량\s*[:：].*$/gm,'')
-      .replace(/^.*예상\s*시간\s*[:：].*$/gm,'')
-      .replace(/^---+$/gm,'')
-      .replace(/^===+$/gm,'')
-      .replace(/^#+\s.*$/gm,'')
-      .replace(/^[-*]\s/gm,'')
-      .replace(/\*{2,}/g,'')
-      .replace(/[━═─▶▷►■●•🎙️🎬📌🔹✅☐🎵🎶⚡⏩]/g,'')
-      .replace(/\n{3,}/g,'\n\n')
-      .trim();
+    const clean=cleanTTSScript(S.script);
     document.getElementById('ttsText').value=clean;
     S.ttsText=clean;
   }
@@ -2191,16 +2214,7 @@ async function startAutoPipeline(){
     // 4. TTS
     t1=Date.now();
     autoStatus('tts','running','ElevenLabs TTS 변환 중...');
-    const META_KW='(?:이미지|배경|장면|효과음|음악|BGM|bgm|배경음악|자막|화면|카메라|컷|전환|샷|shot|비주얼|visual|영상|화면설명|시각효과|VFX|sfx|SFX)';
-    const cleanScript=S.script
-      .replace(/\[장면[^\]]*\]/g,'')
-      .replace(new RegExp(`(?:\\*{1,2}|_{1,2})\\s*${META_KW}\\s*(?:\\*{1,2}|_{1,2})\\s*[:：][^\\n]*`,'gim'),'')
-      .replace(new RegExp(`^\\s*[▶▷►▪■◆◇★☆◎●○•\\-\\*]?\\s*[<\\[\\(]?\\s*${META_KW}\\s*[>\\]\\)]?\\s*[:：].*$`,'gim'),'')
-      .replace(new RegExp(`[▶▷►▪■◆◇★☆◎●○]\\s*${META_KW}\\s*[:：][^\\n]*`,'gi'),'')
-      .replace(/\*{0,2}(?:나레이터|내레이터|해설|화자)\*{0,2}\s*\([^)]*\)\s*[:：]\s*/g,'')
-      .replace(/\*{0,2}(?:나레이터|내레이터|해설|화자)\*{0,2}\s*[:：]\s*/g,'')
-      .replace(/[━═─▶▷►■●•🎙️🎬📌🔹✅☐🎵🎶]/g,'')
-      .replace(/\n{3,}/g,'\n\n').trim();
+    const cleanScript=cleanTTSScript(S.script);
     const ttsData=await api('/api/tts/full-script',{script:cleanScript,voiceId,stability:ttsSt,similarity:ttsSim});
     S.audioFile=ttsData.filename;markOk('tts');save();
     let audioDur=parseInt(len)*60;
