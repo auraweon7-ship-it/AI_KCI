@@ -455,17 +455,36 @@ app.post('/api/tts/full-script', async (req, res) => {
       .replace(/\[장면[^\]]*\]/g, '')
       .replace(/\[영상[^\]]*\]/g, '')
       .replace(/\[(?:오프닝|엔딩|인트로|아웃트로|마무리|시작|종료|끝)[^\]]*\]/gi, '')
-      .replace(/▶\s*이미지\s*[:：][^\n]*/g, '')
+      // 메타 라벨 (라인 단위 제거) - 화살표 유무 무관
+      .replace(/^\s*[▶▷►▪■]?\s*이미지\s*[:：].*$/gm, '')
+      .replace(/^\s*[▶▷►▪■]?\s*배경\s*[:：].*$/gm, '')
+      .replace(/^\s*[▶▷►▪■]?\s*장면\s*[:：].*$/gm, '')
+      .replace(/^\s*[▶▷►▪■]?\s*효과음\s*[:：].*$/gm, '')
+      .replace(/^\s*[▶▷►▪■]?\s*(?:음악|BGM|bgm|배경음악)\s*[:：].*$/gm, '')
+      .replace(/^\s*[▶▷►▪■]?\s*자막\s*[:：].*$/gm, '')
+      .replace(/^\s*[▶▷►▪■]?\s*(?:화면|카메라|컷|전환|샷|shot)\s*[:：].*$/gim, '')
+      .replace(/^\s*[▶▷►▪■]?\s*(?:비주얼|visual|영상)\s*[:：].*$/gim, '')
+      // 라인 중간 인라인 메타 라벨도 제거
+      .replace(/[▶▷►▪■]\s*이미지\s*[:：][^\n]*/g, '')
+      .replace(/[▶▷►▪■]\s*배경\s*[:：][^\n]*/g, '')
+      .replace(/[▶▷►▪■]\s*효과음\s*[:：][^\n]*/g, '')
+      .replace(/[▶▷►▪■]\s*(?:음악|BGM)\s*[:：][^\n]*/g, '')
+      // 나레이터 라벨
       .replace(/\*{0,2}나레이터\*{0,2}\s*\([^)]*\)\s*[:：]\s*/g, '')
       .replace(/\*{0,2}(?:나레이터|내레이터|해설|화자)\*{0,2}\s*[:：]\s*/g, '')
+      // 톤/연출 지시문
       .replace(/\([^)]*(?:톤|tone|하게|으로|있게|이듯|하며)[^)]*\)/gi, '')
+      // 메타 정보
       .replace(/^.*총\s*글자\s*수\s*[:：].*$/gm, '')
       .replace(/^.*총\s*분량\s*[:：].*$/gm, '')
+      .replace(/^.*예상\s*시간\s*[:：].*$/gm, '')
+      // 구분선/마크다운
       .replace(/^---+$/gm, '')
+      .replace(/^===+$/gm, '')
       .replace(/^#+\s.*$/gm, '')
       .replace(/^[-*]\s/gm, '')
       .replace(/\*{2,}/g, '')
-      .replace(/[━═─■●•🎙️🎬📌🔹✅☐▶🎵🎶⚡⏩]/g, '')
+      .replace(/[━═─■●•🎙️🎬📌🔹✅☐▶▷►🎵🎶⚡⏩]/g, '')
       .replace(/\n{3,}/g, '\n\n')
       .trim();
 
@@ -677,16 +696,64 @@ function formatSrtTime(sec) {
 }
 
 // 헬퍼: 스크립트 → SRT 변환 (오디오 길이 기반 + 오프셋)
+// 메타 라벨 제거 (이미지:, 배경:, 효과음: 등)
+function stripMetaLabels(text) {
+  return text
+    .replace(/^\s*[▶▷►▪■]?\s*이미지\s*[:：].*$/gm, '')
+    .replace(/^\s*[▶▷►▪■]?\s*배경\s*[:：].*$/gm, '')
+    .replace(/^\s*[▶▷►▪■]?\s*장면\s*[:：].*$/gm, '')
+    .replace(/^\s*[▶▷►▪■]?\s*효과음\s*[:：].*$/gm, '')
+    .replace(/^\s*[▶▷►▪■]?\s*(?:음악|BGM|bgm|배경음악)\s*[:：].*$/gm, '')
+    .replace(/^\s*[▶▷►▪■]?\s*자막\s*[:：].*$/gm, '')
+    .replace(/^\s*[▶▷►▪■]?\s*(?:화면|카메라|컷|전환|샷)\s*[:：].*$/gim, '')
+    .replace(/^\s*[▶▷►▪■]?\s*(?:비주얼|영상)\s*[:：].*$/gim, '')
+    .replace(/[▶▷►▪■]\s*이미지\s*[:：][^\n]*/g, '')
+    .replace(/[▶▷►▪■]\s*배경\s*[:：][^\n]*/g, '')
+    .replace(/[▶▷►▪■]\s*효과음\s*[:：][^\n]*/g, '')
+    .replace(/\*{0,2}(?:나레이터|내레이터|해설|화자)\*{0,2}\s*\([^)]*\)\s*[:：]\s*/g, '')
+    .replace(/\*{0,2}(?:나레이터|내레이터|해설|화자)\*{0,2}\s*[:：]\s*/g, '');
+}
+
+// 긴 문장을 자연스러운 단위(30~35자)로 분할
+function splitForSubtitle(sentence, maxLen = 33) {
+  const t = sentence.trim();
+  if (t.length <= maxLen) return [t];
+  const parts = [];
+  let remaining = t;
+  while (remaining.length > maxLen) {
+    // 우선순위: 쉼표/조사 → 공백 → 강제 컷
+    let cut = -1;
+    const ideal = Math.min(maxLen, remaining.length);
+    const minIdx = Math.floor(maxLen * 0.6);
+    // 쉼표/마침표/콜론 우선
+    for (let i = ideal; i >= minIdx; i--) {
+      if (/[,，、:：;；]/.test(remaining[i])) { cut = i + 1; break; }
+    }
+    // 한국어 조사/어미 뒤 띄어쓰기
+    if (cut < 0) {
+      for (let i = ideal; i >= minIdx; i--) {
+        if (remaining[i] === ' ') { cut = i; break; }
+      }
+    }
+    if (cut < 0) cut = ideal;
+    parts.push(remaining.substring(0, cut).trim());
+    remaining = remaining.substring(cut).trim();
+  }
+  if (remaining) parts.push(remaining);
+  return parts.filter(p => p.length > 0);
+}
+
 function scriptToSrt(scriptText, audioDur, offset = 0) {
+  const cleaned = stripMetaLabels(scriptText);
   const sceneRegex = /\[장면\s*(\d+)[^\]]*\]([\s\S]*?)(?=\[장면|\s*$)/g;
   const scenes = [];
   let m;
-  while ((m = sceneRegex.exec(scriptText)) !== null) {
+  while ((m = sceneRegex.exec(cleaned)) !== null) {
     const c = m[2].replace(/[━═─▶■●•🎙️🎬📌🔹✅☐]/g, '').replace(/\(.*?\)/g, '').replace(/\n{2,}/g, '\n').trim();
     if (c) scenes.push(c);
   }
   if (scenes.length === 0) {
-    const ps = scriptText.replace(/\[.*?\]/g, '').replace(/[━═─▶■●•🎙️🎬📌🔹✅☐]/g, '').replace(/\(.*?\)/g, '')
+    const ps = cleaned.replace(/\[.*?\]/g, '').replace(/[━═─▶■●•🎙️🎬📌🔹✅☐]/g, '').replace(/\(.*?\)/g, '')
       .split(/\n{2,}/).map(p => p.trim()).filter(p => p.length > 10);
     scenes.push(...ps);
   }
@@ -701,10 +768,16 @@ function scriptToSrt(scriptText, audioDur, offset = 0) {
     sentences.forEach((sent) => {
       const t = sent.trim();
       if (!t || t.length < 3) return;
-      const dur = Math.max(1, (t.length / sentChars) * sceneDur);
-      srt += `${idx}\n${formatSrtTime(cur)} --> ${formatSrtTime(cur + dur)}\n${t}\n\n`;
-      cur += dur;
-      idx++;
+      const sentDur = Math.max(1, (t.length / sentChars) * sceneDur);
+      // 30~35자 단위로 분할 (1행 표시용)
+      const chunks = splitForSubtitle(t, 33);
+      const chunkChars = chunks.reduce((a, c) => a + c.length, 0) || 1;
+      chunks.forEach((chunk) => {
+        const dur = Math.max(0.8, (chunk.length / chunkChars) * sentDur);
+        srt += `${idx}\n${formatSrtTime(cur)} --> ${formatSrtTime(cur + dur)}\n${chunk}\n\n`;
+        cur += dur;
+        idx++;
+      });
     });
   });
   return srt;
@@ -911,7 +984,7 @@ app.post('/api/render/video', async (req, res) => {
         await new Promise((resolve, reject) => {
           execFile('ffmpeg', [
             '-i', outputPath,
-            '-vf', `subtitles='${srtPathEscaped}':force_style='FontName=Malgun Gothic,FontSize=22,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=40'`,
+            '-vf', `subtitles='${srtPathEscaped}':force_style='FontName=Malgun Gothic,FontSize=16,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=1.5,Shadow=0.8,MarginV=35,Bold=0'`,
             '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
             '-movflags', '+faststart', '-y', srtOutput
           ], { timeout: 600000 }, (error, stdout, stderr) => {
