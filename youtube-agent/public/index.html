@@ -480,7 +480,42 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         </div>
         <div class="cd">
           <div class="fg"><label class="fl">🎯 영상 주제 *</label>
-            <input type="text" class="fi" id="autoTopic" placeholder="예: 베트남 전쟁 속 병사들의 고독과 연대">
+            <div style="display:flex;gap:6px;align-items:stretch">
+              <input type="text" class="fi" id="autoTopic" placeholder="예: 베트남 전쟁 속 병사들의 고독과 연대" style="flex:1">
+              <button type="button" class="b bp" id="autoTopicAiBtn" onclick="doAutoTopicAi()" style="white-space:nowrap;font-size:11px;padding:0 14px">✨ AI 자동 생성</button>
+            </div>
+            <div class="fh" id="autoTopicHint" style="margin-top:4px">선택한 카테고리/언어 기반으로 인기 주제를 자동 추천</div>
+          </div>
+          <div class="fr3" style="margin-bottom:8px">
+            <div class="fg"><label class="fl">📂 추천 카테고리</label>
+              <select class="fs" id="autoTopicCat">
+                <option value="">전체</option>
+                <option value="역사">역사</option>
+                <option value="과학">과학</option>
+                <option value="AI">AI</option>
+                <option value="미스터리">미스터리</option>
+                <option value="경제">경제</option>
+                <option value="심리">심리</option>
+                <option value="자연">자연</option>
+                <option value="범죄">범죄</option>
+                <option value="문화">문화</option>
+                <option value="철학">철학</option>
+                <option value="건강">건강</option>
+              </select>
+            </div>
+            <div class="fg"><label class="fl">👥 타겟 시청자</label>
+              <select class="fs" id="autoTopicAud">
+                <option value="">전체</option>
+                <option value="10대">10대</option>
+                <option value="20대">20대</option>
+                <option value="30대" selected>30대</option>
+                <option value="40대">40대</option>
+                <option value="50대 이상">50대 이상</option>
+              </select>
+            </div>
+            <div class="fg"><label class="fl">🔑 핵심 키워드 (선택)</label>
+              <input type="text" class="fi" id="autoTopicKw" placeholder="예: 미스터리, 잊혀진">
+            </div>
           </div>
           <div class="fr3">
             <div class="fg"><label class="fl">⏱️ 영상 길이</label>
@@ -500,10 +535,48 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
             </div>
             <div class="fg"><label class="fl">🎨 이미지 스타일</label>
               <select class="fs" id="autoStyle">
-                <option value="european-animation">유럽풍 애니메이션</option>
-                <option value="realistic">실사/포토리얼</option>
-                <option value="cinematic">시네마틱</option>
-                <option value="watercolor">수채화풍</option>
+                <optgroup label="🎬 시네마틱·포토리얼">
+                  <option value="realistic">실사/포토리얼</option>
+                  <option value="cinematic">시네마틱</option>
+                  <option value="documentary">다큐멘터리</option>
+                  <option value="hyperrealistic">하이퍼리얼리즘</option>
+                  <option value="film-noir">필름 누아르 (흑백)</option>
+                  <option value="vintage-film">빈티지 필름</option>
+                </optgroup>
+                <optgroup label="🎨 일러스트·애니메이션">
+                  <option value="european-animation" selected>유럽풍 애니메이션</option>
+                  <option value="anime">애니메 (일본풍)</option>
+                  <option value="pixar-3d">픽사 3D</option>
+                  <option value="ghibli">지브리풍</option>
+                  <option value="comic-book">코믹북</option>
+                  <option value="manga">망가</option>
+                  <option value="storybook">동화책 일러스트</option>
+                </optgroup>
+                <optgroup label="🖌️ 회화·예술">
+                  <option value="watercolor">수채화</option>
+                  <option value="oil-painting">유화</option>
+                  <option value="pencil-sketch">연필 스케치</option>
+                  <option value="ink-painting">수묵화</option>
+                  <option value="impressionist">인상주의</option>
+                  <option value="renaissance">르네상스 회화</option>
+                  <option value="ukiyo-e">우키요에</option>
+                </optgroup>
+                <optgroup label="🌌 콘셉트·판타지">
+                  <option value="fantasy-art">판타지 아트</option>
+                  <option value="sci-fi">SF/공상과학</option>
+                  <option value="cyberpunk">사이버펑크</option>
+                  <option value="steampunk">스팀펑크</option>
+                  <option value="dark-fantasy">다크 판타지</option>
+                  <option value="surreal">초현실주의</option>
+                </optgroup>
+                <optgroup label="📐 그래픽·디자인">
+                  <option value="minimalist">미니멀리스트</option>
+                  <option value="flat-design">플랫 디자인</option>
+                  <option value="vector-art">벡터 아트</option>
+                  <option value="pixel-art">픽셀 아트</option>
+                  <option value="low-poly">로우폴리</option>
+                  <option value="isometric">아이소메트릭</option>
+                </optgroup>
               </select>
             </div>
           </div>
@@ -678,7 +751,50 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">🎨 이미지 생성 (ChatGPT Images 2.0)</div><div class="cd-s">대본 기반 장면별 이미지 실제 생성</div></div></div>
         <div class="fr3">
-          <div class="fg"><label class="fl">🎨 스타일</label><select class="fs" id="imgStyle"><option value="european-animation">유럽풍 애니메이션</option><option value="realistic">실사</option><option value="cinematic">시네마틱</option><option value="watercolor">수채화</option><option value="oil-painting">유화</option></select></div>
+          <div class="fg"><label class="fl">🎨 스타일</label><select class="fs" id="imgStyle">
+            <optgroup label="🎬 시네마틱·포토리얼">
+              <option value="realistic">실사/포토리얼</option>
+              <option value="cinematic">시네마틱</option>
+              <option value="documentary">다큐멘터리</option>
+              <option value="hyperrealistic">하이퍼리얼리즘</option>
+              <option value="film-noir">필름 누아르 (흑백)</option>
+              <option value="vintage-film">빈티지 필름</option>
+            </optgroup>
+            <optgroup label="🎨 일러스트·애니메이션">
+              <option value="european-animation" selected>유럽풍 애니메이션</option>
+              <option value="anime">애니메 (일본풍)</option>
+              <option value="pixar-3d">픽사 3D</option>
+              <option value="ghibli">지브리풍</option>
+              <option value="comic-book">코믹북</option>
+              <option value="manga">망가</option>
+              <option value="storybook">동화책 일러스트</option>
+            </optgroup>
+            <optgroup label="🖌️ 회화·예술">
+              <option value="watercolor">수채화</option>
+              <option value="oil-painting">유화</option>
+              <option value="pencil-sketch">연필 스케치</option>
+              <option value="ink-painting">수묵화</option>
+              <option value="impressionist">인상주의</option>
+              <option value="renaissance">르네상스 회화</option>
+              <option value="ukiyo-e">우키요에</option>
+            </optgroup>
+            <optgroup label="🌌 콘셉트·판타지">
+              <option value="fantasy-art">판타지 아트</option>
+              <option value="sci-fi">SF/공상과학</option>
+              <option value="cyberpunk">사이버펑크</option>
+              <option value="steampunk">스팀펑크</option>
+              <option value="dark-fantasy">다크 판타지</option>
+              <option value="surreal">초현실주의</option>
+            </optgroup>
+            <optgroup label="📐 그래픽·디자인">
+              <option value="minimalist">미니멀리스트</option>
+              <option value="flat-design">플랫 디자인</option>
+              <option value="vector-art">벡터 아트</option>
+              <option value="pixel-art">픽셀 아트</option>
+              <option value="low-poly">로우폴리</option>
+              <option value="isometric">아이소메트릭</option>
+            </optgroup>
+          </select></div>
           <div class="fg"><label class="fl">📐 비율</label><select class="fs" id="imgRatio"><option value="16:9" selected>16:9</option><option value="9:16">9:16 (세로)</option><option value="1:1">1:1</option></select></div>
           <div class="fg"><label class="fl">🔢 장면 수</label><select class="fs" id="imgCnt"><option value="5">5개</option><option value="8" selected>8개</option><option value="10">10개</option><option value="12">12개</option><option value="15">15개</option><option value="20">20개</option><option value="25">25개</option><option value="30">30개</option></select></div>
         </div>
@@ -1645,6 +1761,39 @@ function autoStatus(step,status,msg){
 }
 function autoTime(step,sec){
   document.getElementById('ast-'+step).textContent=sec>=60?`${Math.floor(sec/60)}분 ${sec%60}초`:sec+'초';
+}
+
+async function doAutoTopicAi(){
+  const btn=document.getElementById('autoTopicAiBtn');
+  const orig=btn.innerHTML;
+  btn.disabled=true;btn.innerHTML='<span class="sp"></span> 생성중...';
+  try{
+    const cat=document.getElementById('autoTopicCat').value;
+    const aud=document.getElementById('autoTopicAud').value;
+    const kw=document.getElementById('autoTopicKw').value;
+    const lang=document.getElementById('autoLang').value;
+    const langNames={ko:'한국어',en:'영어',zh:'중국어'};
+    const d=await api('/api/topics/suggest',{
+      category:cat||'전체',
+      target:aud||'전 연령',
+      keyword:kw||'',
+      language:langNames[lang]||'한국어',
+      count:5
+    });
+    const topics=d.topics||[];
+    if(!topics.length){toast('주제 생성 실패','err');return}
+    // 5개 중 첫 번째를 input에 자동 입력
+    const top=topics[0];
+    const topicText=top.title||top.topic||top;
+    document.getElementById('autoTopic').value=topicText;
+    // 나머지는 hint에 표시
+    if(topics.length>1){
+      const others=topics.slice(1).map(t=>`<span style="cursor:pointer;color:var(--acc);text-decoration:underline" onclick="document.getElementById('autoTopic').value='${(t.title||t.topic||t).replace(/'/g,"\\'")}'">${t.title||t.topic||t}</span>`).join(' · ');
+      document.getElementById('autoTopicHint').innerHTML='💡 다른 추천: '+others;
+    }
+    toast('AI가 주제를 추천했습니다 ✨','ok');
+  }catch(e){toast('AI 생성 실패: '+e.message,'err')}
+  finally{btn.disabled=false;btn.innerHTML=orig}
 }
 
 async function startAutoPipeline(){

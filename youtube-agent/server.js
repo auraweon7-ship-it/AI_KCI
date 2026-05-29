@@ -279,11 +279,47 @@ app.post('/api/images/generate', async (req, res) => {
     };
 
     const stylePrefix = {
+      // 시네마틱·포토리얼
+      'realistic': 'photorealistic, hyper-detailed, 8K resolution, cinematic lighting, sharp focus,',
+      'cinematic': 'cinematic concept art, dramatic lighting, film grain, wide aspect ratio,',
+      'documentary': 'documentary photography style, candid moment, natural lighting, realistic colors, photojournalism,',
+      'hyperrealistic': 'hyperrealistic rendering, ultra-detailed textures, lifelike skin and materials, professional photography,',
+      'film-noir': 'film noir style, black and white, high contrast shadows, dramatic chiaroscuro lighting, 1940s atmosphere,',
+      'vintage-film': 'vintage film aesthetic, faded colors, grainy texture, retro 1970s look, nostalgic mood,',
+
+      // 일러스트·애니메이션
       'european-animation': 'European animation style, Ghibli-inspired, soft lighting, painterly textures,',
-      'realistic': 'photorealistic, hyper-detailed, 8K resolution, cinematic lighting,',
-      'watercolor': 'watercolor painting style, soft edges, flowing colors,',
-      'cinematic': 'cinematic concept art, dramatic lighting, film grain,',
-      'oil-painting': 'classical oil painting style, rich colors, Renaissance-inspired,'
+      'anime': 'Japanese anime style, vibrant colors, expressive characters, clean line art, cel-shaded,',
+      'pixar-3d': 'Pixar 3D animation style, vibrant lighting, expressive character design, soft global illumination,',
+      'ghibli': 'Studio Ghibli style, lush hand-painted backgrounds, whimsical atmosphere, soft watercolor textures,',
+      'comic-book': 'American comic book style, bold outlines, halftone shading, dynamic action poses, vibrant colors,',
+      'manga': 'Japanese manga style, black ink linework, screen tones, dramatic panel composition, expressive eyes,',
+      'storybook': 'childrens storybook illustration, gentle watercolor, soft pastel tones, whimsical hand-drawn quality,',
+
+      // 회화·예술
+      'watercolor': 'watercolor painting style, soft edges, flowing colors, paper texture,',
+      'oil-painting': 'classical oil painting style, rich colors, Renaissance-inspired, visible brushstrokes,',
+      'pencil-sketch': 'detailed pencil sketch, graphite shading, fine cross-hatching, monochrome, hand-drawn artistry,',
+      'ink-painting': 'East Asian ink wash painting, sumi-e style, monochromatic brushwork, minimal composition, atmospheric,',
+      'impressionist': 'Impressionist painting style, visible brushstrokes, dappled light, Monet-inspired color palette,',
+      'renaissance': 'Renaissance painting style, classical composition, chiaroscuro lighting, Da Vinci or Caravaggio inspired,',
+      'ukiyo-e': 'Japanese ukiyo-e woodblock print style, flat color planes, bold outlines, Edo period aesthetic,',
+
+      // 콘셉트·판타지
+      'fantasy-art': 'epic fantasy concept art, magical atmosphere, ethereal lighting, painterly digital art,',
+      'sci-fi': 'science fiction concept art, futuristic technology, atmospheric lighting, cinematic sci-fi aesthetic,',
+      'cyberpunk': 'cyberpunk aesthetic, neon-lit streets, rainy night, holographic signs, blade runner style,',
+      'steampunk': 'steampunk Victorian aesthetic, brass and copper machinery, gears and steam, retro-futuristic,',
+      'dark-fantasy': 'dark fantasy art, gothic atmosphere, moody shadows, Frazetta inspired, epic scale,',
+      'surreal': 'surrealist art, dreamlike composition, Salvador Dali inspired, impossible perspective, symbolic imagery,',
+
+      // 그래픽·디자인
+      'minimalist': 'minimalist design, clean composition, limited color palette, negative space, modern aesthetic,',
+      'flat-design': 'flat design illustration, solid colors, no gradients, geometric shapes, modern UI style,',
+      'vector-art': 'clean vector art, sharp lines, smooth gradients, illustrator style,',
+      'pixel-art': '16-bit pixel art, retro video game aesthetic, limited color palette, detailed pixel work,',
+      'low-poly': 'low poly 3D art, geometric facets, flat shading, isometric perspective, modern minimalist 3D,',
+      'isometric': 'isometric illustration, 2.5D perspective, clean geometry, vibrant colors, infographic style,'
     };
 
     const fullPrompt = `${stylePrefix[style] || ''} ${prompt}. High quality, detailed, professional.`;
