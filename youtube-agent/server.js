@@ -1069,9 +1069,23 @@ app.post('/api/render/video', async (req, res) => {
 
     // 오디오 길이 = 총 영상 길이 (싱크 핵심)
     const totalDuration = audioDuration;
-    const durationPerImage = totalDuration / images.length;
-    const transDur = Math.min(parseFloat(transitionDuration) || 0.8, durationPerImage * 0.4);
     const transType = transition || 'none';
+    const rawTransDur = parseFloat(transitionDuration) || 0.8;
+
+    // === 오디오 끝부분 잘림 방지: xfade 전환 보상 ===
+    // xfade 결과 영상 길이 = N*durationPerImage - (N-1)*transDur
+    // 이를 audioDuration과 일치시키려면:
+    // durationPerImage = (audioDuration + (N-1)*transDur) / N
+    // + 1초 여유 버퍼로 오디오 끝까지 보장
+    const N = images.length;
+    let durationPerImage;
+    if (transType !== 'none' && N > 1) {
+      const adjustedTotal = totalDuration + 1.0; // 1초 여유
+      durationPerImage = (adjustedTotal + (N - 1) * rawTransDur) / N;
+    } else {
+      durationPerImage = (totalDuration + 1.0) / N;
+    }
+    const transDur = Math.min(rawTransDur, durationPerImage * 0.4);
     const kbMode = kenburns || 'varied';
 
     const KB_PATTERNS = [
@@ -1584,14 +1598,27 @@ JSON으로 출력: {"main":"메인문구","sub":"서브문구"}` }]
     // 세로 중앙 정렬 (y 시작 위치)
     const startY = Math.round((720 - totalH) / 2);
 
+    // === 시각 효과 강화: 호기심·주의 환기 ===
+    // 메인: 진노란색(#FFEB3B) + 검정 외곽선 8px + 깊은 그림자 + 빨간색 그림자 레이어
+    // 서브: 흰색 + 빨간 box 배경 + 검정 외곽선
+    // 좌측에 ⚠️ 또는 ▶ 아이콘 효과를 위해 메인 텍스트 좌우 박스
     const filters = [];
+
+    // 메인 텍스트 — 노란색(눈에 띔) + 두꺼운 검정 외곽선 + 빨간 그림자(임팩트)
     mainLines.forEach((line, i) => {
       const y = startY + i * mainLineH;
-      filters.push(`drawtext=text='${escapeText(line)}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=white:borderw=5:bordercolor=black:shadowcolor=black@0.7:shadowx=4:shadowy=4:x=(w-text_w)/2:y=${y}`);
+      const esc = escapeText(line);
+      // 1차: 빨간 그림자 (5px 오프셋)
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=#FF1744@0.7:x=(w-text_w)/2+6:y=${y}+6`);
+      // 2차: 메인 노란색 + 검정 외곽선 + 그림자
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=#FFEB3B:borderw=8:bordercolor=black:shadowcolor=black@0.85:shadowx=5:shadowy=5:x=(w-text_w)/2:y=${y}`);
     });
+
+    // 서브 텍스트 — 빨간 박스 배경 + 흰색 텍스트
     subLines.forEach((line, i) => {
       const y = startY + mainTotalH + gap + i * subLineH;
-      filters.push(`drawtext=text='${escapeText(line)}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=#FFDD00:borderw=3:bordercolor=black:shadowcolor=black@0.6:shadowx=3:shadowy=3:x=(w-text_w)/2:y=${y}`);
+      const esc = escapeText(line);
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=white:borderw=4:bordercolor=black:shadowcolor=black@0.7:shadowx=3:shadowy=3:box=1:boxcolor=#D50000@0.85:boxborderw=15:x=(w-text_w)/2:y=${y}`);
     });
 
     const drawFilters = filters.join(',');
