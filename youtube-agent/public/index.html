@@ -1420,6 +1420,9 @@ let ttsLang = 'ko';
 const LANG_NAMES = {ko:'한국어',en:'영어',zh:'중국어'};
 const VOICE_PRESETS = {
   ko:[
+    {id:'uyVNoMrnUku1dZyVEXwD',name:'Anna Kim',gender:'여성',country:'🇰🇷 한국',desc:'네이티브 한국어 여성',sample:'안녕하세요. 오늘 여러분께 흥미로운 이야기를 들려드리겠습니다.',icon:'👩‍💼',color:'#ff6b9d'},
+    {id:'s07IwTCOrCDCaETjUVjx',name:'Hyun Bin',gender:'남성',country:'🇰🇷 한국',desc:'네이티브 한국어 남성',sample:'역사 속 잊혀진 진실을 지금부터 함께 살펴보겠습니다.',icon:'🎙️',color:'#5b8def'},
+    {id:'2D7WduPjg3k3xZOMThX3',name:'박정원',gender:'남성',country:'🇰🇷 한국',desc:'네이티브 한국어 남성',sample:'오늘의 주제는 우리가 미처 알지 못했던 놀라운 사실입니다.',icon:'🎬',color:'#f59e0b'},
     {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',gender:'여성',country:'🇺🇸 미국',desc:'차분하고 명확한 나레이션',sample:'안녕하세요. 오늘 여러분과 함께할 이야기를 시작하겠습니다.',icon:'👩',color:'#a78bfa'},
     {id:'TxGEqnHWrfWFTfGW9XjX',name:'Josh',gender:'남성',country:'🇺🇸 미국',desc:'깊고 무게감 있는 다큐 톤',sample:'역사 속에 숨겨진 진실, 지금부터 그 이야기를 풀어보겠습니다.',icon:'🎤',color:'#34d399'}
   ],
@@ -1813,8 +1816,11 @@ function autoTime(step,sec){
 // ElevenLabs multilingual_v2는 모든 언어 합성 가능, 단 언어와 어울리는 톤 우선 추천
 const VOICE_BY_LANG={
   ko:[
-    {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',flag:'🇺🇸',country:'미국 여성',tone:'차분/뉴스 톤',recommended:true},
-    {id:'pNInz6obpgDQGcFmaJgB',name:'Adam',flag:'🇺🇸',country:'미국 남성',tone:'깊은 다큐 톤',recommended:true},
+    {id:'uyVNoMrnUku1dZyVEXwD',name:'Anna Kim',flag:'🇰🇷',country:'한국 여성',tone:'네이티브 한국어',recommended:true},
+    {id:'s07IwTCOrCDCaETjUVjx',name:'Hyun Bin',flag:'🇰🇷',country:'한국 남성',tone:'네이티브 한국어',recommended:true},
+    {id:'2D7WduPjg3k3xZOMThX3',name:'박정원',flag:'🇰🇷',country:'한국 남성',tone:'네이티브 한국어',recommended:true},
+    {id:'21m00Tcm4TlvDq8ikWAM',name:'Rachel',flag:'🇺🇸',country:'미국 여성',tone:'차분/뉴스 톤'},
+    {id:'pNInz6obpgDQGcFmaJgB',name:'Adam',flag:'🇺🇸',country:'미국 남성',tone:'깊은 다큐 톤'},
     {id:'ErXwobaYiN019PkySvjV',name:'Antoni',flag:'🇵🇱',country:'폴란드 남성',tone:'진중한 톤'},
     {id:'EXAVITQu4vr4xnSDxMaL',name:'Bella',flag:'🇺🇸',country:'미국 여성',tone:'친근한 스토리텔링'},
     {id:'TxGEqnHWrfWFTfGW9XjX',name:'Josh',flag:'🇺🇸',country:'미국 남성',tone:'활기찬 톤'},
