@@ -768,15 +768,78 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     <div class="sec" id="sec-plan">
       <div id="planReq"></div>
       <div class="cd">
-        <div class="cd-h"><div><div class="cd-t">📋 대본 기획 (Claude AI)</div><div class="cd-s">영상 구조를 설계합니다</div></div></div>
+        <div class="cd-h"><div><div class="cd-t">📋 대본 기획 (Claude AI)</div><div class="cd-s">영상 구조를 설계합니다 (자동제작과 동일 옵션)</div></div></div>
         <div class="fg"><label class="fl">🎯 영상 주제 *</label><input type="text" class="fi" id="planTopic" placeholder="주제"></div>
-        <div class="fr">
+        <div class="fr3">
           <div class="fg"><label class="fl">👥 타겟 시청자</label><select class="fs" id="planTarget"><option value="">선택...</option><option>10대 청소년</option><option>20~30대</option><option>30~40대 직장인</option><option>40~60대 중장년</option><option>전 연령</option></select></div>
-          <div class="fg"><label class="fl">⏱️ 영상 길이</label><select class="fs" id="planLen"><option value="10">10분</option><option value="15" selected>15분</option><option value="20">20분</option><option value="30">30분+</option></select></div>
+          <div class="fg"><label class="fl">⏱️ 영상 길이</label><select class="fs" id="planLen">
+            <option value="1">1분 (쇼츠/티저)</option>
+            <option value="3">3분 (짧은 영상)</option>
+            <option value="5">5분 (미디엄)</option>
+            <option value="10">10분</option>
+            <option value="15" selected>15분</option>
+            <option value="20">20분</option>
+            <option value="30">30분+</option>
+          </select></div>
+          <div class="fg"><label class="fl">🌐 영상 언어</label><select class="fs" id="planLang">
+            <option value="ko" selected>🇰🇷 한국어</option>
+            <option value="en">🇺🇸 영어</option>
+            <option value="zh">🇨🇳 중국어</option>
+            <option value="ja">🇯🇵 일본어</option>
+            <option value="es">🇪🇸 스페인어</option>
+          </select></div>
         </div>
         <div class="fr">
-          <div class="fg"><label class="fl">🎭 톤</label><select class="fs" id="planTone"><option value="진지하고 무게감 있는">진지/무게감</option><option value="따뜻하고 감성적인">따뜻/감성</option><option value="긴박하고 흥미진진한">긴박/흥미</option><option value="교육적이고 차분한">교육/차분</option></select></div>
-          <div class="fg"><label class="fl">🎨 이미지 스타일</label><select class="fs" id="planStyle"><option value="european-animation">유럽풍 애니메이션</option><option value="realistic">실사/포토리얼</option><option value="cinematic">시네마틱</option><option value="watercolor">수채화풍</option></select></div>
+          <div class="fg"><label class="fl">🎭 톤</label><select class="fs" id="planTone">
+            <option value="진지하고 무게감 있는">진지/무게감</option>
+            <option value="따뜻하고 감성적인">따뜻/감성</option>
+            <option value="긴박하고 흥미진진한">긴박/흥미</option>
+            <option value="교육적이고 차분한">교육/차분</option>
+          </select></div>
+          <div class="fg"><label class="fl">🎨 이미지 스타일</label><select class="fs" id="planStyle">
+            <optgroup label="🎬 시네마틱·포토리얼">
+              <option value="realistic">실사/포토리얼</option>
+              <option value="cinematic">시네마틱</option>
+              <option value="documentary">다큐멘터리</option>
+              <option value="hyperrealistic">하이퍼리얼리즘</option>
+              <option value="film-noir">필름 누아르</option>
+              <option value="vintage-film">빈티지 필름</option>
+            </optgroup>
+            <optgroup label="🎨 일러스트·애니메이션">
+              <option value="european-animation" selected>유럽풍 애니메이션</option>
+              <option value="anime">애니메 (일본풍)</option>
+              <option value="pixar-3d">픽사 3D</option>
+              <option value="ghibli">지브리풍</option>
+              <option value="comic-book">코믹북</option>
+              <option value="manga">망가</option>
+              <option value="storybook">동화책</option>
+            </optgroup>
+            <optgroup label="🖌️ 회화·예술">
+              <option value="watercolor">수채화</option>
+              <option value="oil-painting">유화</option>
+              <option value="pencil-sketch">연필 스케치</option>
+              <option value="ink-painting">수묵화</option>
+              <option value="impressionist">인상주의</option>
+              <option value="renaissance">르네상스</option>
+              <option value="ukiyo-e">우키요에</option>
+            </optgroup>
+            <optgroup label="🌌 콘셉트·판타지">
+              <option value="fantasy-art">판타지 아트</option>
+              <option value="sci-fi">SF</option>
+              <option value="cyberpunk">사이버펑크</option>
+              <option value="steampunk">스팀펑크</option>
+              <option value="dark-fantasy">다크 판타지</option>
+              <option value="surreal">초현실주의</option>
+            </optgroup>
+            <optgroup label="📐 그래픽·디자인">
+              <option value="minimalist">미니멀리스트</option>
+              <option value="flat-design">플랫 디자인</option>
+              <option value="vector-art">벡터 아트</option>
+              <option value="pixel-art">픽셀 아트</option>
+              <option value="low-poly">로우폴리</option>
+              <option value="isometric">아이소메트릭</option>
+            </optgroup>
+          </select></div>
         </div>
         <div class="fg"><label class="fl">💬 특별 요청</label><textarea class="ft" id="planNotes" rows="2" placeholder="추가 참고사항..."></textarea></div>
         <button class="b bp blg" id="planBtn" onclick="doPlan()">📋 기획안 생성 (Claude AI)</button>
@@ -788,10 +851,30 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     <div class="sec" id="sec-script">
       <div id="scriptReq"></div>
       <div class="cd">
-        <div class="cd-h"><div><div class="cd-t">✍️ 대본 생성 (Claude AI)</div><div class="cd-s">Fact-Check 기반 전체 대본 작성</div></div></div>
-        <div class="fr">
-          <div class="fg"><label class="fl">📏 분량</label><select class="fs" id="scriptWc"><option value="2000">~2,000자 (10분)</option><option value="3000" selected>~3,000자 (15분)</option><option value="4500">~4,500자 (20분)</option><option value="6000">~6,000자 (30분)</option></select></div>
-          <div class="fg"><label class="fl">🎤 나레이션</label><select class="fs" id="scriptNar"><option value="3인칭 나레이터">3인칭 나레이터</option><option value="이야기꾼">이야기꾼 (구연)</option><option value="리포터">리포터</option><option value="대화체">대화체</option></select></div>
+        <div class="cd-h"><div><div class="cd-t">✍️ 대본 생성 (Claude AI)</div><div class="cd-s">Fact-Check 기반 전체 대본 작성 (자동제작과 동일 옵션)</div></div></div>
+        <div class="fr3">
+          <div class="fg"><label class="fl">📏 분량</label><select class="fs" id="scriptWc">
+            <option value="250">~250자 (1분 쇼츠)</option>
+            <option value="700">~700자 (3분)</option>
+            <option value="1200">~1,200자 (5분)</option>
+            <option value="2000">~2,000자 (10분)</option>
+            <option value="3000" selected>~3,000자 (15분)</option>
+            <option value="4500">~4,500자 (20분)</option>
+            <option value="6000">~6,000자 (30분)</option>
+          </select></div>
+          <div class="fg"><label class="fl">🎤 나레이션</label><select class="fs" id="scriptNar">
+            <option value="3인칭 나레이터">3인칭 나레이터</option>
+            <option value="이야기꾼">이야기꾼 (구연)</option>
+            <option value="리포터">리포터</option>
+            <option value="대화체">대화체</option>
+          </select></div>
+          <div class="fg"><label class="fl">🌐 영상 언어</label><select class="fs" id="scriptLang">
+            <option value="ko" selected>🇰🇷 한국어</option>
+            <option value="en">🇺🇸 영어</option>
+            <option value="zh">🇨🇳 중국어</option>
+            <option value="ja">🇯🇵 일본어</option>
+            <option value="es">🇪🇸 스페인어</option>
+          </select></div>
         </div>
         <button class="b bp blg" id="scriptBtn" onclick="doScript()">✍️ 대본 생성 (Claude AI)</button>
       </div>
@@ -1364,9 +1447,12 @@ async function doPlan(){
   const topic=document.getElementById('planTopic').value;
   if(!topic){toast('주제 입력 필요','err');return}
   S.topic=topic;S.target=document.getElementById('planTarget').value;
+  const langCode=document.getElementById('planLang')?.value||'ko';
+  const langNames={ko:'한국어',en:'English',zh:'中文',ja:'日本語',es:'Español'};
+  S.langCode=langCode;
   loading('planBtn',true,'Claude AI 기획 중...');
   try{
-    const d=await api('/api/plan/generate',{topic,target:S.target,length:document.getElementById('planLen').value,tone:document.getElementById('planTone').value,style:document.getElementById('planStyle').value,notes:document.getElementById('planNotes').value});
+    const d=await api('/api/plan/generate',{topic,target:S.target,length:document.getElementById('planLen').value,tone:document.getElementById('planTone').value,style:document.getElementById('planStyle').value,notes:`${document.getElementById('planNotes').value}\n언어: ${langNames[langCode]}`});
     S.plan=d.plan;
     document.getElementById('planOut').innerHTML=`<div class="cd">
       <div class="otb"><button class="b bs" onclick="cp(S.plan)">📋 복사</button><button class="b bp" onclick="S.plan=document.getElementById('planEdit').value;markOk('plan');save();go('script')">✅ 확정 → 대본 생성</button><span class="wc">${S.plan.length}자</span></div>
@@ -1379,8 +1465,10 @@ async function doPlan(){
 // === 3. 대본 생성 ===
 async function doScript(){
   loading('scriptBtn',true,'Claude AI 대본 작성 중...');
+  const langCode=document.getElementById('scriptLang')?.value||S.langCode||'ko';
+  const langNames={ko:'한국어',en:'English',zh:'中文',ja:'日本語',es:'Español'};
   try{
-    const d=await api('/api/script/generate',{topic:S.topic,target:S.target,plan:S.plan,wordCount:document.getElementById('scriptWc').value,narration:document.getElementById('scriptNar').value});
+    const d=await api('/api/script/generate',{topic:S.topic,target:S.target,plan:S.plan,wordCount:document.getElementById('scriptWc').value,narration:document.getElementById('scriptNar').value,language:langNames[langCode]});
     S.script=d.script;
     document.getElementById('scriptOut').innerHTML=`<div class="cd">
       <div class="otb"><button class="b bs" onclick="cp(S.script)">📋 복사</button><button class="b bp" onclick="S.script=document.getElementById('scriptEdit').value;markOk('script');save();go('image')">✅ 확정 → 이미지 생성</button><span class="wc">${S.script.length}자 | 장면 ${d.sceneCount}개</span></div>

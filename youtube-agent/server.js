@@ -221,7 +221,7 @@ ${notes ? `[특별 요청]: ${notes}` : ''}
 // ========================
 app.post('/api/script/generate', async (req, res) => {
   try {
-    const { projectId, topic, target, wordCount, narration, plan, tone } = req.body;
+    const { projectId, topic, target, wordCount, narration, plan, tone, language } = req.body;
     const project = getProject(projectId);
 
     const prompt = `당신은 100만 구독자를 보유한 전문 유튜브 대본 작가입니다.
@@ -233,6 +233,7 @@ app.post('/api/script/generate', async (req, res) => {
 [대본 분량]: 약 ${wordCount || 3000}자
 [나레이션 스타일]: ${narration || '3인칭 나레이터'}
 [톤앤매너]: ${tone || '진지하고 무게감 있는'}
+[출력 언어]: ${language || '한국어'} (이 언어로 모든 본문 나레이션을 작성하세요)
 
 ${plan || project.plan ? `[기획안 참고]:\n${(plan || project.plan).substring(0, 2000)}` : ''}
 
