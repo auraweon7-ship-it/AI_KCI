@@ -2206,7 +2206,7 @@ async function startAutoPipeline(){
         ${lastResult.upload?.videoUrl?`<div>📤 YouTube: <a href="${lastResult.upload.videoUrl}" target="_blank" style="color:var(--acc)">${lastResult.upload.videoUrl}</a></div>`:''}
         <div>💾 프로젝트 자동 저장됨</div>
       </div>
-      <div class="cd-t" style="margin:10px 0 6px">🖼️ 생성된 이미지 미리보기</div>
+      <div class="cd-t" style="margin:10px 0 6px">${sourceMode==='video'?'🎬 다운로드된 영상 클립':'🖼️ 생성된 이미지'} 미리보기</div>
       <div class="prev-grid" id="autoPrevGrid"></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
         ${renderData.videoUrl?`<a href="${renderData.videoUrl}" download class="b bs">💾 영상 다운로드</a>`:''}
@@ -2217,12 +2217,20 @@ async function startAutoPipeline(){
       </div>
     </div>`;
     toast('자동 제작 완료! 🎉');
-    // Load image preview grid
+    // Load preview grid (이미지 또는 영상 클립)
     try{
-      const flist=await fetch('/api/files/list').then(r=>r.json());
-      const imgs=(flist.files.images||[]).filter(f=>f.name.startsWith('scene_'));
       const prevEl=document.getElementById('autoPrevGrid');
-      if(prevEl)prevEl.innerHTML=imgs.map((img,i)=>`<div class="prev-item" onclick="window.open('${img.url}','_blank')"><img src="${img.url}" alt="Scene ${i+1}"><div class="prev-label">장면 ${i+1} | ${img.size}</div></div>`).join('');
+      if(prevEl){
+        if(sourceMode==='video'){
+          const clipList=await fetch('/api/clips/list').then(r=>r.json());
+          const clips=(clipList.files||[]).filter(f=>f.name.startsWith('clip_'));
+          prevEl.innerHTML=clips.map((c,i)=>`<div class="prev-item" onclick="window.open('${c.url}','_blank')"><video src="${c.url}" muted style="width:100%;display:block"></video><div class="prev-label">클립 ${i+1} | ${c.size}</div></div>`).join('');
+        } else {
+          const flist=await fetch('/api/files/list').then(r=>r.json());
+          const imgs=(flist.files.images||[]).filter(f=>f.name.startsWith('scene_'));
+          prevEl.innerHTML=imgs.map((img,i)=>`<div class="prev-item" onclick="window.open('${img.url}','_blank')"><img src="${img.url}" alt="Scene ${i+1}"><div class="prev-label">장면 ${i+1} | ${img.size}</div></div>`).join('');
+        }
+      }
     }catch(e){}
   }catch(e){
     const failStep=AUTO_STEPS.find(s=>document.getElementById('as-'+s).classList.contains('running'));
