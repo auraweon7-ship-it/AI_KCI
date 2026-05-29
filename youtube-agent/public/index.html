@@ -636,8 +636,42 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
             </div>
             <div class="fg"><label class="fl">📝 SRT 자막</label>
               <select class="fs" id="autoSrt">
-                <option value="yes" selected>자동 생성</option>
+                <option value="yes" selected>자동 생성 + 영상 burn</option>
                 <option value="no">생성 안함</option>
+              </select>
+            </div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label class="fl">🖼️ 썸네일 인트로 (3초)</label>
+              <select class="fs" id="autoThumbIntro">
+                <option value="yes" selected>영상 시작에 삽입</option>
+                <option value="no">삽입 안함</option>
+              </select>
+            </div>
+            <div class="fg"><label class="fl">🎥 Ken Burns 카메라 효과</label>
+              <select class="fs" id="autoKenburns">
+                <option value="varied" selected>다양한 효과 (추천)</option>
+                <option value="zoom-in">줌 인</option>
+                <option value="zoom-out">줌 아웃</option>
+                <option value="none">없음</option>
+              </select>
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div style="font-size:10px;font-weight:600;color:var(--t2);margin-bottom:8px">📤 YouTube 업로드 (선택)</div>
+          <div class="fr">
+            <div class="fg"><label class="fl">📤 자동 업로드</label>
+              <select class="fs" id="autoUpload">
+                <option value="no" selected>업로드 안함</option>
+                <option value="yes">자동 업로드</option>
+              </select>
+              <div class="fh" id="autoUploadHint" style="margin-top:4px">⚠️ YouTube OAuth 인증 필요</div>
+            </div>
+            <div class="fg"><label class="fl">🔒 공개 설정</label>
+              <select class="fs" id="autoPrivacy">
+                <option value="private" selected>비공개 (private)</option>
+                <option value="unlisted">미등록 (unlisted)</option>
+                <option value="public">공개 (public)</option>
               </select>
             </div>
           </div>
@@ -649,11 +683,12 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
           <div class="auto-step" id="as-script"><div class="as-ico">✍️</div><div class="as-body"><div class="as-name">2. 대본 작성</div><div class="as-status">대기</div></div><div class="as-time" id="ast-script"></div></div>
           <div class="auto-step" id="as-image"><div class="as-ico">🎨</div><div class="as-body"><div class="as-name">3. 이미지 생성</div><div class="as-status">대기</div></div><div class="as-time" id="ast-image"></div></div>
           <div class="auto-step" id="as-tts"><div class="as-ico">🎙️</div><div class="as-body"><div class="as-name">4. TTS 음성</div><div class="as-status">대기</div></div><div class="as-time" id="ast-tts"></div></div>
-          <div class="auto-step" id="as-render"><div class="as-ico">🎬</div><div class="as-body"><div class="as-name">5. 영상 합성</div><div class="as-status">대기</div></div><div class="as-time" id="ast-render"></div></div>
-          <div class="auto-step" id="as-meta"><div class="as-ico">🏷️</div><div class="as-body"><div class="as-name">6. 메타데이터</div><div class="as-status">대기</div></div><div class="as-time" id="ast-meta"></div></div>
-          <div class="auto-step" id="as-thumb"><div class="as-ico">🖼️</div><div class="as-body"><div class="as-name">7. 썸네일</div><div class="as-status">대기</div></div><div class="as-time" id="ast-thumb"></div></div>
-          <div class="auto-step" id="as-srt"><div class="as-ico">📝</div><div class="as-body"><div class="as-name">8. SRT 자막</div><div class="as-status">대기</div></div><div class="as-time" id="ast-srt"></div></div>
-          <div class="auto-step" id="as-save"><div class="as-ico">💾</div><div class="as-body"><div class="as-name">9. 프로젝트 저장</div><div class="as-status">대기</div></div><div class="as-time" id="ast-save"></div></div>
+          <div class="auto-step" id="as-meta"><div class="as-ico">🏷️</div><div class="as-body"><div class="as-name">5. 메타데이터</div><div class="as-status">대기</div></div><div class="as-time" id="ast-meta"></div></div>
+          <div class="auto-step" id="as-thumb"><div class="as-ico">🖼️</div><div class="as-body"><div class="as-name">6. 썸네일</div><div class="as-status">대기</div></div><div class="as-time" id="ast-thumb"></div></div>
+          <div class="auto-step" id="as-srt"><div class="as-ico">📝</div><div class="as-body"><div class="as-name">7. SRT 자막</div><div class="as-status">대기</div></div><div class="as-time" id="ast-srt"></div></div>
+          <div class="auto-step" id="as-render"><div class="as-ico">🎬</div><div class="as-body"><div class="as-name">8. 영상 합성 (썸네일+자막 burn)</div><div class="as-status">대기</div></div><div class="as-time" id="ast-render"></div></div>
+          <div class="auto-step" id="as-upload"><div class="as-ico">📤</div><div class="as-body"><div class="as-name">9. YouTube 업로드</div><div class="as-status">대기</div></div><div class="as-time" id="ast-upload"></div></div>
+          <div class="auto-step" id="as-save"><div class="as-ico">💾</div><div class="as-body"><div class="as-name">10. 프로젝트 저장</div><div class="as-status">대기</div></div><div class="as-time" id="ast-save"></div></div>
         </div>
 
         <div id="autoResult" style="display:none"></div>
@@ -1747,7 +1782,7 @@ function exportAll(){
 }
 
 // === Auto Pipeline ===
-const AUTO_STEPS = ['plan','script','image','tts','render','meta','thumb','srt','save'];
+const AUTO_STEPS = ['plan','script','image','tts','meta','thumb','srt','render','upload','save'];
 const AUTO_LABELS = {plan:'대본 기획',script:'대본 작성',image:'이미지 생성',tts:'TTS 음성',render:'영상 합성',meta:'메타데이터',thumb:'썸네일',srt:'SRT 자막',save:'프로젝트 저장'};
 let autoRunning = false;
 
@@ -1812,6 +1847,10 @@ async function startAutoPipeline(){
   const bgmFile=document.getElementById('autoBgm').value;
   const bgmVol=parseFloat(document.getElementById('autoBgmVol').value)||0.15;
   const doSrtAuto=document.getElementById('autoSrt').value==='yes';
+  const doThumbIntro=document.getElementById('autoThumbIntro')?.value==='yes';
+  const kenburns=document.getElementById('autoKenburns')?.value||'varied';
+  const doUpload=document.getElementById('autoUpload')?.value==='yes';
+  const privacy=document.getElementById('autoPrivacy')?.value||'private';
   const langNames={ko:'한국어',en:'English',zh:'中文'};
   const wordCounts={10:'2000',15:'4500',20:'6000',30:'9000'};
 
@@ -1868,15 +1907,7 @@ async function startAutoPipeline(){
     autoTime('tts',Math.round((Date.now()-t1)/1000));
     autoStatus('tts','done',`음성 완료 (${ttsData.charCount}자${ttsData.chunks>1?`, ${ttsData.chunks}청크`:''})`);
 
-    // 5. Render
-    t1=Date.now();
-    autoStatus('render','running',`FFmpeg 영상 합성 중...${transition!=='none'?' (전환효과: '+transition+')':''}${bgmFile?' + BGM':''}`);
-    const renderData=await api('/api/render/video',{duration:audioDur,transition,transitionDuration:transDur,bgmFile,bgmVolume:bgmVol});
-    lastResult.video=renderData;markOk('render');save();
-    autoTime('render',Math.round((Date.now()-t1)/1000));
-    autoStatus('render','done',`영상 합성 완료${renderData.transition&&renderData.transition!=='none'?' ('+renderData.transition+')':''}${renderData.bgm?' + BGM':''}`);
-
-    // 6. Meta
+    // 5. Meta (영상 합성 전에 생성 → 썸네일 텍스트, 업로드 메타데이터에 사용)
     t1=Date.now();
     autoStatus('meta','running','메타데이터 생성 중...');
     const metaData=await api('/api/meta/generate',{topic,script:S.script,languages:[lang]});
@@ -1885,7 +1916,7 @@ async function startAutoPipeline(){
     autoTime('meta',Math.round((Date.now()-t1)/1000));
     autoStatus('meta','done','메타데이터 완료');
 
-    // 7. Thumbnail
+    // 6. Thumbnail (영상 합성 전에 생성 → 인트로 prepend에 사용)
     t1=Date.now();
     autoStatus('thumb','running','썸네일 생성 중...');
     const thumbData=await api('/api/thumbnail/generate',{topic,style:'dramatic',text:''});
@@ -1894,7 +1925,7 @@ async function startAutoPipeline(){
     autoTime('thumb',Math.round((Date.now()-t1)/1000));
     autoStatus('thumb','done','썸네일 완료');
 
-    // 8. SRT
+    // 7. SRT (영상 합성 전에 생성 → burn에 사용)
     if(doSrtAuto){
       t1=Date.now();
       autoStatus('srt','running','SRT 자막 생성 중...');
@@ -1908,7 +1939,53 @@ async function startAutoPipeline(){
       autoStatus('srt','done','건너뜀');
     }
 
-    // 9. Project Save
+    // 8. Render (썸네일 인트로 + SRT burn + 인트로 텍스트 모두 적용)
+    t1=Date.now();
+    const burnDesc=[doSrtAuto?'자막':'',doThumbIntro?'썸네일':''].filter(Boolean).join('+')||'없음';
+    autoStatus('render','running',`FFmpeg 영상 합성 (burn: ${burnDesc})...`);
+    const renderData=await api('/api/render/video',{
+      duration:audioDur,
+      transition,transitionDuration:transDur,
+      bgmFile,bgmVolume:bgmVol,
+      kenburns,
+      burnSrt:doSrtAuto,
+      showThumb:doThumbIntro,
+      showIntro:false
+    });
+    lastResult.video=renderData;markOk('render');save();
+    autoTime('render',Math.round((Date.now()-t1)/1000));
+    autoStatus('render','done',`영상 합성 완료 (burn: ${burnDesc})${renderData.bgm?' + BGM':''}`);
+
+    // 9. YouTube Upload (옵션)
+    if(doUpload){
+      t1=Date.now();
+      autoStatus('upload','running','YouTube 업로드 중...');
+      try{
+        const authStat=await fetch('/api/youtube/status').then(r=>r.json());
+        if(!authStat.authenticated){
+          autoStatus('upload','fail','YouTube OAuth 인증 필요. /api/youtube/auth 접속하세요.');
+        }else{
+          const ytTitle=S.meta?.titles?.[0]?.options?.[0]||topic;
+          const ytDesc=Object.values(S.meta?.description||{})[0]||'';
+          const ytTags=S.meta?.tags||[];
+          const upData=await api('/api/youtube/upload',{
+            title:ytTitle,
+            description:ytDesc,
+            tags:ytTags,
+            categoryId:'22',
+            privacyStatus:privacy,
+            thumbnailFile:S.thumbFile
+          });
+          lastResult.upload=upData;markOk('upload');
+          autoTime('upload',Math.round((Date.now()-t1)/1000));
+          autoStatus('upload','done',`업로드 완료: ${upData.videoUrl||upData.videoId||''}`);
+        }
+      }catch(e){autoStatus('upload','fail',e.message)}
+    }else{
+      autoStatus('upload','done','건너뜀');
+    }
+
+    // 10. Project Save
     t1=Date.now();
     autoStatus('save','running','프로젝트 저장 중...');
     const projName=topic.substring(0,30);
@@ -1935,6 +2012,7 @@ async function startAutoPipeline(){
         <div>📹 영상: ${renderData.filename||''} | ${renderData.fileSize||''}${renderData.transition&&renderData.transition!=='none'?' | ✨'+renderData.transition:''}${renderData.bgm?' | 🎵BGM':''}</div>
         <div>🖼️ 썸네일: ${thumbData.filename||''}</div>
         ${lastResult.srt?`<div>📝 자막: ${lastResult.srt.filename} (${lastResult.srt.subtitleCount}개)</div>`:''}
+        ${lastResult.upload?.videoUrl?`<div>📤 YouTube: <a href="${lastResult.upload.videoUrl}" target="_blank" style="color:var(--acc)">${lastResult.upload.videoUrl}</a></div>`:''}
         <div>💾 프로젝트 자동 저장됨</div>
       </div>
       <div class="cd-t" style="margin:10px 0 6px">🖼️ 생성된 이미지 미리보기</div>
