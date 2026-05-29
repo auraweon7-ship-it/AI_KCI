@@ -1533,22 +1533,73 @@ app.post('/api/thumbnail/generate', async (req, res) => {
     }
 
     const styleGuide = {
-      dramatic: 'dramatic lighting, high contrast, dark background, cinematic, powerful imagery, depth of field',
+      dramatic: 'cinematic lighting, atmospheric composition, depth of field, soft mood',
       clean: 'clean minimal design, modern, professional, white space, sharp typography, gradient background',
-      clickbait: 'vibrant colors, shocked expression, red highlights, bold arrows, attention-grabbing, neon accents',
+      clickbait: 'vibrant colors, bold colorful composition, bright highlights, attention-grabbing',
       cinematic: 'cinematic wide shot, film-like, teal and orange grading, atmospheric, lens flare'
     };
 
-    // gpt-image-1이 텍스트를 그리지 않도록 명시 — drawtext로만 텍스트 오버레이
-    const thumbPrompt = `YouTube video thumbnail in exact 16:9 aspect ratio (1280x720), ${styleGuide[style] || styleGuide.dramatic}, topic: "${topic}", background image related to the topic with dramatic composition, professional YouTube thumbnail design, high impact visual, cinematic composition with empty space in the upper-left and lower-center area for text overlay. IMPORTANT: NO TEXT, NO LETTERS, NO WORDS, NO TYPOGRAPHY, NO CAPTIONS, NO WRITTEN CONTENT of any kind in the image — pure visual scene only.`;
+    // === Topic → 안전한 영문 비주얼 묘사 (Claude로 한 번 더 정제) ===
+    // 한글 topic을 직접 prompt에 넣으면 OpenAI 안전 필터(abuse)에 걸릴 수 있음.
+    // 예: "왕조 멸망", "충격 진실" → 폭력/공포로 오인. 안전한 시각적 명사로 치환.
+    let safeVisual = '';
+    try {
+      const visMsg = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 200,
+        messages: [{ role: 'user', content: `다음 한국어 주제를 OpenAI 이미지 생성 API에 안전한 영문 비주얼 묘사로 변환하세요.
+주제: "${topic}"
+규칙:
+- 영문, 1문장 (30단어 이내)
+- 폭력/죽음/사고/범죄/마약/무기/공포 직접 어휘 금지 (예: death, kill, blood, weapon, abuse, drug, murder, violence)
+- 대신 평화로운/은유적/상징적 시각 명사 사용 (예: ancient palace, vintage clock, glowing book, abstract pattern, mysterious silhouette, golden sunset, atmospheric landscape)
+- 추상적·예술적 묘사 위주
+- 안전하고 일반적인 단어만 사용
 
-    const image = await openai.images.generate({
-      model: 'gpt-image-1',
-      prompt: thumbPrompt,
-      size: '1536x1024',
-      quality: 'high',
-      n: 1
-    });
+출력: 영문 1문장만 (따옴표/설명 없이).` }]
+      });
+      safeVisual = visMsg.content[0].text.trim().replace(/^["']|["']$/g, '').split('\n')[0].substring(0, 250);
+    } catch(e) {
+      console.warn('[Thumbnail] safe visual 변환 실패:', e.message);
+      safeVisual = 'abstract cinematic composition with atmospheric lighting';
+    }
+
+    console.log(`[Thumbnail] 안전 비주얼: "${safeVisual}"`);
+
+    // 안전한 시각 묘사 + 스타일 + NO TEXT 명시
+    function buildPrompt(visual) {
+      return `Professional YouTube thumbnail background image, 16:9 aspect ratio, ${styleGuide[style] || styleGuide.dramatic}, ${visual}. Cinematic composition with empty space in the upper-left and lower-center area. IMPORTANT: NO TEXT, NO LETTERS, NO WORDS, NO TYPOGRAPHY, NO CAPTIONS, NO WRITTEN CONTENT of any kind — pure abstract visual scene only, peaceful and artistic.`;
+    }
+
+    // 자동 재시도 (safety violation 시 fallback prompt로)
+    async function generateWithRetry() {
+      const attempts = [
+        buildPrompt(safeVisual),
+        buildPrompt('atmospheric abstract artistic composition with soft lighting and depth'),
+        buildPrompt('minimalist artistic composition with soft gradient background')
+      ];
+      let lastErr;
+      for (let i = 0; i < attempts.length; i++) {
+        try {
+          console.log(`[Thumbnail] 생성 시도 ${i+1}/${attempts.length}`);
+          return await openai.images.generate({
+            model: 'gpt-image-1',
+            prompt: attempts[i],
+            size: '1536x1024',
+            quality: 'high',
+            n: 1
+          });
+        } catch(e) {
+          lastErr = e;
+          const isSafety = (e?.status === 400) && /safety|abuse|moderation/i.test(e?.message || '');
+          if (!isSafety) throw e; // safety 아니면 즉시 throw
+          console.warn(`[Thumbnail] safety 차단, fallback 시도 → ${i+1}/${attempts.length}`);
+        }
+      }
+      throw lastErr;
+    }
+
+    const image = await generateWithRetry();
 
     const b64 = image.data[0].b64_json;
     const buffer = Buffer.from(b64, 'base64');
