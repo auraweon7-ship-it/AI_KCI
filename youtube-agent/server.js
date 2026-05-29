@@ -23,7 +23,7 @@ app.use('/output', express.static(path.join(__dirname, 'output')));
 const PORT = process.env.PORT || 3003;
 const OUTPUT_DIR = path.join(__dirname, 'output');
 
-['images', 'audio', 'video', 'thumbnails', 'bgm', 'srt'].forEach(dir => {
+['images', 'audio', 'video', 'thumbnails', 'bgm', 'srt', 'clips'].forEach(dir => {
   fs.mkdirSync(path.join(OUTPUT_DIR, dir), { recursive: true });
 });
 
@@ -692,6 +692,94 @@ app.post('/api/srt/generate', async (req, res) => {
 });
 
 app.use('/output/srt', express.static(path.join(OUTPUT_DIR, 'srt')));
+app.use('/output/clips', express.static(path.join(OUTPUT_DIR, 'clips')));
+
+// ========================
+// 6. 영상 클립 생성 (Pexels 스톡 영상)
+// ========================
+// Pexels API로 장면별 키워드 영상 검색 후 다운로드
+app.post('/api/clips/generate', async (req, res) => {
+  try {
+    const apiKey = process.env.PEXELS_API_KEY;
+    if (!apiKey) throw new Error('PEXELS_API_KEY가 설정되지 않았습니다. .env 파일에 추가하세요. (무료 발급: https://www.pexels.com/api/)');
+
+    const { projectId, scenePrompts, perSceneDuration } = req.body;
+    const project = getProject(projectId);
+    const prompts = scenePrompts || project.scenePrompts || [];
+    if (!prompts.length) throw new Error('장면 프롬프트가 없습니다. 먼저 프롬프트를 생성하세요.');
+
+    // 기존 clip 파일 정리
+    fs.readdirSync(path.join(OUTPUT_DIR, 'clips'))
+      .filter(f => f.startsWith('clip_') && f.endsWith('.mp4'))
+      .forEach(f => { try { fs.unlinkSync(path.join(OUTPUT_DIR, 'clips', f)); } catch(e) {} });
+
+    const targetDur = perSceneDuration || 10;
+    const clips = [];
+
+    for (let i = 0; i < prompts.length; i++) {
+      const p = prompts[i];
+      // 영문 prompt에서 핵심 키워드 추출 (앞 30자 또는 name)
+      const query = (p.name || p.prompt || '').replace(/[^a-zA-Z가-힣\s]/g, ' ').replace(/\s+/g, ' ').trim().substring(0, 80);
+      try {
+        const searchUrl = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=3&orientation=landscape`;
+        const r = await fetch(searchUrl, { headers: { Authorization: apiKey } });
+        if (!r.ok) throw new Error(`Pexels API ${r.status}`);
+        const data = await r.json();
+        const videos = data.videos || [];
+        if (!videos.length) {
+          clips.push({ index: i + 1, error: 'no result', query });
+          continue;
+        }
+        // HD 화질 720p~1080p 우선
+        const video = videos[0];
+        const files = video.video_files || [];
+        const hd = files.find(f => f.width >= 1280 && f.width <= 1920 && f.file_type === 'video/mp4')
+                || files.find(f => f.file_type === 'video/mp4')
+                || files[0];
+        if (!hd?.link) {
+          clips.push({ index: i + 1, error: 'no mp4 file' });
+          continue;
+        }
+        const vRes = await fetch(hd.link);
+        if (!vRes.ok) throw new Error(`Download ${vRes.status}`);
+        const buffer = Buffer.from(await vRes.arrayBuffer());
+        const sceneNum = String(i + 1).padStart(2, '0');
+        const filename = `clip_${sceneNum}.mp4`;
+        const filepath = path.join(OUTPUT_DIR, 'clips', filename);
+        fs.writeFileSync(filepath, buffer);
+        clips.push({
+          index: i + 1,
+          filename,
+          url: `/output/clips/${filename}`,
+          size: `${(buffer.length / 1024 / 1024).toFixed(1)}MB`,
+          query,
+          source: 'pexels',
+          author: video.user?.name || 'Unknown',
+          authorUrl: video.user?.url || ''
+        });
+        // Rate limit 보호
+        await new Promise(r => setTimeout(r, 800));
+      } catch(e) {
+        clips.push({ index: i + 1, error: e.message, query });
+      }
+    }
+
+    project.clipFiles = clips.filter(c => c.filename);
+    res.json({ success: true, clips });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// 클립 목록 조회
+app.get('/api/clips/list', (req, res) => {
+  const dir = path.join(OUTPUT_DIR, 'clips');
+  const files = fs.readdirSync(dir).filter(f => f.endsWith('.mp4')).sort().map(f => ({
+    name: f, url: `/output/clips/${f}`,
+    size: `${(fs.statSync(path.join(dir, f)).size / 1024 / 1024).toFixed(1)}MB`
+  }));
+  res.json({ success: true, files });
+});
 app.use('/output/bgm', express.static(path.join(OUTPUT_DIR, 'bgm')));
 
 // ========================
@@ -814,19 +902,27 @@ function scriptToSrt(scriptText, audioDur, offset = 0) {
 
 app.post('/api/render/video', async (req, res) => {
   try {
-    const { projectId, duration, bgmFile, bgmVolume, transition, transitionDuration, burnSrt, showThumb, showIntro, kenburns } = req.body;
+    const { projectId, duration, bgmFile, bgmVolume, transition, transitionDuration, burnSrt, showThumb, showIntro, kenburns, sourceMode } = req.body;
     const project = getProject(projectId);
 
-    // 이미지: 파일명 순서대로 (scene_01, scene_02, ...)
-    const images = fs.readdirSync(path.join(OUTPUT_DIR, 'images'))
-      .filter(f => f.startsWith('scene_') && f.endsWith('.png'))
+    // 소스 모드: 'image' (기본) / 'video' (Pexels 스톡 영상)
+    const useVideo = sourceMode === 'video';
+    const sourceDir = useVideo ? 'clips' : 'images';
+    const sourcePrefix = useVideo ? 'clip_' : 'scene_';
+    const sourceExt = useVideo ? '.mp4' : '.png';
+
+    // 이미지/영상 클립: 파일명 순서대로
+    const images = fs.readdirSync(path.join(OUTPUT_DIR, sourceDir))
+      .filter(f => f.startsWith(sourcePrefix) && f.endsWith(sourceExt))
       .sort();
 
     // 오디오: mtime 기준 최신, 'full_' 우선
     const allAudios = listFilesByMtime(path.join(OUTPUT_DIR, 'audio'), f => f.endsWith('.mp3'));
     const audioFile = allAudios.find(f => f.startsWith('full_')) || allAudios[0];
 
-    if (images.length === 0) throw new Error('이미지 파일이 없습니다. 먼저 이미지를 생성하세요.');
+    if (images.length === 0) throw new Error(useVideo
+      ? '영상 클립이 없습니다. 먼저 영상 클립을 생성하세요 (/api/clips/generate).'
+      : '이미지 파일이 없습니다. 먼저 이미지를 생성하세요.');
     if (!audioFile) throw new Error('오디오 파일이 없습니다. 먼저 TTS를 생성하세요.');
 
     const audioPath = path.join(OUTPUT_DIR, 'audio', audioFile);
@@ -866,10 +962,51 @@ app.post('/api/render/video', async (req, res) => {
 
     let ffmpegArgs;
 
-    if (transType !== 'none' && images.length > 1) {
+    if (useVideo) {
+      // === 비디오 클립 모드: 각 클립을 durationPerImage 길이로 trim/loop, 1080p 스케일, 전환 적용 ===
+      const inputArgs = [];
+      images.forEach(clip => {
+        // 클립이 짧으면 loop, 길면 trim (stream_loop+t로 모두 처리)
+        inputArgs.push('-stream_loop', '-1', '-t', String(durationPerImage), '-i', path.join(OUTPUT_DIR, sourceDir, clip));
+      });
+      inputArgs.push('-i', audioPath);
+
+      let filterComplex = '';
+      const scaledLabels = [];
+      images.forEach((_, i) => {
+        filterComplex += `[${i}:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,setpts=PTS-STARTPTS[v${i}];`;
+        scaledLabels.push(`v${i}`);
+      });
+
+      if (transType !== 'none' && images.length > 1) {
+        let prevLabel = scaledLabels[0];
+        for (let i = 1; i < scaledLabels.length; i++) {
+          const offset = i * durationPerImage - i * transDur;
+          const outLabel = i < scaledLabels.length - 1 ? `xf${i}` : 'vout';
+          filterComplex += `[${prevLabel}][${scaledLabels[i]}]xfade=transition=${transType}:duration=${transDur}:offset=${offset.toFixed(2)}[${outLabel}];`;
+          prevLabel = outLabel;
+        }
+      } else {
+        // 전환 없을 때 단순 concat
+        filterComplex += scaledLabels.map(l => `[${l}]`).join('') + `concat=n=${scaledLabels.length}:v=1:a=0[vout];`;
+      }
+
+      filterComplex = filterComplex.slice(0, -1);
+
+      ffmpegArgs = [
+        ...inputArgs,
+        '-filter_complex', filterComplex,
+        '-map', '[vout]', '-map', `${images.length}:a`,
+        '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
+        '-c:a', 'aac', '-b:a', '192k',
+        '-shortest', '-movflags', '+faststart',
+        '-y', outputPath
+      ];
+    } else if (transType !== 'none' && images.length > 1) {
+      // === 이미지 모드 + 전환 효과 ===
       const inputArgs = [];
       images.forEach(img => {
-        inputArgs.push('-loop', '1', '-t', String(durationPerImage), '-i', path.join(OUTPUT_DIR, 'images', img));
+        inputArgs.push('-loop', '1', '-t', String(durationPerImage), '-i', path.join(OUTPUT_DIR, sourceDir, img));
       });
       inputArgs.push('-i', audioPath);
 
@@ -901,11 +1038,12 @@ app.post('/api/render/video', async (req, res) => {
         '-y', outputPath
       ];
     } else {
-      const concatFile = path.join(OUTPUT_DIR, 'images', 'concat.txt');
+      // === 이미지 모드 + 전환 없음 (concat demuxer) ===
+      const concatFile = path.join(OUTPUT_DIR, sourceDir, 'concat.txt');
       const concatContent = images
-        .map(img => `file '${path.join(OUTPUT_DIR, 'images', img).replace(/\\/g, '/')}'\nduration ${durationPerImage}`)
+        .map(img => `file '${path.join(OUTPUT_DIR, sourceDir, img).replace(/\\/g, '/')}'\nduration ${durationPerImage}`)
         .join('\n');
-      fs.writeFileSync(concatFile, concatContent + `\nfile '${path.join(OUTPUT_DIR, 'images', images[images.length - 1]).replace(/\\/g, '/')}'`);
+      fs.writeFileSync(concatFile, concatContent + `\nfile '${path.join(OUTPUT_DIR, sourceDir, images[images.length - 1]).replace(/\\/g, '/')}'`);
 
       ffmpegArgs = [
         '-f', 'concat', '-safe', '0', '-i', concatFile,
@@ -918,8 +1056,8 @@ app.post('/api/render/video', async (req, res) => {
       ];
     }
 
-    // === 단계 1: 메인 영상 렌더 (이미지 + 오디오 + Ken Burns + 전환) ===
-    console.log(`[Render] 1. 메인 렌더: ${images.length}장 이미지 × ${durationPerImage.toFixed(2)}초 = ${totalDuration.toFixed(2)}초`);
+    // === 단계 1: 메인 영상 렌더 (이미지/영상 + 오디오 + Ken Burns + 전환) ===
+    console.log(`[Render] 1. 메인 렌더: ${useVideo?'영상 클립':'이미지'} ${images.length}개 × ${durationPerImage.toFixed(2)}초 = ${totalDuration.toFixed(2)}초`);
     let finalOutput = outputPath;
     const bgmPath = bgmFile ? path.join(OUTPUT_DIR, 'bgm', bgmFile) : null;
     const hasBgm = bgmPath && fs.existsSync(bgmPath);

@@ -535,6 +535,15 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
                 <option value="es">🇪🇸 스페인어</option>
               </select>
             </div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label class="fl">🎞️ 소스 모드 (영상 합성 재료)</label>
+              <select class="fs" id="autoSourceMode" onchange="updateSourceModeHint()">
+                <option value="image" selected>🖼️ 이미지 기반 (GPT Image-1 + Ken Burns)</option>
+                <option value="video">🎬 영상 기반 (Pexels 스톡 영상)</option>
+              </select>
+              <div class="fh" id="autoSourceModeHint">AI 생성 이미지에 카메라 움직임을 적용합니다</div>
+            </div>
             <div class="fg"><label class="fl">🎨 이미지 스타일</label>
               <select class="fs" id="autoStyle">
                 <optgroup label="🎬 시네마틱·포토리얼">
@@ -920,16 +929,23 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
           </div>
         </div>
         <div class="divider"></div>
-        <div class="cd-t" style="margin-bottom:10px">🎥 Ken Burns 효과 (카메라 움직임)</div>
+        <div class="cd-t" style="margin-bottom:10px">🎞️ 소스 모드 + Ken Burns</div>
         <div class="fr">
-          <div class="fg"><label class="fl">🎥 카메라 효과</label>
+          <div class="fg"><label class="fl">🎞️ 영상 합성 재료</label>
+            <select class="fs" id="renderSourceMode">
+              <option value="image" selected>🖼️ 이미지 기반 (Ken Burns 적용)</option>
+              <option value="video">🎬 영상 기반 (Pexels 스톡)</option>
+            </select>
+            <div class="fh">영상 기반은 PEXELS_API_KEY 필요. 클립 생성 후 사용</div>
+          </div>
+          <div class="fg"><label class="fl">🎥 카메라 효과 (이미지 모드)</label>
             <select class="fs" id="renderKenburns">
               <option value="varied" selected>다양한 효과 (추천)</option>
               <option value="zoom-in">줌 인</option>
               <option value="zoom-out">줌 아웃</option>
               <option value="none">없음 (정지)</option>
             </select>
-            <div class="fh">장면마다 pan/zoom이 자동 적용되어 영상이 생동감 있게 됩니다</div>
+            <div class="fh">장면마다 pan/zoom 자동 적용</div>
           </div>
         </div>
         <div class="divider"></div>
@@ -1615,6 +1631,7 @@ async function doRender(){
       transition:document.getElementById('renderTrans')?.value||'none',
       transitionDuration:parseFloat(document.getElementById('renderTransDur')?.value||0.8),
       kenburns:document.getElementById('renderKenburns')?.value||'varied',
+      sourceMode:document.getElementById('renderSourceMode')?.value||'image',
       burnSrt:document.getElementById('renderSrt')?.checked||false,
       showThumb:document.getElementById('renderThumb')?.checked||false,
       showIntro:document.getElementById('renderIntro')?.checked||false
@@ -1868,6 +1885,17 @@ const LANG_HINTS={
   es:'스페인어 발음에 적합한 진중한 톤 우선 추천'
 };
 
+function updateSourceModeHint(){
+  const mode=document.getElementById('autoSourceMode')?.value||'image';
+  const hint=document.getElementById('autoSourceModeHint');
+  if(!hint)return;
+  if(mode==='video'){
+    hint.innerHTML='⚠️ Pexels API 키 필요 (.env에 PEXELS_API_KEY 설정). <a href="https://www.pexels.com/api/" target="_blank" style="color:var(--acc)">무료 발급</a>';
+  } else {
+    hint.textContent='AI 생성 이미지에 카메라 움직임을 적용합니다';
+  }
+}
+
 function updateAutoVoiceOptions(){
   const lang=document.getElementById('autoLang')?.value||'ko';
   const voices=VOICE_BY_LANG[lang]||VOICE_BY_LANG.ko;
@@ -1986,6 +2014,7 @@ async function startAutoPipeline(){
   const privacy=document.getElementById('autoPrivacy')?.value||'private';
   const ttsSt=parseFloat(document.getElementById('autoTtsSt')?.value||0.5);
   const ttsSim=parseFloat(document.getElementById('autoTtsSim')?.value||0.75);
+  const sourceMode=document.getElementById('autoSourceMode')?.value||'image';
   const langNames={ko:'한국어',en:'English',zh:'中文'};
   const wordCounts={10:'2000',15:'4500',20:'6000',30:'9000'};
 
@@ -2016,20 +2045,34 @@ async function startAutoPipeline(){
     autoTime('script',Math.round((Date.now()-t1)/1000));
     autoStatus('script','done',`대본 완료 (${S.script.length}자)`);
 
-    // 3. Images
+    // 3. Images / Video Clips
     t1=Date.now();
     autoStatus('image','running','프롬프트 생성 중...');
     const promptData=await api('/api/images/generate-prompts',{script:S.script,style,count:imgCnt});
     S.imgPrompts=promptData.prompts;
-    autoStatus('image','running',`0/${imgCnt} 이미지 생성 중...`);
-    for(let i=0;i<S.imgPrompts.length;i++){
-      autoStatus('image','running',`${i+1}/${S.imgPrompts.length} 이미지 생성 중...`);
-      try{await api('/api/images/generate',{prompt:S.imgPrompts[i].prompt,style,ratio:'16:9',index:i+1})}catch(e){}
-      if(i<S.imgPrompts.length-1)await new Promise(r=>setTimeout(r,1500));
+    if(sourceMode==='video'){
+      // 비디오 모드: Pexels 스톡 영상 다운로드
+      autoStatus('image','running','Pexels 영상 검색·다운로드 중...');
+      try{
+        const clipData=await api('/api/clips/generate',{scenePrompts:S.imgPrompts,perSceneDuration:10});
+        const ok=clipData.clips.filter(c=>c.filename).length;
+        const fail=clipData.clips.length-ok;
+        markOk('image');save();
+        autoTime('image',Math.round((Date.now()-t1)/1000));
+        autoStatus('image','done',`${ok}/${clipData.clips.length} 영상 클립 다운로드 완료${fail>0?` (실패 ${fail})`:''}`);
+      }catch(e){autoStatus('image','fail',e.message);throw e}
+    } else {
+      // 이미지 모드: 기존 로직
+      autoStatus('image','running',`0/${imgCnt} 이미지 생성 중...`);
+      for(let i=0;i<S.imgPrompts.length;i++){
+        autoStatus('image','running',`${i+1}/${S.imgPrompts.length} 이미지 생성 중...`);
+        try{await api('/api/images/generate',{prompt:S.imgPrompts[i].prompt,style,ratio:'16:9',index:i+1})}catch(e){}
+        if(i<S.imgPrompts.length-1)await new Promise(r=>setTimeout(r,1500));
+      }
+      markOk('image');save();
+      autoTime('image',Math.round((Date.now()-t1)/1000));
+      autoStatus('image','done',`${S.imgPrompts.length}장 생성 완료`);
     }
-    markOk('image');save();
-    autoTime('image',Math.round((Date.now()-t1)/1000));
-    autoStatus('image','done',`${S.imgPrompts.length}장 생성 완료`);
 
     // 4. TTS
     t1=Date.now();
@@ -2094,7 +2137,8 @@ async function startAutoPipeline(){
       kenburns,
       burnSrt:doSrtAuto,
       showThumb:doThumbIntro,
-      showIntro:false
+      showIntro:false,
+      sourceMode
     });
     lastResult.video=renderData;markOk('render');save();
     autoTime('render',Math.round((Date.now()-t1)/1000));
