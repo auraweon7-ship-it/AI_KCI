@@ -1694,147 +1694,76 @@ app.post('/api/thumbnail/generate', async (req, res) => {
     const mainText = (hookText || '').trim();
     const subTxt = (subText || '').trim();
 
-    // === 화려한 멀티컬러 디자인 — 시네마틱 + 무지개 글로우 + 스파클 ===
-    // 컨셉: 영화 포스터 + 6색 무지개 글로우 + 코너 멀티컬러 + 스파클 점들
-    const mainFontSize = pickFontSize(mainText, 120, 60);
+    // === 텍스트만 중앙 정렬 — 장식 요소 모두 제거, 텍스트 디자인 극대화 ===
+    const mainFontSize = pickFontSize(mainText, 140, 70);
     const mainLines = wrapLines(mainText, mainFontSize);
 
-    const subFontSize = subTxt ? pickFontSize(subTxt, 50, 32) : 0;
+    const subFontSize = subTxt ? pickFontSize(subTxt, 56, 36) : 0;
     const subLines = subTxt ? wrapLines(subTxt, subFontSize) : [];
 
     const escapeText = (s) => s.replace(/\\/g, '\\\\').replace(/'/g, "'\\''").replace(/:/g, '\\:').replace(/%/g, '\\%');
 
     const mainLineH = Math.round(mainFontSize * 1.15);
-    const subLineH = Math.round(subFontSize * 1.25);
+    const subLineH = Math.round(subFontSize * 1.3);
     const mainTotalH = mainLines.length * mainLineH;
     const subTotalH = subLines.length * subLineH;
 
-    const CINEMA_BAR_H = 70;
-    const usableTop = CINEMA_BAR_H + 40;
-    const usableBottom = 720 - CINEMA_BAR_H - 40;
-    const usableH = usableBottom - usableTop;
-    const startY = usableTop + Math.round((usableH - mainTotalH) / 2);
+    // 메인+서브 통합 블록 세로 중앙 정렬
+    const gapBetween = subTxt ? 40 : 0;
+    const totalH = mainTotalH + gapBetween + subTotalH;
+    const startY = Math.round((720 - totalH) / 2);
+
+    const COLORS = {
+      red:'#FF1744', orange:'#FF6D00', yellow:'#FFEB3B', green:'#00E676',
+      cyan:'#00E5FF', blue:'#2979FF', purple:'#D500F9', magenta:'#FF00C8',
+      pink:'#FF4081', gold:'#FFC400', white:'white', black:'black'
+    };
 
     const filters = [];
 
-    // 멀티컬러 팔레트 (무지개 + 핫 컬러)
-    const COLORS = {
-      red:     '#FF1744',  // 빨강
-      orange:  '#FF6D00',  // 주황
-      yellow:  '#FFEB3B',  // 노랑
-      green:   '#00E676',  // 초록
-      cyan:    '#00E5FF',  // 시안
-      blue:    '#2979FF',  // 파랑
-      purple:  '#D500F9',  // 보라
-      magenta: '#FF00C8',  // 마젠타
-      pink:    '#FF4081',  // 분홍
-      gold:    '#FFC400',  // 금색
-    };
+    // 1) 비네트만 유지 (텍스트 가독성)
+    filters.push(`drawbox=x=0:y=0:w=1280:h=720:color=black@0.5:t=fill`);
 
-    // 1) 비네트 (약하게)
-    filters.push(`drawbox=x=0:y=0:w=1280:h=720:color=black@0.35:t=fill`);
-
-    // 2) 시네마 바 (위/아래) — 무지개 그라데이션 라인 추가
-    filters.push(`drawbox=x=0:y=0:w=1280:h=${CINEMA_BAR_H}:color=black:t=fill`);
-    filters.push(`drawbox=x=0:y=${720-CINEMA_BAR_H}:w=1280:h=${CINEMA_BAR_H}:color=black:t=fill`);
-    // 위 시네마 바 하단에 무지개 라인 (10등분)
-    const rainbowSeq = ['red','orange','yellow','green','cyan','blue','purple','magenta','pink','gold'];
-    const segW = Math.floor(1280 / rainbowSeq.length);
-    rainbowSeq.forEach((c, idx) => {
-      filters.push(`drawbox=x=${idx*segW}:y=${CINEMA_BAR_H-4}:w=${segW}:h=4:color=${COLORS[c]}:t=fill`);
-    });
-    // 아래 시네마 바 상단에 역방향 무지개 라인
-    [...rainbowSeq].reverse().forEach((c, idx) => {
-      filters.push(`drawbox=x=${idx*segW}:y=${720-CINEMA_BAR_H}:w=${segW}:h=4:color=${COLORS[c]}:t=fill`);
-    });
-
-    // 3) 좌측 수직 무지개 바 (사이드 액센트)
-    const sideColors = ['red','orange','yellow','green','cyan','blue','purple'];
-    const sideBarTotal = 720 - 2*CINEMA_BAR_H - 80;
-    const sideSegH = Math.floor(sideBarTotal / sideColors.length);
-    sideColors.forEach((c, idx) => {
-      filters.push(`drawbox=x=30:y=${CINEMA_BAR_H+40+idx*sideSegH}:w=8:h=${sideSegH}:color=${COLORS[c]}:t=fill`);
-    });
-    // 우측 미러 (가독성 위해 짧게)
-    [...sideColors].reverse().forEach((c, idx) => {
-      filters.push(`drawbox=x=${1280-38}:y=${CINEMA_BAR_H+40+idx*sideSegH}:w=8:h=${sideSegH}:color=${COLORS[c]}:t=fill`);
-    });
-
-    // 4) 코너 멀티컬러 뷰파인더 마크 (각 모서리 다른 색)
-    const CM = 35, CT = 5, CO = 22;
-    const cornerColors = [COLORS.cyan, COLORS.magenta, COLORS.yellow, COLORS.green];
-    // 좌상단 (cyan)
-    filters.push(`drawbox=x=${CO}:y=${CINEMA_BAR_H+CO}:w=${CM}:h=${CT}:color=${cornerColors[0]}:t=fill`);
-    filters.push(`drawbox=x=${CO}:y=${CINEMA_BAR_H+CO}:w=${CT}:h=${CM}:color=${cornerColors[0]}:t=fill`);
-    // 우상단 (magenta)
-    filters.push(`drawbox=x=${1280-CO-CM}:y=${CINEMA_BAR_H+CO}:w=${CM}:h=${CT}:color=${cornerColors[1]}:t=fill`);
-    filters.push(`drawbox=x=${1280-CO-CT}:y=${CINEMA_BAR_H+CO}:w=${CT}:h=${CM}:color=${cornerColors[1]}:t=fill`);
-    // 좌하단 (yellow)
-    filters.push(`drawbox=x=${CO}:y=${720-CINEMA_BAR_H-CO-CT}:w=${CM}:h=${CT}:color=${cornerColors[2]}:t=fill`);
-    filters.push(`drawbox=x=${CO}:y=${720-CINEMA_BAR_H-CO-CM}:w=${CT}:h=${CM}:color=${cornerColors[2]}:t=fill`);
-    // 우하단 (green)
-    filters.push(`drawbox=x=${1280-CO-CM}:y=${720-CINEMA_BAR_H-CO-CT}:w=${CM}:h=${CT}:color=${cornerColors[3]}:t=fill`);
-    filters.push(`drawbox=x=${1280-CO-CT}:y=${720-CINEMA_BAR_H-CO-CM}:w=${CT}:h=${CM}:color=${cornerColors[3]}:t=fill`);
-
-    // 5) 스파클 점들 (작은 4x4 도트, 다양한 색, 결정적 위치)
-    const sparkles = [
-      { x: 180, y: CINEMA_BAR_H+90,  c: COLORS.yellow },
-      { x: 1100,y: CINEMA_BAR_H+120, c: COLORS.cyan },
-      { x: 250, y: CINEMA_BAR_H+200, c: COLORS.pink },
-      { x: 1050,y: CINEMA_BAR_H+250, c: COLORS.gold },
-      { x: 200, y: 720-CINEMA_BAR_H-150, c: COLORS.magenta },
-      { x: 1080,y: 720-CINEMA_BAR_H-180, c: COLORS.green },
-      { x: 350, y: CINEMA_BAR_H+60,  c: COLORS.red },
-      { x: 950, y: CINEMA_BAR_H+80,  c: COLORS.blue },
-    ];
-    sparkles.forEach(s => {
-      // 스파클: + 모양 (가로 6px + 세로 6px 작은 십자)
-      filters.push(`drawbox=x=${s.x-3}:y=${s.y}:w=6:h=2:color=${s.c}:t=fill`);
-      filters.push(`drawbox=x=${s.x}:y=${s.y-3}:w=2:h=6:color=${s.c}:t=fill`);
-    });
-
-    // 6) 상단 시네마 바 — REC + 4K + HDR (멀티컬러)
-    filters.push(`drawbox=x=70:y=28:w=14:h=14:color=${COLORS.red}:t=fill`);
-    filters.push(`drawtext=text='● REC':fontfile='${fontPath}':fontsize=22:fontcolor=${COLORS.red}:x=95:y=24`);
-    filters.push(`drawtext=text='LIVE':fontfile='${fontPath}':fontsize=22:fontcolor=${COLORS.gold}:x=180:y=24`);
-    filters.push(`drawtext=text='4K':fontfile='${fontPath}':fontsize=22:fontcolor=${COLORS.cyan}:x=(w-text_w)-180:y=24`);
-    filters.push(`drawtext=text='HDR':fontfile='${fontPath}':fontsize=22:fontcolor=${COLORS.magenta}:x=(w-text_w)-100:y=24`);
-
-    // 7) 메인 텍스트 — 7색 무지개 글로우 + 흰색 본체 + 검정 외곽선
-    // 외부 → 내부 순으로 색 레이어 쌓기 (각 -1px씩 안쪽으로)
+    // 2) 메인 텍스트 — 강화된 다층 효과
+    // 레이어 순서 (아래 → 위):
+    //   외광1 자홍 (-18,-18) 0.4
+    //   외광2 빨강 (-14,-14) 0.55
+    //   외광3 주황 (-10,-10) 0.7
+    //   외광4 노랑 (-6,-6) 0.85
+    //   외광5 시안 (+6,+6) 0.85
+    //   외광6 파랑 (+10,+10) 0.7
+    //   외광7 보라 (+14,+14) 0.55
+    //   외광8 마젠타 (+18,+18) 0.4
+    //   검정 그림자 (+22,+22) 0.95
+    //   본체 흰색 + 14px 검정 외곽선 + 자체 그림자
     mainLines.forEach((line, i) => {
       const y = startY + i * mainLineH;
       const esc = escapeText(line);
-      // 외광 효과 — 6방향 무지개 그림자
-      // 빨강(-10,-10) → 주황(-7,-7) → 노랑(-4,-4) → 본체 흰색
-      // 보라(+10,+10) → 파랑(+7,+7) → 초록(+4,+4)
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.red}@0.7:x=(w-text_w)/2-10:y=${y}-10`);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.orange}@0.75:x=(w-text_w)/2-7:y=${y}-7`);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.yellow}@0.8:x=(w-text_w)/2-4:y=${y}-4`);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.green}@0.75:x=(w-text_w)/2+4:y=${y}+4`);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.cyan}@0.75:x=(w-text_w)/2+7:y=${y}+7`);
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.magenta}@0.4:x=(w-text_w)/2-18:y=${y}-18`);
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.red}@0.55:x=(w-text_w)/2-14:y=${y}-14`);
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.orange}@0.7:x=(w-text_w)/2-10:y=${y}-10`);
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.yellow}@0.85:x=(w-text_w)/2-6:y=${y}-6`);
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.cyan}@0.85:x=(w-text_w)/2+6:y=${y}+6`);
       filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.blue}@0.7:x=(w-text_w)/2+10:y=${y}+10`);
-      // 검정 깊은 그림자 (입체)
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=black@0.85:x=(w-text_w)/2+14:y=${y}+14`);
-      // 본체 흰색 + 두꺼운 검정 외곽선
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=white:borderw=10:bordercolor=black:x=(w-text_w)/2:y=${y}`);
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.purple}@0.55:x=(w-text_w)/2+14:y=${y}+14`);
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.magenta}@0.4:x=(w-text_w)/2+18:y=${y}+18`);
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=black@0.95:x=(w-text_w)/2+22:y=${y}+22`);
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=white:borderw=14:bordercolor=black:shadowcolor=black@0.9:shadowx=5:shadowy=5:x=(w-text_w)/2:y=${y}`);
     });
 
-    // 8) 서브 텍스트 — 멀티컬러 그라데이션 박스 (무지개 박스)
+    // 3) 서브 텍스트 — 멀티 글로우 (서브도 강화)
     if (subLines.length > 0) {
-      const subBarY = 720 - CINEMA_BAR_H + 18;
       subLines.forEach((line, i) => {
-        const y = subBarY + i * subLineH;
+        const y = startY + mainTotalH + gapBetween + i * subLineH;
         const esc = escapeText(line);
-        // 글로우: 4방향 다른 색
-        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=${COLORS.pink}@0.6:x=(w-text_w)/2-3:y=${y}`);
-        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=${COLORS.cyan}@0.6:x=(w-text_w)/2+3:y=${y}`);
-        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=${COLORS.yellow}@0.5:x=(w-text_w)/2:y=${y}-2`);
-        // 본체 흰색
-        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=white:borderw=3:bordercolor=black:x=(w-text_w)/2:y=${y}`);
+        // 4방향 색 글로우
+        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=${COLORS.pink}@0.7:x=(w-text_w)/2-5:y=${y}`);
+        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=${COLORS.cyan}@0.7:x=(w-text_w)/2+5:y=${y}`);
+        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=${COLORS.yellow}@0.6:x=(w-text_w)/2:y=${y}-4`);
+        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=${COLORS.gold}@0.6:x=(w-text_w)/2:y=${y}+4`);
+        // 본체 흰색 + 두꺼운 검정 외곽선 + 그림자
+        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=white:borderw=6:bordercolor=black:shadowcolor=black@0.85:shadowx=4:shadowy=4:x=(w-text_w)/2:y=${y}`);
       });
-    } else {
-      filters.push(`drawtext=text='● 본편 시청':fontfile='${fontPath}':fontsize=26:fontcolor=${COLORS.gold}:x=(w-text_w)/2:y=${720-CINEMA_BAR_H+22}`);
     }
 
     const drawFilters = filters.join(',');
