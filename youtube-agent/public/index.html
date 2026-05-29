@@ -935,7 +935,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         <div class="cd-t" style="margin-bottom:10px">🎞️ 소스 모드 + Ken Burns</div>
         <div class="fr">
           <div class="fg"><label class="fl">🎞️ 영상 합성 재료</label>
-            <select class="fs" id="renderSourceMode">
+            <select class="fs" id="renderSourceMode" onchange="updateRenderSourceMode()">
               <option value="image" selected>🖼️ 이미지 기반 (Ken Burns 적용)</option>
               <option value="video">🎬 영상 기반 (Pexels 스톡)</option>
             </select>
@@ -1266,7 +1266,7 @@ function go(id) {
   else document.getElementById('ban').style.display='none';
   checkPrereqs(id);
   if(id==='plan') { document.getElementById('planTopic').value=S.topic; const tv=document.getElementById('topTar').value; if(tv) document.getElementById('planTarget').value=tv; }
-  if(id==='auto') loadAutoBgmList();
+  if(id==='auto') { loadAutoBgmList(); updateSourceModeHint(); }
   if(id==='tts') prepareTTS();
   if(id==='render') { prepareRender(); loadBgmList(); }
   if(id==='upload') prepareUpload();
@@ -1621,6 +1621,7 @@ async function prepareRender(){
     const imgs=r.files.images?.length||0;const auds=r.files.audio?.length||0;const vids=r.files.video?.length||0;
     document.getElementById('renderAssets').innerHTML=`이미지: <strong>${imgs}장</strong><br>오디오: <strong>${auds}개</strong><br>영상: <strong>${vids}개</strong>`;
   }catch(e){}
+  updateRenderSourceMode();
 }
 
 async function doRender(){
@@ -1891,11 +1892,46 @@ const LANG_HINTS={
 function updateSourceModeHint(){
   const mode=document.getElementById('autoSourceMode')?.value||'image';
   const hint=document.getElementById('autoSourceModeHint');
-  if(!hint)return;
-  if(mode==='video'){
-    hint.innerHTML='⚠️ Pexels API 키 필요 (.env에 PEXELS_API_KEY 설정). <a href="https://www.pexels.com/api/" target="_blank" style="color:var(--acc)">무료 발급</a>';
-  } else {
-    hint.textContent='AI 생성 이미지에 카메라 움직임을 적용합니다';
+  if(hint){
+    if(mode==='video'){
+      hint.innerHTML='⚠️ Pexels API 키 필요 (.env에 PEXELS_API_KEY 설정). <a href="https://www.pexels.com/api/" target="_blank" style="color:var(--acc)">무료 발급</a>';
+    } else {
+      hint.textContent='AI 생성 이미지에 카메라 움직임을 적용합니다';
+    }
+  }
+  // 이미지 모드 전용 메뉴 비활성화 (영상 모드 시)
+  const imageOnly=['autoStyle','autoImgCnt','autoKenburns'];
+  const isVideo=mode==='video';
+  imageOnly.forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    el.disabled=isVideo;
+    el.style.opacity=isVideo?'0.4':'1';
+    el.style.cursor=isVideo?'not-allowed':'';
+    const parent=el.closest('.fg');
+    if(parent){
+      parent.style.opacity=isVideo?'0.5':'1';
+      const label=parent.querySelector('.fl');
+      if(label){
+        const baseText=label.dataset.baseText||label.textContent;
+        label.dataset.baseText=baseText;
+        label.textContent=isVideo?baseText+' (영상 모드에서 비활성)':baseText;
+      }
+    }
+  });
+}
+
+// 영상 합성 페이지의 Ken Burns 토글
+function updateRenderSourceMode(){
+  const mode=document.getElementById('renderSourceMode')?.value||'image';
+  const isVideo=mode==='video';
+  const kb=document.getElementById('renderKenburns');
+  if(kb){
+    kb.disabled=isVideo;
+    kb.style.opacity=isVideo?'0.4':'1';
+    kb.style.cursor=isVideo?'not-allowed':'';
+    const parent=kb.closest('.fg');
+    if(parent)parent.style.opacity=isVideo?'0.5':'1';
   }
 }
 
