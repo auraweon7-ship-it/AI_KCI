@@ -520,6 +520,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
           <div class="fr3">
             <div class="fg"><label class="fl">⏱️ 영상 길이</label>
               <select class="fs" id="autoLen">
+                <option value="1">1분 (쇼츠/티저)</option>
+                <option value="3">3분 (짧은 영상)</option>
+                <option value="5">5분 (미디엄)</option>
                 <option value="10">10분</option>
                 <option value="15" selected>15분</option>
                 <option value="20">20분</option>
@@ -2016,7 +2019,7 @@ async function startAutoPipeline(){
   const ttsSim=parseFloat(document.getElementById('autoTtsSim')?.value||0.75);
   const sourceMode=document.getElementById('autoSourceMode')?.value||'image';
   const langNames={ko:'한국어',en:'English',zh:'中文'};
-  const wordCounts={10:'2000',15:'4500',20:'6000',30:'9000'};
+  const wordCounts={1:'250',3:'700',5:'1200',10:'2000',15:'4500',20:'6000',30:'9000'};
 
   S.topic=topic;
   document.getElementById('autoSteps').style.display='block';
