@@ -554,25 +554,21 @@ app.post('/api/tts/full-script', async (req, res) => {
     const filename = `full_narration_${timestamp}.mp3`;
     const outputPath = path.join(OUTPUT_DIR, 'audio', filename);
 
-    // 청크 사이 잡음(글리치/팝) 방지: stream copy 대신 재인코딩으로 정규화
-    // + concat filter로 무음 패딩(250ms) 자동 삽입하여 청크 경계 잡음 차단
+    // 청크 결합 — re-encode로 stream copy 오정렬 방지
+    // 수정 이력:
+    //   - 이전 버그 1: afade=t=out:st=0 → 각 청크 처음 5ms를 페이드아웃시켜 클릭 잡음 발생
+    //   - 이전 버그 2: 250ms silence 패딩 → SRT가 silence 구간까지 텍스트에 분배해서 누적 드리프트
+    //   - 수정: silence 패딩 제거, afade out 제거, afade in 20ms만 유지
+    //   - TTS 자체 마침표/쉼표 pause 있어 자연스러움. 청크 경계 click은 aformat 재인코딩으로 해결.
     const inputArgs = [];
     chunkFiles.forEach(f => { inputArgs.push('-i', path.join(OUTPUT_DIR, 'audio', f)); });
 
-    // 각 청크 양 끝에 5ms 페이드 적용 후 250ms 무음 패딩 추가
     const filterParts = [];
     chunkFiles.forEach((_, i) => {
-      filterParts.push(`[${i}:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,afade=t=in:st=0:d=0.005,afade=t=out:st=0:d=0.005:curve=tri[a${i}]`);
+      // 샘플레이트/채널/포맷 통일 + 청크 시작 20ms 페이드인 (클릭 방지)
+      filterParts.push(`[${i}:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,afade=t=in:st=0:d=0.02[a${i}]`);
     });
-    // 청크 사이에 250ms silence 삽입
-    const concatInputs = [];
-    chunkFiles.forEach((_, i) => {
-      concatInputs.push(`[a${i}]`);
-      if (i < chunkFiles.length - 1) {
-        filterParts.push(`aevalsrc=0:d=0.25:s=44100:c=stereo[s${i}]`);
-        concatInputs.push(`[s${i}]`);
-      }
-    });
+    const concatInputs = chunkFiles.map((_, i) => `[a${i}]`);
     const concatN = concatInputs.length;
     filterParts.push(`${concatInputs.join('')}concat=n=${concatN}:v=0:a=1[out]`);
     const filterComplex = filterParts.join(';');
