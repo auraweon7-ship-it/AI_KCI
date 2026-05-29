@@ -571,67 +571,22 @@ app.post('/api/srt/generate', async (req, res) => {
     const text = script || project.script || '';
     if (!text) throw new Error('대본이 없습니다');
 
-    // 실제 오디오 길이 프로빙 (SRT 싱크 핵심)
+    // 오디오 mtime 최신 파일 선택 후 길이 측정
     let audioDuration = 0;
-    try {
-      const audioFiles = fs.readdirSync(path.join(OUTPUT_DIR, 'audio')).filter(f => f.endsWith('.mp3')).sort();
-      const audioFile = audioFiles.find(f => f.startsWith('full_')) || audioFiles[0];
-      if (audioFile) {
-        const audioPath = path.join(OUTPUT_DIR, 'audio', audioFile);
-        audioDuration = await new Promise((resolve) => {
-          execFile('ffmpeg', ['-i', audioPath, '-hide_banner'], { timeout: 10000 }, (error, stdout, stderr) => {
-            const match = (stderr || '').match(/Duration:\s*(\d+):(\d+):(\d+)\.(\d+)/);
-            if (match) resolve(parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]) + parseInt(match[4])/100);
-            else resolve(0);
-          });
-        });
-      }
-    } catch(e) {}
-
-    const sceneRegex = /\[장면\s*(\d+)[^\]]*\]([\s\S]*?)(?=\[장면|\s*$)/g;
-    const scenes = [];
-    let match;
-    while ((match = sceneRegex.exec(text)) !== null) {
-      const content = match[2].replace(/[━═─▶■●•🎙️🎬📌🔹✅☐]/g, '').replace(/\(.*?\)/g, '').replace(/\n{2,}/g, '\n').trim();
-      if (content) scenes.push(content);
+    const audioFiles = fs.existsSync(path.join(OUTPUT_DIR, 'audio'))
+      ? fs.readdirSync(path.join(OUTPUT_DIR, 'audio'))
+          .filter(f => f.endsWith('.mp3'))
+          .map(f => ({ f, m: fs.statSync(path.join(OUTPUT_DIR, 'audio', f)).mtimeMs }))
+          .sort((a, b) => b.m - a.m)
+          .map(o => o.f)
+      : [];
+    const audioFile = audioFiles.find(f => f.startsWith('full_')) || audioFiles[0];
+    if (audioFile) {
+      audioDuration = await probeDuration(path.join(OUTPUT_DIR, 'audio', audioFile));
     }
 
-    if (scenes.length === 0) {
-      const paragraphs = text.replace(/\[.*?\]/g, '').replace(/[━═─▶■●•🎙️🎬📌🔹✅☐]/g, '').replace(/\(.*?\)/g, '').split(/\n{2,}/).map(p => p.trim()).filter(p => p.length > 10);
-      scenes.push(...paragraphs);
-    }
-
-    // 오디오 길이 우선, 없으면 UI 입력값 fallback
-    const totalDur = audioDuration > 0 ? Math.ceil(audioDuration) : (duration || 120);
-    const totalChars = scenes.reduce((a, s) => a + s.length, 0);
-    let currentTime = 0;
-    let srtContent = '';
-
-    scenes.forEach((scene, idx) => {
-      const sceneDur = (scene.length / totalChars) * totalDur;
-      const sentences = scene.match(/[^.!?。！？\n]+[.!?。！？]?/g) || [scene];
-      const sentTotalChars = sentences.reduce((a, s) => a + s.length, 0);
-
-      sentences.forEach((sent, si) => {
-        const sentText = sent.trim();
-        if (!sentText || sentText.length < 3) return;
-        const sentDur = Math.max(1, (sentText.length / sentTotalChars) * sceneDur);
-        const startTime = currentTime;
-        const endTime = currentTime + sentDur;
-
-        const formatTime = (sec) => {
-          const h = Math.floor(sec / 3600);
-          const m = Math.floor((sec % 3600) / 60);
-          const s = Math.floor(sec % 60);
-          const ms = Math.round((sec % 1) * 1000);
-          return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
-        };
-
-        const subIdx = srtContent.split('\n\n').filter(Boolean).length + 1;
-        srtContent += `${subIdx}\n${formatTime(startTime)} --> ${formatTime(endTime)}\n${sentText}\n\n`;
-        currentTime = endTime;
-      });
-    });
+    const totalDur = audioDuration > 0 ? audioDuration : (duration || 120);
+    const srtContent = scriptToSrt(text, totalDur, 0);
 
     const filename = `subtitles_${Date.now()}.srt`;
     fs.writeFileSync(path.join(OUTPUT_DIR, 'srt', filename), srtContent, 'utf-8');
@@ -641,7 +596,8 @@ app.post('/api/srt/generate', async (req, res) => {
       srtUrl: `/output/srt/${filename}`,
       filename,
       subtitleCount: srtContent.split('\n\n').filter(Boolean).length,
-      preview: srtContent.substring(0, 500)
+      preview: srtContent.substring(0, 500),
+      audioDuration: totalDur
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -654,38 +610,95 @@ app.use('/output/bgm', express.static(path.join(OUTPUT_DIR, 'bgm')));
 // ========================
 // 6. 영상 렌더링 (FFmpeg)
 // ========================
+// 헬퍼: 디렉토리에서 최신 파일 mtime 기준 정렬
+function listFilesByMtime(dir, filterFn) {
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir)
+    .filter(filterFn)
+    .map(f => ({ name: f, mtime: fs.statSync(path.join(dir, f)).mtimeMs }))
+    .sort((a, b) => b.mtime - a.mtime)
+    .map(o => o.name);
+}
+
+// 헬퍼: FFmpeg로 미디어 길이 측정
+async function probeDuration(filePath) {
+  return new Promise((resolve) => {
+    execFile('ffmpeg', ['-i', filePath, '-hide_banner'], { timeout: 10000 }, (error, stdout, stderr) => {
+      const match = (stderr || '').match(/Duration:\s*(\d+):(\d+):(\d+)\.(\d+)/);
+      if (match) resolve(parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]) + parseInt(match[4])/100);
+      else resolve(0);
+    });
+  });
+}
+
+// 헬퍼: SRT 시간 형식
+function formatSrtTime(sec) {
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = Math.floor(sec % 60);
+  const ms = Math.round((sec % 1) * 1000);
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')},${String(ms).padStart(3,'0')}`;
+}
+
+// 헬퍼: 스크립트 → SRT 변환 (오디오 길이 기반 + 오프셋)
+function scriptToSrt(scriptText, audioDur, offset = 0) {
+  const sceneRegex = /\[장면\s*(\d+)[^\]]*\]([\s\S]*?)(?=\[장면|\s*$)/g;
+  const scenes = [];
+  let m;
+  while ((m = sceneRegex.exec(scriptText)) !== null) {
+    const c = m[2].replace(/[━═─▶■●•🎙️🎬📌🔹✅☐]/g, '').replace(/\(.*?\)/g, '').replace(/\n{2,}/g, '\n').trim();
+    if (c) scenes.push(c);
+  }
+  if (scenes.length === 0) {
+    const ps = scriptText.replace(/\[.*?\]/g, '').replace(/[━═─▶■●•🎙️🎬📌🔹✅☐]/g, '').replace(/\(.*?\)/g, '')
+      .split(/\n{2,}/).map(p => p.trim()).filter(p => p.length > 10);
+    scenes.push(...ps);
+  }
+  const totalChars = scenes.reduce((a, s) => a + s.length, 0) || 1;
+  let cur = offset;
+  let srt = '';
+  let idx = 1;
+  scenes.forEach((scene) => {
+    const sceneDur = (scene.length / totalChars) * audioDur;
+    const sentences = scene.match(/[^.!?。！？\n]+[.!?。！？]?/g) || [scene];
+    const sentChars = sentences.reduce((a, s) => a + s.length, 0) || 1;
+    sentences.forEach((sent) => {
+      const t = sent.trim();
+      if (!t || t.length < 3) return;
+      const dur = Math.max(1, (t.length / sentChars) * sceneDur);
+      srt += `${idx}\n${formatSrtTime(cur)} --> ${formatSrtTime(cur + dur)}\n${t}\n\n`;
+      cur += dur;
+      idx++;
+    });
+  });
+  return srt;
+}
+
 app.post('/api/render/video', async (req, res) => {
   try {
     const { projectId, duration, bgmFile, bgmVolume, transition, transitionDuration, burnSrt, showThumb, showIntro, kenburns } = req.body;
     const project = getProject(projectId);
 
+    // 이미지: 파일명 순서대로 (scene_01, scene_02, ...)
     const images = fs.readdirSync(path.join(OUTPUT_DIR, 'images'))
       .filter(f => f.startsWith('scene_') && f.endsWith('.png'))
       .sort();
-    const audioFiles = fs.readdirSync(path.join(OUTPUT_DIR, 'audio'))
-      .filter(f => f.endsWith('.mp3'))
-      .sort();
+
+    // 오디오: mtime 기준 최신, 'full_' 우선
+    const allAudios = listFilesByMtime(path.join(OUTPUT_DIR, 'audio'), f => f.endsWith('.mp3'));
+    const audioFile = allAudios.find(f => f.startsWith('full_')) || allAudios[0];
 
     if (images.length === 0) throw new Error('이미지 파일이 없습니다. 먼저 이미지를 생성하세요.');
-    if (audioFiles.length === 0) throw new Error('오디오 파일이 없습니다. 먼저 TTS를 생성하세요.');
+    if (!audioFile) throw new Error('오디오 파일이 없습니다. 먼저 TTS를 생성하세요.');
 
-    const audioFile = audioFiles.find(f => f.startsWith('full_')) || audioFiles[0];
     const audioPath = path.join(OUTPUT_DIR, 'audio', audioFile);
+    const audioDuration = await probeDuration(audioPath);
+    if (audioDuration <= 0) throw new Error('오디오 길이를 측정할 수 없습니다.');
 
-    // 실제 오디오 길이를 FFmpeg probe로 측정 (싱크 핵심)
-    let audioDuration = 0;
-    try {
-      audioDuration = await new Promise((resolve, reject) => {
-        execFile('ffmpeg', ['-i', audioPath, '-hide_banner'], { timeout: 10000 }, (error, stdout, stderr) => {
-          const match = (stderr || '').match(/Duration:\s*(\d+):(\d+):(\d+)\.(\d+)/);
-          if (match) resolve(parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]) + parseInt(match[4])/100);
-          else resolve(0);
-        });
-      });
-    } catch(e) {}
+    console.log(`[Render] 오디오: ${audioFile}, 실제 길이: ${audioDuration.toFixed(2)}초`);
 
-    // 오디오 길이 우선 사용, 없으면 UI 입력값 fallback
-    const totalDuration = audioDuration > 0 ? Math.ceil(audioDuration) : (duration || 120);
+    // 오디오 길이 = 총 영상 길이 (싱크 핵심)
+    const totalDuration = audioDuration;
     const durationPerImage = totalDuration / images.length;
     const transDur = Math.min(parseFloat(transitionDuration) || 0.8, durationPerImage * 0.4);
     const transType = transition || 'none';
@@ -767,7 +780,8 @@ app.post('/api/render/video', async (req, res) => {
       ];
     }
 
-    // BGM mixing as a second pass if requested
+    // === 단계 1: 메인 영상 렌더 (이미지 + 오디오 + Ken Burns + 전환) ===
+    console.log(`[Render] 1. 메인 렌더: ${images.length}장 이미지 × ${durationPerImage.toFixed(2)}초 = ${totalDuration.toFixed(2)}초`);
     let finalOutput = outputPath;
     const bgmPath = bgmFile ? path.join(OUTPUT_DIR, 'bgm', bgmFile) : null;
     const hasBgm = bgmPath && fs.existsSync(bgmPath);
@@ -779,7 +793,9 @@ app.post('/api/render/video', async (req, res) => {
       });
     });
 
+    // === 단계 2: BGM 믹싱 ===
     if (hasBgm) {
+      console.log(`[Render] 2. BGM 믹싱: ${bgmFile}`);
       const bgmOutput = path.join(OUTPUT_DIR, 'video', `bgm_${outputFile}`);
       const vol = bgmVolume || 0.15;
       const bgmArgs = [
@@ -801,20 +817,69 @@ app.post('/api/render/video', async (req, res) => {
       fs.renameSync(bgmOutput, outputPath);
     }
 
-    // SRT 자막 하드섭
+    // === 단계 3: 썸네일 인트로 prepend (3초, SRT 오프셋 위해 SRT보다 먼저) ===
+    let srtOffset = 0;
+    const THUMB_INTRO_SEC = 3;
+    if (showThumb) {
+      const thumbFiles = listFilesByMtime(path.join(OUTPUT_DIR, 'thumbnails'), f => f.endsWith('.png'));
+      if (thumbFiles.length > 0) {
+        const thumbPath = path.join(OUTPUT_DIR, 'thumbnails', thumbFiles[0]);
+        console.log(`[Render] 3. 썸네일 인트로 prepend: ${thumbFiles[0]}`);
+        const thumbVid = path.join(OUTPUT_DIR, 'video', `thumb_intro_${Date.now()}.mp4`);
+        const thumbOutput = path.join(OUTPUT_DIR, 'video', `withthumb_${outputFile}`);
+        await new Promise((resolve, reject) => {
+          execFile('ffmpeg', [
+            '-loop', '1', '-t', String(THUMB_INTRO_SEC), '-i', thumbPath,
+            '-f', 'lavfi', '-t', String(THUMB_INTRO_SEC), '-i', 'anullsrc=r=44100:cl=stereo',
+            '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,fps=30',
+            '-c:v', 'libx264', '-preset', 'medium', '-crf', '23', '-pix_fmt', 'yuv420p',
+            '-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-shortest',
+            '-y', thumbVid
+          ], { timeout: 60000 }, (error, stdout, stderr) => {
+            if (error) reject(new Error(`썸네일 인트로 생성 오류: ${error.message}\n${stderr}`));
+            else resolve();
+          });
+        });
+        // 메인 영상도 동일 코덱으로 재인코딩 후 concat (concat copy는 스트림 호환성 이슈 발생)
+        const concatList = path.join(OUTPUT_DIR, 'video', 'thumb_concat.txt');
+        fs.writeFileSync(concatList, `file '${thumbVid.replace(/\\/g, '/')}'\nfile '${outputPath.replace(/\\/g, '/')}'`);
+        await new Promise((resolve, reject) => {
+          execFile('ffmpeg', [
+            '-f', 'concat', '-safe', '0', '-i', concatList,
+            '-c:v', 'libx264', '-preset', 'medium', '-crf', '23', '-pix_fmt', 'yuv420p',
+            '-c:a', 'aac', '-b:a', '192k', '-ar', '44100',
+            '-movflags', '+faststart', '-y', thumbOutput
+          ], { timeout: 300000 }, (error, stdout, stderr) => {
+            if (error) reject(new Error(`썸네일 인트로 결합 오류: ${error.message}\n${stderr}`));
+            else resolve();
+          });
+        });
+        try { fs.unlinkSync(outputPath); fs.unlinkSync(thumbVid); fs.unlinkSync(concatList); } catch(e) {}
+        fs.renameSync(thumbOutput, outputPath);
+        srtOffset = THUMB_INTRO_SEC;  // 자막 타임라인을 3초 뒤로 밀어야 함
+      }
+    }
+
+    // === 단계 4: SRT 자막 burn (오디오 길이 기반 즉석 생성 + 썸네일 오프셋 적용) ===
     if (burnSrt) {
-      const srtFiles = fs.readdirSync(path.join(OUTPUT_DIR, 'srt')).filter(f => f.endsWith('.srt')).sort();
-      if (srtFiles.length > 0) {
-        const srtPath = path.join(OUTPUT_DIR, 'srt', srtFiles[srtFiles.length - 1]).replace(/\\/g, '/').replace(/:/g, '\\:');
+      const scriptText = project.script || '';
+      if (scriptText) {
+        console.log(`[Render] 4. SRT 자동 생성 (오프셋 ${srtOffset}초) → burn`);
+        const freshSrtContent = scriptToSrt(scriptText, audioDuration, srtOffset);
+        const freshSrtFile = `render_${Date.now()}.srt`;
+        const freshSrtPath = path.join(OUTPUT_DIR, 'srt', freshSrtFile);
+        fs.writeFileSync(freshSrtPath, freshSrtContent, 'utf-8');
+
+        const srtPathEscaped = freshSrtPath.replace(/\\/g, '/').replace(/:/g, '\\:');
         const srtOutput = path.join(OUTPUT_DIR, 'video', `srt_${outputFile}`);
         await new Promise((resolve, reject) => {
           execFile('ffmpeg', [
             '-i', outputPath,
-            '-vf', `subtitles='${srtPath}':force_style='FontSize=24,FontName=Malgun Gothic,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,Outline=2,Shadow=1,MarginV=30'`,
+            '-vf', `subtitles='${srtPathEscaped}':force_style='FontName=Malgun Gothic,FontSize=22,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=40'`,
             '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
             '-movflags', '+faststart', '-y', srtOutput
           ], { timeout: 600000 }, (error, stdout, stderr) => {
-            if (error) reject(new Error(`자막 삽입 오류: ${error.message}`));
+            if (error) reject(new Error(`자막 삽입 오류: ${error.message}\n${stderr}`));
             else resolve(stdout);
           });
         });
@@ -823,54 +888,21 @@ app.post('/api/render/video', async (req, res) => {
       }
     }
 
-    // 썸네일 인트로 (3초)
-    if (showThumb) {
-      const thumbFiles = fs.readdirSync(path.join(OUTPUT_DIR, 'thumbnails')).filter(f => f.endsWith('.png')).sort();
-      if (thumbFiles.length > 0) {
-        const thumbPath = path.join(OUTPUT_DIR, 'thumbnails', thumbFiles[thumbFiles.length - 1]);
-        const thumbVid = path.join(OUTPUT_DIR, 'video', `thumb_intro_${Date.now()}.mp4`);
-        const thumbOutput = path.join(OUTPUT_DIR, 'video', `withthumb_${outputFile}`);
-        await new Promise((resolve, reject) => {
-          execFile('ffmpeg', [
-            '-loop', '1', '-t', '3', '-i', thumbPath,
-            '-f', 'lavfi', '-t', '3', '-i', 'anullsrc=r=44100:cl=stereo',
-            '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2',
-            '-c:v', 'libx264', '-preset', 'medium', '-crf', '23', '-pix_fmt', 'yuv420p',
-            '-c:a', 'aac', '-b:a', '192k', '-shortest',
-            '-y', thumbVid
-          ], { timeout: 60000 }, (error) => {
-            if (error) reject(new Error(`썸네일 인트로 생성 오류: ${error.message}`));
-            else resolve();
-          });
-        });
-        const concatList = path.join(OUTPUT_DIR, 'video', 'thumb_concat.txt');
-        fs.writeFileSync(concatList, `file '${thumbVid.replace(/\\/g, '/')}'\nfile '${outputPath.replace(/\\/g, '/')}'`);
-        await new Promise((resolve, reject) => {
-          execFile('ffmpeg', [
-            '-f', 'concat', '-safe', '0', '-i', concatList,
-            '-c', 'copy', '-movflags', '+faststart', '-y', thumbOutput
-          ], { timeout: 120000 }, (error) => {
-            if (error) reject(new Error(`썸네일 인트로 결합 오류: ${error.message}`));
-            else resolve();
-          });
-        });
-        try { fs.unlinkSync(outputPath); fs.unlinkSync(thumbVid); fs.unlinkSync(concatList); } catch(e) {}
-        fs.renameSync(thumbOutput, outputPath);
-      }
-    }
-
-    // 인트로 텍스트 오버레이 (첫 5초)
+    // === 단계 5: 인트로 텍스트 오버레이 (첫 5초, 썸네일 있으면 3~8초) ===
     if (showIntro && project.topic) {
+      const introStart = srtOffset;
+      const introEnd = srtOffset + 5;
+      console.log(`[Render] 5. 인트로 텍스트 오버레이 (${introStart}~${introEnd}초)`);
       const introOutput = path.join(OUTPUT_DIR, 'video', `intro_${outputFile}`);
-      const introText = project.topic.replace(/'/g, "'\\''");
+      const introText = project.topic.replace(/'/g, "'\\''").replace(/:/g, '\\:');
       await new Promise((resolve, reject) => {
         execFile('ffmpeg', [
           '-i', outputPath,
-          '-vf', `drawtext=text='${introText}':fontsize=48:fontcolor=white:borderw=3:bordercolor=black:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,0,5)':fontfile='C\\:/Windows/Fonts/malgun.ttf'`,
+          '-vf', `drawtext=text='${introText}':fontsize=56:fontcolor=white:borderw=3:bordercolor=black:shadowcolor=black@0.6:shadowx=2:shadowy=2:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,${introStart},${introEnd})':fontfile='C\\:/Windows/Fonts/malgunbd.ttf'`,
           '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
           '-movflags', '+faststart', '-y', introOutput
-        ], { timeout: 300000 }, (error) => {
-          if (error) reject(new Error(`인트로 텍스트 오류: ${error.message}`));
+        ], { timeout: 300000 }, (error, stdout, stderr) => {
+          if (error) reject(new Error(`인트로 텍스트 오류: ${error.message}\n${stderr}`));
           else resolve();
         });
       });
