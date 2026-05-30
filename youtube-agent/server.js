@@ -622,23 +622,38 @@ app.post('/api/tts/full-script', async (req, res) => {
     const filename = `full_narration_${timestamp}.mp3`;
     const outputPath = path.join(OUTPUT_DIR, 'audio', filename);
 
-    // 청크 결합 — re-encode로 stream copy 오정렬 방지
+    // 청크 결합 — acrossfade로 청크 경계 click/pop 노이즈 완전 제거
     // 수정 이력:
-    //   - 이전 버그 1: afade=t=out:st=0 → 각 청크 처음 5ms를 페이드아웃시켜 클릭 잡음 발생
-    //   - 이전 버그 2: 250ms silence 패딩 → SRT가 silence 구간까지 텍스트에 분배해서 누적 드리프트
-    //   - 수정: silence 패딩 제거, afade out 제거, afade in 20ms만 유지
-    //   - TTS 자체 마침표/쉼표 pause 있어 자연스러움. 청크 경계 click은 aformat 재인코딩으로 해결.
+    //   - 버그 1 (해결): afade=t=out:st=0 → 청크 처음 5ms 페이드아웃 클릭 노이즈
+    //   - 버그 2 (해결): 250ms silence 패딩 → SRT 누적 드리프트
+    //   - 버그 3 (현재 수정): concat filter 단순 이어붙임 → 청크 경계 sample 불연속 click
+    //   - 신규 해결: acrossfade 80ms crossfade로 청크 경계 자연스럽게 mix
+    //              · ElevenLabs MP3는 sentence 경계 cut 후 80ms 무음에 가까움 → mix 자연스러움
+    //              · sample-level 불연속 제거 → click 완전 차단
+    //              · libmp3lame 192k → 320k 상향 (음성 narration 품질 안전 마진)
     const inputArgs = [];
     chunkFiles.forEach(f => { inputArgs.push('-i', path.join(OUTPUT_DIR, 'audio', f)); });
 
     const filterParts = [];
+    const N = chunkFiles.length;
+    // 1) aformat으로 샘플레이트/채널/포맷 통일 (재인코딩 도메인 동일화)
     chunkFiles.forEach((_, i) => {
-      // 샘플레이트/채널/포맷 통일 + 청크 시작 20ms 페이드인 (클릭 방지)
-      filterParts.push(`[${i}:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,afade=t=in:st=0:d=0.02[a${i}]`);
+      filterParts.push(`[${i}:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[a${i}]`);
     });
-    const concatInputs = chunkFiles.map((_, i) => `[a${i}]`);
-    const concatN = concatInputs.length;
-    filterParts.push(`${concatInputs.join('')}concat=n=${concatN}:v=0:a=1[out]`);
+    // 2) 순차적 acrossfade — 청크 N개를 (N-1)번 crossfade
+    //    [a0][a1]acrossfade=d=0.08[mix1];
+    //    [mix1][a2]acrossfade=d=0.08[mix2]; ...
+    //    마지막 출력은 [out]
+    if (N === 1) {
+      filterParts.push(`[a0]anull[out]`);
+    } else {
+      let prev = 'a0';
+      for (let i = 1; i < N; i++) {
+        const out = (i === N - 1) ? 'out' : `mix${i}`;
+        filterParts.push(`[${prev}][a${i}]acrossfade=d=0.08:c1=tri:c2=tri[${out}]`);
+        prev = out;
+      }
+    }
     const filterComplex = filterParts.join(';');
 
     await new Promise((resolve, reject) => {
@@ -646,15 +661,15 @@ app.post('/api/tts/full-script', async (req, res) => {
         ...inputArgs,
         '-filter_complex', filterComplex,
         '-map', '[out]',
-        '-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100',
+        '-c:a', 'libmp3lame', '-b:a', '320k', '-ar', '44100',
         '-y', outputPath
       ], { timeout: 180000 }, (error, stdout, stderr) => {
         if (error) {
           // Fallback: concat demuxer + re-encode (필터 실패 시)
-          console.error('[TTS concat filter 실패, fallback]', error.message);
+          console.error('[TTS acrossfade 실패, concat fallback]', error.message);
           execFile('ffmpeg', [
             '-f', 'concat', '-safe', '0', '-i', concatFile,
-            '-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100',
+            '-c:a', 'libmp3lame', '-b:a', '320k', '-ar', '44100',
             '-y', outputPath
           ], { timeout: 120000 }, (e2) => { if (e2) reject(e2); else resolve(); });
         } else resolve();
@@ -1694,8 +1709,10 @@ app.post('/api/thumbnail/generate', async (req, res) => {
     const mainText = (hookText || '').trim();
     const subTxt = (subText || '').trim();
 
-    // === 텍스트만 중앙 정렬 — 장식 요소 모두 제거, 텍스트 디자인 극대화 ===
-    const mainFontSize = pickFontSize(mainText, 140, 70);
+    // === 한국 뉴스 스타일 디자인 — 하단 좌측 정렬 + 빨간 단독 라벨 ===
+    // 참고: JTBC 뉴스룸, MBC 뉴스.zip 썸네일 디자인
+    // 핵심: 좌측 하단 정렬, 흰 굵은 텍스트 + 검정 외곽선, 빨간 [단독] 라벨
+    const mainFontSize = pickFontSize(mainText, 78, 50);
     const mainLines = wrapLines(mainText, mainFontSize);
 
     const subFontSize = subTxt ? pickFontSize(subTxt, 56, 36) : 0;
@@ -1703,66 +1720,61 @@ app.post('/api/thumbnail/generate', async (req, res) => {
 
     const escapeText = (s) => s.replace(/\\/g, '\\\\').replace(/'/g, "'\\''").replace(/:/g, '\\:').replace(/%/g, '\\%');
 
-    const mainLineH = Math.round(mainFontSize * 1.15);
-    const subLineH = Math.round(subFontSize * 1.3);
+    const mainLineH = Math.round(mainFontSize * 1.2);
+    const subLineH = Math.round(subFontSize * 1.25);
     const mainTotalH = mainLines.length * mainLineH;
     const subTotalH = subLines.length * subLineH;
 
-    // 메인+서브 통합 블록 세로 중앙 정렬
-    const gapBetween = subTxt ? 40 : 0;
-    const totalH = mainTotalH + gapBetween + subTotalH;
-    const startY = Math.round((720 - totalH) / 2);
+    // 좌측 여백 + 하단 정렬
+    const LEFT_MARGIN = 50;
+    const BOTTOM_MARGIN = 60;
+    const LABEL_H = 56; // 단독 라벨 높이
+    const LABEL_GAP = 18;
 
-    const COLORS = {
-      red:'#FF1744', orange:'#FF6D00', yellow:'#FFEB3B', green:'#00E676',
-      cyan:'#00E5FF', blue:'#2979FF', purple:'#D500F9', magenta:'#FF00C8',
-      pink:'#FF4081', gold:'#FFC400', white:'white', black:'black'
-    };
+    // 전체 텍스트 블록 (라벨 + 메인 + 서브) 하단 정렬
+    const subGap = subLines.length > 0 ? 20 : 0;
+    const labelGap = LABEL_GAP;
+    const blockH = LABEL_H + labelGap + mainTotalH + subGap + subTotalH;
+    const blockY = 720 - BOTTOM_MARGIN - blockH;
 
     const filters = [];
 
-    // 1) 비네트만 유지 (텍스트 가독성)
-    filters.push(`drawbox=x=0:y=0:w=1280:h=720:color=black@0.5:t=fill`);
+    // 1) 하단 그라데이션 비네트 (어두운 영역에 텍스트 — 가독성)
+    // 하단 60% 영역 어둡게
+    filters.push(`drawbox=x=0:y=300:w=1280:h=420:color=black@0.55:t=fill`);
 
-    // 2) 메인 텍스트 — 강화된 다층 효과
-    // 레이어 순서 (아래 → 위):
-    //   외광1 자홍 (-18,-18) 0.4
-    //   외광2 빨강 (-14,-14) 0.55
-    //   외광3 주황 (-10,-10) 0.7
-    //   외광4 노랑 (-6,-6) 0.85
-    //   외광5 시안 (+6,+6) 0.85
-    //   외광6 파랑 (+10,+10) 0.7
-    //   외광7 보라 (+14,+14) 0.55
-    //   외광8 마젠타 (+18,+18) 0.4
-    //   검정 그림자 (+22,+22) 0.95
-    //   본체 흰색 + 14px 검정 외곽선 + 자체 그림자
+    // 2) [단독] 빨간 라벨 박스 (좌측 상단 텍스트 블록 위)
+    const labelX = LEFT_MARGIN;
+    const labelY = blockY;
+    const labelText = '단독';
+    const labelFontSize = 36;
+    const labelEsc = escapeText(labelText);
+    // 빨간 박스 (사각형)
+    filters.push(`drawbox=x=${labelX}:y=${labelY}:w=140:h=${LABEL_H}:color=#E50914:t=fill`);
+    // 좌측 흰 라인 액센트
+    filters.push(`drawbox=x=${labelX}:y=${labelY}:w=6:h=${LABEL_H}:color=white:t=fill`);
+    // 라벨 텍스트 (흰색, 중앙)
+    filters.push(`drawtext=text='${labelEsc}':fontfile='${fontPath}':fontsize=${labelFontSize}:fontcolor=white:x=${labelX}+(140-text_w)/2:y=${labelY}+(${LABEL_H}-text_h)/2`);
+
+    // 3) 메인 텍스트 — 하단 좌측 정렬, 굵은 흰색 + 검정 외곽선
+    const mainStartY = blockY + LABEL_H + labelGap;
     mainLines.forEach((line, i) => {
-      const y = startY + i * mainLineH;
+      const y = mainStartY + i * mainLineH;
       const esc = escapeText(line);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.magenta}@0.4:x=(w-text_w)/2-18:y=${y}-18`);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.red}@0.55:x=(w-text_w)/2-14:y=${y}-14`);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.orange}@0.7:x=(w-text_w)/2-10:y=${y}-10`);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.yellow}@0.85:x=(w-text_w)/2-6:y=${y}-6`);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.cyan}@0.85:x=(w-text_w)/2+6:y=${y}+6`);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.blue}@0.7:x=(w-text_w)/2+10:y=${y}+10`);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.purple}@0.55:x=(w-text_w)/2+14:y=${y}+14`);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=${COLORS.magenta}@0.4:x=(w-text_w)/2+18:y=${y}+18`);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=black@0.95:x=(w-text_w)/2+22:y=${y}+22`);
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=white:borderw=14:bordercolor=black:shadowcolor=black@0.9:shadowx=5:shadowy=5:x=(w-text_w)/2:y=${y}`);
+      // 그림자 (단순 검정, 3px)
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=black@0.7:x=${LEFT_MARGIN}+4:y=${y}+4`);
+      // 본체 흰색 + 두꺼운 검정 외곽선
+      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=white:borderw=8:bordercolor=black:x=${LEFT_MARGIN}:y=${y}`);
     });
 
-    // 3) 서브 텍스트 — 멀티 글로우 (서브도 강화)
+    // 4) 서브 텍스트 — 하단 좌측, 약간 작은 흰색 + 검정 외곽선
     if (subLines.length > 0) {
+      const subStartY = mainStartY + mainTotalH + subGap;
       subLines.forEach((line, i) => {
-        const y = startY + mainTotalH + gapBetween + i * subLineH;
+        const y = subStartY + i * subLineH;
         const esc = escapeText(line);
-        // 4방향 색 글로우
-        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=${COLORS.pink}@0.7:x=(w-text_w)/2-5:y=${y}`);
-        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=${COLORS.cyan}@0.7:x=(w-text_w)/2+5:y=${y}`);
-        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=${COLORS.yellow}@0.6:x=(w-text_w)/2:y=${y}-4`);
-        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=${COLORS.gold}@0.6:x=(w-text_w)/2:y=${y}+4`);
-        // 본체 흰색 + 두꺼운 검정 외곽선 + 그림자
-        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=white:borderw=6:bordercolor=black:shadowcolor=black@0.85:shadowx=4:shadowy=4:x=(w-text_w)/2:y=${y}`);
+        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=black@0.6:x=${LEFT_MARGIN}+3:y=${y}+3`);
+        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=white:borderw=6:bordercolor=black:x=${LEFT_MARGIN}:y=${y}`);
       });
     }
 
