@@ -49,22 +49,9 @@
   .han-text { font-family:'Noto Serif SC','Noto Serif KR',serif; letter-spacing:.06em; }
   .serif    { font-family:'Noto Serif KR',serif; }
 
-  /* ===== 카드 뒤집기 3D 애니메이션 ===== */
-  .flip-card { perspective:1600px; }
-  .flip-inner {
-    position:relative; width:100%; min-height:340px;
-    transition:transform .6s cubic-bezier(.4,.2,.2,1);
-    transform-style:preserve-3d;
-  }
-  .flip-card.flipped .flip-inner { transform:rotateY(180deg); }
-  .flip-face {
-    position:absolute; inset:0; backface-visibility:hidden;
-    -webkit-backface-visibility:hidden;
-    border-radius:1rem; overflow:hidden;
-  }
-  .flip-back { transform:rotateY(180deg); }
-  /* 모바일에서 카드 높이 자동 (절대배치 해제) */
-  @media (max-width:768px){ .flip-inner{ min-height:420px; } }
+  /* ===== 해석 패널 펼침 애니메이션 ===== */
+  @keyframes slideDown { from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);} }
+  #answerPanel:not([hidden]){ animation:slideDown .3s ease; }
 
   /* 스크롤바 */
   ::-webkit-scrollbar{ width:8px; height:8px; }
@@ -201,59 +188,58 @@
           </div>
 
           <!-- 플래시카드 -->
-          <div id="flipCard" class="flip-card cursor-pointer">
-            <div class="flip-inner shadow-xl">
-              <!-- 앞면 -->
-              <div class="flip-face bg-white border border-gold/30 p-6 flex flex-col">
-                <div class="flex justify-between items-start">
-                  <span id="fcWork" class="text-sm font-bold text-brown"></span>
-                  <div class="flex gap-1.5 items-center">
-                    <span id="fcLen" class="text-[11px] px-2 py-0.5 rounded-full bg-navy/10 text-navy"></span>
-                    <span id="fcDiff" class="text-[11px] px-2 py-0.5 rounded-full"></span>
-                    <span id="fcStatus" class="text-[11px] px-2 py-0.5 rounded-full"></span>
-                  </div>
-                </div>
-                <div class="flex-1 flex flex-col items-center justify-center text-center py-6">
-                  <p id="fcOriginal" class="han-text text-3xl sm:text-4xl leading-relaxed text-ink mb-3"></p>
-                  <p id="fcReading" class="serif text-base text-navy/70"></p>
-                </div>
-                <div id="fcKeywords" class="flex flex-wrap gap-2 justify-center mb-2"></div>
-                <p class="text-center text-xs text-ink/40"><i class="fa-solid fa-hand-pointer"></i> 클릭하여 해석 보기</p>
-              </div>
-              <!-- 뒷면 -->
-              <div class="flip-face flip-back bg-paper border border-navy/20 p-5 overflow-y-auto">
-                <div class="space-y-3 text-sm">
-                  <div class="bg-white rounded-lg p-3 border-l-4 border-navy">
-                    <p class="text-[11px] font-bold text-navy/50 mb-1">현대어 풀이</p>
-                    <p id="fcNatural" class="serif text-base"></p>
-                  </div>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div class="bg-white rounded-lg p-3 border-l-4 border-brown">
-                      <p class="text-[11px] font-bold text-brown/70 mb-1">직역</p>
-                      <p id="fcLiteral" class="serif"></p>
-                    </div>
-                    <div class="bg-white rounded-lg p-3 border-l-4 border-gold">
-                      <p class="text-[11px] font-bold text-gold mb-1">배경 지식</p>
-                      <p id="fcBackground" class="text-xs"></p>
-                    </div>
-                  </div>
-                  <div class="bg-white rounded-lg p-3 border-l-4 border-correct">
-                    <p class="text-[11px] font-bold text-correct mb-1">핵심 어휘</p>
-                    <div id="fcKwList" class="space-y-1"></div>
-                  </div>
-                  <div class="bg-white rounded-lg p-3 border-l-4 border-review">
-                    <p class="text-[11px] font-bold text-review mb-1">문법 포인트</p>
-                    <div id="fcGrammar" class="space-y-1"></div>
-                  </div>
-                  <div class="bg-white rounded-lg p-3 border-l-4 border-ink/40">
-                    <p class="text-[11px] font-bold text-ink/50 mb-1">문장 구조</p>
-                    <p id="fcStructure" class="text-xs"></p>
-                  </div>
-                  <button id="fcQuizBtn" class="w-full bg-navy text-white py-2 rounded-lg font-bold text-sm hover:bg-navy/90">
-                    <i class="fa-solid fa-circle-question"></i> 관련 퀴즈 풀기
-                  </button>
+          <!-- 학습 카드(앞면만) — 클릭 시 아래 해석 패널이 펼쳐짐 -->
+          <div id="flipCard" class="cursor-pointer">
+            <div class="bg-white border border-gold/30 rounded-2xl shadow-xl p-6 flex flex-col min-h-[300px]">
+              <div class="flex justify-between items-start">
+                <span id="fcWork" class="text-sm font-bold text-brown"></span>
+                <div class="flex gap-1.5 items-center">
+                  <span id="fcLen" class="text-[11px] px-2 py-0.5 rounded-full bg-navy/10 text-navy"></span>
+                  <span id="fcDiff" class="text-[11px] px-2 py-0.5 rounded-full"></span>
+                  <span id="fcStatus" class="text-[11px] px-2 py-0.5 rounded-full"></span>
                 </div>
               </div>
+              <div class="flex-1 flex flex-col items-center justify-center text-center py-6">
+                <p id="fcOriginal" class="han-text text-3xl sm:text-4xl leading-relaxed text-ink mb-3"></p>
+                <p id="fcReading" class="serif text-base text-navy/70"></p>
+              </div>
+              <div id="fcKeywords" class="flex flex-wrap gap-2 justify-center mb-2"></div>
+              <p id="fcHint" class="text-center text-xs text-ink/40"><i class="fa-solid fa-hand-pointer"></i> 클릭하여 해석 보기</p>
+            </div>
+          </div>
+
+          <!-- 해석 패널 — 카드 아래에 펼쳐짐 -->
+          <div id="answerPanel" class="bg-paper border border-navy/20 rounded-2xl p-5 mt-3" hidden>
+            <div class="space-y-3 text-sm">
+              <div class="bg-white rounded-lg p-3 border-l-4 border-navy">
+                <p class="text-[11px] font-bold text-navy/50 mb-1">현대어 풀이</p>
+                <p id="fcNatural" class="serif text-base"></p>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div class="bg-white rounded-lg p-3 border-l-4 border-brown">
+                  <p class="text-[11px] font-bold text-brown/70 mb-1">직역</p>
+                  <p id="fcLiteral" class="serif"></p>
+                </div>
+                <div class="bg-white rounded-lg p-3 border-l-4 border-gold">
+                  <p class="text-[11px] font-bold text-gold mb-1">배경 지식</p>
+                  <p id="fcBackground" class="text-xs"></p>
+                </div>
+              </div>
+              <div class="bg-white rounded-lg p-3 border-l-4 border-correct">
+                <p class="text-[11px] font-bold text-correct mb-1">핵심 어휘</p>
+                <div id="fcKwList" class="space-y-1"></div>
+              </div>
+              <div class="bg-white rounded-lg p-3 border-l-4 border-review">
+                <p class="text-[11px] font-bold text-review mb-1">문법 포인트</p>
+                <div id="fcGrammar" class="space-y-1"></div>
+              </div>
+              <div class="bg-white rounded-lg p-3 border-l-4 border-ink/40">
+                <p class="text-[11px] font-bold text-ink/50 mb-1">문장 구조</p>
+                <p id="fcStructure" class="text-xs"></p>
+              </div>
+              <button id="fcQuizBtn" class="w-full bg-navy text-white py-2 rounded-lg font-bold text-sm hover:bg-navy/90">
+                <i class="fa-solid fa-circle-question"></i> 관련 퀴즈 풀기
+              </button>
             </div>
           </div>
 
@@ -932,8 +918,9 @@ function renderCard(){
     `<div class="text-xs"><b class="text-review">${g.point}</b>: ${g.explanation}${g.example?`<br/><span class="text-ink/50 han-text">예) ${g.example}</span>`:""}</div>`).join("");
   $("#fcStructure").innerHTML=structText(s.structure);
 
-  // 카드 초기화(앞면)
-  $("#flipCard").classList.remove("flipped");
+  // 카드 초기화: 해석 패널 접기, 안내문 복원
+  $("#answerPanel").hidden = true;
+  if($("#fcHint")) $("#fcHint").innerHTML = '<i class="fa-solid fa-hand-pointer"></i> 클릭하여 해석 보기';
 
   // 도구 버튼 상태
   $("#btnBookmark").classList.toggle("active", state.bookmarks.includes(s.id));
@@ -1565,8 +1552,8 @@ function openSidebarMobile(){ $("#sidebar").classList.add("open"); $("#sidebarBa
    14. 이벤트 바인딩
    ============================================================ */
 function bindEvents(){
-  // 카드 뒤집기
-  $("#flipCard").onclick=(e)=>{ if(e.target.closest("button")) return; $("#flipCard").classList.toggle("flipped"); };
+  // 카드 클릭 → 해석 패널 펼치기/접기(카드 아래)
+  $("#flipCard").onclick=(e)=>{ if(e.target.closest("button")) return; toggleAnswer(); };
   $("#fcQuizBtn").onclick=(e)=>{ e.stopPropagation(); const s=currentSentence(); if(s) startQuiz([s]); };
 
   // 하단 도구
@@ -1615,8 +1602,19 @@ function bindEvents(){
     if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA") return;
     if(e.key==="ArrowLeft") $("#btnPrev").click();
     if(e.key==="ArrowRight") $("#btnNext").click();
-    if(e.key===" "){ e.preventDefault(); $("#flipCard").classList.toggle("flipped"); }
+    if(e.key===" "){ e.preventDefault(); toggleAnswer(); }
   });
+}
+
+/* 해석 패널 펼치기/접기 */
+function toggleAnswer(){
+  const panel=$("#answerPanel");
+  if(!panel) return;
+  panel.hidden = !panel.hidden;
+  if($("#fcHint")) $("#fcHint").innerHTML = panel.hidden
+    ? '<i class="fa-solid fa-hand-pointer"></i> 클릭하여 해석 보기'
+    : '<i class="fa-solid fa-chevron-up"></i> 클릭하여 해석 접기';
+  if(!panel.hidden) panel.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
 /* ============================================================
