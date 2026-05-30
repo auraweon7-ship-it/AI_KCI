@@ -91,6 +91,97 @@ function structureOf(chars){
   };
 }
 
+/* ============================================================
+   『공식으로 읽는 논어명구』(박정원) 분석 틀 자동 적용
+   - 문장성분 표기: S(주어)/V(술어)/O(목적어)/E(생략, empty)
+   - 사건의미: 변화결과(BECOME)/상태(BE)/활동(DO)
+   - 논리관계: 순접/역접 (접속사 기반)
+   - 백화(白话): 규칙 기반 현대중국어 근사 풀이
+   ============================================================ */
+
+// 동사/술어 후보 판정
+function isVerb(ch){ const m=meaningOf(ch); return m && (/다$/.test(m) && !/[가-힣]+다$/.test('명사')) ; }
+function isPredicate(ch){ const m=meaningOf(ch); return m && /(다|하다|되다|이다)$/.test(m); }
+
+// 허사(생략·표기 제외 대상)
+const PARTICLES = new Set(['之','而','則','於','于','以','也','矣','乎','哉','焉','者','其','且','兮','夫','蓋','故']);
+// 부정·금지 부사(술어 후보에서 제외 — 뒤의 본동사가 V)
+const NEGATIVES = new Set(['不','非','無','莫','勿','未','弗','否']);
+
+// 한 절(comma 단위)에 S/V/O/E 태그를 부여하여 표기 문자열 생성
+function tagClause(clause){
+  const chars=[...clause].filter(isHan);
+  if(!chars.length) return {marked:'', s:'-', v:'-', o:'-', hasE:false};
+  // 술어(V): 동사류 중 가장 앞쪽(부정사 제외, 한문 SVO 기본 어순)
+  let vIdx=-1;
+  for(let i=0;i<chars.length;i++){ if(isPredicate(chars[i]) && !NEGATIVES.has(chars[i])){ vIdx=i; break; } }
+  if(vIdx<0){ // 동사 없으면 마지막 실사를 서술(계사 생략 판단)
+    for(let i=chars.length-1;i>=0;i--){ if(!PARTICLES.has(chars[i]) && !NEGATIVES.has(chars[i])){ vIdx=i; break; } }
+  }
+  // 주어(S): V 앞의 첫 실사(부정사·허사 제외)
+  let sIdx=-1;
+  for(let i=0;i<vIdx;i++){ if(!PARTICLES.has(chars[i]) && !NEGATIVES.has(chars[i])){ sIdx=i; break; } }
+  // 목적어(O): V 뒤의 첫 실사(부정사·허사 제외)
+  let oIdx=-1;
+  for(let i=vIdx+1;i<chars.length;i++){ if(!PARTICLES.has(chars[i]) && !NEGATIVES.has(chars[i])){ oIdx=i; break; } }
+  // 표기 문자열: 각 글자 뒤에 성분 태그
+  const tag={}; if(sIdx>=0)tag[sIdx]='S'; if(vIdx>=0)tag[vIdx]='V'; if(oIdx>=0)tag[oIdx]='O';
+  let marked=''; let ci=0;
+  for(const ch of clause){
+    marked+=ch;
+    if(isHan(ch)){ if(tag[ci]) marked+=tag[ci]; ci++; }
+  }
+  // 생략 주어(E): 주어가 없으면 E 표시(앞에)
+  const hasE = sIdx<0;
+  if(hasE) marked = 'E'+marked;
+  return { marked, s: sIdx>=0?chars[sIdx]:'(E·생략)', v: vIdx>=0?chars[vIdx]:'-', o: oIdx>=0?chars[oIdx]:'-', hasE };
+}
+
+// 문장 전체(절 단위로) 성분 표기
+function syntaxMarkup(original){
+  const clauses = original.split(/[,，]/).map(c=>c.trim()).filter(Boolean);
+  const parts = clauses.map(tagClause);
+  return {
+    marked: parts.map(p=>p.marked).join(' , '),
+    clauses: parts,
+  };
+}
+
+// 사건의미 판정: 술어 동사의 의미로 변화결과/상태/활동 구분
+function eventMeaning(predMeaning){
+  if(!predMeaning) return '상태';
+  if(/(되다|지다|이루다|나다|생기다|변하다|오다|가다|이르다|죽다|살다|망하다|일어나다)/.test(predMeaning)) return '변화결과';
+  if(/(있다|없다|같다|아니다|이다|어질다|밝다|높다|크다|많다|드물다|곧다|바르다)/.test(predMeaning)) return '상태';
+  return '활동';
+}
+
+// 논리관계: 접속사로 절 간 순접/역접 판정
+function logicRelation(original){
+  if(/而/.test(original)){
+    // 而가 대비(부정 포함)면 역접 경향
+    if(/不|非|無|莫/.test(original)) return '역접';
+    return '순접';
+  }
+  if(/則/.test(original)) return '조건';
+  if(/,|，/.test(original)) return '순접';
+  return '-';
+}
+
+// 백화(白话) 현대중국어 근사 풀이: 핵심 글자 매핑 기반
+const BAIHUA = {
+  "學":"学习","習":"温习","時":"经常","說":"高兴","樂":"快乐","知":"了解","仁":"仁德","德":"品德",
+  "君子":"君子","小人":"小人","朋":"朋友","友":"朋友","遠":"远","近":"近","來":"来","有":"有","無":"没有",
+  "不":"不","必":"一定","孤":"孤单","鄰":"邻居","善":"善良","惡":"恶","過":"过错","改":"改正","學者":"学习的人",
+  "父":"父亲","母":"母亲","生":"生养","身":"身体","孝":"孝顺","禮":"礼","信":"诚信","愛":"爱","人":"别人",
+};
+function toBaihua(original, natural){
+  // 1차: 사전 매핑이 가능한 글자를 치환, 나머지는 원문 유지하되 자연어 풀이를 보조로
+  // 규칙 근사이므로 한국어 풀이를 중국어 어순 힌트와 함께 제공
+  let hint = original;
+  for(const [k,v] of Object.entries(BAIHUA)){ hint = hint.split(k).join(v); }
+  return hint; // 근사치(참고용)
+}
+
 // 퀴즈 2개 자동 생성: ①현대어 풀이 선택 ②핵심 어휘 뜻 맞히기
 function quizOf(sent, allNaturals, allMeanings){
   const q = [];
@@ -200,6 +291,10 @@ for(const [workKey, arr] of Object.entries(groups)){
     const chars = [...p.original].filter(isHan);
     const length = chars.length; // 문장 길이(한자 수)
     const keywords = keywordsOf(chars);
+    const struct = structureOf(chars);
+    const syn = syntaxMarkup(p.original);          // S/V/O/E 성분 표기
+    const evt = eventMeaning(meaningOf(struct.predicate)); // 사건의미
+    const logic = logicRelation(p.original);       // 논리관계
     const sentObj = {
       id: 'g'+sentCounter,
       original: p.original,
@@ -207,11 +302,19 @@ for(const [workKey, arr] of Object.entries(groups)){
       length,
       literal_translation: p.natural,           // 큐레이션 풀이를 직역에도 활용
       natural_translation: p.natural,
+      baihua: toBaihua(p.original, p.natural),   // 백화(白话) 근사 풀이
       keywords,
       grammar: grammarOf(chars),
-      structure: structureOf(chars),
+      structure: struct,
+      // 『공식으로 읽는 논어명구』 분석 틀
+      analysis: {
+        markup: syn.marked,                      // 예: "中庸S 之 爲V 德O 也"
+        event: evt,                              // 변화결과/상태/활동
+        logic: logic,                            // 순접/역접/조건
+        clauses: syn.clauses.map(c=>({ s:c.s, v:c.v, o:c.o, hasE:c.hasE })),
+      },
       background: isFullText ? `${TITLE[workKey]||workKey}의 한 부분이다.` : `${source}에 나오는 문장이다.`,
-      exam_point: keywords[0] ? `핵심 어휘 ‘${keywords[0].word}’의 뜻과 문장 구조 파악` : '문장 구조 파악',
+      exam_point: keywords[0] ? `핵심 어휘 ‘${keywords[0].word}’의 뜻과 문장 구조 파악(${evt})` : '문장 구조 파악',
       source: source,
     };
     return sentObj;

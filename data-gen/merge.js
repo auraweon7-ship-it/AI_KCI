@@ -32,10 +32,17 @@ const out = [];
 for(const file of ['/tmp/gen/corpus.txt','/tmp/gen/corpus2.txt']){
   const secs = loadSections(file);
   for(const sec of secs){
-    for(let i=0;i<sec.length;i+=2){
-      const a = sec[i].split('|');
-      if(i+1 < sec.length){
-        const b = sec[i+1].split('|');
+    // @로 시작하는 줄 = 이미 완성된 문장(병합하지 않고 그대로 사용)
+    const ready = sec.filter(l=>l.startsWith('@'));
+    const rest  = sec.filter(l=>!l.startsWith('@'));
+    ready.forEach(l=>{
+      const a=l.slice(1).split('|');   // @ 제거
+      out.push(a.concat(a[2]).join('|'));
+    });
+    for(let i=0;i<rest.length;i+=2){
+      const a = rest[i].split('|');
+      if(i+1 < rest.length){
+        const b = rest[i+1].split('|');
         // 같은 출전이면 병합, 다르면 단독 두 개
         if(a[2]===b[2]){
           const original = a[0] + ', ' + b[0];        // 원문: A, B
