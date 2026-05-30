@@ -665,7 +665,7 @@ app.post('/api/tts/full-script', async (req, res) => {
       return new Promise((resolve, reject) => {
         execFile('ffmpeg', [
           '-i', srcPath,
-          '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11,dynaudnorm=f=200:g=15',
+          '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11',
           '-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100',
           '-y', dstPath
         ], { timeout: 120000 }, (error, stdout, stderr) => {
@@ -770,7 +770,7 @@ app.post('/api/tts/full-script', async (req, res) => {
       mixOut = 'mixed';
     }
     // 3) 정규화 — loudnorm -16 LUFS + dynaudnorm 압축 (YouTube 권장 라우드니스)
-    filterParts.push(`[${mixOut}]loudnorm=I=-16:TP=-1.5:LRA=11,dynaudnorm=f=200:g=15[out]`);
+    filterParts.push(`[${mixOut}]loudnorm=I=-16:TP=-1.5:LRA=11[out]`);
     const filterComplex = filterParts.join(';');
 
     await new Promise((resolve, reject) => {
@@ -1303,7 +1303,7 @@ app.post('/api/render/video', async (req, res) => {
     // 영상 합성 시 narration audio normalize (보장책)
     // TTS 단계에서 정규화했지만 영상 합성 단계에서도 한 번 더 보장 — narration 명확히 들림
     // -16 LUFS + dynaudnorm 압축 (작은 부분 ↑)
-    const audioNormFilter = `[__A__:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,loudnorm=I=-16:TP=-1.5:LRA=11,dynaudnorm=f=200:g=15[aout]`;
+    const audioNormFilter = `[__A__:a]aresample=44100,pan=stereo|c0=c0|c1=c0,loudnorm=I=-16:TP=-1.5:LRA=11[aout]`;
 
     if (useVideo) {
       // === 비디오 클립 모드 ===
@@ -1389,7 +1389,7 @@ app.post('/api/render/video', async (req, res) => {
       ffmpegArgs = [
         '-f', 'concat', '-safe', '0', '-i', concatFile,
         '-i', audioPath,
-        '-filter_complex', `[0:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,zoompan=z='min(zoom+0.0008,1.25)':d=${Math.round(durationPerImage*30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=30[vout];[1:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,loudnorm=I=-16:TP=-1.5:LRA=11,dynaudnorm=f=200:g=15[aout]`,
+        '-filter_complex', `[0:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,zoompan=z='min(zoom+0.0008,1.25)':d=${Math.round(durationPerImage*30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=30[vout];[1:a]aresample=44100,pan=stereo|c0=c0|c1=c0,loudnorm=I=-16:TP=-1.5:LRA=11[aout]`,
         '-map', '[vout]', '-map', '[aout]',
         '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
         '-c:a', 'aac', '-b:a', '192k',
