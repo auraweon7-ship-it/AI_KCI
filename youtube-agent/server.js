@@ -1372,7 +1372,7 @@ app.post('/api/render/video', async (req, res) => {
         await new Promise((resolve, reject) => {
           execFile('ffmpeg', [
             '-i', outputPath,
-            '-vf', `subtitles='${srtPathEscaped}':force_style='FontName=Malgun Gothic,Fontname=Malgun Gothic,FontSize=16,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=40,Bold=1,Italic=0,Alignment=2'`,
+            '-vf', `subtitles='${srtPathEscaped}':fontsdir='${path.join(__dirname, 'assets', 'fonts').replace(/\\/g, '/').replace(/:/g, '\\:')}':force_style='FontName=KoPubWorld Dotum Bold,Fontname=KoPubWorld Dotum Bold,FontSize=16,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=40,Bold=1,Italic=0,Alignment=2'`,
             '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
             '-movflags', '+faststart', '-y', srtOutput
           ], { timeout: 600000 }, (error, stdout, stderr) => {
@@ -1395,7 +1395,7 @@ app.post('/api/render/video', async (req, res) => {
       await new Promise((resolve, reject) => {
         execFile('ffmpeg', [
           '-i', outputPath,
-          '-vf', `drawtext=text='${introText}':fontsize=56:fontcolor=white:borderw=3:bordercolor=black:shadowcolor=black@0.6:shadowx=2:shadowy=2:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,${introStart},${introEnd})':fontfile='C\\:/Windows/Fonts/malgunbd.ttf'`,
+          '-vf', `drawtext=text='${introText}':fontsize=56:fontcolor=white:borderw=3:bordercolor=black:shadowcolor=black@0.6:shadowx=2:shadowy=2:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,${introStart},${introEnd})':fontfile='${path.join(__dirname, 'assets', 'fonts', 'KoPubWorldDotumBold.ttf').replace(/\\/g, '/').replace(/:/g, '\\\\:')}'`,
           '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
           '-movflags', '+faststart', '-y', introOutput
         ], { timeout: 300000 }, (error, stdout, stderr) => {
@@ -1664,7 +1664,8 @@ app.post('/api/thumbnail/generate', async (req, res) => {
     // 2단계: FFmpeg drawtext로 한글 텍스트 오버레이 — 화면 안에 들어가도록 동적 사이즈/줄바꿈
     const filename = `thumbnail_${Date.now()}.png`;
     const filepath = path.join(OUTPUT_DIR, 'thumbnails', filename);
-    const fontPath = 'C\\:/Windows/Fonts/malgunbd.ttf';
+    // 커스텀 폰트: KoPubWorld Dotum Bold (한국어 두꺼운 고딕)
+    const fontPath = path.join(__dirname, 'assets', 'fonts', 'KoPubWorldDotumBold.ttf').replace(/\\/g, '/').replace(/:/g, '\\:');
 
     // 한글 1글자 = 약 fontSize px 폭 차지 (고딕 굵게)
     // 가용 폭 1280 - 좌우 여백 80 × 2 = 1120
