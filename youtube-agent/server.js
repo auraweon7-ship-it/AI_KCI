@@ -580,6 +580,10 @@ app.post('/api/tts/full-script', async (req, res) => {
       });
       if (!response.ok) {
         const err = await response.text();
+        // quota 부족 시 명확한 메시지
+        if (response.status === 401 || /quota|credit/i.test(err)) {
+          throw new Error(`ElevenLabs 크레딧 부족: ${err}. 충전: https://elevenlabs.io/app/subscription`);
+        }
         throw new Error(`ElevenLabs 오류: ${response.status} - ${err}`);
       }
       return Buffer.from(await response.arrayBuffer());
@@ -594,6 +598,12 @@ app.post('/api/tts/full-script', async (req, res) => {
       });
       if (!response.ok) {
         const err = await response.text();
+        // quota 부족 or 권한 부족 시 일반 TTS로 fallback
+        if (response.status === 401 || response.status === 402 || /quota|credit/i.test(err)) {
+          console.warn(`[TTS] with-timestamps 실패 (${response.status}), 일반 TTS로 fallback`);
+          const audio = await generateTTSChunk(text);
+          return { audio, alignment: null, fallback: true };
+        }
         throw new Error(`ElevenLabs with-timestamps 오류: ${response.status} - ${err}`);
       }
       const data = await response.json();
