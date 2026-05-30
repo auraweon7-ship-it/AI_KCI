@@ -1233,7 +1233,7 @@ function renderWordbook(){
 const BADGES=[
   {id:"first_sent", name:"첫 문장 학습", icon:"fa-seedling", test:()=>state.completed.length>=1},
   {id:"first_work", name:"첫 작품 완료", icon:"fa-trophy", test:()=>allWorks().some(w=>w.sentences.every(s=>state.completed.includes(s.id)))},
-  {id:"sent10", name:"10문장 학습", icon:"fa-10", test:()=>state.completed.length>=10},
+  {id:"sent10", name:"10문장 학습", icon:"fa-list-ol", test:()=>state.completed.length>=10},
   {id:"sent50", name:"50문장 학습", icon:"fa-fire", test:()=>state.completed.length>=50},
   {id:"sent100", name:"100문장 학습", icon:"fa-crown", test:()=>state.completed.length>=100},
   {id:"word100", name:"어휘 100개 저장", icon:"fa-book", test:()=>totalWords()>=100},
