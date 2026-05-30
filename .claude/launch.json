@@ -22,6 +22,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["youtube-agent/server.js"],
       "port": 3003
+    },
+    {
+      "name": "dingdong-dashboard",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["serve-dashboard.js"],
+      "port": 3099
     }
   ]
 }
