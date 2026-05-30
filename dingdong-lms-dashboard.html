@@ -3,9 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dingdong LMS - 중국어 교육 콘텐츠 제작 대시보드</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
+<title>Dingdong LMS - 중국어 교육 콘텐츠 제작</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -13,994 +11,814 @@
   --accent:#DB7F8E;--accent-hover:#c96e7d;--accent-light:#FFDBDA;
   --mid:#EBCCC5;--bg:#FFF9F9;--card:#fff;--text:#604D53;--text-light:#8a7a7f;
   --border:#D5C5C8;--success:#4CAF50;--info:#2196F3;--warning:#FF9800;--error:#E53935;
-  --radius:20px;--radius-sm:12px;
-  --shadow:0 2px 16px rgba(96,77,83,.06);--shadow-hover:0 8px 32px rgba(219,127,142,.12);
-  --glass:rgba(255,255,255,.7);--glass-border:rgba(213,197,200,.4);
+  --radius:16px;--radius-sm:10px;
+  --shadow:0 2px 12px rgba(96,77,83,.06);--shadow-hover:0 6px 24px rgba(219,127,142,.12);
 }
-body{
-  font-family:'Noto Sans KR','Noto Sans SC',-apple-system,BlinkMacSystemFont,sans-serif;
-  background:linear-gradient(135deg,#FFF9F9 0%,#FFF0F0 30%,#F8E8EA 60%,#F0E0E4 100%);
-  color:var(--text);line-height:1.7;min-height:100vh;
-}
-.topbar{
-  background:rgba(255,255,255,.85);backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--glass-border);
-  position:sticky;top:0;z-index:100;padding:0 2rem;
-}
-.topbar-inner{
-  max-width:1400px;margin:0 auto;display:flex;align-items:center;
-  justify-content:space-between;height:64px;
-}
-.logo{display:flex;align-items:center;gap:.75rem;font-weight:700;font-size:1.2rem;color:var(--text)}
-.logo-icon{
-  width:40px;height:40px;background:linear-gradient(135deg,var(--accent),var(--accent-light));
-  border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;
-}
-.nav{display:flex;gap:.5rem}
-.nav a{
-  padding:.45rem 1rem;border-radius:50px;font-size:.82rem;font-weight:600;
-  color:var(--text-light);text-decoration:none;transition:all .2s;
-}
-.nav a:hover,.nav a.active{background:var(--accent-light);color:var(--accent)}
-.container{max-width:1400px;margin:0 auto;padding:2rem}
+body{font-family:'Noto Sans KR','Noto Sans SC',sans-serif;background:var(--bg);color:var(--text);line-height:1.6}
+.topbar{background:rgba(255,255,255,.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;padding:0 1.5rem}
+.topbar-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:56px}
+.logo{display:flex;align-items:center;gap:.6rem;font-weight:700;font-size:1.1rem;color:var(--text);cursor:pointer}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--accent),var(--accent-light));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}
+.nav{display:flex;gap:.25rem}
+.nav button{padding:.4rem .85rem;border-radius:50px;font-size:.8rem;font-weight:600;color:var(--text-light);background:none;border:none;cursor:pointer;transition:all .2s;font-family:inherit}
+.nav button:hover,.nav button.active{background:var(--accent-light);color:var(--accent)}
+.container{max-width:1200px;margin:0 auto;padding:1.5rem}
+.page{display:none}.page.active{display:block}
 
-/* Hero */
-.hero{
-  background:linear-gradient(135deg,rgba(219,127,142,.15),rgba(255,219,218,.3));
-  border-radius:var(--radius);padding:2.5rem 3rem;margin-bottom:2rem;
-  display:flex;align-items:center;justify-content:space-between;gap:2rem;
-  border:1px solid var(--glass-border);position:relative;overflow:hidden;
-}
-.hero::before{
-  content:'';position:absolute;right:-60px;top:-60px;width:200px;height:200px;
-  background:radial-gradient(circle,rgba(219,127,142,.2),transparent 70%);
-}
-.hero-text h1{font-size:1.8rem;font-weight:700;margin-bottom:.5rem}
-.hero-text p{font-size:.95rem;color:var(--text-light);max-width:500px}
-.hero-panda{font-size:5rem;position:relative;z-index:1;animation:bounce 2s ease-in-out infinite}
-@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+/* Cards & Forms */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;box-shadow:var(--shadow);margin-bottom:1.25rem}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.card-title{font-size:1.05rem;font-weight:700}
+.form-group{margin-bottom:1rem}
+.form-group label{display:block;font-size:.82rem;font-weight:600;margin-bottom:.3rem}
+.input,.textarea,.select{width:100%;padding:.6rem .85rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:.88rem;font-family:inherit;color:var(--text);background:#fff;transition:border-color .2s}
+.input:focus,.textarea:focus,.select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(219,127,142,.1)}
+.textarea{resize:vertical;min-height:100px}
+.help{font-size:.75rem;color:var(--text-light);margin-top:.25rem}
 
-/* Stats Row */
-.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:2rem}
-.stat-card{
-  background:var(--card);border:1px solid var(--glass-border);border-radius:var(--radius-sm);
-  padding:1.25rem 1.5rem;display:flex;align-items:center;gap:1rem;
-  box-shadow:var(--shadow);transition:all .25s;
-}
-.stat-card:hover{box-shadow:var(--shadow-hover);transform:translateY(-2px)}
-.stat-icon{
-  width:48px;height:48px;border-radius:14px;display:flex;align-items:center;
-  justify-content:center;font-size:1.5rem;flex-shrink:0;
-}
-.stat-number{font-size:1.6rem;font-weight:700;color:var(--accent);line-height:1.2}
-.stat-label{font-size:.78rem;color:var(--text-light)}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:.35rem;padding:.5rem 1.15rem;border-radius:50px;font-weight:600;font-size:.82rem;font-family:inherit;cursor:pointer;border:2px solid transparent;transition:all .2s;text-decoration:none}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent-hover);transform:translateY(-1px)}
+.btn-secondary{background:transparent;color:var(--accent);border-color:var(--accent)}
+.btn-secondary:hover{background:var(--accent-light)}
+.btn-danger{background:transparent;color:var(--error);border-color:var(--error)}
+.btn-danger:hover{background:var(--error);color:#fff}
+.btn-sm{padding:.35rem .75rem;font-size:.75rem}
+.btn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
 
-/* Section Grid */
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem}
-.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-bottom:2rem}
-.card{
-  background:var(--card);border:1px solid var(--glass-border);border-radius:var(--radius);
-  padding:1.75rem;box-shadow:var(--shadow);transition:all .25s;
-}
-.card:hover{box-shadow:var(--shadow-hover)}
-.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem}
-.card-title{font-size:1.05rem;font-weight:700;display:flex;align-items:center;gap:.5rem}
-.badge{
-  display:inline-flex;align-items:center;padding:.2rem .6rem;border-radius:50px;
-  font-size:.7rem;font-weight:600;
-}
+/* Badge */
+.badge{display:inline-flex;align-items:center;padding:.15rem .5rem;border-radius:50px;font-size:.68rem;font-weight:600}
 .badge-accent{background:var(--accent-light);color:var(--accent)}
 .badge-success{background:rgba(76,175,80,.1);color:var(--success)}
-.badge-info{background:rgba(33,150,243,.1);color:var(--info)}
-.badge-warning{background:rgba(255,152,0,.1);color:var(--warning)}
 
-/* Architecture Diagram */
-.arch-flow{display:flex;flex-direction:column;gap:1rem}
-.arch-step{
-  display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;
-  background:var(--bg);border-radius:var(--radius-sm);border-left:4px solid var(--accent);
-  transition:all .2s;cursor:default;
-}
-.arch-step:hover{background:var(--accent-light);border-left-color:var(--accent-hover)}
-.arch-step-icon{font-size:1.5rem;flex-shrink:0}
-.arch-step-text h4{font-size:.88rem;font-weight:600;margin-bottom:.15rem}
-.arch-step-text p{font-size:.78rem;color:var(--text-light)}
-.arch-arrow{text-align:center;color:var(--accent);font-size:1.2rem;opacity:.5}
+/* Alert */
+.alert{padding:.7rem 1rem;border-radius:var(--radius-sm);font-size:.82rem;font-weight:500;margin-bottom:1rem;animation:fadeIn .3s}
+.alert-success{background:rgba(76,175,80,.1);color:var(--success);border:1px solid rgba(76,175,80,.2)}
+.alert-error{background:rgba(229,57,53,.08);color:var(--error);border:1px solid rgba(229,57,53,.2)}
+.alert-info{background:rgba(33,150,243,.08);color:var(--info);border:1px solid rgba(33,150,243,.2)}
+.alert-warning{background:rgba(255,152,0,.08);color:#E65100;border:1px solid rgba(255,152,0,.2)}
 
-/* Feature Cards */
-.feature-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem}
-.feature-card{
-  background:var(--card);border:1px solid var(--glass-border);border-radius:var(--radius);
-  padding:1.5rem;text-align:center;box-shadow:var(--shadow);transition:all .3s;cursor:default;
-}
-.feature-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-hover)}
-.feature-emoji{font-size:2.5rem;margin-bottom:.75rem;display:block}
-.feature-name{font-size:.9rem;font-weight:700;margin-bottom:.35rem}
-.feature-desc{font-size:.78rem;color:var(--text-light);line-height:1.5}
+/* Stats */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:1rem 1.25rem;display:flex;align-items:center;gap:.85rem;box-shadow:var(--shadow)}
+.stat-icon{font-size:1.5rem}
+.stat-number{font-size:1.5rem;font-weight:700;color:var(--accent);line-height:1.1}
+.stat-label{font-size:.75rem;color:var(--text-light)}
 
-/* Content Type Table */
-.content-table{width:100%;border-collapse:separate;border-spacing:0;font-size:.85rem}
-.content-table th{
-  background:var(--accent-light);color:var(--accent);font-weight:600;
-  padding:.65rem 1rem;text-align:left;
-}
-.content-table th:first-child{border-radius:var(--radius-sm) 0 0 0}
-.content-table th:last-child{border-radius:0 var(--radius-sm) 0 0}
-.content-table td{padding:.65rem 1rem;border-bottom:1px solid var(--glass-border)}
-.content-table tr:last-child td{border-bottom:none}
-.content-table tr:hover td{background:rgba(219,127,142,.04)}
+/* Grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+.course-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);transition:all .25s;cursor:pointer}
+.course-card:hover{box-shadow:var(--shadow-hover);transform:translateY(-2px)}
+.course-thumb{height:100px;background:linear-gradient(135deg,var(--accent-light),var(--mid),var(--accent));display:flex;align-items:center;justify-content:center;font-size:2rem}
+.course-info{padding:1rem}
+.course-info h3{font-size:.92rem;font-weight:700;margin-bottom:.3rem}
+.course-info p{font-size:.78rem;color:var(--text-light);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.course-meta{display:flex;gap:.4rem;margin-top:.5rem;flex-wrap:wrap}
+.course-actions{display:flex;gap:.4rem;margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--border)}
 
-/* Workflow Steps */
-.workflow{display:flex;gap:.5rem;flex-wrap:wrap;margin-top:1rem}
-.wf-step{
-  flex:1;min-width:140px;background:var(--bg);border-radius:var(--radius-sm);
-  padding:1rem;text-align:center;position:relative;border:1px solid var(--glass-border);
-}
-.wf-step::after{
-  content:'\2192';position:absolute;right:-16px;top:50%;transform:translateY(-50%);
-  color:var(--accent);font-size:1.2rem;font-weight:700;
-}
-.wf-step:last-child::after{display:none}
-.wf-num{
-  width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;
-  display:inline-flex;align-items:center;justify-content:center;font-size:.75rem;
-  font-weight:700;margin-bottom:.5rem;
-}
-.wf-label{font-size:.8rem;font-weight:600}
-.wf-detail{font-size:.72rem;color:var(--text-light);margin-top:.25rem}
+/* Progress */
+.progress{width:100%;margin:1rem 0}
+.progress-bar{height:8px;background:var(--border);border-radius:50px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-light));border-radius:50px;transition:width .4s;width:0}
+.progress-text{font-size:.8rem;color:var(--text-light);margin-top:.4rem}
 
-/* Tab Navigation */
-.tab-nav{display:flex;border-bottom:2px solid var(--glass-border);margin-bottom:1.5rem;gap:0}
-.tab-btn{
-  padding:.75rem 1.5rem;font-size:.85rem;font-weight:600;
-  color:var(--text-light);background:none;border:none;cursor:pointer;
-  border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;
-}
+/* Modal */
+.modal{display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center}
+.modal.active{display:flex}
+.modal-overlay{position:absolute;inset:0;background:rgba(96,77,83,.45);backdrop-filter:blur(3px)}
+.modal-content{position:relative;background:#fff;border-radius:var(--radius);padding:1.75rem;max-width:600px;width:92%;max-height:85vh;overflow-y:auto;box-shadow:0 20px 60px rgba(96,77,83,.2);animation:slideUp .25s}
+.modal-close{position:absolute;top:.75rem;right:.75rem;background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text-light);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--accent-light);color:var(--accent)}
+.modal-footer{display:flex;gap:.5rem;justify-content:flex-end;margin-top:1.25rem;padding-top:.75rem;border-top:1px solid var(--border)}
+
+/* Tabs */
+.tabs{display:flex;border-bottom:2px solid var(--border);margin-bottom:1.25rem;gap:0;overflow-x:auto}
+.tab-btn{padding:.65rem 1.15rem;font-size:.82rem;font-weight:600;color:var(--text-light);background:none;border:none;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;font-family:inherit;white-space:nowrap}
 .tab-btn:hover{color:var(--accent)}
 .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent)}
-.tab-panel{display:none;animation:fadeIn .3s ease}
-.tab-panel.active{display:block}
-@keyframes fadeIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.tab-panel{display:none}.tab-panel.active{display:block}
 
-/* API Stack */
-.api-stack{display:flex;flex-direction:column;gap:.75rem}
-.api-item{
-  display:flex;align-items:center;gap:1rem;padding:.85rem 1rem;
-  background:var(--bg);border-radius:var(--radius-sm);border:1px solid var(--glass-border);
-}
-.api-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.api-dot.green{background:var(--success)}
-.api-dot.blue{background:var(--info)}
-.api-dot.orange{background:var(--warning)}
-.api-name{font-size:.85rem;font-weight:600;min-width:140px}
-.api-desc{font-size:.78rem;color:var(--text-light);flex:1}
+/* Lesson Viewer */
+.lesson-section{margin-bottom:1.5rem;padding:1.25rem;background:var(--card);border:1px solid var(--border);border-radius:var(--radius)}
+.lesson-section h3{font-size:1rem;font-weight:700;margin-bottom:.75rem;color:var(--accent)}
+.expr-card{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem .85rem;background:var(--accent-light);border-radius:var(--radius-sm);margin:.25rem;font-size:.82rem}
+.expr-zh{font-weight:700;font-size:1rem;font-family:'Noto Sans SC'}
+.expr-pinyin{color:var(--text-light);font-size:.75rem}
+.expr-ko{font-size:.8rem}
+.dialogue-line{padding:.5rem 0;border-bottom:1px solid rgba(0,0,0,.05);font-size:.88rem}
+.dialogue-speaker{font-weight:700;color:var(--accent);margin-right:.35rem}
+.quiz-item{padding:1rem;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:.75rem}
+.quiz-q{font-weight:600;margin-bottom:.5rem;font-size:.88rem}
+.quiz-options{display:flex;flex-direction:column;gap:.35rem}
+.quiz-opt{padding:.45rem .75rem;border:1.5px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;font-size:.82rem;transition:all .15s}
+.quiz-opt:hover{border-color:var(--accent);background:var(--accent-light)}
+.quiz-opt.correct{border-color:var(--success);background:rgba(76,175,80,.1)}
+.quiz-opt.wrong{border-color:var(--error);background:rgba(229,57,53,.06)}
+.slide-card{padding:1.25rem;background:linear-gradient(135deg,var(--accent-light),var(--bg));border-radius:var(--radius);margin-bottom:.75rem}
+.slide-card h4{font-size:.95rem;font-weight:700;color:var(--accent);margin-bottom:.5rem}
+.cultural-note{padding:1rem;background:rgba(33,150,243,.05);border-left:4px solid var(--info);border-radius:0 var(--radius-sm) var(--radius-sm) 0}
+.storybook-page{padding:1rem;background:var(--bg);border-radius:var(--radius-sm);margin-bottom:.75rem}
+.storybook-zh{font-size:1.1rem;font-family:'Noto Sans SC';font-weight:500;margin-bottom:.25rem}
+.storybook-pinyin{font-size:.78rem;color:var(--text-light)}
+.storybook-ko{font-size:.85rem;margin-top:.25rem}
 
-/* Lesson Tab Structure */
-.lesson-tabs{display:flex;gap:.5rem;flex-wrap:wrap}
-.lesson-tab{
-  padding:.5rem 1rem;border-radius:50px;font-size:.78rem;font-weight:600;
-  border:1.5px solid var(--accent);color:var(--accent);background:transparent;
-  cursor:default;transition:all .2s;
-}
-.lesson-tab:hover,.lesson-tab.filled{background:var(--accent);color:#fff}
+/* Story Player */
+.story-scene{padding:2rem;background:linear-gradient(135deg,var(--accent-light),var(--bg));border-radius:var(--radius);text-align:center;min-height:300px;display:flex;flex-direction:column;justify-content:center}
+.story-zh{font-size:1.15rem;font-family:'Noto Sans SC';font-weight:500;line-height:1.8;margin-bottom:.5rem}
+.story-pinyin{font-size:.8rem;color:var(--text-light);margin-bottom:.5rem}
+.story-ko{font-size:.9rem;color:var(--text);margin-bottom:1.25rem}
+.story-choices{display:flex;flex-direction:column;gap:.5rem;max-width:400px;margin:0 auto}
+.story-choice{padding:.65rem 1rem;background:#fff;border:2px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;text-align:left;transition:all .2s;font-size:.85rem}
+.story-choice:hover{border-color:var(--accent);background:var(--accent-light)}
+.story-vocab{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin-top:1rem}
 
-/* Dingding Character */
-.dingding-preview{
-  display:flex;align-items:center;gap:1.5rem;padding:1.25rem;
-  background:linear-gradient(135deg,rgba(219,127,142,.08),rgba(255,219,218,.15));
-  border-radius:var(--radius);margin-top:1rem;
-}
-.dingding-avatar{
-  width:80px;height:80px;border-radius:50%;
-  background:linear-gradient(135deg,#fff,var(--accent-light));
-  display:flex;align-items:center;justify-content:center;font-size:3rem;
-  box-shadow:0 4px 20px rgba(219,127,142,.2);flex-shrink:0;
-}
-.dingding-info h4{font-size:.95rem;font-weight:700;margin-bottom:.25rem}
-.dingding-info p{font-size:.8rem;color:var(--text-light)}
-.dingding-features{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem}
-.dingding-feat{
-  padding:.2rem .5rem;border-radius:50px;font-size:.68rem;font-weight:600;
-  background:rgba(219,127,142,.1);color:var(--accent);
-}
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.spin{animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
-/* Chart Container */
-.chart-container{position:relative;height:280px;width:100%}
-.chart-container-sm{height:220px}
+/* Empty State */
+.empty{text-align:center;padding:3rem 1.5rem;color:var(--text-light)}
+.empty-icon{font-size:3rem;margin-bottom:.75rem;opacity:.5}
+.empty-title{font-size:1rem;font-weight:600;margin-bottom:.35rem;color:var(--text)}
 
-/* RPG Scenario Cards */
-.scenario-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-top:1rem}
-.scenario-card{
-  padding:.85rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border);
-  background:var(--bg);text-align:center;transition:all .2s;
-}
-.scenario-card:hover{background:var(--accent-light);border-color:var(--accent)}
-.scenario-emoji{font-size:1.8rem;display:block;margin-bottom:.35rem}
-.scenario-name{font-size:.8rem;font-weight:600}
-.scenario-desc{font-size:.7rem;color:var(--text-light);margin-top:.15rem}
+/* Generated List */
+.gen-list{list-style:none;padding:0}
+.gen-list li{padding:.5rem .85rem;border-left:3px solid var(--accent);margin-bottom:.4rem;background:var(--bg);border-radius:0 var(--radius-sm) var(--radius-sm) 0;font-size:.82rem;animation:fadeIn .3s}
 
-/* Version Banner */
-.version-banner{
-  background:linear-gradient(135deg,var(--accent),var(--accent-hover));
-  color:#fff;border-radius:var(--radius);padding:1.5rem 2rem;
-  display:flex;align-items:center;justify-content:space-between;margin-bottom:2rem;
-}
-.version-banner h3{font-size:1.1rem;font-weight:700}
-.version-banner p{font-size:.85rem;opacity:.9}
-.version-tag{
-  background:rgba(255,255,255,.25);padding:.4rem 1rem;border-radius:50px;
-  font-size:.82rem;font-weight:700;
-}
-
-/* File Structure */
-.file-tree{font-family:monospace;font-size:.78rem;line-height:1.9;color:var(--text)}
-.file-tree .dir{color:var(--accent);font-weight:600}
-.file-tree .file{color:var(--text-light)}
-.file-tree .comment{color:#999;font-style:italic}
+/* Toggle */
+.toggle{position:relative;display:inline-block;width:38px;height:22px}
+.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:50px;transition:.2s}
+.toggle-slider::before{content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.toggle input:checked+.toggle-slider{background:var(--accent)}
+.toggle input:checked+.toggle-slider::before{transform:translateX(16px)}
 
 /* Responsive */
-@media(max-width:1200px){.stats-row{grid-template-columns:repeat(3,1fr)}.feature-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr}.stats-row{grid-template-columns:repeat(2,1fr)}.hero{flex-direction:column;text-align:center;padding:2rem}}
-@media(max-width:600px){.stats-row{grid-template-columns:1fr}.feature-grid{grid-template-columns:1fr}.scenario-grid{grid-template-columns:1fr}.workflow{flex-direction:column}}
+@media(max-width:768px){.nav{flex-wrap:wrap;gap:.15rem}.stats-row{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr}}
 
-/* Scroll Reveal */
-.reveal{opacity:0;transform:translateY(20px);transition:all .5s ease}
-.reveal.visible{opacity:1;transform:translateY(0)}
+/* Markdown rendering */
+.md-content h2{font-size:1.05rem;font-weight:700;color:var(--accent);margin:1.25rem 0 .5rem;padding-bottom:.25rem;border-bottom:2px solid var(--accent-light)}
+.md-content h3{font-size:.95rem;font-weight:600;margin:1rem 0 .4rem}
+.md-content p{margin-bottom:.5rem;font-size:.88rem}
+.md-content ul,.md-content ol{padding-left:1.5rem;margin-bottom:.5rem}
+.md-content li{font-size:.85rem;margin-bottom:.25rem}
+.md-content strong{color:var(--accent)}
+.md-content code{background:var(--accent-light);padding:.1rem .3rem;border-radius:4px;font-size:.82rem}
+
+/* Newsletter */
+.nl-section{padding:1rem;margin-bottom:1rem;background:var(--bg);border-radius:var(--radius-sm)}
+.nl-section h4{font-size:.92rem;font-weight:700;color:var(--accent);margin-bottom:.5rem}
+.nl-terms{display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.5rem}
 </style>
 </head>
 <body>
 
-<!-- Topbar -->
 <div class="topbar">
   <div class="topbar-inner">
-    <div class="logo">
-      <div class="logo-icon">🐼</div>
-      <span>Dingdong LMS</span>
-    </div>
-    <div class="nav">
-      <a href="#overview" class="active">개요</a>
-      <a href="#architecture">아키텍처</a>
-      <a href="#features">기능</a>
-      <a href="#content">콘텐츠</a>
-      <a href="#api">API</a>
-      <a href="#tech">기술스택</a>
+    <div class="logo" onclick="showPage('dashboard')"><div class="logo-icon">🐼</div><span>Dingdong LMS</span></div>
+    <div class="nav" id="mainNav">
+      <button class="active" data-page="dashboard">대시보드</button>
+      <button data-page="generator">AI 생성</button>
+      <button data-page="stories">스토리</button>
+      <button data-page="newsletters">뉴스레터</button>
+      <button data-page="settings">설정</button>
     </div>
   </div>
 </div>
 
 <div class="container">
+  <div id="alertContainer"></div>
 
-<!-- Hero -->
-<div class="hero reveal">
-  <div class="hero-text">
-    <h1>AI 기반 중국어 교육 플랫폼</h1>
-    <p>Gemini API로 강좌 원클릭 자동 생성 &middot; 5탭 학습 시스템 &middot; 叮叮 AI 도우미 &middot; 인터랙티브 스토리 &middot; 로그인 없이 공유 링크 학습</p>
-  </div>
-  <div class="hero-panda">🐼</div>
-</div>
-
-<!-- Version Banner -->
-<div class="version-banner reveal">
-  <div>
-    <h3>Dingdong LMS v2.1.0</h3>
-    <p>WordPress 플러그인 &mdash; zip 배포 &middot; 커스텀 테이블 없음 &middot; Vanilla JS &middot; 글라스모피즘 UI</p>
-  </div>
-  <span class="version-tag">v2.1.0</span>
-</div>
-
-<!-- Stats Row -->
-<div class="stats-row reveal" id="overview">
-  <div class="stat-card">
-    <div class="stat-icon" style="background:rgba(219,127,142,.12)">📚</div>
-    <div><div class="stat-number">5</div><div class="stat-label">학습 탭</div></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon" style="background:rgba(76,175,80,.1)">🎭</div>
-    <div><div class="stat-number">6</div><div class="stat-label">역할극 시나리오</div></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon" style="background:rgba(33,150,243,.1)">🧠</div>
-    <div><div class="stat-number">35+</div><div class="stat-label">지식 DB 패턴</div></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon" style="background:rgba(255,152,0,.1)">🎨</div>
-    <div><div class="stat-number">36</div><div class="stat-label">의상 조합</div></div>
-  </div>
-  <div class="stat-card">
-    <div class="stat-icon" style="background:rgba(156,39,176,.1)">📄</div>
-    <div><div class="stat-number">9</div><div class="stat-label">섹션 사이드바</div></div>
-  </div>
-</div>
-
-<!-- Architecture & Content Type Charts -->
-<div class="grid-2 reveal" id="architecture">
-  <!-- AI Generation Flow -->
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">🔄 AI 강좌 생성 파이프라인</span>
+  <!-- ===== DASHBOARD ===== -->
+  <div class="page active" id="page-dashboard">
+    <div class="card-header" style="margin-bottom:1rem">
+      <h1 style="font-size:1.4rem;font-weight:700">강좌 관리</h1>
+      <button class="btn btn-primary" onclick="openModal('modalNewCourse')">+ 새 강좌</button>
     </div>
-    <div class="arch-flow">
-      <div class="arch-step">
-        <span class="arch-step-icon">📝</span>
-        <div class="arch-step-text">
-          <h4>Step 1 &mdash; 주제 + 난이도 입력</h4>
-          <p>입문 / 중급 / 고급 (병음 포함 여부 결정)</p>
-        </div>
-      </div>
-      <div class="arch-arrow">&darr;</div>
-      <div class="arch-step">
-        <span class="arch-step-icon">🤖</span>
-        <div class="arch-step-text">
-          <h4>Step 2 &mdash; Gemini 텍스트 생성</h4>
-          <p>본문 + 대화 + 핵심표현 + 슬라이드 + 퀴즈 + 문화노트 + 만화 + 스토리북</p>
-        </div>
-      </div>
-      <div class="arch-arrow">&darr;</div>
-      <div class="arch-step">
-        <span class="arch-step-icon">🖼️</span>
-        <div class="arch-step-text">
-          <h4>Step 3 &mdash; 이미지 생성 (4단계 fallback)</h4>
-          <p>gemini-2.5-flash &rarr; gemini-3-pro &rarr; gemini-3.1-flash &rarr; imagen-4.0</p>
-        </div>
-      </div>
-      <div class="arch-arrow">&darr;</div>
-      <div class="arch-step">
-        <span class="arch-step-icon">🎬</span>
-        <div class="arch-step-text">
-          <h4>Step 4 &mdash; YouTube + 썸네일</h4>
-          <p>관련 교육 영상 자동 검색 + Pixabay 썸네일</p>
-        </div>
-      </div>
+    <div class="stats-row" id="dashStats"></div>
+    <div class="grid" id="courseGrid"></div>
+    <div class="empty" id="dashEmpty" style="display:none">
+      <div class="empty-icon">📚</div>
+      <div class="empty-title">아직 강좌가 없습니다</div>
+      <p style="font-size:.85rem">AI 생성 또는 직접 만들기로 시작하세요!</p>
     </div>
   </div>
 
-  <!-- Content Distribution Chart -->
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">📊 콘텐츠 구성 비율</span>
-    </div>
-    <div class="chart-container">
-      <canvas id="chartContentDist"></canvas>
-    </div>
-  </div>
-</div>
-
-<!-- Feature Cards -->
-<h2 style="font-size:1.3rem;font-weight:700;margin-bottom:1rem" id="features" class="reveal">핵심 기능</h2>
-<div class="feature-grid reveal">
-  <div class="feature-card">
-    <span class="feature-emoji">📚</span>
-    <div class="feature-name">AI 강좌 생성</div>
-    <div class="feature-desc">주제+난이도 입력 &rarr; Gemini가 강좌/강의 원클릭 자동 생성. 1~12주차 구성 가능</div>
-  </div>
-  <div class="feature-card">
-    <span class="feature-emoji">🎮</span>
-    <div class="feature-name">인터랙티브 스토리</div>
-    <div class="feature-desc">12~18개 노드 분기형 게임북. 4개 엔딩 수집, 어휘 하이라이트, TTS 음성</div>
-  </div>
-  <div class="feature-card">
-    <span class="feature-emoji">🎵</span>
-    <div class="feature-name">학습송</div>
-    <div class="feature-desc">Gemini 작사 + Web Audio 비트 합성 + 중국 5음계 + 포먼트 보컬 + 가라오케 MV</div>
-  </div>
-  <div class="feature-card">
-    <span class="feature-emoji">🐼</span>
-    <div class="feature-name">叮叮 AI 도우미</div>
-    <div class="feature-desc">판다 캐릭터 AI 어시스턴트. 음성 대화, 역할극, 페이지 이동, 옷 커스터마이징</div>
-  </div>
-  <div class="feature-card">
-    <span class="feature-emoji">🎬</span>
-    <div class="feature-name">드라마 학습</div>
-    <div class="feature-desc">YouTube 자막 추출 (Innertube 4단계 fallback) + Gemini 분석 자동 강좌화</div>
-  </div>
-  <div class="feature-card">
-    <span class="feature-emoji">✍️</span>
-    <div class="feature-name">작문 AI 채점</div>
-    <div class="feature-desc">문법/어휘/자연스러움 실시간 Gemini 채점 + 한국어 피드백</div>
-  </div>
-  <div class="feature-card">
-    <span class="feature-emoji">📰</span>
-    <div class="feature-name">뉴스레터</div>
-    <div class="feature-desc">중국 대중문화 트렌드 중국어 독해 콘텐츠 자동 생성</div>
-  </div>
-  <div class="feature-card">
-    <span class="feature-emoji">📖</span>
-    <div class="feature-name">AI 단어장</div>
-    <div class="feature-desc">플래시카드 + 4종 미니게임 + HSK 급수 + CSV 내보내기 + localStorage CRUD</div>
-  </div>
-</div>
-
-<!-- 5-Tab Learning & Dingding -->
-<div class="grid-2 reveal" id="content">
-  <!-- 5-Tab Learning System -->
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">📑 5탭 학습 시스템</span>
-      <span class="badge badge-accent">강의당</span>
-    </div>
-    <div class="tab-nav" id="learningTabs">
-      <button class="tab-btn active" data-tab="tab-content">학습 내용</button>
-      <button class="tab-btn" data-tab="tab-slides">슬라이드</button>
-      <button class="tab-btn" data-tab="tab-audio">오디오북</button>
-      <button class="tab-btn" data-tab="tab-story">스토리북</button>
-      <button class="tab-btn" data-tab="tab-quiz">퀴즈</button>
-    </div>
-    <div class="tab-panel active" id="tab-content">
-      <p style="font-size:.85rem;margin-bottom:.75rem;font-weight:600">9섹션 사이드바 구성:</p>
-      <div style="display:flex;flex-direction:column;gap:.35rem">
-        <div class="arch-step" style="padding:.6rem .85rem;border-left-width:3px"><span class="arch-step-icon" style="font-size:1rem">🔤</span><div class="arch-step-text"><h4 style="font-size:.8rem">핵심 표현</h4><p style="font-size:.72rem">중국어/병음/한국어 6~9개</p></div></div>
-        <div class="arch-step" style="padding:.6rem .85rem;border-left-width:3px"><span class="arch-step-icon" style="font-size:1rem">📝</span><div class="arch-step-text"><h4 style="font-size:.8rem">본문</h4><p style="font-size:.72rem">레벨별 대화 형식 마크다운</p></div></div>
-        <div class="arch-step" style="padding:.6rem .85rem;border-left-width:3px"><span class="arch-step-icon" style="font-size:1rem">🎨</span><div class="arch-step-text"><h4 style="font-size:.8rem">학습만화</h4><p style="font-size:.72rem">4컷 만화 (AI 이미지 + CSS 오버레이)</p></div></div>
-        <div class="arch-step" style="padding:.6rem .85rem;border-left-width:3px"><span class="arch-step-icon" style="font-size:1rem">🏛️</span><div class="arch-step-text"><h4 style="font-size:.8rem">문화노트</h4><p style="font-size:.72rem">배경/재미/비교/관련표현</p></div></div>
-        <div class="arch-step" style="padding:.6rem .85rem;border-left-width:3px"><span class="arch-step-icon" style="font-size:1rem">💬</span><div class="arch-step-text"><h4 style="font-size:.8rem">실전대화 + 학습Song + 작문 + 자료 + 영상</h4><p style="font-size:.72rem">5개 추가 섹션</p></div></div>
-      </div>
-    </div>
-    <div class="tab-panel" id="tab-slides">
-      <p style="font-size:.85rem;color:var(--text-light)">5장 인포그래픽 슬라이드 &mdash; 어휘/예문/팁 포함, 레벨별 난이도 자동 조정. 인쇄/PDF 다운로드 지원.</p>
-    </div>
-    <div class="tab-panel" id="tab-audio">
-      <p style="font-size:.85rem;color:var(--text-light)">TTS 중국어 전용 (zh-CN) 오디오북. 화자별 음성 프로필 분리, 속도 0.5x~2.0x 조절.</p>
-    </div>
-    <div class="tab-panel" id="tab-story">
-      <p style="font-size:.85rem;color:var(--text-light)">6페이지 그림책: 중국어/병음/한국어 + 스타일 자동 감지 이미지 (현대/전통).</p>
-    </div>
-    <div class="tab-panel" id="tab-quiz">
-      <p style="font-size:.85rem;color:var(--text-light)">6문제: 4지선다 2 + 빈칸 채우기 2 + 어순 배열 2. 완료 패널 + 최고 점수 추적.</p>
+  <!-- ===== COURSE DETAIL ===== -->
+  <div class="page" id="page-courseDetail">
+    <button class="btn btn-secondary btn-sm" onclick="showPage('dashboard')" style="margin-bottom:1rem">&larr; 강좌 목록</button>
+    <div class="card" id="courseDetailHeader"></div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">강의 목록</span></div>
+      <div id="lessonList"></div>
     </div>
   </div>
 
-  <!-- Dingding AI Assistant -->
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">🐼 叮叮 (Dingding) AI 학습도우미 v2.1</span>
+  <!-- ===== LESSON VIEWER ===== -->
+  <div class="page" id="page-lessonViewer">
+    <button class="btn btn-secondary btn-sm" id="btnBackToCourse" style="margin-bottom:1rem">&larr; 강좌로 돌아가기</button>
+    <h2 id="lessonViewerTitle" style="font-size:1.2rem;font-weight:700;margin-bottom:1rem"></h2>
+    <div class="tabs" id="lessonTabs">
+      <button class="tab-btn active" data-ltab="lcontent">학습 내용</button>
+      <button class="tab-btn" data-ltab="lslides">슬라이드</button>
+      <button class="tab-btn" data-ltab="lquiz">퀴즈</button>
+      <button class="tab-btn" data-ltab="lstorybook">스토리북</button>
     </div>
-    <div class="dingding-preview">
-      <div class="dingding-avatar">🐼</div>
-      <div class="dingding-info">
-        <h4>판다 캐릭터 AI 어시스턴트</h4>
-        <p>모든 페이지 우하단 플로팅. 페이지 컨텍스트 인식. Gemini 3모델 fallback.</p>
-        <div class="dingding-features">
-          <span class="dingding-feat">음성 대화</span>
-          <span class="dingding-feat">역할극 6종</span>
-          <span class="dingding-feat">페이지 이동</span>
-          <span class="dingding-feat">옷 커스터마이징</span>
-          <span class="dingding-feat">코치마크</span>
-          <span class="dingding-feat">지식 DB 35+</span>
-        </div>
-      </div>
-    </div>
-    <h4 style="font-size:.9rem;font-weight:700;margin-top:1.25rem;margin-bottom:.5rem">역할극 시나리오</h4>
-    <div class="scenario-grid">
-      <div class="scenario-card"><span class="scenario-emoji">🍜</span><div class="scenario-name">식당 주문</div><div class="scenario-desc">메뉴/가격 확인</div></div>
-      <div class="scenario-card"><span class="scenario-emoji">🚕</span><div class="scenario-name">택시 탑승</div><div class="scenario-desc">목적지/요금 대화</div></div>
-      <div class="scenario-card"><span class="scenario-emoji">🛍️</span><div class="scenario-name">쇼핑 흥정</div><div class="scenario-desc">가격/구매 협상</div></div>
-      <div class="scenario-card"><span class="scenario-emoji">🏨</span><div class="scenario-name">호텔 체크인</div><div class="scenario-desc">예약/시설 안내</div></div>
-      <div class="scenario-card"><span class="scenario-emoji">🏥</span><div class="scenario-name">병원 진료</div><div class="scenario-desc">증상/처방 대화</div></div>
-      <div class="scenario-card"><span class="scenario-emoji">🏦</span><div class="scenario-name">은행 업무</div><div class="scenario-desc">환전/계좌 문의</div></div>
-    </div>
+    <div class="tab-panel active" id="lcontent"></div>
+    <div class="tab-panel" id="lslides"></div>
+    <div class="tab-panel" id="lquiz"></div>
+    <div class="tab-panel" id="lstorybook"></div>
   </div>
-</div>
 
-<!-- Charts Row -->
-<div class="grid-2 reveal">
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">📈 페이지별 叮叮 인터랙션 밀도</span>
+  <!-- ===== AI GENERATOR ===== -->
+  <div class="page" id="page-generator">
+    <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1.25rem">AI 강좌 생성</h1>
+    <div id="genApiWarning" class="alert alert-warning" style="display:none">Gemini API 키가 설정되지 않았습니다. <button class="btn btn-secondary btn-sm" onclick="showPage('settings')" style="margin-left:auto">설정으로 이동</button></div>
+    <div class="card" id="genFormCard">
+      <div class="card-title" style="margin-bottom:1rem">새 강좌 자동 생성</div>
+      <p style="font-size:.85rem;color:var(--text-light);margin-bottom:1rem">학습 주제를 입력하면 AI가 강좌 구조와 강의 콘텐츠를 자동으로 생성합니다.</p>
+      <div class="form-group">
+        <label>학습 주제</label>
+        <input class="input" id="genTopic" placeholder="예: 중국 음식 문화, HSK 3급 문법 정리">
+      </div>
+      <div class="form-group">
+        <label>강좌 주차 수</label>
+        <select class="select" id="genWeeks">
+          <option value="1">1주차 (1개)</option><option value="2">2주차</option><option value="3">3주차</option>
+          <option value="4" selected>4주차</option><option value="6">6주차</option><option value="8">8주차</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>난이도</label>
+        <select class="select" id="genLevel">
+          <option value="beginner">입문 (중국어 + 병음 + 한국어)</option>
+          <option value="intermediate">중급 (병음 없음)</option>
+          <option value="advanced">고급 (병음 없음)</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" id="btnGenerate" onclick="startGeneration()">강좌 생성하기</button>
     </div>
-    <div class="chart-container">
-      <canvas id="chartDingding"></canvas>
+    <div class="card" id="genProgressCard" style="display:none">
+      <div class="card-title">생성 진행 상황</div>
+      <div class="progress"><div class="progress-bar"><div class="progress-fill" id="genProgressFill"></div></div></div>
+      <div class="progress-text" id="genProgressText">준비 중...</div>
+      <ul class="gen-list" id="genLessonList"></ul>
     </div>
-  </div>
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">🎯 콘텐츠 유형별 Gemini 호출 구조</span>
-    </div>
-    <div class="chart-container">
-      <canvas id="chartGemini"></canvas>
-    </div>
-  </div>
-</div>
-
-<!-- Workflow & Routes -->
-<div class="grid-2 reveal">
-  <!-- Content Generation Workflow -->
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">⚡ 콘텐츠 생성 워크플로우</span>
-    </div>
-    <div class="workflow">
-      <div class="wf-step">
-        <div class="wf-num">1</div>
-        <div class="wf-label">주제 입력</div>
-        <div class="wf-detail">주제 + 난이도 + 주차 수</div>
-      </div>
-      <div class="wf-step">
-        <div class="wf-num">2</div>
-        <div class="wf-label">Gemini 텍스트</div>
-        <div class="wf-detail">본문/대화/퀴즈/만화</div>
-      </div>
-      <div class="wf-step">
-        <div class="wf-num">3</div>
-        <div class="wf-label">이미지 생성</div>
-        <div class="wf-detail">4단계 모델 fallback</div>
-      </div>
-      <div class="wf-step">
-        <div class="wf-num">4</div>
-        <div class="wf-label">YouTube</div>
-        <div class="wf-detail">한/중 키워드 검색</div>
-      </div>
-      <div class="wf-step">
-        <div class="wf-num">5</div>
-        <div class="wf-label">공개 배포</div>
-        <div class="wf-detail">UUID 링크 + QR</div>
-      </div>
-    </div>
-    <h4 style="font-size:.9rem;font-weight:700;margin-top:1.5rem;margin-bottom:.75rem">드라마 학습 자막 추출 fallback</h4>
-    <div style="display:flex;flex-direction:column;gap:.4rem">
-      <div class="arch-step" style="padding:.5rem .75rem;border-left-width:3px;border-left-color:var(--info)">
-        <span class="arch-step-icon" style="font-size:1rem">1️⃣</span>
-        <div class="arch-step-text"><h4 style="font-size:.78rem">Innertube WEB API</h4><p style="font-size:.7rem">SOCS/CONSENT 쿠키</p></div>
-      </div>
-      <div class="arch-step" style="padding:.5rem .75rem;border-left-width:3px;border-left-color:var(--info)">
-        <span class="arch-step-icon" style="font-size:1rem">2️⃣</span>
-        <div class="arch-step-text"><h4 style="font-size:.78rem">Innertube ANDROID API</h4><p style="font-size:.7rem">봇 감지 우회</p></div>
-      </div>
-      <div class="arch-step" style="padding:.5rem .75rem;border-left-width:3px;border-left-color:var(--info)">
-        <span class="arch-step-icon" style="font-size:1rem">3️⃣</span>
-        <div class="arch-step-text"><h4 style="font-size:.78rem">timedtext list API</h4><p style="font-size:.7rem">직접 자막 트랙 조회</p></div>
-      </div>
-      <div class="arch-step" style="padding:.5rem .75rem;border-left-width:3px;border-left-color:var(--info)">
-        <span class="arch-step-icon" style="font-size:1rem">4️⃣</span>
-        <div class="arch-step-text"><h4 style="font-size:.78rem">watch 페이지 스크래핑</h4><p style="font-size:.7rem">brace-counting JSON 추출</p></div>
+    <div class="card" id="genResultCard" style="display:none">
+      <div class="alert alert-success">강좌가 성공적으로 생성되었습니다!</div>
+      <p id="genResultSummary"></p>
+      <div style="margin-top:1rem;display:flex;gap:.5rem">
+        <button class="btn btn-primary" id="btnViewGenCourse">강좌 보기</button>
+        <button class="btn btn-secondary" onclick="resetGenerator()">다른 강좌 생성</button>
       </div>
     </div>
   </div>
 
-  <!-- Public Routes -->
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">🌐 공개 페이지 라우팅</span>
+  <!-- ===== STORIES ===== -->
+  <div class="page" id="page-stories">
+    <div class="card-header" style="margin-bottom:1rem">
+      <h1 style="font-size:1.4rem;font-weight:700">인터랙티브 스토리</h1>
+      <button class="btn btn-primary" onclick="openModal('modalNewStory')">+ 새 스토리</button>
     </div>
-    <table class="content-table">
-      <thead>
-        <tr><th>URL 패턴</th><th>페이지</th><th>템플릿</th></tr>
-      </thead>
-      <tbody>
-        <tr><td><code>/</code></td><td>랜딩페이지</td><td>landing-public.php</td></tr>
-        <tr><td><code>/courses/</code></td><td>강좌 목록</td><td>courses-public.php</td></tr>
-        <tr><td><code>/lesson/{uuid}/</code></td><td>강의 상세</td><td>lesson-public.php</td></tr>
-        <tr><td><code>/stories/</code></td><td>스토리 목록</td><td>stories-public.php</td></tr>
-        <tr><td><code>/story/{uuid}/</code></td><td>스토리 플레이</td><td>story-public.php</td></tr>
-        <tr><td><code>/newsletters/</code></td><td>뉴스레터</td><td>newsletters-public.php</td></tr>
-        <tr><td><code>/newsletter/{uuid}/</code></td><td>뉴스레터 상세</td><td>newsletter-detail.php</td></tr>
-        <tr><td><code>/vocabulary/</code></td><td>AI 단어장</td><td>vocabulary-public.php</td></tr>
-      </tbody>
-    </table>
-    <h4 style="font-size:.9rem;font-weight:700;margin-top:1.25rem;margin-bottom:.5rem">CPT (Custom Post Types)</h4>
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap">
-      <span class="badge badge-accent">dd_course</span>
-      <span class="badge badge-success">dd_lesson</span>
-      <span class="badge badge-info">dd_story</span>
-      <span class="badge badge-warning">dd_newsletter</span>
-    </div>
-  </div>
-</div>
-
-<!-- API Stack & Tech Stack -->
-<div class="grid-2 reveal" id="api">
-  <!-- API Dependencies -->
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">🔑 외부 API 의존성</span>
-    </div>
-    <div class="api-stack">
-      <div class="api-item">
-        <span class="api-dot green"></span>
-        <span class="api-name">Gemini API</span>
-        <span class="api-desc">텍스트 생성, 이미지, 작문 채점, 叮叮 대화, 학습송 작사</span>
-      </div>
-      <div class="api-item">
-        <span class="api-dot green"></span>
-        <span class="api-name">Gemini Image</span>
-        <span class="api-desc">4단계 fallback: flash &rarr; pro &rarr; flash-preview &rarr; imagen-4.0</span>
-      </div>
-      <div class="api-item">
-        <span class="api-dot blue"></span>
-        <span class="api-name">YouTube Data v3</span>
-        <span class="api-desc">교육 영상 검색/임베드 + 드라마 메타데이터</span>
-      </div>
-      <div class="api-item">
-        <span class="api-dot blue"></span>
-        <span class="api-name">YouTube Innertube</span>
-        <span class="api-desc">자막 트랙 조회 (WEB + ANDROID, 키 불필요)</span>
-      </div>
-      <div class="api-item">
-        <span class="api-dot orange"></span>
-        <span class="api-name">Pixabay API</span>
-        <span class="api-desc">강좌 썸네일 이미지 자동 검색</span>
-      </div>
-      <div class="api-item">
-        <span class="api-dot orange"></span>
-        <span class="api-name">Web Speech API</span>
-        <span class="api-desc">음성 입력 (ko-KR) + TTS (zh-CN, ko-KR) &mdash; 브라우저 내장</span>
-      </div>
+    <div class="grid" id="storyGrid"></div>
+    <div class="empty" id="storyEmpty" style="display:none">
+      <div class="empty-icon">📖</div>
+      <div class="empty-title">아직 스토리가 없습니다</div>
+      <p style="font-size:.85rem">AI로 분기형 스토리를 만들어보세요!</p>
     </div>
   </div>
 
-  <!-- Tech Stack -->
-  <div class="card" id="tech">
-    <div class="card-header">
-      <span class="card-title">🛠️ 기술 스택</span>
+  <!-- ===== STORY PLAYER ===== -->
+  <div class="page" id="page-storyPlayer">
+    <button class="btn btn-secondary btn-sm" onclick="showPage('stories')" style="margin-bottom:1rem">&larr; 스토리 목록</button>
+    <h2 id="storyPlayerTitle" style="font-size:1.2rem;font-weight:700;margin-bottom:1rem"></h2>
+    <div id="storyScene"></div>
+    <div style="margin-top:1rem;text-align:center">
+      <button class="btn btn-secondary btn-sm" id="btnRestartStory" style="display:none" onclick="restartStory()">처음부터 다시</button>
     </div>
-    <div class="chart-container chart-container-sm">
-      <canvas id="chartTech"></canvas>
+  </div>
+
+  <!-- ===== NEWSLETTERS ===== -->
+  <div class="page" id="page-newsletters">
+    <div class="card-header" style="margin-bottom:1rem">
+      <h1 style="font-size:1.4rem;font-weight:700">뉴스레터</h1>
+      <button class="btn btn-primary" onclick="toggleNlGen()">+ AI 뉴스레터 생성</button>
     </div>
-    <div style="margin-top:1rem;display:flex;flex-direction:column;gap:.5rem">
-      <div class="api-item">
-        <span class="api-dot green"></span>
-        <span class="api-name">서버</span>
-        <span class="api-desc">WordPress Studio (PHP WASM + SQLite)</span>
+    <div class="card" id="nlGenForm" style="display:none">
+      <div class="card-title" style="margin-bottom:.75rem">AI 뉴스레터 생성</div>
+      <div class="form-group">
+        <label>주제 (선택)</label>
+        <input class="input" id="nlTopic" placeholder="비워두면 최신 중국 대중문화 트렌드로 자동 생성">
       </div>
-      <div class="api-item">
-        <span class="api-dot blue"></span>
-        <span class="api-name">프론트엔드</span>
-        <span class="api-desc">Vanilla JS (빌드 도구 없음, React 없음)</span>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-primary" id="btnGenNl" onclick="generateNewsletter()">생성하기</button>
+        <button class="btn btn-secondary" onclick="toggleNlGen()">취소</button>
       </div>
-      <div class="api-item">
-        <span class="api-dot orange"></span>
-        <span class="api-name">DB</span>
-        <span class="api-desc">CPT + post_meta (커스텀 테이블 없음)</span>
+    </div>
+    <div class="grid" id="nlGrid"></div>
+    <div class="empty" id="nlEmpty" style="display:none">
+      <div class="empty-icon">📰</div>
+      <div class="empty-title">아직 뉴스레터가 없습니다</div>
+    </div>
+  </div>
+
+  <!-- ===== NEWSLETTER DETAIL ===== -->
+  <div class="page" id="page-nlDetail">
+    <button class="btn btn-secondary btn-sm" onclick="showPage('newsletters')" style="margin-bottom:1rem">&larr; 뉴스레터 목록</button>
+    <div id="nlDetailContent"></div>
+  </div>
+
+  <!-- ===== SETTINGS ===== -->
+  <div class="page" id="page-settings">
+    <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1.25rem">설정</h1>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title">Gemini API 키</span>
+        <span id="apiKeyStatus" class="badge badge-accent">미설정</span>
       </div>
-      <div class="api-item">
-        <span class="api-dot green"></span>
-        <span class="api-name">UI</span>
-        <span class="api-desc">CSS Custom Properties + 글라스모피즘 + Pretendard + Noto Sans SC</span>
+      <p style="font-size:.85rem;color:var(--text-light);margin-bottom:1rem">강좌/콘텐츠 자동 생성을 위한 Gemini API 키를 입력하세요.</p>
+      <div class="form-group">
+        <label>API 키</label>
+        <input type="password" class="input" id="apiKeyInput" placeholder="Gemini API 키 입력...">
+        <div class="help"><a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio에서 키 발급받기 &rarr;</a></div>
+      </div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-primary" onclick="saveApiKey()">저장</button>
+        <button class="btn btn-danger" onclick="deleteApiKey()">삭제</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">Gemini 모델</span></div>
+      <div class="form-group">
+        <select class="select" id="modelSelect">
+          <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite (빠름/저비용)</option>
+          <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+          <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (권장)</option>
+          <option value="gemini-2.5-pro">Gemini 2.5 Pro (고품질)</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" onclick="saveModel()">모델 저장</button>
+    </div>
+    <div class="card">
+      <div class="card-header"><span class="card-title">데이터 관리</span></div>
+      <p style="font-size:.85rem;color:var(--text-light);margin-bottom:1rem">모든 데이터는 브라우저 localStorage에 저장됩니다.</p>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-secondary" onclick="exportData()">데이터 내보내기 (JSON)</button>
+        <button class="btn btn-danger" onclick="if(confirm('모든 데이터를 삭제합니까?')){localStorage.clear();location.reload()}">전체 초기화</button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- File Size & Complexity Chart -->
-<div class="grid-2 reveal">
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">📁 파일 크기 분포 (KB)</span>
-    </div>
-    <div class="chart-container">
-      <canvas id="chartFileSize"></canvas>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">🗂️ 관리자 페이지 구조</span>
-    </div>
-    <table class="content-table">
-      <thead><tr><th>페이지</th><th>파일</th><th>기능</th></tr></thead>
-      <tbody>
-        <tr><td>대시보드</td><td>page-dashboard.php</td><td>강좌 목록 + CRUD</td></tr>
-        <tr><td>AI 생성</td><td>page-generator.php</td><td>주제/난이도 &rarr; 원클릭 생성</td></tr>
-        <tr><td>스토리</td><td>page-stories.php</td><td>인터랙티브 스토리 관리</td></tr>
-        <tr><td>드라마</td><td>page-drama.php</td><td>YouTube 자막 &rarr; 강좌</td></tr>
-        <tr><td>뉴스레터</td><td>page-newsletters.php</td><td>AI 뉴스레터 생성/관리</td></tr>
-        <tr><td>설정</td><td>page-settings.php</td><td>API 키 (Gemini/YT/Pixabay)</td></tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- Learning Progress & Vocabulary -->
-<div class="grid-2 reveal">
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">📈 학습 진도 추적 시스템</span>
-    </div>
-    <div style="display:flex;flex-direction:column;gap:.6rem">
-      <div class="api-item">
-        <span style="font-size:1.2rem">📊</span>
-        <span class="api-name">자동 기록</span>
-        <span class="api-desc">탭 5초 체류 시 완료 처리 (localStorage)</span>
-      </div>
-      <div class="api-item">
-        <span style="font-size:1.2rem">🏆</span>
-        <span class="api-name">퀴즈 점수</span>
-        <span class="api-desc">최고 점수 추적 + 완료 인터랙션</span>
-      </div>
-      <div class="api-item">
-        <span style="font-size:1.2rem">🧠</span>
-        <span class="api-name">에빙하우스 복습</span>
-        <span class="api-desc">전체 완료 시 1/3/7/30일 스케줄 자동 생성</span>
-      </div>
-      <div class="api-item">
-        <span style="font-size:1.2rem">📌</span>
-        <span class="api-name">진도 위젯</span>
-        <span class="api-desc">프로그레스 바 + 탭별 체크마크 + 복습 알림</span>
-      </div>
-    </div>
-  </div>
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">📖 AI 단어장 기능</span>
-    </div>
-    <div class="chart-container chart-container-sm">
-      <canvas id="chartVocab"></canvas>
-    </div>
-    <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-top:.75rem">
-      <span class="lesson-tab filled">플래시카드</span>
-      <span class="lesson-tab">단어 맞추기</span>
-      <span class="lesson-tab">랜덤 배열</span>
-      <span class="lesson-tab">문장 빈칸</span>
-      <span class="lesson-tab">뜻 연결</span>
-      <span class="lesson-tab">HSK 급수</span>
-      <span class="lesson-tab">CSV 내보내기</span>
+<!-- ===== MODALS ===== -->
+<div class="modal" id="modalNewCourse">
+  <div class="modal-overlay" onclick="closeModal('modalNewCourse')"></div>
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('modalNewCourse')">&times;</button>
+    <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem">새 강좌 만들기</h2>
+    <div class="form-group"><label>강좌 제목</label><input class="input" id="newCourseTitle" placeholder="예: HSK 4급 필수 문법"></div>
+    <div class="form-group"><label>강좌 설명</label><textarea class="textarea" id="newCourseDesc" placeholder="강좌 설명..." rows="3"></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalNewCourse')">취소</button>
+      <button class="btn btn-primary" onclick="createCourse()">만들기</button>
     </div>
   </div>
 </div>
 
-<!-- Song Player Architecture -->
-<div class="card reveal" style="margin-bottom:2rem">
-  <div class="card-header">
-    <span class="card-title">🎵 학습송 플레이어 아키텍처</span>
-    <span class="badge badge-info">Web Audio API</span>
-  </div>
-  <div class="workflow" style="margin-top:0">
-    <div class="wf-step">
-      <div class="wf-num">1</div>
-      <div class="wf-label">Gemini 작사</div>
-      <div class="wf-detail">6~8줄 verse + chorus</div>
-    </div>
-    <div class="wf-step">
-      <div class="wf-num">2</div>
-      <div class="wf-label">비트 합성</div>
-      <div class="wf-detail">Drums + Bass + Melody + Pad</div>
-    </div>
-    <div class="wf-step">
-      <div class="wf-num">3</div>
-      <div class="wf-label">보컬 합성</div>
-      <div class="wf-detail">포먼트 필터 + vibrato</div>
-    </div>
-    <div class="wf-step">
-      <div class="wf-num">4</div>
-      <div class="wf-label">TTS 가사</div>
-      <div class="wf-detail">zh-CN 라인별 동기화</div>
-    </div>
-    <div class="wf-step">
-      <div class="wf-num">5</div>
-      <div class="wf-label">가라오케 MV</div>
-      <div class="wf-detail">가사 하이라이트 + 비주얼라이저</div>
-    </div>
-  </div>
-  <div style="margin-top:1.25rem;display:grid;grid-template-columns:repeat(5,1fr);gap:.5rem">
-    <div style="text-align:center;padding:.6rem;background:var(--bg);border-radius:var(--radius-sm)">
-      <div style="font-size:1.5rem">🥁</div>
-      <div style="font-size:.72rem;font-weight:600;margin-top:.25rem">Drums</div>
-      <div style="font-size:.65rem;color:var(--text-light)">kick + snare + hi-hat</div>
-    </div>
-    <div style="text-align:center;padding:.6rem;background:var(--bg);border-radius:var(--radius-sm)">
-      <div style="font-size:1.5rem">🎸</div>
-      <div style="font-size:.72rem;font-weight:600;margin-top:.25rem">Bass</div>
-      <div style="font-size:.65rem;color:var(--text-light)">중국 5음계 (宮商角徵羽)</div>
-    </div>
-    <div style="text-align:center;padding:.6rem;background:var(--bg);border-radius:var(--radius-sm)">
-      <div style="font-size:1.5rem">🎹</div>
-      <div style="font-size:.72rem;font-weight:600;margin-top:.25rem">Melody</div>
-      <div style="font-size:.65rem;color:var(--text-light)">square + vibrato</div>
-    </div>
-    <div style="text-align:center;padding:.6rem;background:var(--bg);border-radius:var(--radius-sm)">
-      <div style="font-size:1.5rem">🌊</div>
-      <div style="font-size:.72rem;font-weight:600;margin-top:.25rem">Pad</div>
-      <div style="font-size:.65rem;color:var(--text-light)">sine 분위기</div>
-    </div>
-    <div style="text-align:center;padding:.6rem;background:var(--bg);border-radius:var(--radius-sm)">
-      <div style="font-size:1.5rem">🎤</div>
-      <div style="font-size:.72rem;font-weight:600;margin-top:.25rem">Vocal Synth</div>
-      <div style="font-size:.65rem;color:var(--text-light)">포먼트 + breath</div>
+<div class="modal" id="modalNewStory">
+  <div class="modal-overlay" onclick="closeModal('modalNewStory')"></div>
+  <div class="modal-content">
+    <button class="modal-close" onclick="closeModal('modalNewStory')">&times;</button>
+    <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:1rem">새 인터랙티브 스토리</h2>
+    <div class="form-group"><label>스토리 주제</label><input class="input" id="storyTopic" placeholder="예: 중국 식당에서 음식 주문하기"></div>
+    <div class="form-group"><label>난이도</label><select class="select" id="storyLevel"><option value="beginner">입문 (HSK 1-2)</option><option value="intermediate">중급 (HSK 3-4)</option><option value="advanced">고급 (HSK 5+)</option></select></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modalNewStory')">취소</button>
+      <button class="btn btn-primary" id="btnGenStory" onclick="generateStory()">AI로 생성하기</button>
     </div>
   </div>
 </div>
-
-<!-- Data Model -->
-<div class="card reveal" style="margin-bottom:2rem">
-  <div class="card-header">
-    <span class="card-title">🗄️ 데이터 모델 (CPT + post_meta)</span>
-  </div>
-  <div class="grid-3" style="margin-bottom:0">
-    <div>
-      <h4 style="font-size:.88rem;font-weight:700;margin-bottom:.5rem;color:var(--accent)">dd_course</h4>
-      <div style="font-size:.78rem;line-height:1.8;color:var(--text-light)">
-        <div><code>_dd_course_status</code> draft/generating/complete</div>
-        <div><code>_dd_course_level</code> beginner/intermediate/advanced</div>
-        <div><code>_dd_course_thumbnail</code> Pixabay URL</div>
-        <div><code>_dd_course_type</code> general/drama</div>
-      </div>
-    </div>
-    <div>
-      <h4 style="font-size:.88rem;font-weight:700;margin-bottom:.5rem;color:var(--success)">dd_lesson (20+ meta)</h4>
-      <div style="font-size:.78rem;line-height:1.8;color:var(--text-light)">
-        <div><code>_dd_slides_data</code> 슬라이드 JSON (5장)</div>
-        <div><code>_dd_quiz_data</code> 퀴즈 JSON (6문제)</div>
-        <div><code>_dd_dialogues_data</code> 구조화 대화 JSON</div>
-        <div><code>_dd_comic_data</code> 만화 4컷 JSON</div>
-        <div><code>_dd_storybook_data</code> 6페이지 JSON</div>
-        <div><code>_dd_cultural_note</code> 문화노트 구조화</div>
-        <div><code>_dd_public_token</code> UUID v4</div>
-      </div>
-    </div>
-    <div>
-      <h4 style="font-size:.88rem;font-weight:700;margin-bottom:.5rem;color:var(--info)">dd_story + dd_newsletter</h4>
-      <div style="font-size:.78rem;line-height:1.8;color:var(--text-light)">
-        <div><code>_dd_story_nodes</code> 분기 JSON (12~18 노드)</div>
-        <div><code>_dd_story_level</code> 난이도</div>
-        <div><code>_dd_story_cover_image</code> 커버 URL</div>
-        <div>뉴스레터: Gemini 자동 생성 + 이미지</div>
-        <div>카테고리: entertainment/music/food/tech</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Footer -->
-<div style="text-align:center;padding:2rem 0;font-size:.82rem;color:var(--text-light)">
-  <p>Dingdong LMS v2.1.0 &mdash; AI 기반 중국어&middot;중국문화 교육 플랫폼 WordPress 플러그인</p>
-  <p style="margin-top:.35rem">대시보드 생성일: 2026-05-30</p>
-</div>
-
-</div><!-- /container -->
 
 <script>
-// Tab Navigation
-document.querySelectorAll('.tab-btn[data-tab]').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    const parent=btn.closest('.card');
-    parent.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    parent.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById(btn.dataset.tab).classList.add('active');
+// ===== DATA LAYER (localStorage) =====
+const DB={
+  _get(k){try{return JSON.parse(localStorage.getItem('dd_'+k))||[]}catch{return[]}},
+  _set(k,v){localStorage.setItem('dd_'+k,JSON.stringify(v))},
+  courses(){return this._get('courses')},
+  saveCourses(c){this._set('courses',c)},
+  lessons(){return this._get('lessons')},
+  saveLessons(l){this._set('lessons',l)},
+  stories(){return this._get('stories')},
+  saveStories(s){this._set('stories',s)},
+  newsletters(){return this._get('newsletters')},
+  saveNewsletters(n){this._set('newsletters',n)},
+  addCourse(c){const a=this.courses();c.id=Date.now();a.push(c);this.saveCourses(a);return c},
+  addLesson(l){const a=this.lessons();l.id=Date.now()+Math.random();a.push(l);this.saveLessons(a);return l},
+  addStory(s){const a=this.stories();s.id=Date.now();a.push(s);this.saveStories(a);return s},
+  addNewsletter(n){const a=this.newsletters();n.id=Date.now();a.push(n);this.saveNewsletters(a);return n},
+  deleteCourse(id){this.saveCourses(this.courses().filter(c=>c.id!==id));this.saveLessons(this.lessons().filter(l=>l.courseId!==id))},
+  deleteStory(id){this.saveStories(this.stories().filter(s=>s.id!==id))},
+  deleteNewsletter(id){this.saveNewsletters(this.newsletters().filter(n=>n.id!==id))},
+  getLessons(courseId){return this.lessons().filter(l=>l.courseId===courseId).sort((a,b)=>a.order-b.order)},
+};
+
+// ===== GEMINI API =====
+async function callGemini(prompt,system=''){
+  const key=localStorage.getItem('dd_api_key');
+  if(!key)throw new Error('API 키가 설정되지 않았습니다.');
+  const model=localStorage.getItem('dd_model')||'gemini-2.5-flash';
+  const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+  const body={contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:.7,topP:.9,maxOutputTokens:65536,responseMimeType:'application/json'}};
+  if(system)body.systemInstruction={parts:[{text:system}]};
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const d=await r.json();
+  if(!r.ok)throw new Error(d.error?.message||`API 오류 (${r.status})`);
+  const text=d.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  return parseJSON(text);
+}
+function parseJSON(text){
+  text=text.trim();
+  if(/```(?:json)?\s*([\s\S]*?)\s*```/.test(text))text=RegExp.$1.trim();
+  try{return JSON.parse(text)}catch{}
+  const s=text.indexOf('{'),e=text.lastIndexOf('}');
+  if(s>=0&&e>s){try{return JSON.parse(text.slice(s,e+1))}catch{}}
+  throw new Error('JSON 파싱 실패');
+}
+
+// ===== UI HELPERS =====
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  const el=document.getElementById('page-'+name);
+  if(el)el.classList.add('active');
+  document.querySelectorAll('.nav button').forEach(b=>{b.classList.remove('active');if(b.dataset.page===name)b.classList.add('active')});
+  if(name==='dashboard')renderDashboard();
+  if(name==='stories')renderStories();
+  if(name==='newsletters')renderNewsletters();
+  if(name==='settings')renderSettings();
+  if(name==='generator')checkGenApi();
+}
+function openModal(id){document.getElementById(id).classList.add('active')}
+function closeModal(id){document.getElementById(id).classList.remove('active')}
+function showAlert(msg,type='success'){
+  const c=document.getElementById('alertContainer');
+  const el=document.createElement('div');el.className='alert alert-'+type;el.textContent=msg;
+  c.prepend(el);setTimeout(()=>el.remove(),4000);
+}
+function escHtml(t){const d=document.createElement('div');d.textContent=t||'';return d.innerHTML}
+function renderMd(md){
+  if(!md)return'';
+  return md.replace(/^### (.*$)/gm,'<h3>$1</h3>').replace(/^## (.*$)/gm,'<h2>$1</h2>')
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/^- (.*$)/gm,'<li>$1</li>').replace(/(<li>.*<\/li>)/gs,'<ul>$1</ul>')
+    .replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>');
+}
+const levelLabels={beginner:'입문',intermediate:'중급',advanced:'고급'};
+
+// ===== NAV =====
+document.querySelectorAll('.nav button[data-page]').forEach(b=>b.addEventListener('click',()=>showPage(b.dataset.page)));
+
+// ===== DASHBOARD =====
+function renderDashboard(){
+  const courses=DB.courses(),lessons=DB.lessons();
+  document.getElementById('dashStats').innerHTML=`
+    <div class="stat-card"><div class="stat-icon">📚</div><div><div class="stat-number">${courses.length}</div><div class="stat-label">전체 강좌</div></div></div>
+    <div class="stat-card"><div class="stat-icon">📝</div><div><div class="stat-number">${lessons.length}</div><div class="stat-label">전체 강의</div></div></div>
+    <div class="stat-card"><div class="stat-icon">🎮</div><div><div class="stat-number">${DB.stories().length}</div><div class="stat-label">스토리</div></div></div>
+    <div class="stat-card"><div class="stat-icon">📰</div><div><div class="stat-number">${DB.newsletters().length}</div><div class="stat-label">뉴스레터</div></div></div>`;
+  const grid=document.getElementById('courseGrid');
+  document.getElementById('dashEmpty').style.display=courses.length?'none':'block';
+  grid.innerHTML=courses.map(c=>{
+    const lc=lessons.filter(l=>l.courseId===c.id).length;
+    return`<div class="course-card" onclick="showCourseDetail(${c.id})">
+      <div class="course-thumb">📚</div>
+      <div class="course-info">
+        <h3>${escHtml(c.title)}</h3>
+        <p>${escHtml(c.description)}</p>
+        <div class="course-meta"><span class="badge badge-accent">${lc}개 강의</span><span class="badge badge-success">${levelLabels[c.level]||'입문'}</span></div>
+        <div class="course-actions">
+          <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();if(confirm('삭제?')){DB.deleteCourse(${c.id});renderDashboard()}">삭제</button>
+        </div>
+      </div></div>`}).join('');
+}
+function createCourse(){
+  const title=document.getElementById('newCourseTitle').value.trim();
+  if(!title)return showAlert('제목을 입력하세요','error');
+  DB.addCourse({title,description:document.getElementById('newCourseDesc').value.trim(),level:'beginner',status:'draft',createdAt:new Date().toISOString()});
+  closeModal('modalNewCourse');document.getElementById('newCourseTitle').value='';document.getElementById('newCourseDesc').value='';
+  showAlert('강좌가 생성되었습니다.');renderDashboard();
+}
+
+// ===== COURSE DETAIL =====
+let currentCourseId=null;
+function showCourseDetail(id){
+  currentCourseId=id;
+  const c=DB.courses().find(x=>x.id===id);if(!c)return;
+  const lessons=DB.getLessons(id);
+  showPage('courseDetail');
+  document.getElementById('courseDetailHeader').innerHTML=`<h2 style="font-size:1.2rem;font-weight:700;margin-bottom:.35rem">${escHtml(c.title)}</h2>
+    <p style="font-size:.85rem;color:var(--text-light)">${escHtml(c.description)}</p>
+    <div style="margin-top:.5rem;display:flex;gap:.4rem"><span class="badge badge-accent">${lessons.length}개 강의</span><span class="badge badge-success">${levelLabels[c.level]||'입문'}</span></div>`;
+  document.getElementById('lessonList').innerHTML=lessons.length?lessons.map(l=>`
+    <div style="display:flex;align-items:center;gap:.85rem;padding:.75rem 1rem;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:.5rem;cursor:pointer;transition:all .2s" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--border)'" onclick="viewLesson(${JSON.stringify(l.id).replace(/"/g,'&quot;')})">
+      <span style="width:28px;height:28px;border-radius:50%;background:var(--accent-light);color:var(--accent);font-weight:700;font-size:.8rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">${l.order}</span>
+      <span style="flex:1;font-size:.88rem;font-weight:500">${escHtml(l.title)}</span>
+      <span class="badge badge-accent">${l.slides?.length||0}슬라이드</span>
+      <span class="badge badge-success">${l.quiz?.length||0}퀴즈</span>
+    </div>`).join(''):'<div class="empty" style="padding:2rem"><div class="empty-title">강의가 없습니다</div></div>';
+}
+
+// ===== LESSON VIEWER =====
+let currentLessonId=null;
+function viewLesson(id){
+  const l=DB.lessons().find(x=>x.id===id);if(!l)return;
+  currentLessonId=id;
+  showPage('lessonViewer');
+  document.getElementById('lessonViewerTitle').textContent=l.title;
+  document.getElementById('btnBackToCourse').onclick=()=>showCourseDetail(l.courseId);
+
+  // Tabs
+  document.querySelectorAll('#lessonTabs .tab-btn').forEach(b=>{
+    b.onclick=()=>{
+      document.querySelectorAll('#lessonTabs .tab-btn').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('.page.active .tab-panel').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');document.getElementById(b.dataset.ltab).classList.add('active');
+    };
+    b.classList.remove('active');
   });
-});
+  document.querySelector('#lessonTabs .tab-btn').classList.add('active');
+  document.querySelectorAll('#page-lessonViewer .tab-panel').forEach(x=>x.classList.remove('active'));
+  document.getElementById('lcontent').classList.add('active');
 
-// Smooth scroll nav
-document.querySelectorAll('.nav a').forEach(a=>{
-  a.addEventListener('click',e=>{
-    e.preventDefault();
-    document.querySelectorAll('.nav a').forEach(n=>n.classList.remove('active'));
-    a.classList.add('active');
-    const target=document.querySelector(a.getAttribute('href'));
-    if(target)target.scrollIntoView({behavior:'smooth',block:'start'});
-  });
-});
-
-// Scroll reveal
-const observer=new IntersectionObserver(entries=>{
-  entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')});
-},{threshold:.1});
-document.querySelectorAll('.reveal').forEach(el=>observer.observe(el));
-
-// Chart defaults
-Chart.defaults.font.family="'Noto Sans KR',sans-serif";
-Chart.defaults.font.size=12;
-Chart.defaults.color='#604D53';
-
-const accent='#DB7F8E',accentLight='#FFDBDA',mid='#EBCCC5';
-
-// 1. Content Distribution (Doughnut)
-new Chart(document.getElementById('chartContentDist'),{
-  type:'doughnut',
-  data:{
-    labels:['본문+대화','슬라이드','퀴즈','만화+스토리북','문화노트','영상+음악','AI 기능'],
-    datasets:[{
-      data:[25,12,10,18,10,12,13],
-      backgroundColor:['#DB7F8E','#FFDBDA','#EBCCC5','#F4A7B4','#D5C5C8','#B8A0A6','#E8D0D3'],
-      borderWidth:0,
-      hoverOffset:8
-    }]
-  },
-  options:{
-    responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{position:'right',labels:{padding:12,usePointStyle:true,pointStyleWidth:10}}}
+  // Content tab
+  let html='';
+  if(l.key_expressions?.length){
+    html+=`<div class="lesson-section"><h3>핵심 표현</h3><div>${l.key_expressions.map(e=>`<div class="expr-card"><span class="expr-zh">${escHtml(e.zh)}</span><span class="expr-pinyin">${escHtml(e.pinyin)}</span><span class="expr-ko">${escHtml(e.ko)}</span>${e.hsk?`<span class="badge badge-accent">HSK${e.hsk}</span>`:''}</div>`).join('')}</div></div>`;
   }
-});
-
-// 2. Dingding Interaction (Bar)
-new Chart(document.getElementById('chartDingding'),{
-  type:'bar',
-  data:{
-    labels:['랜딩','강좌목록','강의','스토리목록','스토리플레이','뉴스레터','단어장'],
-    datasets:[
-      {label:'말풍선',data:[6,5,8,4,4,3,4],backgroundColor:'rgba(219,127,142,.6)',borderRadius:6},
-      {label:'퀵액션',data:[4,4,5,3,3,2,3],backgroundColor:'rgba(255,219,218,.8)',borderRadius:6},
-      {label:'코치마크',data:[5,3,7,0,2,1,1],backgroundColor:'rgba(235,204,197,.8)',borderRadius:6}
-    ]
-  },
-  options:{
-    responsive:true,maintainAspectRatio:false,
-    scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,grid:{color:'rgba(213,197,200,.3)'}}},
-    plugins:{legend:{position:'top',labels:{padding:10,usePointStyle:true,pointStyleWidth:10}}}
+  if(l.content){html+=`<div class="lesson-section"><h3>본문</h3><div class="md-content">${renderMd(l.content)}</div></div>`}
+  if(l.dialogues?.length){
+    html+=`<div class="lesson-section"><h3>실전 대화</h3>${l.dialogues.map(d=>`<div class="dialogue-line"><span class="dialogue-speaker">${escHtml(d.speaker)}:</span> <span style="font-family:'Noto Sans SC';font-weight:500">${escHtml(d.zh)}</span>${d.pinyin?` <span style="color:var(--text-light);font-size:.8rem">(${escHtml(d.pinyin)})</span>`:''} <span style="font-size:.82rem">— ${escHtml(d.ko)}</span></div>`).join('')}</div>`;
   }
-});
-
-// 3. Gemini Call Structure (Radar)
-new Chart(document.getElementById('chartGemini'),{
-  type:'radar',
-  data:{
-    labels:['텍스트 생성','이미지 생성','작문 채점','叮叮 대화','학습송 작사','스토리 생성','뉴스레터'],
-    datasets:[{
-      label:'호출 복잡도',
-      data:[95,80,60,85,70,75,55],
-      backgroundColor:'rgba(219,127,142,.15)',
-      borderColor:accent,borderWidth:2,
-      pointBackgroundColor:accent,pointRadius:4
-    },{
-      label:'fallback 단계',
-      data:[30,90,20,70,10,15,10],
-      backgroundColor:'rgba(235,204,197,.2)',
-      borderColor:mid,borderWidth:2,
-      pointBackgroundColor:mid,pointRadius:4
-    }]
-  },
-  options:{
-    responsive:true,maintainAspectRatio:false,
-    scales:{r:{beginAtZero:true,max:100,ticks:{stepSize:25,display:false},grid:{color:'rgba(213,197,200,.3)'},pointLabels:{font:{size:10}}}},
-    plugins:{legend:{position:'top',labels:{padding:10,usePointStyle:true,pointStyleWidth:10}}}
+  if(l.cultural_note){
+    const cn=typeof l.cultural_note==='string'?tryParse(l.cultural_note):l.cultural_note;
+    if(cn&&typeof cn==='object'){
+      html+=`<div class="lesson-section"><h3>문화 노트</h3><div class="cultural-note">
+        ${cn.summary?`<p style="font-weight:600;margin-bottom:.5rem">${escHtml(cn.summary)}</p>`:''}
+        ${cn.background?`<p style="font-size:.85rem;margin-bottom:.5rem">${escHtml(cn.background)}</p>`:''}
+        ${cn.fun_facts?`<ul style="font-size:.82rem">${cn.fun_facts.map(f=>`<li>${escHtml(f)}</li>`).join('')}</ul>`:''}
+        ${cn.comparison?`<p style="font-size:.82rem;margin-top:.5rem"><strong>한국과 비교:</strong> ${escHtml(cn.comparison)}</p>`:''}
+        ${cn.did_you_know?`<p style="font-size:.82rem;margin-top:.5rem;font-style:italic">💡 ${escHtml(cn.did_you_know)}</p>`:''}
+      </div></div>`;
+    }
   }
-});
+  document.getElementById('lcontent').innerHTML=html||'<p style="color:var(--text-light)">콘텐츠 없음</p>';
 
-// 4. Tech Stack (Polar Area)
-new Chart(document.getElementById('chartTech'),{
-  type:'polarArea',
-  data:{
-    labels:['PHP (서버)','Vanilla JS (프론트)','CSS (글라스모피즘)','REST API','Web Audio','Web Speech'],
-    datasets:[{
-      data:[35,30,15,10,5,5],
-      backgroundColor:['rgba(219,127,142,.5)','rgba(255,219,218,.7)','rgba(235,204,197,.6)','rgba(213,197,200,.5)','rgba(184,160,166,.4)','rgba(244,167,180,.4)'],
-      borderWidth:0
-    }]
-  },
-  options:{
-    responsive:true,maintainAspectRatio:false,
-    scales:{r:{beginAtZero:true,ticks:{display:false},grid:{color:'rgba(213,197,200,.2)'}}},
-    plugins:{legend:{position:'right',labels:{padding:8,usePointStyle:true,pointStyleWidth:10,font:{size:10}}}}
-  }
-});
+  // Slides tab
+  document.getElementById('lslides').innerHTML=l.slides?.length?l.slides.map((s,i)=>`<div class="slide-card">
+    <h4>슬라이드 ${i+1}: ${escHtml(s.title)}</h4>
+    ${s.subtitle?`<p style="font-size:.82rem;color:var(--text-light);margin-bottom:.5rem">${escHtml(s.subtitle)}</p>`:''}
+    ${s.bullets?`<ul style="font-size:.82rem;margin-bottom:.5rem">${s.bullets.map(b=>`<li>${escHtml(b)}</li>`).join('')}</ul>`:''}
+    ${s.vocab?.length?`<div style="display:flex;gap:.35rem;flex-wrap:wrap;margin:.5rem 0">${s.vocab.map(v=>`<span class="expr-card" style="font-size:.75rem"><span class="expr-zh" style="font-size:.85rem">${escHtml(v.zh)}</span><span class="expr-pinyin">${escHtml(v.pinyin)}</span><span class="expr-ko">${escHtml(v.ko)}</span></span>`).join('')}</div>`:''}
+    ${s.tip?`<p style="font-size:.78rem;color:var(--info);margin-top:.35rem">💡 ${escHtml(s.tip)}</p>`:''}
+  </div>`).join(''):'<p style="color:var(--text-light)">슬라이드 없음</p>';
 
-// 5. File Size Distribution (Horizontal Bar)
-new Chart(document.getElementById('chartFileSize'),{
-  type:'bar',
-  data:{
-    labels:['dd-lesson.css','dd-assistant.js','dd-admin.js','lesson-public.php','REST API','drama-generator','course-generator','dd-vocabulary.js','public-access','dd-song-player.js','landing-public.php'],
-    datasets:[{
-      label:'파일 크기 (KB)',
-      data:[94,91,87,58,57,41,32,41,35,33,31],
-      backgroundColor:function(ctx){
-        const v=ctx.raw;
-        return v>80?'rgba(219,127,142,.7)':v>50?'rgba(255,219,218,.8)':'rgba(235,204,197,.6)';
-      },
-      borderRadius:6,
-      barThickness:18
-    }]
-  },
-  options:{
-    indexAxis:'y',responsive:true,maintainAspectRatio:false,
-    scales:{x:{beginAtZero:true,grid:{color:'rgba(213,197,200,.2)'},title:{display:true,text:'KB'}},y:{grid:{display:false}}},
-    plugins:{legend:{display:false}}
-  }
-});
+  // Quiz tab
+  document.getElementById('lquiz').innerHTML=l.quiz?.length?l.quiz.map((q,qi)=>{
+    if(q.type==='choice')return`<div class="quiz-item"><div class="quiz-q">${qi+1}. ${escHtml(q.question_ko)}</div><div class="quiz-options">${q.options.map((o,oi)=>`<div class="quiz-opt" onclick="checkQuiz(this,${oi===q.correct},${qi})" data-qi="${qi}">${escHtml(o)}</div>`).join('')}</div><div class="quiz-explain" id="qexp${qi}" style="display:none;font-size:.78rem;color:var(--info);margin-top:.5rem">💡 ${escHtml(q.explanation||'')}</div></div>`;
+    if(q.type==='fill')return`<div class="quiz-item"><div class="quiz-q">${qi+1}. ${escHtml(q.question_ko)}</div><p style="font-size:.92rem;font-family:'Noto Sans SC';margin:.5rem 0">${escHtml(q.sentence_zh)}</p><input class="input" placeholder="${escHtml(q.hint||'답을 입력하세요')}" style="max-width:200px" onchange="checkFill(this,'${escHtml(q.answer)}',${qi})"><div class="quiz-explain" id="qexp${qi}" style="display:none;font-size:.78rem;color:var(--info);margin-top:.5rem">정답: ${escHtml(q.answer)} — ${escHtml(q.explanation||'')}</div></div>`;
+    if(q.type==='order')return`<div class="quiz-item"><div class="quiz-q">${qi+1}. ${escHtml(q.question_ko)}</div><p style="font-size:.82rem;color:var(--text-light);margin-bottom:.5rem">단어: ${q.words?.map(w=>`<span class="badge badge-accent" style="margin:.15rem">${escHtml(w)}</span>`).join('')}</p><p style="font-size:.82rem">정답: <strong style="font-family:'Noto Sans SC'">${escHtml(q.answer_text||'')}</strong></p><div class="quiz-explain" style="font-size:.78rem;color:var(--info);margin-top:.35rem">💡 ${escHtml(q.explanation||'')}</div></div>`;
+    return'';
+  }).join(''):'<p style="color:var(--text-light)">퀴즈 없음</p>';
 
-// 6. Vocabulary Features (Doughnut)
-new Chart(document.getElementById('chartVocab'),{
-  type:'doughnut',
-  data:{
-    labels:['플래시카드','단어 맞추기','랜덤 배열','문장 빈칸','뜻 연결'],
-    datasets:[{
-      data:[30,20,15,20,15],
-      backgroundColor:['#DB7F8E','#F4A7B4','#FFDBDA','#EBCCC5','#D5C5C8'],
-      borderWidth:0,hoverOffset:6
-    }]
-  },
-  options:{
-    responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{position:'right',labels:{padding:8,usePointStyle:true,pointStyleWidth:8,font:{size:10}}}}
-  }
-});
+  // Storybook tab
+  document.getElementById('lstorybook').innerHTML=l.storybook_pages?.length?l.storybook_pages.map((p,i)=>`<div class="storybook-page">
+    <div style="font-size:.72rem;color:var(--text-light);margin-bottom:.35rem">페이지 ${i+1}</div>
+    <div class="storybook-zh">${escHtml(p.text_zh)}</div>
+    <div class="storybook-pinyin">${escHtml(p.pinyin)}</div>
+    <div class="storybook-ko">${escHtml(p.text_ko)}</div>
+  </div>`).join(''):'<p style="color:var(--text-light)">스토리북 없음</p>';
+}
+function checkQuiz(el,correct,qi){
+  if(el.parentElement.querySelector('.correct,.wrong'))return;
+  el.classList.add(correct?'correct':'wrong');
+  if(!correct){const opts=el.parentElement.children;for(let o of opts)if(!o.classList.contains('wrong'))o.classList.add('correct')}// hmm, should highlight correct one
+  document.getElementById('qexp'+qi).style.display='block';
+}
+function checkFill(el,answer,qi){
+  el.style.borderColor=el.value.trim()===answer?'var(--success)':'var(--error)';
+  document.getElementById('qexp'+qi).style.display='block';
+}
+function tryParse(s){try{return JSON.parse(s)}catch{return s}}
+
+// ===== AI GENERATOR =====
+function checkGenApi(){document.getElementById('genApiWarning').style.display=localStorage.getItem('dd_api_key')?'none':'flex'}
+let genCourseId=null;
+async function startGeneration(){
+  const topic=document.getElementById('genTopic').value.trim();
+  if(!topic)return showAlert('주제를 입력하세요','error');
+  const weeks=parseInt(document.getElementById('genWeeks').value);
+  const level=document.getElementById('genLevel').value;
+  const btn=document.getElementById('btnGenerate');
+  btn.disabled=true;
+  document.getElementById('genFormCard').style.display='none';
+  document.getElementById('genProgressCard').style.display='block';
+  document.getElementById('genResultCard').style.display='none';
+  document.getElementById('genLessonList').innerHTML='';
+  setProgress(0,'강좌 개요 생성 중...');
+
+  try{
+    // Phase 1: Outline
+    const outline=await callGemini(
+      `주제: "${topic}"\n\n아래 형식의 JSON을 출력하세요.\n{"title":"강좌 제목","description":"강좌 설명 2-3문장","lessons":[{"order":1,"title":"강의 제목","summary":"1줄 요약"}]}\n\n규칙:\n- lessons 배열에 정확히 ${weeks}개 항목\n- 한국어로 작성\n- 난이도: 입문에서 심화 순서`,
+      '당신은 한국인을 위한 중국어·중국문화 교육 전문가입니다. 반드시 유효한 JSON만 출력하세요.'
+    );
+    if(!outline.title||!outline.lessons)throw new Error('강좌 개요 형식 오류');
+    const course=DB.addCourse({title:outline.title,description:outline.description||'',level,status:'generating',createdAt:new Date().toISOString()});
+    genCourseId=course.id;
+    setProgress(10,`강좌 "${outline.title}" 생성 완료. 강의 생성 시작...`);
+
+    // Phase 2: Lessons
+    const total=outline.lessons.length;
+    for(let i=0;i<total;i++){
+      const lt=outline.lessons[i];
+      const pct=10+Math.round(((i+1)/total)*85);
+      setProgress(pct,`강의 ${i+1}/${total} 생성 중: ${lt.title}...`);
+
+      const lessonData=await generateLessonContent(outline.title,lt.title,level);
+      const lesson=DB.addLesson({courseId:course.id,title:lt.title,order:lt.order||i+1,...lessonData});
+
+      const li=document.createElement('li');
+      li.textContent=`✓ ${lt.title} (슬라이드 ${lessonData.slides?.length||0}, 퀴즈 ${lessonData.quiz?.length||0})`;
+      document.getElementById('genLessonList').appendChild(li);
+    }
+
+    // Update course status
+    const courses=DB.courses();const ci=courses.findIndex(c=>c.id===course.id);
+    if(ci>=0){courses[ci].status='complete';DB.saveCourses(courses)}
+
+    setProgress(100,'생성 완료!');
+    document.getElementById('genResultCard').style.display='block';
+    document.getElementById('genResultSummary').textContent=`"${outline.title}" — ${total}개 강의가 생성되었습니다.`;
+    document.getElementById('btnViewGenCourse').onclick=()=>showCourseDetail(course.id);
+  }catch(e){
+    showAlert('생성 실패: '+e.message,'error');
+    document.getElementById('genFormCard').style.display='block';
+  }finally{btn.disabled=false}
+}
+
+async function generateLessonContent(courseName,lessonTitle,level){
+  const levelNote=level==='beginner'?'입문 — 모든 중국어에 병음 표기':'중급/고급 — 병음 없이 한자와 한국어만';
+  const system='당신은 한국인을 위한 중국어·중국문화 교육 콘텐츠 전문가입니다. 반드시 유효한 JSON만 출력하세요.\n[절대 규칙] 중국어는 반드시 한자로! pinyin을 중국어 대신 쓰지 마세요.';
+  const prompt=`강좌명: "${courseName}"\n강의 제목: "${lessonTitle}"\n난이도: ${levelNote}\n\nJSON 구조를 정확히 따라 생성:\n{\n  "content": "강의 본문 (마크다운, 최소 500자, ## 도입 → ## 핵심 표현 → ## 문법 포인트 → ## 실전 대화 → ## 문화 속 언어)",\n  "key_expressions": [{"zh":"你好","pinyin":"nǐ hǎo","ko":"안녕하세요","hsk":1}],\n  "cultural_note": {"summary":"요약","background":"배경 3-4문장","fun_facts":["사실1","사실2"],"comparison":"한국 비교","related_expression":{"zh":"표현","pinyin":"병음","ko":"뜻"},"did_you_know":"트리비아"},\n  "dialogues": [{"speaker":"지수","zh":"你好！","pinyin":"nǐ hǎo!","ko":"안녕!"}],\n  "slides": [{"title":"제목","subtitle":"부제","bullets":["1","2","3","4"],"vocab":[{"zh":"你好","pinyin":"nǐ hǎo","ko":"안녕"}],"examples":[{"zh":"你好吗？","pinyin":"nǐ hǎo ma?","ko":"잘 지내?"}],"tip":"팁"}],\n  "quiz": [{"type":"choice","question_ko":"질문","question_zh":"问题","options":["A","B","C","D"],"correct":0,"explanation":"해설"},{"type":"fill","question_ko":"빈칸","sentence_zh":"我___去。","answer":"想","hint":"원하다","explanation":"해설"},{"type":"order","question_ko":"어순 배열","words":["去","我"],"correct_order":[1,0],"answer_text":"我去","explanation":"해설"}],\n  "storybook_pages": [{"page":1,"text_zh":"中国语文","pinyin":"병음","text_ko":"한국어"}]\n}\n\n규칙:\n- key_expressions: 6-9개, zh 반드시 한자\n- dialogues: 8-10개, zh 반드시 한자\n- slides: 5장, vocab 3-4개, examples 2-3개\n- quiz: 6개 (choice 2 + fill 2 + order 2)\n- storybook_pages: 6페이지`;
+  return await callGemini(prompt,system);
+}
+
+function setProgress(pct,text){
+  document.getElementById('genProgressFill').style.width=pct+'%';
+  document.getElementById('genProgressText').textContent=text;
+}
+function resetGenerator(){
+  document.getElementById('genFormCard').style.display='block';
+  document.getElementById('genProgressCard').style.display='none';
+  document.getElementById('genResultCard').style.display='none';
+  document.getElementById('genTopic').value='';
+}
+
+// ===== STORIES =====
+function renderStories(){
+  const stories=DB.stories();
+  document.getElementById('storyEmpty').style.display=stories.length?'none':'block';
+  document.getElementById('storyGrid').innerHTML=stories.map(s=>`<div class="course-card">
+    <div class="course-thumb" style="background:linear-gradient(135deg,#E8D5E0,var(--accent-light),var(--mid))">🎮</div>
+    <div class="course-info">
+      <h3>${escHtml(s.title)}</h3>
+      <p>${escHtml(s.description)}</p>
+      <div class="course-meta"><span class="badge badge-accent">${Object.keys(s.nodes||{}).length} 장면</span><span class="badge badge-success">${levelLabels[s.level]||'입문'}</span></div>
+      <div class="course-actions">
+        <button class="btn btn-primary btn-sm" onclick="event.stopPropagation();playStory(${s.id})">플레이</button>
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();if(confirm('삭제?')){DB.deleteStory(${s.id});renderStories()}">삭제</button>
+      </div>
+    </div></div>`).join('');
+}
+async function generateStory(){
+  const topic=document.getElementById('storyTopic').value.trim();
+  if(!topic)return showAlert('주제를 입력하세요','error');
+  const level=document.getElementById('storyLevel').value;
+  const btn=document.getElementById('btnGenStory');btn.disabled=true;btn.textContent='생성 중...';
+  try{
+    const levelDesc={beginner:'HSK 1-2급 (기초)',intermediate:'HSK 3-4급 (일상대화)',advanced:'HSK 5+ (고급)'};
+    const result=await callGemini(
+      `주제: "${topic}"\n난이도: ${level} (${levelDesc[level]})\n\n인터랙티브 스토리 JSON 생성:\n{"title":"제목","description":"소개","start":"node_1","nodes":{"node_1":{"id":"node_1","text_zh":"중국어 4-6문장","pinyin":"병음","text_ko":"번역","mood":"warm","speaker":"리리","vocab":[{"zh":"단어","pinyin":"병음","ko":"뜻"}],"grammar_tip":"문법팁","choices":[{"text_zh":"선택지","text_ko":"번역","next":"node_2","emoji":"🍜"}]}}}\n\n규칙:\n- 12-18개 노드, 2-3개 선택지\n- 최소 4개 엔딩 (good 2/neutral 1/bad 1)\n- 엔딩: is_ending:true, ending_type, ending_title, choices:[]\n- vocab: 노드당 2-4개\n- mood: warm/tense/cheerful/mysterious/sad/exciting\n- 중국 문화 체험 내용`,
+      '당신은 한국인 중국어 학습자를 위한 인터랙티브 스토리 작가입니다. 유효한 JSON만 출력.'
+    );
+    if(!result.title||!result.nodes)throw new Error('스토리 형식 오류');
+    DB.addStory({title:result.title,description:result.description||'',level,start:result.start,nodes:result.nodes,createdAt:new Date().toISOString()});
+    closeModal('modalNewStory');showAlert('스토리가 생성되었습니다!');renderStories();
+  }catch(e){showAlert('생성 실패: '+e.message,'error')}
+  finally{btn.disabled=false;btn.textContent='AI로 생성하기'}
+}
+
+// ===== STORY PLAYER =====
+let currentStory=null,currentNode=null;
+function playStory(id){
+  currentStory=DB.stories().find(s=>s.id===id);if(!currentStory)return;
+  showPage('storyPlayer');
+  document.getElementById('storyPlayerTitle').textContent=currentStory.title;
+  currentNode=currentStory.start;
+  renderStoryNode();
+}
+function renderStoryNode(){
+  const node=currentStory.nodes[currentNode];if(!node)return;
+  const isEnd=node.is_ending;
+  document.getElementById('btnRestartStory').style.display=isEnd?'inline-flex':'none';
+  const moodColors={warm:'#FFF5E6',tense:'#F0E0E0',cheerful:'#E8F5E9',mysterious:'#E8E0F0',sad:'#E0E8F0',exciting:'#FFF0E0'};
+  const bg=moodColors[node.mood]||'var(--accent-light)';
+  document.getElementById('storyScene').innerHTML=`
+    <div class="story-scene" style="background:linear-gradient(135deg,${bg},var(--bg))">
+      ${node.speaker?`<div style="font-size:.78rem;color:var(--text-light);margin-bottom:.5rem">🗣️ ${escHtml(node.speaker)}</div>`:''}
+      <div class="story-zh">${escHtml(node.text_zh)}</div>
+      <div class="story-pinyin">${escHtml(node.pinyin||'')}</div>
+      <div class="story-ko">${escHtml(node.text_ko)}</div>
+      ${node.grammar_tip?`<div style="font-size:.78rem;color:var(--info);margin-bottom:.75rem">📝 ${escHtml(node.grammar_tip)}</div>`:''}
+      ${isEnd?`<div style="margin:1rem 0"><span class="badge badge-${node.ending_type==='good'?'success':'accent'}" style="font-size:.85rem;padding:.4rem .85rem">${node.ending_type==='good'?'🎉':'😢'} ${escHtml(node.ending_title||'엔딩')}</span></div>`:''}
+      ${node.choices?.length?`<div class="story-choices">${node.choices.map(ch=>`<div class="story-choice" onclick="currentNode='${ch.next}';renderStoryNode()"><span>${ch.emoji||''}</span> <span style="font-family:'Noto Sans SC'">${escHtml(ch.text_zh)}</span> <span style="font-size:.78rem;color:var(--text-light)">— ${escHtml(ch.text_ko)}</span></div>`).join('')}</div>`:''}
+      ${node.vocab?.length?`<div class="story-vocab">${node.vocab.map(v=>`<span class="expr-card" style="font-size:.72rem"><span class="expr-zh" style="font-size:.82rem">${escHtml(v.zh)}</span><span class="expr-pinyin">${escHtml(v.pinyin)}</span><span class="expr-ko">${escHtml(v.ko)}</span></span>`).join('')}</div>`:''}
+    </div>`;
+}
+function restartStory(){currentNode=currentStory.start;renderStoryNode()}
+
+// ===== NEWSLETTERS =====
+function toggleNlGen(){const f=document.getElementById('nlGenForm');f.style.display=f.style.display==='none'?'block':'none'}
+function renderNewsletters(){
+  const nls=DB.newsletters();
+  document.getElementById('nlEmpty').style.display=nls.length?'none':'block';
+  const catLabels={entertainment:'엔터',music:'음악',food:'음식',tech:'테크',drama:'드라마',social:'소셜'};
+  document.getElementById('nlGrid').innerHTML=nls.map(n=>`<div class="course-card" onclick="viewNewsletter(${n.id})">
+    <div class="course-thumb" style="background:linear-gradient(135deg,#E0E8F5,var(--accent-light))">${n.emoji||'📰'}</div>
+    <div class="course-info">
+      <h3>${escHtml(n.title)}</h3>
+      <p>${escHtml(n.summary)}</p>
+      <div class="course-meta"><span class="badge badge-accent">${catLabels[n.category]||n.category}</span></div>
+      <div class="course-actions">
+        <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();if(confirm('삭제?')){DB.deleteNewsletter(${n.id});renderNewsletters()}">삭제</button>
+      </div>
+    </div></div>`).join('');
+}
+async function generateNewsletter(){
+  const topic=document.getElementById('nlTopic').value.trim()||'최신 중국 대중문화 트렌드';
+  const btn=document.getElementById('btnGenNl');btn.disabled=true;btn.textContent='생성 중...';
+  try{
+    const result=await callGemini(
+      `Generate a newsletter about: ${topic}\n\nReturn JSON:\n{"title":"한국어 제목","title_zh":"中文标题","summary":"한국어 요약 2-3문장","category":"entertainment|music|food|tech|drama|social","cover_emoji":"📰","sections":[{"title":"섹션제목","content":"한국어 2-3문단","key_terms":[{"zh":"中文","pinyin":"병음","ko":"뜻","hsk":3}]}],"vocab_spotlight":[{"zh":"词语","pinyin":"병음","ko":"뜻","example_zh":"例句","example_ko":"번역","hsk":3}]}\n\nRequirements:\n- 3-4 sections, 2-4 key_terms each\n- 4-6 vocab_spotlight items\n- Content in Korean, Chinese only in terms/vocab`,
+      'You are a Chinese pop culture journalist writing newsletters for Korean learners. All content in Korean. Chinese only in vocab fields.'
+    );
+    if(!result.title||!result.sections)throw new Error('뉴스레터 형식 오류');
+    DB.addNewsletter({title:result.title,title_zh:result.title_zh,summary:result.summary||'',category:result.category||'entertainment',emoji:result.cover_emoji||'📰',sections:result.sections,vocab_spotlight:result.vocab_spotlight||[],createdAt:new Date().toISOString()});
+    document.getElementById('nlGenForm').style.display='none';document.getElementById('nlTopic').value='';
+    showAlert('뉴스레터가 생성되었습니다!');renderNewsletters();
+  }catch(e){showAlert('생성 실패: '+e.message,'error')}
+  finally{btn.disabled=false;btn.textContent='생성하기'}
+}
+function viewNewsletter(id){
+  const n=DB.newsletters().find(x=>x.id===id);if(!n)return;
+  showPage('nlDetail');
+  document.getElementById('nlDetailContent').innerHTML=`
+    <h2 style="font-size:1.3rem;font-weight:700;margin-bottom:.25rem">${escHtml(n.title)}</h2>
+    ${n.title_zh?`<p style="font-size:1rem;font-family:'Noto Sans SC';color:var(--text-light);margin-bottom:1rem">${escHtml(n.title_zh)}</p>`:''}
+    ${n.sections?.map(s=>`<div class="nl-section"><h4>${escHtml(s.title)}</h4><p style="font-size:.85rem;line-height:1.7">${escHtml(s.content)}</p>
+      ${s.key_terms?.length?`<div class="nl-terms">${s.key_terms.map(t=>`<span class="expr-card" style="font-size:.72rem"><span class="expr-zh" style="font-size:.82rem">${escHtml(t.zh)}</span><span class="expr-pinyin">${escHtml(t.pinyin)}</span><span class="expr-ko">${escHtml(t.ko)}</span>${t.hsk?`<span class="badge badge-accent">HSK${t.hsk}</span>`:''}</span>`).join('')}</div>`:''}</div>`).join('')||''}
+    ${n.vocab_spotlight?.length?`<div class="card" style="margin-top:1rem"><div class="card-title" style="margin-bottom:.75rem">📖 어휘 스포트라이트</div>
+      ${n.vocab_spotlight.map(v=>`<div style="padding:.6rem 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.25rem"><strong style="font-family:'Noto Sans SC';font-size:1rem">${escHtml(v.zh)}</strong><span style="font-size:.78rem;color:var(--text-light)">${escHtml(v.pinyin)}</span><span style="font-size:.82rem">${escHtml(v.ko)}</span>${v.hsk?`<span class="badge badge-accent">HSK${v.hsk}</span>`:''}</div>
+        ${v.example_zh?`<p style="font-size:.82rem;font-family:'Noto Sans SC'">${escHtml(v.example_zh)}</p>`:''} ${v.example_ko?`<p style="font-size:.78rem;color:var(--text-light)">${escHtml(v.example_ko)}</p>`:''}
+      </div>`).join('')}</div>`:''}`;
+}
+
+// ===== SETTINGS =====
+function renderSettings(){
+  const key=localStorage.getItem('dd_api_key');
+  document.getElementById('apiKeyStatus').textContent=key?'설정됨 ✓':'미설정';
+  document.getElementById('apiKeyStatus').className='badge '+(key?'badge-success':'badge-accent');
+  document.getElementById('modelSelect').value=localStorage.getItem('dd_model')||'gemini-2.5-flash';
+}
+function saveApiKey(){
+  const key=document.getElementById('apiKeyInput').value.trim();
+  if(!key)return showAlert('API 키를 입력하세요','error');
+  localStorage.setItem('dd_api_key',key);document.getElementById('apiKeyInput').value='';
+  showAlert('API 키가 저장되었습니다.');renderSettings();
+}
+function deleteApiKey(){localStorage.removeItem('dd_api_key');showAlert('API 키가 삭제되었습니다.','warning');renderSettings()}
+function saveModel(){localStorage.setItem('dd_model',document.getElementById('modelSelect').value);showAlert('모델이 저장되었습니다.')}
+function exportData(){
+  const data={courses:DB.courses(),lessons:DB.lessons(),stories:DB.stories(),newsletters:DB.newsletters()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='dingdong-lms-export.json';a.click();
+}
+
+// ===== INIT =====
+renderDashboard();
 </script>
 </body>
 </html>
