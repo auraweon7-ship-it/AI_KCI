@@ -668,7 +668,7 @@ app.post('/api/tts/full-script', async (req, res) => {
           '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11',
           '-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100',
           '-y', dstPath
-        ], { timeout: 120000 }, (error, stdout, stderr) => {
+        ], { timeout: 120000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
           if (error) reject(new Error(`normalize 오류: ${error.message}\n${stderr.substring(0, 500)}`));
           else resolve();
         });
@@ -780,7 +780,7 @@ app.post('/api/tts/full-script', async (req, res) => {
         '-map', '[out]',
         '-c:a', 'libmp3lame', '-b:a', '320k', '-ar', '44100',
         '-y', outputPath
-      ], { timeout: 180000 }, (error, stdout, stderr) => {
+      ], { timeout: 180000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
         if (error) {
           // Fallback: concat demuxer + re-encode (필터 실패 시)
           console.error('[TTS acrossfade 실패, concat fallback]', error.message);
@@ -788,7 +788,7 @@ app.post('/api/tts/full-script', async (req, res) => {
             '-f', 'concat', '-safe', '0', '-i', concatFile,
             '-c:a', 'libmp3lame', '-b:a', '320k', '-ar', '44100',
             '-y', outputPath
-          ], { timeout: 120000 }, (e2) => { if (e2) reject(e2); else resolve(); });
+          ], { timeout: 120000, maxBuffer: 50 * 1024 * 1024 }, (e2) => { if (e2) reject(e2); else resolve(); });
         } else resolve();
       });
     });
@@ -1062,7 +1062,7 @@ function listFilesByMtime(dir, filterFn) {
 // 헬퍼: FFmpeg로 미디어 길이 측정
 async function probeDuration(filePath) {
   return new Promise((resolve) => {
-    execFile('ffmpeg', ['-i', filePath, '-hide_banner'], { timeout: 10000 }, (error, stdout, stderr) => {
+    execFile('ffmpeg', ['-i', filePath, '-hide_banner'], { timeout: 10000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
       const match = (stderr || '').match(/Duration:\s*(\d+):(\d+):(\d+)\.(\d+)/);
       if (match) resolve(parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]) + parseInt(match[4])/100);
       else resolve(0);
@@ -1405,7 +1405,7 @@ app.post('/api/render/video', async (req, res) => {
     const hasBgm = bgmPath && fs.existsSync(bgmPath);
 
     await new Promise((resolve, reject) => {
-      execFile('ffmpeg', ffmpegArgs, { timeout: 1200000 }, (error, stdout, stderr) => {
+      execFile('ffmpeg', ffmpegArgs, { timeout: 1200000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
         if (error) reject(new Error(`FFmpeg 오류: ${error.message}\n${stderr}`));
         else resolve(stdout);
       });
@@ -1428,7 +1428,7 @@ app.post('/api/render/video', async (req, res) => {
         '-y', bgmOutput
       ];
       await new Promise((resolve, reject) => {
-        execFile('ffmpeg', bgmArgs, { timeout: 300000 }, (error, stdout, stderr) => {
+        execFile('ffmpeg', bgmArgs, { timeout: 300000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
           if (error) reject(new Error(`BGM 믹싱 오류: ${error.message}`));
           else resolve(stdout);
         });
@@ -1455,7 +1455,7 @@ app.post('/api/render/video', async (req, res) => {
             '-c:v', 'libx264', '-preset', 'medium', '-crf', '23', '-pix_fmt', 'yuv420p',
             '-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-shortest',
             '-y', thumbVid
-          ], { timeout: 60000 }, (error, stdout, stderr) => {
+          ], { timeout: 60000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
             if (error) reject(new Error(`썸네일 인트로 생성 오류: ${error.message}\n${stderr}`));
             else resolve();
           });
@@ -1469,7 +1469,7 @@ app.post('/api/render/video', async (req, res) => {
             '-c:v', 'libx264', '-preset', 'medium', '-crf', '23', '-pix_fmt', 'yuv420p',
             '-c:a', 'aac', '-b:a', '192k', '-ar', '44100',
             '-movflags', '+faststart', '-y', thumbOutput
-          ], { timeout: 300000 }, (error, stdout, stderr) => {
+          ], { timeout: 300000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
             if (error) reject(new Error(`썸네일 인트로 결합 오류: ${error.message}\n${stderr}`));
             else resolve();
           });
@@ -1498,7 +1498,7 @@ app.post('/api/render/video', async (req, res) => {
             '-vf', `subtitles='${srtPathEscaped}':fontsdir='${path.join(__dirname, 'assets', 'fonts').replace(/\\/g, '/').replace(/:/g, '\\:')}':force_style='FontName=KoPubWorld Dotum Bold,Fontname=KoPubWorld Dotum Bold,FontSize=16,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=40,Bold=1,Italic=0,Alignment=2'`,
             '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
             '-movflags', '+faststart', '-y', srtOutput
-          ], { timeout: 600000 }, (error, stdout, stderr) => {
+          ], { timeout: 600000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
             if (error) reject(new Error(`자막 삽입 오류: ${error.message}\n${stderr}`));
             else resolve(stdout);
           });
@@ -1521,7 +1521,7 @@ app.post('/api/render/video', async (req, res) => {
           '-vf', `drawtext=text='${introText}':fontsize=56:fontcolor=white:borderw=3:bordercolor=black:shadowcolor=black@0.6:shadowx=2:shadowy=2:x=(w-text_w)/2:y=(h-text_h)/2:enable='between(t,${introStart},${introEnd})':fontfile='${path.join(__dirname, 'assets', 'fonts', 'KoPubWorldDotumBold.ttf').replace(/\\/g, '/').replace(/:/g, '\\\\:')}'`,
           '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
           '-movflags', '+faststart', '-y', introOutput
-        ], { timeout: 300000 }, (error, stdout, stderr) => {
+        ], { timeout: 300000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
           if (error) reject(new Error(`인트로 텍스트 오류: ${error.message}\n${stderr}`));
           else resolve();
         });
@@ -1536,7 +1536,7 @@ app.post('/api/render/video', async (req, res) => {
     let videoDuration = totalDuration;
     try {
       const dur = await new Promise((resolve, reject) => {
-        execFile('ffmpeg', ['-i', outputPath], { timeout: 10000 }, (error, stdout, stderr) => {
+        execFile('ffmpeg', ['-i', outputPath], { timeout: 10000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
           const match = (stderr || '').match(/Duration:\s*(\d+):(\d+):(\d+)\.(\d+)/);
           if (match) resolve(parseInt(match[1])*3600 + parseInt(match[2])*60 + parseInt(match[3]));
           else resolve(totalDuration);
@@ -1778,7 +1778,7 @@ app.post('/api/thumbnail/generate', async (req, res) => {
         '-i', rawPath,
         '-vf', 'crop=ih*16/9:ih,scale=1280:720',
         '-y', croppedPath
-      ], { timeout: 30000 }, (error) => {
+      ], { timeout: 30000, maxBuffer: 50 * 1024 * 1024 }, (error) => {
         if (error) { fs.copyFileSync(rawPath, croppedPath); }
         resolve();
       });
@@ -1909,7 +1909,7 @@ app.post('/api/thumbnail/generate', async (req, res) => {
         '-i', croppedPath,
         '-vf', drawFilters,
         '-y', filepath
-      ], { timeout: 30000 }, (error, stdout, stderr) => {
+      ], { timeout: 30000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
         if (error) { console.error('[Thumbnail drawtext]', stderr); fs.copyFileSync(croppedPath, filepath); }
         resolve();
       });
@@ -2136,7 +2136,7 @@ app.get('/api/files/list', (req, res) => {
 // FFmpeg Check
 // ========================
 app.get('/api/system/ffmpeg', (req, res) => {
-  execFile('ffmpeg', ['-version'], { timeout: 5000 }, (error, stdout) => {
+  execFile('ffmpeg', ['-version'], { timeout: 5000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout) => {
     if (error) {
       res.json({ success: true, installed: false, error: error.message });
     } else {
@@ -2154,7 +2154,7 @@ app.get('/api/audio/duration/:filename', (req, res) => {
   if (!fs.existsSync(filepath)) return res.json({ success: false, error: 'File not found' });
 
   execFile('ffprobe', ['-v', 'quiet', '-print_format', 'json', '-show_format', filepath],
-    { timeout: 10000 }, (error, stdout) => {
+    { timeout: 10000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout) => {
       if (error) return res.json({ success: true, duration: 0 });
       try {
         const info = JSON.parse(stdout);
