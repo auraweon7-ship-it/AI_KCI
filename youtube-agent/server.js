@@ -1156,25 +1156,20 @@ function scriptToSrt(scriptText, audioDur, offset = 0, alignment = null) {
 
   let srt = '';
 
-  // === alignment 기반 정확 매칭 ===
+  // === alignment 기반 정확 매칭 + 연속 표시 보장 ===
   if (alignment && alignment.characters && alignment.characters.length > 0) {
     const alignChars = alignment.characters;
     const alignStarts = alignment.starts;
     const alignEnds = alignment.ends;
-    // alignment의 char 시퀀스를 하나 합친 문자열
     const alignText = alignChars.join('');
 
-    let alignPos = 0; // alignment 안에서 현재 검색 시작 위치
-    let idx = 1;
-
+    // 1단계: 모든 chunk의 startTime/endTime 수집
+    const entries = [];
+    let alignPos = 0;
     for (const chunk of subtitleChunks) {
-      // chunk 텍스트를 alignment 안에서 위치 찾기
-      // 공백·문장부호 무시한 정규화 매칭으로 robust
       const target = chunk.replace(/\s+/g, '').replace(/[.,!?。！？，、:：;；]/g, '');
       if (target.length === 0) continue;
 
-      // alignment text에서 정규화된 위치 찾기
-      let normalizedIdx = 0;
       let realStartIdx = -1;
       let realEndIdx = -1;
       let matchedCount = 0;
@@ -1187,38 +1182,51 @@ function scriptToSrt(scriptText, audioDur, offset = 0, alignment = null) {
           realEndIdx = i;
           matchedCount++;
         } else if (matchedCount > 0) {
-          // 매칭 깨짐 → 다시 시작
           matchedCount = 0;
           realStartIdx = -1;
-          // i 다시 이전 위치 시도하지 않음 (단순 forward)
         }
       }
 
       if (realStartIdx >= 0 && realEndIdx >= 0 && realEndIdx < alignStarts.length) {
-        const startTime = alignStarts[realStartIdx] + offset;
-        const endTime = alignEnds[realEndIdx] + offset;
-        const dur = Math.max(0.5, endTime - startTime);
-        srt += `${idx}\n${formatSrtTime(startTime)} --> ${formatSrtTime(startTime + dur)}\n${chunk}\n\n`;
+        entries.push({
+          chunk,
+          start: alignStarts[realStartIdx] + offset,
+          end: alignEnds[realEndIdx] + offset
+        });
         alignPos = realEndIdx + 1;
-        idx++;
       } else {
-        // 매칭 실패: skip (희귀 케이스)
         console.warn(`[SRT] alignment 매칭 실패: "${chunk.substring(0, 20)}..."`);
       }
     }
 
-    if (srt.length > 0) return srt;
+    if (entries.length > 0) {
+      // 2단계: 각 자막의 endTime을 다음 자막 startTime까지 연장 (gap 제거)
+      let idx = 1;
+      for (let i = 0; i < entries.length; i++) {
+        const e = entries[i];
+        const next = entries[i + 1];
+        // 다음 자막 시작까지 표시 (마지막은 audioDur + offset까지)
+        let endTime = next ? next.start : (audioDur + offset);
+        // 최소 1초 보장
+        if (endTime - e.start < 1.0) endTime = e.start + 1.0;
+        srt += `${idx}\n${formatSrtTime(e.start)} --> ${formatSrtTime(endTime)}\n${e.chunk}\n\n`;
+        idx++;
+      }
+      return srt;
+    }
     console.warn('[SRT] alignment 매칭 결과 없음, fallback');
   }
 
-  // === Fallback: 글자 비례 분배 ===
+  // === Fallback: 글자 비례 분배 (gap 없는 연속) ===
   const totalChars = subtitleChunks.reduce((a, c) => a + c.length, 0) || 1;
   let cur = offset;
   let idx = 1;
-  subtitleChunks.forEach((chunk) => {
-    const dur = Math.max(0.8, (chunk.length / totalChars) * audioDur);
-    srt += `${idx}\n${formatSrtTime(cur)} --> ${formatSrtTime(cur + dur)}\n${chunk}\n\n`;
-    cur += dur;
+  subtitleChunks.forEach((chunk, i) => {
+    const isLast = i === subtitleChunks.length - 1;
+    const dur = Math.max(1.0, (chunk.length / totalChars) * audioDur);
+    const endTime = isLast ? (offset + audioDur) : (cur + dur);
+    srt += `${idx}\n${formatSrtTime(cur)} --> ${formatSrtTime(endTime)}\n${chunk}\n\n`;
+    cur = endTime;
     idx++;
   });
   return srt;
@@ -1503,7 +1511,7 @@ app.post('/api/render/video', async (req, res) => {
         await new Promise((resolve, reject) => {
           execFile('ffmpeg', [
             '-i', outputPath,
-            '-vf', `subtitles='${srtPathEscaped}':fontsdir='${path.join(__dirname, 'assets', 'fonts').replace(/\\/g, '/').replace(/:/g, '\\:')}':force_style='FontName=KoPubWorld Dotum Bold,Fontname=KoPubWorld Dotum Bold,FontSize=16,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=40,Bold=1,Italic=0,Alignment=2'`,
+            '-vf', `subtitles='${srtPathEscaped}':fontsdir='${path.join(__dirname, 'assets', 'fonts').replace(/\\/g, '/').replace(/:/g, '\\:')}':force_style='FontName=KoPubWorld Dotum Bold,Fontname=KoPubWorld Dotum Bold,FontSize=16,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=40,MarginL=80,MarginR=80,WrapStyle=2,Bold=1,Italic=0,Alignment=2'`,
             '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
             '-movflags', '+faststart', '-y', srtOutput
           ], { timeout: 600000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
