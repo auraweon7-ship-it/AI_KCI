@@ -1,7 +1,7 @@
 // 코퍼스 -> 작품/문장 JSON 생성기
 // 핵심 필드(원문·풀이·출전)는 큐레이션, 부가 필드는 사전+규칙 자동 생성.
 const fs = require('fs');
-const DICT = Object.assign({}, require('./dict.js'), require('./dict2.js'), require('./dict3.js'));
+const DICT = Object.assign({}, require('./dict.js'), require('./dict2.js'), require('./dict3.js'), require('./dict4.js'));
 
 // 문맥 다음자 오버라이드(앞 글자 기준 등은 단순화: 글자별 대표 독음 사용)
 const lines = fs.readFileSync('/tmp/gen/final.txt','utf8').split('\n')
@@ -35,14 +35,35 @@ function meaningOf(ch){
   return e ? e[1] : '';
 }
 
+// 다음자(多音字) 문맥 보정: [정규식, 글자, 대체독음]
+const POLY_RULES = [
+  [/不亦說乎|說乎/, '說', '열'],          // 說(기쁠 열)
+  [/樂山|樂水|樂之|好之者不如樂/, '樂', '요'], // 樂(좋아할 요)
+  [/不知其可|可也/, '', ''],
+];
+// 글자별 문맥 독음 결정
+function readingInContext(text, idx, ch){
+  // 說: '말하다(설)'가 기본이나 '기쁘다'면 '열'
+  if(ch==='說' && /不亦說乎/.test(text)) return '열';
+  // 樂: 음악(악)/즐거울(락)/좋아할(요). '樂山·樂水·樂之'는 '요'
+  if(ch==='樂'){
+    if(/樂山|樂水|者樂|樂之/.test(text)) return '요';
+    return '락'; // 즐겁다
+  }
+  // 識: 알 식 / 기록할 지(默而識之 → 지)
+  if(ch==='識' && /默而識之/.test(text)) return '지';
+  // 好: 좋아할 호(거의 호로 통일)
+  return readingOf(ch);
+}
 // 원문 -> 독음 문자열
 function toReading(text){
+  const chars=[...text];
   let out = [];
-  for(const ch of text){
-    if(isHan(ch)) out.push(readingOf(ch));
+  for(let i=0;i<chars.length;i++){
+    const ch=chars[i];
+    if(isHan(ch)) out.push(readingInContext(text, i, ch));
     else if(ch.trim()==='') out.push(' ');
   }
-  // 공백 정리
   return out.join('').replace(/·/g,'').trim() || text;
 }
 

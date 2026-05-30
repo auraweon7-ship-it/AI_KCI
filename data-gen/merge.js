@@ -29,7 +29,7 @@ function joinKor(a, b){
 }
 
 const out = [];
-for(const file of ['/tmp/gen/corpus.txt','/tmp/gen/corpus2.txt']){
+for(const file of ['/tmp/gen/corpus.txt','/tmp/gen/corpus2.txt','/tmp/gen/corpus_lunyu.txt']){
   const secs = loadSections(file);
   for(const sec of secs){
     // @로 시작하는 줄 = 이미 완성된 문장(병합하지 않고 그대로 사용)
