@@ -659,6 +659,22 @@ app.post('/api/tts/full-script', async (req, res) => {
     const chunks = splitTextIntoChunks(cleanScript, CHUNK_LIMIT);
     const timestamp = Date.now();
 
+    // === 정규화 헬퍼: -16 LUFS (YouTube 권장) + 압축 ===
+    // narration 약함 → loudnorm으로 -16 LUFS 정규화 + dynaudnorm으로 작은 부분 ↑ + 큰 부분 ↓
+    async function normalizeAudio(srcPath, dstPath) {
+      return new Promise((resolve, reject) => {
+        execFile('ffmpeg', [
+          '-i', srcPath,
+          '-af', 'loudnorm=I=-16:TP=-1.5:LRA=11,dynaudnorm=f=200:g=15',
+          '-c:a', 'libmp3lame', '-b:a', '192k', '-ar', '44100',
+          '-y', dstPath
+        ], { timeout: 120000 }, (error, stdout, stderr) => {
+          if (error) reject(new Error(`normalize 오류: ${error.message}\n${stderr.substring(0, 500)}`));
+          else resolve();
+        });
+      });
+    }
+
     // 글자별 정확한 timing 누적 (with-timestamps API 결과)
     const globalAlignment = { characters: [], starts: [], ends: [] };
     let cumulativeOffset = 0;
@@ -666,15 +682,27 @@ app.post('/api/tts/full-script', async (req, res) => {
     if (chunks.length === 1) {
       const { audio, alignment } = await generateTTSChunkWithTimestamps(chunks[0]);
       const filename = `full_narration_${timestamp}.mp3`;
-      fs.writeFileSync(path.join(OUTPUT_DIR, 'audio', filename), audio);
+      const filepath = path.join(OUTPUT_DIR, 'audio', filename);
+      // raw audio 임시 저장
+      const rawPath = path.join(OUTPUT_DIR, 'audio', `raw_${timestamp}.mp3`);
+      fs.writeFileSync(rawPath, audio);
+      // 정규화 → 최종 파일
+      console.log('[TTS] 단일 청크 → 정규화 (-16 LUFS) 적용');
+      try {
+        await normalizeAudio(rawPath, filepath);
+        try { fs.unlinkSync(rawPath); } catch(e) {}
+      } catch(e) {
+        console.warn('[TTS] 정규화 실패, raw 사용:', e.message);
+        fs.renameSync(rawPath, filepath);
+      }
       if (alignment && alignment.characters) {
         globalAlignment.characters = alignment.characters;
         globalAlignment.starts = alignment.character_start_times_seconds || [];
         globalAlignment.ends = alignment.character_end_times_seconds || [];
       }
-      project.audioFiles = [{ index: 0, filename, filepath: path.join(OUTPUT_DIR, 'audio', filename), full: true }];
+      project.audioFiles = [{ index: 0, filename, filepath, full: true }];
       project.ttsAlignment = globalAlignment.characters.length > 0 ? globalAlignment : null;
-      return res.json({ success: true, audioUrl: `/output/audio/${filename}`, filename, charCount: cleanScript.length, chunks: 1, hasTimestamps: !!project.ttsAlignment });
+      return res.json({ success: true, audioUrl: `/output/audio/${filename}`, filename, charCount: cleanScript.length, chunks: 1, hasTimestamps: !!project.ttsAlignment, normalized: true });
     }
 
     const chunkFiles = [];
@@ -728,19 +756,21 @@ app.post('/api/tts/full-script', async (req, res) => {
       filterParts.push(`[${i}:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo[a${i}]`);
     });
     // 2) 순차적 acrossfade — 청크 N개를 (N-1)번 crossfade
-    //    [a0][a1]acrossfade=d=0.08[mix1];
-    //    [mix1][a2]acrossfade=d=0.08[mix2]; ...
-    //    마지막 출력은 [out]
+    let mixOut;
     if (N === 1) {
-      filterParts.push(`[a0]anull[out]`);
+      filterParts.push(`[a0]anull[mixed]`);
+      mixOut = 'mixed';
     } else {
       let prev = 'a0';
       for (let i = 1; i < N; i++) {
-        const out = (i === N - 1) ? 'out' : `mix${i}`;
+        const out = (i === N - 1) ? 'mixed' : `mix${i}`;
         filterParts.push(`[${prev}][a${i}]acrossfade=d=0.08:c1=tri:c2=tri[${out}]`);
         prev = out;
       }
+      mixOut = 'mixed';
     }
+    // 3) 정규화 — loudnorm -16 LUFS + dynaudnorm 압축 (YouTube 권장 라우드니스)
+    filterParts.push(`[${mixOut}]loudnorm=I=-16:TP=-1.5:LRA=11,dynaudnorm=f=200:g=15[out]`);
     const filterComplex = filterParts.join(';');
 
     await new Promise((resolve, reject) => {
