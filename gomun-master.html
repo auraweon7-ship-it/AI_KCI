@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>古文 학습 마스터 · 고문 마스터</title>
+
+<!-- ===== 외부 라이브러리 (CDN) ===== -->
+<!-- Tailwind CSS: 유틸리티 기반 스타일링 -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Font Awesome: 아이콘 -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<!-- Chart.js: 학습 통계 차트 -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Google Fonts: 한글 본문 / 고문 명조 / 한문 명조 -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=Noto+Serif+KR:wght@400;500;700;900&family=Noto+Serif+SC:wght@400;600;900&display=swap" rel="stylesheet" />
+
+<!-- ===== Tailwind 테마 확장 ===== -->
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          ink:    '#2b2b2b',   // 먹색
+          navy:   '#1f3a5f',   // 짙은 남색
+          gold:   '#b8860b',   // 금색
+          brown:  '#6b4f3a',   // 갈색
+          paper:  '#f7f3ea',   // 따뜻한 미색 (배경)
+          correct:'#16a34a',   // 정답 녹색
+          wrong:  '#dc2626',   // 오답 붉은색
+          review: '#7c3aed',   // 복습 보라색
+        },
+        fontFamily: {
+          sans:  ['"Noto Sans KR"', 'sans-serif'],
+          serif: ['"Noto Serif KR"', 'serif'],
+          han:   ['"Noto Serif SC"', '"Noto Serif KR"', 'serif'],
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  body { background:#f7f3ea; font-family:'Noto Sans KR',sans-serif; color:#2b2b2b; }
+
+  /* 한문 원문 가독성 강화 */
+  .han-text { font-family:'Noto Serif SC','Noto Serif KR',serif; letter-spacing:.06em; }
+  .serif    { font-family:'Noto Serif KR',serif; }
+
+  /* ===== 카드 뒤집기 3D 애니메이션 ===== */
+  .flip-card { perspective:1600px; }
+  .flip-inner {
+    position:relative; width:100%; min-height:340px;
+    transition:transform .6s cubic-bezier(.4,.2,.2,1);
+    transform-style:preserve-3d;
+  }
+  .flip-card.flipped .flip-inner { transform:rotateY(180deg); }
+  .flip-face {
+    position:absolute; inset:0; backface-visibility:hidden;
+    -webkit-backface-visibility:hidden;
+    border-radius:1rem; overflow:hidden;
+  }
+  .flip-back { transform:rotateY(180deg); }
+  /* 모바일에서 카드 높이 자동 (절대배치 해제) */
+  @media (max-width:768px){ .flip-inner{ min-height:420px; } }
+
+  /* 스크롤바 */
+  ::-webkit-scrollbar{ width:8px; height:8px; }
+  ::-webkit-scrollbar-thumb{ background:#cbb89a; border-radius:8px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+
+  /* 토스트 등장 애니메이션 */
+  @keyframes slideIn { from{transform:translateX(120%);opacity:0} to{transform:translateX(0);opacity:1} }
+  .toast-in{ animation:slideIn .4s ease forwards; }
+
+  /* 배지 획득 펄스 */
+  @keyframes pop { 0%{transform:scale(.4);opacity:0} 60%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+  .pop{ animation:pop .5s ease forwards; }
+
+  /* 학습 완료 체크 효과 */
+  @keyframes flash { 0%{box-shadow:0 0 0 0 rgba(22,163,74,.5)} 100%{box-shadow:0 0 0 18px rgba(22,163,74,0)} }
+  .flash-done{ animation:flash .7s ease; }
+
+  /* 핵심 어휘 강조 */
+  .kw-hi{ color:#b8860b; font-weight:700; border-bottom:2px dotted #b8860b; }
+
+  /* 가리기 효과 */
+  .blurred{ filter:blur(7px); user-select:none; transition:filter .2s; }
+
+  /* 사이드바 슬라이드 (모바일) */
+  #sidebar{ transition:transform .3s ease; }
+  @media (max-width:1024px){
+    #sidebar{ position:fixed; z-index:40; top:0; left:0; height:100%; transform:translateX(-100%); }
+    #sidebar.open{ transform:translateX(0); }
+  }
+
+  .tab-active{ background:#1f3a5f; color:#fff; }
+  [hidden]{ display:none !important; }
+</style>
+</head>
+
+<body class="min-h-screen">
+
+<!-- ================= 상단 헤더 ================= -->
+<header class="sticky top-0 z-30 bg-navy text-paper shadow-lg">
+  <div class="px-3 sm:px-5 py-2.5 flex items-center gap-3 flex-wrap">
+    <!-- 모바일 사이드바 토글 -->
+    <button id="btnSidebar" class="lg:hidden text-xl px-2" title="메뉴"><i class="fa-solid fa-bars"></i></button>
+
+    <div class="flex items-center gap-2 mr-2">
+      <span class="text-2xl text-gold"><i class="fa-solid fa-scroll"></i></span>
+      <div class="leading-tight">
+        <h1 class="text-lg sm:text-xl font-black serif">古文 학습 마스터</h1>
+        <p class="text-[11px] text-paper/70 hidden sm:block">원문·해석·어휘·문법·퀴즈 통합 학습</p>
+      </div>
+    </div>
+
+    <!-- 검색창 -->
+    <div class="flex-1 min-w-[160px] max-w-md relative">
+      <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-navy/40"></i>
+      <input id="searchInput" type="text" placeholder="작품·작가·원문·어휘·문법 검색…"
+        class="w-full pl-9 pr-3 py-1.5 rounded-full text-ink text-sm outline-none focus:ring-2 ring-gold" />
+    </div>
+
+    <!-- 작품 / 난이도 필터 -->
+    <select id="genreFilter" class="text-ink text-sm rounded-full px-3 py-1.5 outline-none hidden md:block">
+      <option value="">갈래 전체</option>
+    </select>
+    <select id="diffFilter" class="text-ink text-sm rounded-full px-3 py-1.5 outline-none hidden md:block">
+      <option value="">난이도 전체</option>
+      <option value="초급">초급</option>
+      <option value="중급">중급</option>
+      <option value="고급">고급</option>
+    </select>
+
+    <!-- 오늘의 목표 -->
+    <button id="goalChip" class="text-xs bg-gold/90 hover:bg-gold text-ink font-bold px-3 py-1.5 rounded-full hidden sm:flex items-center gap-1.5">
+      <i class="fa-solid fa-bullseye"></i><span id="goalChipText">목표 0/5</span>
+    </button>
+
+    <!-- 로그인 / 관리자 -->
+    <button id="btnLearner" class="text-sm bg-paper text-navy font-bold px-3 py-1.5 rounded-full hover:bg-white flex items-center gap-1.5">
+      <i class="fa-solid fa-user"></i><span id="learnerName" class="hidden sm:inline">학습자</span>
+    </button>
+    <button id="btnAdmin" class="text-sm border border-paper/50 px-3 py-1.5 rounded-full hover:bg-paper/10" title="관리자">
+      <i class="fa-solid fa-gear"></i>
+    </button>
+  </div>
+</header>
+
+<!-- ================= 본문 3분할 레이아웃 ================= -->
+<div class="flex">
+
+  <!-- ===== 왼쪽 사이드바 ===== -->
+  <aside id="sidebar" class="w-64 shrink-0 bg-white border-r border-black/10 h-[calc(100vh-52px)] overflow-y-auto p-3">
+    <div class="flex items-center justify-between lg:hidden mb-2">
+      <span class="font-bold">메뉴</span>
+      <button id="closeSidebar" class="text-xl px-2"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <p class="text-xs font-bold text-navy/50 px-2 mb-1 mt-1">학습 카테고리</p>
+    <nav id="categoryNav" class="space-y-0.5 text-sm"></nav>
+
+    <p class="text-xs font-bold text-navy/50 px-2 mb-1 mt-4">작품 목록</p>
+    <nav id="workNav" class="space-y-0.5 text-sm"></nav>
+
+    <div class="mt-5 border-t border-black/10 pt-3 space-y-1">
+      <button data-view="dashboard" class="navItem w-full text-left px-3 py-2 rounded-lg hover:bg-paper text-sm flex items-center gap-2"><i class="fa-solid fa-chart-line w-5 text-center"></i> 학습 대시보드</button>
+      <button data-view="wordbook" class="navItem w-full text-left px-3 py-2 rounded-lg hover:bg-paper text-sm flex items-center gap-2"><i class="fa-solid fa-book w-5 text-center"></i> 단어장</button>
+      <button data-view="wrongnote" class="navItem w-full text-left px-3 py-2 rounded-lg hover:bg-paper text-sm flex items-center gap-2"><i class="fa-solid fa-circle-xmark w-5 text-center"></i> 오답 노트</button>
+      <button data-view="badges" class="navItem w-full text-left px-3 py-2 rounded-lg hover:bg-paper text-sm flex items-center gap-2"><i class="fa-solid fa-medal w-5 text-center"></i> 성취 배지</button>
+    </div>
+  </aside>
+  <!-- 모바일 사이드바 배경 -->
+  <div id="sidebarBackdrop" class="fixed inset-0 bg-black/40 z-30 hidden lg:hidden"></div>
+
+  <!-- ===== 중앙 + 오른쪽 ===== -->
+  <main class="flex-1 min-w-0 p-3 sm:p-5">
+
+    <!-- ---------- 학습 뷰 (카드) ---------- -->
+    <section id="view-study">
+      <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+
+        <!-- 중앙 학습 카드 영역 -->
+        <div class="xl:col-span-2 space-y-4">
+          <div id="studyHeader" class="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <h2 id="currentWorkTitle" class="text-xl font-black serif text-navy">작품을 선택하세요</h2>
+              <p id="currentWorkMeta" class="text-xs text-ink/60"></p>
+            </div>
+            <span id="sentProgress" class="text-xs bg-navy/10 text-navy px-3 py-1 rounded-full font-bold"></span>
+          </div>
+
+          <!-- 플래시카드 -->
+          <div id="flipCard" class="flip-card cursor-pointer">
+            <div class="flip-inner shadow-xl">
+              <!-- 앞면 -->
+              <div class="flip-face bg-white border border-gold/30 p-6 flex flex-col">
+                <div class="flex justify-between items-start">
+                  <span id="fcWork" class="text-sm font-bold text-brown"></span>
+                  <div class="flex gap-1.5 items-center">
+                    <span id="fcDiff" class="text-[11px] px-2 py-0.5 rounded-full"></span>
+                    <span id="fcStatus" class="text-[11px] px-2 py-0.5 rounded-full"></span>
+                  </div>
+                </div>
+                <div class="flex-1 flex flex-col items-center justify-center text-center py-6">
+                  <p id="fcOriginal" class="han-text text-3xl sm:text-4xl leading-relaxed text-ink mb-3"></p>
+                  <p id="fcReading" class="serif text-base text-navy/70"></p>
+                </div>
+                <div id="fcKeywords" class="flex flex-wrap gap-2 justify-center mb-2"></div>
+                <p class="text-center text-xs text-ink/40"><i class="fa-solid fa-hand-pointer"></i> 클릭하여 해석 보기</p>
+              </div>
+              <!-- 뒷면 -->
+              <div class="flip-face flip-back bg-paper border border-navy/20 p-5 overflow-y-auto">
+                <div class="space-y-3 text-sm">
+                  <div class="bg-white rounded-lg p-3 border-l-4 border-navy">
+                    <p class="text-[11px] font-bold text-navy/50 mb-1">현대어 풀이</p>
+                    <p id="fcNatural" class="serif text-base"></p>
+                  </div>
+                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="bg-white rounded-lg p-3 border-l-4 border-brown">
+                      <p class="text-[11px] font-bold text-brown/70 mb-1">직역</p>
+                      <p id="fcLiteral" class="serif"></p>
+                    </div>
+                    <div class="bg-white rounded-lg p-3 border-l-4 border-gold">
+                      <p class="text-[11px] font-bold text-gold mb-1">배경 지식</p>
+                      <p id="fcBackground" class="text-xs"></p>
+                    </div>
+                  </div>
+                  <div class="bg-white rounded-lg p-3 border-l-4 border-correct">
+                    <p class="text-[11px] font-bold text-correct mb-1">핵심 어휘</p>
+                    <div id="fcKwList" class="space-y-1"></div>
+                  </div>
+                  <div class="bg-white rounded-lg p-3 border-l-4 border-review">
+                    <p class="text-[11px] font-bold text-review mb-1">문법 포인트</p>
+                    <div id="fcGrammar" class="space-y-1"></div>
+                  </div>
+                  <div class="bg-white rounded-lg p-3 border-l-4 border-ink/40">
+                    <p class="text-[11px] font-bold text-ink/50 mb-1">문장 구조</p>
+                    <p id="fcStructure" class="text-xs"></p>
+                  </div>
+                  <button id="fcQuizBtn" class="w-full bg-navy text-white py-2 rounded-lg font-bold text-sm hover:bg-navy/90">
+                    <i class="fa-solid fa-circle-question"></i> 관련 퀴즈 풀기
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 하단 학습 도구 -->
+          <div class="bg-white rounded-xl p-3 shadow flex flex-wrap items-center gap-2 justify-center">
+            <button id="btnPrev" class="tool-btn"><i class="fa-solid fa-chevron-left"></i> 이전</button>
+            <button id="btnNext" class="tool-btn"><i class="fa-solid fa-chevron-right"></i> 다음</button>
+            <button id="btnBookmark" class="tool-btn"><i class="fa-regular fa-bookmark"></i> 북마크</button>
+            <button id="btnAddWord" class="tool-btn"><i class="fa-solid fa-plus"></i> 단어장</button>
+            <button id="btnHideTrans" class="tool-btn"><i class="fa-solid fa-eye-slash"></i> 해석 가리기</button>
+            <button id="btnHideOrig" class="tool-btn"><i class="fa-solid fa-eye-slash"></i> 원문 가리기</button>
+            <button id="btnQuiz" class="tool-btn bg-navy text-white"><i class="fa-solid fa-pen"></i> 퀴즈</button>
+            <button id="btnReview" class="tool-btn bg-review text-white"><i class="fa-solid fa-rotate"></i> 복습</button>
+            <button id="btnDone" class="tool-btn bg-correct text-white"><i class="fa-solid fa-check"></i> 학습 완료</button>
+          </div>
+        </div>
+
+        <!-- 오른쪽 분석 패널 -->
+        <aside class="space-y-3">
+          <div class="bg-white rounded-xl shadow p-4">
+            <h3 class="font-bold text-navy mb-3 flex items-center gap-2"><i class="fa-solid fa-microscope text-gold"></i> 문장 상세 분석</h3>
+            <div id="analysisPanel" class="space-y-3 text-sm text-ink/80">
+              <p class="text-ink/40 text-center py-8">문장을 선택하면<br/>상세 분석이 표시됩니다.</p>
+            </div>
+          </div>
+          <button id="btnAI" class="w-full bg-gradient-to-r from-navy to-brown text-white py-3 rounded-xl font-bold shadow hover:opacity-90">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> AI 해설 생성
+          </button>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ---------- 검색/필터 결과 그리드 ---------- -->
+    <section id="view-grid" hidden>
+      <div class="flex items-center justify-between mb-4">
+        <h2 id="gridTitle" class="text-xl font-black serif text-navy">검색 결과</h2>
+        <button id="gridBack" class="text-sm text-navy hover:underline"><i class="fa-solid fa-arrow-left"></i> 학습으로</button>
+      </div>
+      <div id="gridResults" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+    </section>
+
+    <!-- ---------- 학습 대시보드 ---------- -->
+    <section id="view-dashboard" hidden>
+      <h2 class="text-xl font-black serif text-navy mb-4"><i class="fa-solid fa-chart-line text-gold"></i> 학습 대시보드</h2>
+      <div id="statCards" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5"></div>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold mb-2 text-sm">최근 14일 학습 현황</h3><canvas id="chart14"></canvas></div>
+        <div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold mb-2 text-sm">작품별 학습 진도</h3><canvas id="chartWork"></canvas></div>
+        <div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold mb-2 text-sm">문법 항목별 정답률</h3><canvas id="chartGrammar"></canvas></div>
+        <div class="bg-white rounded-xl shadow p-4"><h3 class="font-bold mb-2 text-sm">오답률 높은 작품</h3><canvas id="chartWrong"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ---------- 단어장 ---------- -->
+    <section id="view-wordbook" hidden>
+      <div class="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <h2 class="text-xl font-black serif text-navy"><i class="fa-solid fa-book text-gold"></i> 단어장</h2>
+        <div class="flex gap-2">
+          <select id="wbListSelect" class="text-sm rounded-lg border px-3 py-1.5"></select>
+          <button id="wbNewList" class="text-sm bg-navy text-white px-3 py-1.5 rounded-lg"><i class="fa-solid fa-plus"></i> 새 목록</button>
+        </div>
+      </div>
+      <div id="wordbookGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3"></div>
+    </section>
+
+    <!-- ---------- 오답 노트 ---------- -->
+    <section id="view-wrongnote" hidden>
+      <h2 class="text-xl font-black serif text-navy mb-4"><i class="fa-solid fa-circle-xmark text-wrong"></i> 오답 노트</h2>
+      <div id="wrongNoteList" class="space-y-3"></div>
+    </section>
+
+    <!-- ---------- 성취 배지 ---------- -->
+    <section id="view-badges" hidden>
+      <h2 class="text-xl font-black serif text-navy mb-4"><i class="fa-solid fa-medal text-gold"></i> 성취 배지</h2>
+      <div id="badgeGrid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"></div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ================= 퀴즈 모달 ================= -->
+<div id="quizModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-black text-navy serif"><i class="fa-solid fa-pen-to-square"></i> 퀴즈</h3>
+      <button class="closeModal text-xl text-ink/50">&times;</button>
+    </div>
+    <div id="quizBody"></div>
+  </div>
+</div>
+
+<!-- ================= 관리자 모달 ================= -->
+<div id="adminModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+  <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="font-black text-navy serif"><i class="fa-solid fa-user-shield"></i> 관리자 대시보드</h3>
+      <button class="closeModal text-xl text-ink/50">&times;</button>
+    </div>
+    <div id="adminBody"></div>
+  </div>
+</div>
+
+<!-- ================= 토스트 컨테이너 ================= -->
+<div id="toastWrap" class="fixed top-16 right-4 z-[60] space-y-2"></div>
+
+<!-- 공통 버튼 스타일 -->
+<style>
+  .tool-btn{ font-size:.8rem; padding:.45rem .75rem; border-radius:.6rem; background:#f1ece0; color:#2b2b2b; display:inline-flex; align-items:center; gap:.35rem; transition:.15s; }
+  .tool-btn:hover{ filter:brightness(.95); }
+  .tool-btn.active{ background:#b8860b; color:#fff; }
+</style>
+
+<script>
+/* ============================================================
+   古文 학습 마스터 — 단일 HTML 프로토타입
+   모든 상태는 LocalStorage에 저장됩니다.
+   ============================================================ */
+
+/* ---------- 0. 샘플 데이터 (작품 5개 / 문장 30개+) ---------- */
+const SAMPLE_DATA = [
+  /* ===== 1. 논어 ===== */
+  {
+    id:"work_001", title:"논어(論語)", author:"공자(孔子)와 제자들", source:"논어 학이편 등",
+    period:"춘추전국", genre:"한문 산문", difficulty:"중급", exam_frequency:"상",
+    sentences:[
+      { id:"s001", original:"學而時習之 不亦說乎", reading:"학이시습지 불역열호",
+        literal_translation:"배우고 때때로 그것을 익히면 또한 기쁘지 아니한가",
+        natural_translation:"배운 것을 때때로 거듭 익히니 또한 기쁘지 않겠는가?",
+        keywords:[
+          {word:"學",reading:"학",meaning:"배우다",note:"동사로 쓰임"},
+          {word:"時",reading:"시",meaning:"때때로",note:"부사적 용법"},
+          {word:"習",reading:"습",meaning:"익히다, 복습하다",note:""},
+          {word:"說",reading:"열",meaning:"기쁘다(=悅)",note:"여기서는 '열'로 읽음"}],
+        grammar:[{point:"不亦~乎 구문",explanation:"'또한 ~하지 아니한가'라는 반어적 강조 표현",example:"不亦樂乎(또한 즐겁지 아니한가)"}],
+        structure:{subject:"(생략) 사람",predicate:"習",object:"之",omitted:"주어 생략"},
+        background:"논어의 첫 구절로 배움의 즐거움을 강조한다.",
+        exam_point:"說의 독음(열)과 不亦~乎 반어구문",
+        quiz:[
+          {type:"해석선택",q:"'學而時習之 不亦說乎'의 현대어 풀이로 가장 적절한 것은?",
+           options:["배우기만 하고 익히지 않으면 위태롭다","배운 것을 때때로 익히니 기쁘지 않겠는가?","벗이 멀리서 찾아오니 즐겁다","남이 알아주지 않아도 화내지 않는다"],answer:1,
+           explain:"學(배우다)+習(익히다)+不亦說乎(기쁘지 아니한가)의 구조다."},
+          {type:"어휘",q:"이 문장에서 '說'의 뜻과 독음으로 옳은 것은?",
+           options:["말하다 / 설","달래다 / 세","기쁘다 / 열","베풀다 / 설"],answer:2,
+           explain:"여기서 說은 悅과 통하여 '기쁘다', 독음은 '열'이다."}]},
+      { id:"s002", original:"有朋自遠方來 不亦樂乎", reading:"유붕자원방래 불역락호",
+        literal_translation:"벗이 먼 곳으로부터 오니 또한 즐겁지 아니한가",
+        natural_translation:"뜻을 같이하는 벗이 먼 곳에서 찾아오니 또한 즐겁지 않겠는가?",
+        keywords:[
+          {word:"朋",reading:"붕",meaning:"벗, 동문",note:"뜻을 같이하는 친구"},
+          {word:"自",reading:"자",meaning:"~로부터",note:"전치사"},
+          {word:"遠方",reading:"원방",meaning:"먼 곳",note:""}],
+        grammar:[{point:"自 + 장소",explanation:"'自'는 '~로부터'라는 출발점을 나타내는 전치사",example:"自天而降(하늘로부터 내려오다)"}],
+        structure:{subject:"朋",predicate:"來",object:"-",omitted:"-"},
+        background:"학문을 통해 만난 벗과의 교유를 기뻐하는 구절.",
+        exam_point:"전치사 自의 용법",
+        quiz:[
+          {type:"어휘",q:"'自'의 문법적 기능으로 옳은 것은?",options:["'스스로'라는 부사","'~로부터'라는 전치사","'~이다'라는 서술어","'그리고'라는 접속사"],answer:1,explain:"여기서 自는 출발점 '~로부터'를 나타낸다."},
+          {type:"OX",q:"'朋'은 단순한 길거리 행인을 뜻한다.",options:["O","X"],answer:1,explain:"朋은 뜻을 같이하는 벗·동문을 뜻한다."}]},
+      { id:"s003", original:"人不知而不慍 不亦君子乎", reading:"인부지이불온 불역군자호",
+        literal_translation:"남이 알아주지 않아도 성내지 않으면 또한 군자가 아닌가",
+        natural_translation:"남이 나를 알아주지 않아도 화내지 않으니 또한 군자답지 않겠는가?",
+        keywords:[
+          {word:"知",reading:"지",meaning:"알아주다",note:"여기서는 인정하다"},
+          {word:"慍",reading:"온",meaning:"성내다, 노여워하다",note:""},
+          {word:"君子",reading:"군자",meaning:"덕을 갖춘 사람",note:""}],
+        grammar:[{point:"而 역접",explanation:"'而'가 '그러나'의 역접으로 쓰여 앞뒤를 대비",example:"學而不思則罔"}],
+        structure:{subject:"人",predicate:"不知 / 不慍",object:"(생략) 我",omitted:"목적어 我 생략"},
+        background:"군자의 너그러운 태도를 보여주는 구절.",
+        exam_point:"역접 접속사 而, 목적어 생략",
+        quiz:[
+          {type:"문법",q:"'人不知而不慍'에서 '而'의 쓰임은?",options:["순접(그리고)","역접(그러나)","가정(만약)","비교(보다)"],answer:1,explain:"앞(알아주지 않음)과 뒤(성내지 않음)를 대비하는 역접이다."},
+          {type:"해석선택",q:"이 구절이 말하는 '군자'의 태도는?",options:["남의 인정을 갈구함","알아주지 않아도 화내지 않음","항상 침묵함","재물을 모음"],answer:1,explain:"人不知而不慍 — 인정받지 못해도 노여워하지 않는 것."}]},
+      { id:"s004", original:"溫故而知新 可以爲師矣", reading:"온고이지신 가이위사의",
+        literal_translation:"옛것을 익혀 새것을 알면 스승이 될 수 있다",
+        natural_translation:"옛것을 충분히 익혀 새로운 것을 알아내면 남의 스승이 될 만하다.",
+        keywords:[
+          {word:"溫",reading:"온",meaning:"익히다, 데우다",note:"여기서는 '복습하다'"},
+          {word:"故",reading:"고",meaning:"옛것",note:""},
+          {word:"可以",reading:"가이",meaning:"~할 수 있다",note:"가능 표현"}],
+        grammar:[{point:"可以 + 동사",explanation:"'~할 수 있다'는 가능을 나타내는 조동사 구조",example:"可以爲師(스승이 될 수 있다)"}],
+        structure:{subject:"(생략)",predicate:"爲",object:"師",omitted:"주어 생략"},
+        background:"'온고지신'의 출전. 학문의 자세를 강조한다.",
+        exam_point:"成語 溫故知新, 可以 구문",
+        quiz:[
+          {type:"작품명",q:"'溫故知新'이라는 성어가 유래한 책은?",options:["맹자","논어","사기","고문진보"],answer:1,explain:"논어 위정편의 구절에서 유래했다."},
+          {type:"어휘",q:"'可以'의 뜻으로 옳은 것은?",options:["반드시 ~한다","~할 수 있다","~하지 마라","이미 ~했다"],answer:1,explain:"可以는 가능 '~할 수 있다'를 나타낸다."}]},
+      { id:"s005", original:"學而不思則罔 思而不學則殆", reading:"학이불사즉망 사이불학즉태",
+        literal_translation:"배우되 생각하지 않으면 어둡고, 생각하되 배우지 않으면 위태롭다",
+        natural_translation:"배우기만 하고 스스로 생각하지 않으면 얻는 것이 없고, 생각만 하고 배우지 않으면 위태롭다.",
+        keywords:[
+          {word:"思",reading:"사",meaning:"생각하다",note:""},
+          {word:"罔",reading:"망",meaning:"어둡다, 얻는 것이 없다",note:""},
+          {word:"殆",reading:"태",meaning:"위태롭다",note:""}],
+        grammar:[{point:"則 가정·조건",explanation:"'A則B'는 'A하면 B하다'의 조건 표현",example:"學而不思則罔"}],
+        structure:{subject:"(생략)",predicate:"罔 / 殆",object:"-",omitted:"주어 생략"},
+        background:"학(學)과 사(思)의 균형을 강조한 유명한 구절.",
+        exam_point:"조건 접속 則의 용법, 대구 구조",
+        quiz:[
+          {type:"문법",q:"'則'의 문법적 기능은?",options:["병렬","조건(~하면)","의문","부정"],answer:1,explain:"則은 'A則B(A하면 B)'의 조건을 나타낸다."},
+          {type:"빈칸",q:"'學而不思則___'의 빈칸에 들어갈 글자는?",options:["殆","罔","樂","慍"],answer:1,explain:"學而不思則罔(배우되 생각않으면 어둡다)."}]},
+      { id:"s006", original:"知之爲知之 不知爲不知 是知也", reading:"지지위지지 부지위부지 시지야",
+        literal_translation:"아는 것을 안다 하고 모르는 것을 모른다 하는 것, 이것이 앎이다",
+        natural_translation:"아는 것을 안다고 하고 모르는 것을 모른다고 하는 것, 이것이 진정한 앎이다.",
+        keywords:[
+          {word:"爲",reading:"위",meaning:"~라고 하다, 여기다",note:""},
+          {word:"是",reading:"시",meaning:"이것",note:"지시대명사"},
+          {word:"也",reading:"야",meaning:"~이다",note:"단정 종결사"}],
+        grammar:[{point:"是~也 판단문",explanation:"'是A也'는 '이것이 A이다'라는 판단·단정 표현",example:"是知也(이것이 앎이다)"}],
+        structure:{subject:"是",predicate:"知",object:"-",omitted:"~也로 단정"},
+        background:"앎에 대한 정직한 태도를 강조한 구절.",
+        exam_point:"종결사 也의 단정 용법, 是의 지시 기능",
+        quiz:[
+          {type:"어휘",q:"문장 끝 '也'의 기능은?",options:["의문","감탄","단정·판단","명령"],answer:2,explain:"也는 '~이다'라는 단정·판단을 나타내는 종결사다."},
+          {type:"해석선택",q:"이 구절의 핵심 가르침은?",options:["많이 아는 것이 중요","아는 것과 모르는 것을 정직히 구분","무조건 배워야 함","스승을 따름"],answer:1,explain:"知之爲知之 不知爲不知 — 정직한 앎의 태도."}]},
+    ]
+  },
+
+  /* ===== 2. 맹자 ===== */
+  {
+    id:"work_002", title:"맹자(孟子)", author:"맹자(孟子)", source:"맹자 양혜왕·고자편",
+    period:"춘추전국", genre:"한문 산문", difficulty:"고급", exam_frequency:"상",
+    sentences:[
+      { id:"s101", original:"王何必曰利 亦有仁義而已矣", reading:"왕하필왈리 역유인의이이의",
+        literal_translation:"왕은 어찌 반드시 이익을 말하십니까, 또한 인의가 있을 뿐입니다",
+        natural_translation:"왕께서는 어찌 굳이 이익을 말씀하십니까? 오직 인의가 있을 따름입니다.",
+        keywords:[
+          {word:"何必",reading:"하필",meaning:"어찌 반드시",note:"반어"},
+          {word:"利",reading:"리",meaning:"이익",note:""},
+          {word:"而已矣",reading:"이이의",meaning:"~할 따름이다",note:"한정 종결"}],
+        grammar:[{point:"何必~ 반어",explanation:"'어찌 반드시 ~하겠는가'라는 반어적 부정",example:"何必曰利"},
+                 {point:"而已矣",explanation:"'~일 뿐이다'라는 한정·강조 종결사",example:"亦有仁義而已矣"}],
+        structure:{subject:"王",predicate:"曰",object:"利",omitted:"-"},
+        background:"맹자가 양혜왕에게 이익보다 인의를 강조한 첫 대화.",
+        exam_point:"何必 반어, 而已矣 한정 종결사",
+        quiz:[
+          {type:"문법",q:"'而已矣'의 의미로 옳은 것은?",options:["~할 수 있다","~일 뿐이다(한정)","~하지 마라","~인가?"],answer:1,explain:"而已矣는 '~일 따름이다'라는 한정·강조 종결사다."},
+          {type:"해석선택",q:"맹자가 왕에게 강조한 가치는?",options:["이익(利)","인의(仁義)","무력","재물"],answer:1,explain:"亦有仁義而已矣 — 인의를 강조했다."}]},
+      { id:"s102", original:"惻隱之心 仁之端也", reading:"측은지심 인지단야",
+        literal_translation:"측은하게 여기는 마음은 인의 단서이다",
+        natural_translation:"가엾게 여기는 마음은 인(仁)의 실마리이다.",
+        keywords:[
+          {word:"惻隱",reading:"측은",meaning:"가엾게 여김",note:""},
+          {word:"端",reading:"단",meaning:"실마리, 단서",note:""},
+          {word:"之",reading:"지",meaning:"~의",note:"관형격 조사"}],
+        grammar:[{point:"A之B 也",explanation:"'A의 B이다'라는 소유·판단 구조, 也로 단정",example:"仁之端也"}],
+        structure:{subject:"惻隱之心",predicate:"端",object:"-",omitted:"~也 단정"},
+        background:"사단(四端) 중 인의 단서를 설명한 구절.",
+        exam_point:"四端 개념, 之의 관형격 용법",
+        quiz:[
+          {type:"어휘",q:"'端'의 뜻으로 옳은 것은?",options:["끝맺음","실마리·단서","바르다","처음 시작만"],answer:1,explain:"여기서 端은 '실마리, 단서'를 뜻한다."},
+          {type:"작품명",q:"'사단(四端)'을 설명한 사상가는?",options:["공자","맹자","순자","노자"],answer:1,explain:"사단설은 맹자의 핵심 사상이다."}]},
+      { id:"s103", original:"魚我所欲也 熊掌亦我所欲也", reading:"어아소욕야 웅장역아소욕야",
+        literal_translation:"물고기도 내가 원하는 바요, 곰 발바닥도 내가 원하는 바이다",
+        natural_translation:"물고기도 내가 원하는 것이요, 곰 발바닥 요리도 내가 원하는 것이다.",
+        keywords:[
+          {word:"所欲",reading:"소욕",meaning:"원하는 바",note:"所+동사"},
+          {word:"熊掌",reading:"웅장",meaning:"곰 발바닥(진미)",note:""},
+          {word:"亦",reading:"역",meaning:"또한",note:""}],
+        grammar:[{point:"所 + 동사",explanation:"'所欲'은 '원하는 바(것)'로 명사구를 만든다",example:"所欲(원하는 바)"}],
+        structure:{subject:"魚",predicate:"(是) 所欲",object:"-",omitted:"계사 생략"},
+        background:"'사생취의(捨生取義)'로 이어지는 비유의 도입부.",
+        exam_point:"所+동사 명사구, 대구 구조",
+        quiz:[
+          {type:"문법",q:"'所欲'의 구조 설명으로 옳은 것은?",options:["所+동사로 '원하는 바'","所는 의문사","欲은 명사","所는 종결사"],answer:0,explain:"所+동사는 '~하는 바(것)'의 명사구를 만든다."},
+          {type:"OX",q:"이 구절은 이후 '사생취의'로 이어진다.",options:["O","X"],answer:0,explain:"물고기/곰발바닥 비유 → 삶과 의 중 의를 택함."}]},
+      { id:"s104", original:"生於憂患 死於安樂", reading:"생어우환 사어안락",
+        literal_translation:"근심과 걱정에서 살고, 편안함과 즐거움에서 죽는다",
+        natural_translation:"사람은 근심과 환난 속에서 살아남고, 안락함 속에서 도리어 망한다.",
+        keywords:[
+          {word:"於",reading:"어",meaning:"~에서",note:"처소 전치사"},
+          {word:"憂患",reading:"우환",meaning:"근심과 환난",note:""},
+          {word:"安樂",reading:"안락",meaning:"편안함과 즐거움",note:""}],
+        grammar:[{point:"於 처소·원인",explanation:"'於'는 '~에서, ~로 말미암아'를 나타내는 전치사",example:"生於憂患"}],
+        structure:{subject:"(생략)",predicate:"生 / 死",object:"-",omitted:"주어 생략, 대구"},
+        background:"역경이 사람을 단련시킨다는 맹자의 경구.",
+        exam_point:"전치사 於의 용법, 대구",
+        quiz:[
+          {type:"어휘",q:"'於'의 기능으로 옳은 것은?",options:["'~의'(소유)","'~에서'(처소)","'그리고'","'~이다'"],answer:1,explain:"於는 '~에서'라는 처소·원인을 나타낸다."},
+          {type:"해석선택",q:"이 경구가 전하는 교훈은?",options:["편안함을 추구하라","역경이 사람을 살린다","즐거움이 최고다","근심은 피하라"],answer:1,explain:"生於憂患 — 환난 속에서 살아남고 단련된다."}]},
+      { id:"s105", original:"天時不如地利 地利不如人和", reading:"천시불여지리 지리불여인화",
+        literal_translation:"하늘의 때는 땅의 이로움만 못하고, 땅의 이로움은 사람의 화합만 못하다",
+        natural_translation:"하늘이 준 기회도 지리적 이점만 못하고, 지리적 이점도 사람의 화합만 못하다.",
+        keywords:[
+          {word:"天時",reading:"천시",meaning:"하늘이 준 때·기회",note:""},
+          {word:"不如",reading:"불여",meaning:"~만 못하다",note:"비교"},
+          {word:"人和",reading:"인화",meaning:"사람의 화합",note:""}],
+        grammar:[{point:"A不如B 비교",explanation:"'A는 B만 못하다'는 열등 비교 구문",example:"天時不如地利"}],
+        structure:{subject:"天時",predicate:"不如",object:"地利",omitted:"-"},
+        background:"인화(人和)의 중요성을 단계적으로 강조한 명구.",
+        exam_point:"비교구문 不如, 점층 구조",
+        quiz:[
+          {type:"문법",q:"'不如'의 뜻으로 옳은 것은?",options:["~와 같다","~만 못하다","~보다 낫다","~하지 않는다"],answer:1,explain:"A不如B = A는 B만 못하다(열등 비교)."},
+          {type:"빈칸",q:"'地利不如___'의 빈칸은?",options:["天時","人和","君子","仁義"],answer:1,explain:"地利不如人和 — 지리도 인화만 못하다."}]},
+    ]
+  },
+
+  /* ===== 3. 사기열전 ===== */
+  {
+    id:"work_003", title:"사기열전(史記列傳)", author:"사마천(司馬遷)", source:"사기 열전",
+    period:"전한(前漢)", genre:"역사문", difficulty:"고급", exam_frequency:"중",
+    sentences:[
+      { id:"s201", original:"桃李不言 下自成蹊", reading:"도리불언 하자성혜",
+        literal_translation:"복숭아와 오얏은 말하지 않아도 그 아래에 절로 길이 생긴다",
+        natural_translation:"복숭아·오얏나무는 말하지 않아도 그 꽃과 열매에 끌려 사람이 모여 절로 길이 난다.",
+        keywords:[
+          {word:"桃李",reading:"도리",meaning:"복숭아와 오얏",note:"덕 있는 사람의 비유"},
+          {word:"蹊",reading:"혜",meaning:"좁은 길",note:""},
+          {word:"自",reading:"자",meaning:"절로, 저절로",note:"부사"}],
+        grammar:[{point:"自 부사",explanation:"'自'가 '저절로, 스스로'라는 부사로 쓰임",example:"下自成蹊"}],
+        structure:{subject:"桃李",predicate:"成",object:"蹊",omitted:"-"},
+        background:"이장군(이광)의 덕을 기린 사마천의 평. 덕은 절로 사람을 모은다.",
+        exam_point:"비유적 표현, 부사 自",
+        quiz:[
+          {type:"해석선택",q:"이 구절이 비유하는 바는?",options:["말이 많은 사람","덕이 있으면 절로 사람이 따른다","나무를 심어야 한다","길을 닦아야 한다"],answer:1,explain:"덕 있는 이에게는 절로 사람이 모인다는 비유."},
+          {type:"어휘",q:"'自'의 뜻으로 옳은 것은?",options:["~로부터","스스로·저절로","사사로이","처음"],answer:1,explain:"여기서 自는 '저절로'라는 부사다."}]},
+      { id:"s202", original:"士爲知己者死", reading:"사위지기자사",
+        literal_translation:"선비는 자기를 알아주는 이를 위해 죽는다",
+        natural_translation:"선비는 자신을 알아주는 사람을 위해서라면 목숨도 바친다.",
+        keywords:[
+          {word:"士",reading:"사",meaning:"선비",note:""},
+          {word:"爲",reading:"위",meaning:"~을 위하여",note:"전치사"},
+          {word:"知己",reading:"지기",meaning:"자기를 알아주는 이",note:""}],
+        grammar:[{point:"爲 + 대상 + 동사",explanation:"'爲'가 '~을 위하여'라는 전치사로 쓰임",example:"爲知己者死"}],
+        structure:{subject:"士",predicate:"死",object:"-",omitted:"爲~者(위하여)"},
+        background:"예양(豫讓)의 고사에서 나온 말. 지기의 소중함.",
+        exam_point:"전치사 爲(위하여), 者의 용법",
+        quiz:[
+          {type:"어휘",q:"여기서 '爲'의 독음과 뜻은?",options:["위 / 위하여","위 / 되다","유 / 있다","이 / 그리고"],answer:0,explain:"~을 위하여(전치사)일 때 '위'로 읽는다."},
+          {type:"OX",q:"'知己'는 자기를 알아주는 벗을 뜻한다.",options:["O","X"],answer:0,explain:"知己 = 자신을 알아주는 사람."}]},
+      { id:"s203", original:"王侯將相 寧有種乎", reading:"왕후장상 영유종호",
+        literal_translation:"왕후장상이 어찌 씨가 따로 있겠는가",
+        natural_translation:"왕과 제후, 장수와 재상의 씨가 어찌 따로 정해져 있겠는가?",
+        keywords:[
+          {word:"王侯將相",reading:"왕후장상",meaning:"왕·제후·장수·재상",note:"고귀한 신분"},
+          {word:"寧",reading:"영",meaning:"어찌",note:"반어 부사"},
+          {word:"種",reading:"종",meaning:"씨, 혈통",note:""}],
+        grammar:[{point:"寧~乎 반어",explanation:"'어찌 ~하겠는가'라는 강한 반어 표현",example:"寧有種乎"}],
+        structure:{subject:"王侯將相",predicate:"有",object:"種",omitted:"-"},
+        background:"진승(陳勝)의 봉기 때 외친 말. 신분제에 대한 도전.",
+        exam_point:"반어 부사 寧, 종결사 乎",
+        quiz:[
+          {type:"문법",q:"'寧~乎'의 표현 방식은?",options:["감탄","반어(어찌 ~겠는가)","명령","비교"],answer:1,explain:"寧~乎는 '어찌 ~하겠는가'의 반어다."},
+          {type:"해석선택",q:"이 외침의 의미는?",options:["신분은 타고난다","신분은 정해진 것이 아니다","왕이 되겠다는 욕심","씨앗을 심자"],answer:1,explain:"왕후장상의 씨가 따로 없다 — 신분제 부정."}]},
+      { id:"s204", original:"燕雀安知鴻鵠之志哉", reading:"연작안지홍곡지지재",
+        literal_translation:"제비와 참새가 어찌 기러기와 고니의 뜻을 알겠는가",
+        natural_translation:"하찮은 제비와 참새가 어찌 큰 기러기와 고니의 큰 뜻을 알겠는가?",
+        keywords:[
+          {word:"燕雀",reading:"연작",meaning:"제비와 참새(소인배)",note:""},
+          {word:"安",reading:"안",meaning:"어찌",note:"반어 부사"},
+          {word:"鴻鵠",reading:"홍곡",meaning:"기러기와 고니(큰 인물)",note:""}],
+        grammar:[{point:"安~哉 반어",explanation:"'어찌 ~하겠는가'라는 반어, 哉로 강조",example:"安知~哉"}],
+        structure:{subject:"燕雀",predicate:"知",object:"志",omitted:"-"},
+        background:"진승이 젊은 시절 했다는 말. 큰 포부를 비유.",
+        exam_point:"반어 부사 安, 감탄·반어 종결사 哉",
+        quiz:[
+          {type:"어휘",q:"'鴻鵠'이 비유하는 대상은?",options:["소인배","큰 뜻을 품은 인물","평범한 사람","어린아이"],answer:1,explain:"鴻鵠(기러기·고니)은 큰 인물·큰 뜻을 비유한다."},
+          {type:"문법",q:"'安'의 기능은?",options:["편안하다(형용사)","어찌(반어 부사)","어디(장소)","이미"],answer:1,explain:"여기서 安은 '어찌'라는 반어 부사다."}]},
+      { id:"s205", original:"先發制人 後發制於人", reading:"선발제인 후발제어인",
+        literal_translation:"먼저 일으키면 남을 제압하고, 늦게 일으키면 남에게 제압당한다",
+        natural_translation:"먼저 움직이면 남을 제압하고, 뒤늦게 움직이면 도리어 남에게 제압당한다.",
+        keywords:[
+          {word:"發",reading:"발",meaning:"일으키다, 거사하다",note:""},
+          {word:"制",reading:"제",meaning:"제압하다",note:""},
+          {word:"於",reading:"어",meaning:"~에게(피동)",note:"피동 표지"}],
+        grammar:[{point:"制於人 피동",explanation:"'於'가 동사 뒤에서 '~에게 …당하다'는 피동을 나타냄",example:"制於人(남에게 제압당하다)"}],
+        structure:{subject:"(생략)",predicate:"制",object:"人 / (於人)",omitted:"주어 생략, 피동"},
+        background:"항량의 고사에서 나온 선수필승의 병법.",
+        exam_point:"전치사 於의 피동 용법(制於人)",
+        quiz:[
+          {type:"문법",q:"'制於人'에서 '於'의 기능은?",options:["처소","피동(~에게 당하다)","비교","소유"],answer:1,explain:"동사+於+행위자는 피동 '~에게 …당하다'를 나타낸다."},
+          {type:"해석선택",q:"이 구절의 교훈은?",options:["기다리는 것이 낫다","선수를 쳐야 유리하다","남에게 맡겨라","천천히 하라"],answer:1,explain:"先發制人 — 먼저 움직여야 남을 제압한다."}]},
+    ]
+  },
+
+  /* ===== 4. 허생전 ===== */
+  {
+    id:"work_004", title:"허생전(許生傳)", author:"박지원(朴趾源)", source:"열하일기 옥갑야화",
+    period:"조선 후기", genre:"고전 산문", difficulty:"중급", exam_frequency:"상",
+    sentences:[
+      { id:"s301", original:"許生居墨積洞", reading:"허생거묵적동",
+        literal_translation:"허생은 묵적동에 살았다",
+        natural_translation:"허생이라는 사람이 묵적동이라는 곳에 살고 있었다.",
+        keywords:[
+          {word:"居",reading:"거",meaning:"살다, 거주하다",note:""},
+          {word:"墨積洞",reading:"묵적동",meaning:"지명(서울의 동네)",note:""},
+          {word:"生",reading:"생",meaning:"선생, 사람을 가리키는 말",note:""}],
+        grammar:[{point:"주어+서술어+장소",explanation:"한문 기본 문형으로 장소어가 서술어 뒤에 옴",example:"許生居墨積洞"}],
+        structure:{subject:"許生",predicate:"居",object:"墨積洞(장소)",omitted:"-"},
+        background:"허생전의 첫 문장. 주인공을 소개하는 도입부.",
+        exam_point:"한문 기본 문장 구조 파악",
+        quiz:[
+          {type:"해석선택",q:"'許生居墨積洞'의 현대어 풀이로 가장 적절한 것은?",options:["허생은 시장에 갔다","허생은 묵적동에 살았다","허생은 책을 읽었다","허생은 벗을 만났다"],answer:1,explain:"居는 '살다', 墨積洞은 장소를 나타낸다."},
+          {type:"어휘",q:"'居'의 뜻으로 옳은 것은?",options:["가다","살다","읽다","팔다"],answer:1,explain:"居는 '살다, 거주하다'이다."}]},
+      { id:"s302", original:"妻甚饑 泣曰", reading:"처심기 읍왈",
+        literal_translation:"아내가 몹시 굶주려 울며 말하였다",
+        natural_translation:"아내가 너무 굶주린 나머지 울면서 말하였다.",
+        keywords:[
+          {word:"妻",reading:"처",meaning:"아내",note:""},
+          {word:"甚",reading:"심",meaning:"몹시, 매우",note:"정도 부사"},
+          {word:"饑",reading:"기",meaning:"굶주리다",note:""}],
+        grammar:[{point:"甚 정도부사",explanation:"'甚'이 형용사·동사 앞에서 '몹시'라는 정도를 나타냄",example:"妻甚饑"}],
+        structure:{subject:"妻",predicate:"饑 / 泣 / 曰",object:"-",omitted:"-"},
+        background:"가난한 살림에 시달리는 허생 부부의 상황 묘사.",
+        exam_point:"정도부사 甚의 용법",
+        quiz:[
+          {type:"어휘",q:"'甚'의 뜻으로 옳은 것은?",options:["조금","몹시","천천히","결코"],answer:1,explain:"甚은 '몹시, 매우'라는 정도 부사다."},
+          {type:"빈칸",q:"'妻甚___ 泣曰'에서 빈칸(굶주리다)에 알맞은 글자는?",options:["饑","居","曰","泣"],answer:0,explain:"饑는 '굶주리다'이다."}]},
+      { id:"s303", original:"子不能讀書 何爲", reading:"자불능독서 하위",
+        literal_translation:"그대는 글을 읽을 수 없으면 무엇을 하겠는가",
+        natural_translation:"당신은 (벼슬을 못 할) 글공부만 하니, 대체 무엇을 하려는 것입니까?",
+        keywords:[
+          {word:"子",reading:"자",meaning:"그대, 당신",note:"2인칭 존칭"},
+          {word:"不能",reading:"불능",meaning:"~할 수 없다",note:"불가능"},
+          {word:"何爲",reading:"하위",meaning:"무엇을 하는가",note:"의문"}],
+        grammar:[{point:"何爲 의문",explanation:"'무엇을 하는가'라는 의문 표현, 목적어 何의 도치",example:"何爲(무엇을 하는가)"}],
+        structure:{subject:"子",predicate:"爲",object:"何(도치)",omitted:"-"},
+        background:"아내가 무능한 허생을 책망하는 대목.",
+        exam_point:"의문사 何의 도치, 不能 구문",
+        quiz:[
+          {type:"문법",q:"'何爲'에서 何가 동사 앞에 온 까닭은?",options:["강조를 위한 도치","오류","우연","운율"],answer:0,explain:"의문대명사 목적어 何는 동사 앞으로 도치된다."},
+          {type:"어휘",q:"'子'의 뜻으로 옳은 것은?",options:["아들","그대·당신","스승","자식들"],answer:1,explain:"여기서 子는 2인칭 '그대, 당신'이다."}]},
+      { id:"s304", original:"許生笑曰 吾讀書十年矣", reading:"허생소왈 오독서십년의",
+        literal_translation:"허생이 웃으며 말하길, 내가 글을 읽은 지 십 년이다",
+        natural_translation:"허생이 웃으며 말하였다. \"내가 글을 읽은 지 벌써 십 년이오.\"",
+        keywords:[
+          {word:"笑",reading:"소",meaning:"웃다",note:""},
+          {word:"吾",reading:"오",meaning:"나",note:"1인칭"},
+          {word:"矣",reading:"의",meaning:"~이다(완료·단정)",note:"종결사"}],
+        grammar:[{point:"~矣 완료",explanation:"'矣'가 동작의 완료·확정을 나타내는 종결사",example:"讀書十年矣"}],
+        structure:{subject:"許生 / 吾",predicate:"曰 / 讀",object:"書",omitted:"-"},
+        background:"허생이 십 년의 독서 계획을 밝히는 장면.",
+        exam_point:"종결사 矣의 완료 용법, 吾의 인칭",
+        quiz:[
+          {type:"어휘",q:"'矣'의 기능으로 옳은 것은?",options:["의문","완료·단정 종결","부정","가정"],answer:1,explain:"矣는 완료·단정을 나타내는 종결사다."},
+          {type:"해석선택",q:"허생이 말한 내용은?",options:["십 년간 장사했다","십 년간 글을 읽었다","십 년간 굶었다","십 년간 떠돌았다"],answer:1,explain:"吾讀書十年矣 — 글을 읽은 지 십 년."}]},
+      { id:"s305", original:"變姓名 賣藥於市", reading:"변성명 매약어시",
+        literal_translation:"성과 이름을 바꾸고 시장에서 약을 팔았다",
+        natural_translation:"이름을 바꾸고 시장에 나가 약을 팔며 살았다.",
+        keywords:[
+          {word:"變",reading:"변",meaning:"바꾸다",note:""},
+          {word:"賣",reading:"매",meaning:"팔다",note:""},
+          {word:"於",reading:"어",meaning:"~에서",note:"처소 전치사"}],
+        grammar:[{point:"동사+於+장소",explanation:"'於'가 동작의 장소를 나타냄",example:"賣藥於市"}],
+        structure:{subject:"(생략)",predicate:"變 / 賣",object:"姓名 / 藥",omitted:"주어 생략"},
+        background:"허생을 도운 인물 혹은 후일담의 한 장면(시정 생활).",
+        exam_point:"전치사 於의 처소 용법",
+        quiz:[
+          {type:"어휘",q:"'賣'의 뜻은?",options:["사다","팔다","바꾸다","만들다"],answer:1,explain:"賣는 '팔다', 買(사다)와 구별."},
+          {type:"문법",q:"'賣藥於市'에서 '於市'의 의미는?",options:["시장의","시장에서","시장으로부터","시장처럼"],answer:1,explain:"於+장소 = '~에서', '시장에서'."}]},
+    ]
+  },
+
+  /* ===== 5. 고문진보 ===== */
+  {
+    id:"work_005", title:"고문진보(古文眞寶)", author:"여러 작가", source:"고문진보(권학문 등)",
+    period:"송·당 등", genre:"고전 시가", difficulty:"중급", exam_frequency:"중",
+    sentences:[
+      { id:"s401", original:"少年易老學難成", reading:"소년이로학난성",
+        literal_translation:"소년은 늙기 쉽고 학문은 이루기 어렵다",
+        natural_translation:"젊음은 금세 늙어 버리고 학문은 이루기가 어렵다.",
+        keywords:[
+          {word:"易",reading:"이",meaning:"쉽다",note:"'이'로 읽음"},
+          {word:"老",reading:"로",meaning:"늙다",note:""},
+          {word:"難",reading:"난",meaning:"어렵다",note:""}],
+        grammar:[{point:"易/難 + 동사",explanation:"'~하기 쉽다/어렵다'라는 난이 표현",example:"易老, 難成"}],
+        structure:{subject:"少年 / 學",predicate:"易老 / 難成",object:"-",omitted:"대구"},
+        background:"주자(주희)의 권학문으로 알려진 명구. 면학을 권한다.",
+        exam_point:"易(이)의 독음, 易/難 난이 표현, 대구",
+        quiz:[
+          {type:"어휘",q:"여기서 '易'의 독음과 뜻은?",options:["역 / 바꾸다","이 / 쉽다","역 / 점치다","이 / 어렵다"],answer:1,explain:"'쉽다'의 뜻일 때 易은 '이'로 읽는다."},
+          {type:"해석선택",q:"이 구절이 강조하는 바는?",options:["놀이를 즐겨라","젊을 때 부지런히 배워라","늙음을 두려워 마라","학문은 쉽다"],answer:1,explain:"少年易老學難成 — 시간을 아껴 면학할 것."}]},
+      { id:"s402", original:"一寸光陰不可輕", reading:"일촌광음불가경",
+        literal_translation:"한 치의 시간도 가벼이 여겨서는 안 된다",
+        natural_translation:"아주 짧은 시간이라도 가볍게 여겨 헛되이 보내서는 안 된다.",
+        keywords:[
+          {word:"光陰",reading:"광음",meaning:"시간, 세월",note:""},
+          {word:"不可",reading:"불가",meaning:"~해서는 안 된다",note:"금지·불가"},
+          {word:"輕",reading:"경",meaning:"가볍게 여기다",note:""}],
+        grammar:[{point:"不可 + 동사",explanation:"'~해서는 안 된다, ~할 수 없다'는 금지·불가 표현",example:"不可輕"}],
+        structure:{subject:"一寸光陰",predicate:"輕",object:"-",omitted:"不可(금지)"},
+        background:"앞 구절 '少年易老學難成'에 이어지는 권학의 명구.",
+        exam_point:"不可 구문, 一寸光陰(짧은 시간)",
+        quiz:[
+          {type:"문법",q:"'不可'의 뜻으로 옳은 것은?",options:["반드시 ~하라","~해서는 안 된다","~할 수 있다","이미 ~했다"],answer:1,explain:"不可는 금지·불가 '~해서는 안 된다'이다."},
+          {type:"빈칸",q:"'少年易老學難成, 一寸光陰不可___'의 빈칸은?",options:["輕","老","成","難"],answer:0,explain:"一寸光陰不可輕 — 짧은 시간도 가벼이 말라."}]},
+      { id:"s403", original:"勸君莫惜金縷衣", reading:"권군막석금루의",
+        literal_translation:"그대에게 권하노니 금실 옷을 아끼지 말라",
+        natural_translation:"그대에게 권하노니, 값진 금실 옷일랑 아까워하지 마시오.",
+        keywords:[
+          {word:"勸",reading:"권",meaning:"권하다",note:""},
+          {word:"莫",reading:"막",meaning:"~하지 말라",note:"금지사"},
+          {word:"惜",reading:"석",meaning:"아끼다",note:""}],
+        grammar:[{point:"莫 금지",explanation:"'莫'은 '~하지 말라'는 금지를 나타내는 부사",example:"莫惜(아끼지 말라)"}],
+        structure:{subject:"(나)",predicate:"勸 / 惜",object:"君 / 金縷衣",omitted:"주어 생략"},
+        background:"두추랑 '금루의'의 명구. 청춘을 아끼라는 권유.",
+        exam_point:"금지사 莫의 용법",
+        quiz:[
+          {type:"문법",q:"'莫'의 문법적 기능은?",options:["의문사","금지(~하지 말라)","비교","가정"],answer:1,explain:"莫은 '~하지 말라'는 금지 부사다."},
+          {type:"어휘",q:"'惜'의 뜻으로 옳은 것은?",options:["아끼다","버리다","입다","꿰매다"],answer:0,explain:"惜은 '아끼다, 아까워하다'이다."}]},
+      { id:"s404", original:"勸君惜取少年時", reading:"권군석취소년시",
+        literal_translation:"그대에게 권하노니 젊은 시절을 아껴 가지라",
+        natural_translation:"그대에게 권하노니, 다시 오지 않을 젊은 시절을 소중히 여기시오.",
+        keywords:[
+          {word:"惜取",reading:"석취",meaning:"아껴 가지다",note:"惜+취(보조)"},
+          {word:"少年時",reading:"소년시",meaning:"젊은 시절",note:""},
+          {word:"君",reading:"군",meaning:"그대",note:"2인칭"}],
+        grammar:[{point:"동사+取",explanation:"'取'가 동사 뒤에서 동작의 완성·획득을 보조",example:"惜取(아껴 가지다)"}],
+        structure:{subject:"(나)",predicate:"勸 / 惜取",object:"君 / 少年時",omitted:"주어 생략"},
+        background:"'금루의'의 결구. 황금 옷보다 청춘이 귀하다는 주제.",
+        exam_point:"보조 동사 取, 권유 표현 勸",
+        quiz:[
+          {type:"해석선택",q:"이 구절이 권하는 바는?",options:["금실 옷을 사라","젊은 시절을 아끼라","돈을 모으라","글을 읽으라"],answer:1,explain:"惜取少年時 — 젊은 시절을 소중히 여기라."},
+          {type:"OX",q:"'君'은 여기서 2인칭 '그대'를 뜻한다.",options:["O","X"],answer:0,explain:"勸君 — '그대에게 권하다'."}]},
+    ]
+  },
+];
+
+/* ---------- 1. 상태(LocalStorage) ---------- */
+const LS_KEY = "gomun_master_state_v1";
+const ADMIN_DEFAULT_PW = "admin123";
+
+const defaultState = {
+  profile:{ name:"학습자", createdAt:Date.now() },
+  goal:{ sentences:5 },                 // 오늘의 목표(문장 수)
+  progress:{},                          // sentId -> {status, reviewStage, lastStudied, due}
+  completed:[],                         // 완료 문장 id
+  bookmarks:[],                         // 북마크 id
+  wrongNotes:[],                        // 오답 노트
+  wordbooks:{ "기본 단어장":[] },        // 단어장 목록 -> [어휘객체]
+  activeWordbook:"기본 단어장",
+  quizLog:[],                           // {date, correct, grammarPoint, workId, ok}
+  studyLog:{},                          // 'YYYY-MM-DD' -> 학습 문장 수
+  badges:[],                            // 획득 배지 id
+  streak:{ last:null, count:0 },        // 연속 학습
+  admin:{ pw:ADMIN_DEFAULT_PW, apiProvider:"claude", apiKey:"" },
+  customData:[],                        // 관리자가 추가한 작품
+};
+
+let state = loadState();
+function loadState(){
+  try{
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return structuredClone(defaultState);
+    return Object.assign(structuredClone(defaultState), JSON.parse(raw));
+  }catch(e){ console.warn("상태 로드 실패",e); return structuredClone(defaultState); }
+}
+function saveState(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){ console.warn("저장 실패",e);} }
+
+/* 전체 데이터 = 샘플 + 관리자 추가 */
+function allWorks(){ return [...SAMPLE_DATA, ...(state.customData||[])]; }
+function allSentences(){ const a=[]; allWorks().forEach(w=>w.sentences.forEach(s=>a.push({...s, workId:w.id, work:w}))); return a; }
+function findSentence(id){ return allSentences().find(s=>s.id===id); }
+function findWork(id){ return allWorks().find(w=>w.id===id); }
+const todayKey = ()=> new Date().toISOString().slice(0,10);
+
+/* ---------- 2. 현재 학습 컨텍스트 ---------- */
+let ctx = { workId:null, index:0, filterCat:"전체", hideTrans:false, hideOrig:false };
+
+/* ============================================================
+   3. 렌더링
+   ============================================================ */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => document.querySelectorAll(sel);
+
+/* ----- 사이드바: 카테고리 & 작품 ----- */
+const CATEGORIES = ["전체 작품","고전 산문","고전 시가","한문 산문","설화","수필","역사문","논설문","시험 빈출 작품","내가 저장한 작품","오답 복습","오늘의 복습"];
+
+function renderSidebar(){
+  // 카테고리
+  const cn = $("#categoryNav"); cn.innerHTML="";
+  CATEGORIES.forEach(cat=>{
+    const b=document.createElement("button");
+    b.className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-paper flex items-center justify-between";
+    b.innerHTML=`<span>${cat}</span>`;
+    b.onclick=()=>{ ctx.filterCat=cat; openGridByCategory(cat); closeSidebarMobile(); };
+    cn.appendChild(b);
+  });
+  // 작품 목록
+  const wn=$("#workNav"); wn.innerHTML="";
+  allWorks().forEach(w=>{
+    const done=w.sentences.filter(s=>state.completed.includes(s.id)).length;
+    const b=document.createElement("button");
+    b.className="w-full text-left px-3 py-1.5 rounded-lg hover:bg-paper";
+    b.innerHTML=`<div class="flex items-center justify-between">
+        <span class="truncate">${w.title}</span>
+        <span class="text-[10px] text-ink/40">${done}/${w.sentences.length}</span>
+      </div>
+      <div class="h-1 bg-black/5 rounded mt-1"><div class="h-1 bg-gold rounded" style="width:${w.sentences.length?done/w.sentences.length*100:0}%"></div></div>`;
+    b.onclick=()=>{ loadWork(w.id); closeSidebarMobile(); };
+    wn.appendChild(b);
+  });
+  // 갈래 필터 옵션
+  const gf=$("#genreFilter");
+  const genres=[...new Set(allWorks().map(w=>w.genre))];
+  gf.innerHTML='<option value="">갈래 전체</option>'+genres.map(g=>`<option>${g}</option>`).join("");
+}
+
+/* ----- 작품 로드 ----- */
+function loadWork(workId, index=0){
+  ctx.workId=workId; ctx.index=index;
+  showView("study");
+  renderCard();
+}
+
+function currentSentence(){
+  const w=findWork(ctx.workId); if(!w) return null;
+  return {...w.sentences[ctx.index], workId:w.id, work:w};
+}
+
+/* ----- 메인 카드 렌더 ----- */
+function renderCard(){
+  const s=currentSentence();
+  const w=findWork(ctx.workId);
+  if(!s||!w){
+    $("#currentWorkTitle").textContent="작품을 선택하세요";
+    $("#currentWorkMeta").textContent="";
+    return;
+  }
+  $("#currentWorkTitle").textContent=w.title;
+  $("#currentWorkMeta").textContent=`${w.author} · ${w.period} · ${w.genre} · 난이도 ${w.difficulty} · 빈출 ${w.exam_frequency}`;
+  $("#sentProgress").textContent=`${ctx.index+1} / ${w.sentences.length}`;
+
+  // 앞면
+  $("#fcWork").textContent=`${w.title} — ${w.author}`;
+  $("#fcDiff").textContent=w.difficulty;
+  $("#fcDiff").className="text-[11px] px-2 py-0.5 rounded-full "+diffColor(w.difficulty);
+  const st=state.progress[s.id]?.status || (state.completed.includes(s.id)?"완료":"처음 학습");
+  $("#fcStatus").textContent=st;
+  $("#fcStatus").className="text-[11px] px-2 py-0.5 rounded-full "+(state.completed.includes(s.id)?"bg-correct/15 text-correct":"bg-black/10 text-ink/60");
+
+  $("#fcOriginal").innerHTML = ctx.hideOrig ? `<span class="blurred">${s.original}</span>` : highlightKeywords(s.original, s.keywords);
+  $("#fcReading").textContent=s.reading;
+
+  // 앞면 핵심 어휘 칩
+  $("#fcKeywords").innerHTML=s.keywords.slice(0,4).map(k=>
+    `<span class="text-xs bg-gold/10 text-brown px-2 py-0.5 rounded-full">${k.word} ${k.meaning}</span>`).join("");
+
+  // 뒷면
+  const wrap = v => ctx.hideTrans ? `<span class="blurred">${v}</span>` : v;
+  $("#fcNatural").innerHTML=wrap(s.natural_translation);
+  $("#fcLiteral").innerHTML=wrap(s.literal_translation);
+  $("#fcBackground").textContent=s.background;
+  $("#fcKwList").innerHTML=s.keywords.map(k=>
+    `<div class="text-xs"><b class="han-text text-brown">${k.word}</b> <span class="text-ink/50">(${k.reading})</span> — ${k.meaning}${k.note?` <span class="text-ink/40">· ${k.note}</span>`:""}</div>`).join("");
+  $("#fcGrammar").innerHTML=s.grammar.map(g=>
+    `<div class="text-xs"><b class="text-review">${g.point}</b>: ${g.explanation}${g.example?`<br/><span class="text-ink/50 han-text">예) ${g.example}</span>`:""}</div>`).join("");
+  $("#fcStructure").innerHTML=structText(s.structure);
+
+  // 카드 초기화(앞면)
+  $("#flipCard").classList.remove("flipped");
+
+  // 도구 버튼 상태
+  $("#btnBookmark").classList.toggle("active", state.bookmarks.includes(s.id));
+  $("#btnBookmark").innerHTML = state.bookmarks.includes(s.id)
+    ? '<i class="fa-solid fa-bookmark"></i> 북마크됨' : '<i class="fa-regular fa-bookmark"></i> 북마크';
+  $("#btnDone").classList.toggle("active", state.completed.includes(s.id));
+  $("#btnHideTrans").classList.toggle("active", ctx.hideTrans);
+  $("#btnHideOrig").classList.toggle("active", ctx.hideOrig);
+
+  renderAnalysis(s);
+}
+
+function diffColor(d){ return d==="초급"?"bg-correct/15 text-correct":d==="중급"?"bg-gold/20 text-brown":"bg-wrong/15 text-wrong"; }
+
+function highlightKeywords(text, keywords){
+  let out=text;
+  keywords.forEach(k=>{ out=out.split(k.word).join(`<span class="kw-hi">${k.word}</span>`); });
+  return out;
+}
+function structText(st){
+  if(!st) return "-";
+  return `<span class="inline-block bg-navy/10 text-navy px-2 py-0.5 rounded mr-1 mb-1">주어: ${st.subject||"-"}</span>
+          <span class="inline-block bg-brown/10 text-brown px-2 py-0.5 rounded mr-1 mb-1">서술어: ${st.predicate||"-"}</span>
+          <span class="inline-block bg-gold/15 text-brown px-2 py-0.5 rounded mr-1 mb-1">목적어: ${st.object||"-"}</span>
+          <span class="inline-block bg-black/5 px-2 py-0.5 rounded mb-1">생략: ${st.omitted||"-"}</span>`;
+}
+
+/* ----- 오른쪽 분석 패널 ----- */
+function renderAnalysis(s){
+  const p=$("#analysisPanel");
+  p.innerHTML=`
+    <div><p class="text-[11px] font-bold text-gold mb-1">어휘 분석</p>
+      ${s.keywords.map(k=>`<div class="text-xs mb-0.5"><b class="han-text">${k.word}</b>(${k.reading}): ${k.meaning}</div>`).join("")}</div>
+    <div><p class="text-[11px] font-bold text-review mb-1">문법·구문 분석</p>
+      ${s.grammar.map(g=>`<div class="text-xs mb-0.5">• <b>${g.point}</b> — ${g.explanation}</div>`).join("")}</div>
+    <div><p class="text-[11px] font-bold text-navy mb-1">문장 성분</p>
+      <div class="text-xs">${structText(s.structure)}</div></div>
+    <div><p class="text-[11px] font-bold text-brown mb-1">현대어 대응</p>
+      <div class="text-xs">${ctx.hideTrans?'<span class="blurred">'+s.natural_translation+'</span>':s.natural_translation}</div></div>
+    <div class="bg-gold/10 rounded-lg p-2"><p class="text-[11px] font-bold text-brown mb-1"><i class="fa-solid fa-star"></i> 시험 출제 포인트</p>
+      <div class="text-xs">${s.exam_point}</div></div>
+    <div><p class="text-[11px] font-bold text-ink/50 mb-1">유사 문장 비교</p>
+      ${similarSentences(s).map(x=>`<div class="text-xs text-ink/60 mb-0.5 han-text cursor-pointer hover:text-navy" data-go="${x.id}">↪ ${x.original}</div>`).join("")||'<span class="text-xs text-ink/30">유사 문장 없음</span>'}</div>
+  `;
+  p.querySelectorAll("[data-go]").forEach(el=>el.onclick=()=>{ const t=findSentence(el.dataset.go); if(t){ loadWork(t.workId, findWork(t.workId).sentences.findIndex(z=>z.id===t.id)); }});
+}
+function similarSentences(s){
+  // 같은 문법 포인트를 공유하는 다른 문장
+  const pts=s.grammar.map(g=>g.point);
+  return allSentences().filter(x=>x.id!==s.id && x.grammar.some(g=>pts.includes(g.point))).slice(0,3);
+}
+
+/* ============================================================
+   4. 학습 진도 / 완료 / 복습(간격 반복)
+   ============================================================ */
+const REVIEW_STAGES=["처음 학습","1차 복습","2차 복습","장기 기억","오답 집중 복습"];
+const REVIEW_INTERVALS={ "처음 학습":1, "1차 복습":3, "2차 복습":7, "장기 기억":16, "오답 집중 복습":1 }; // 일 단위
+
+function markCompleted(){
+  const s=currentSentence(); if(!s) return;
+  if(!state.completed.includes(s.id)) state.completed.push(s.id);
+  // 진도 갱신 + 다음 복습 단계
+  const cur=state.progress[s.id]||{ reviewStage:0 };
+  const stage=Math.min((cur.reviewStage||0)+1, REVIEW_STAGES.length-2);
+  state.progress[s.id]={ status:REVIEW_STAGES[stage], reviewStage:stage,
+    lastStudied:Date.now(), due:Date.now()+REVIEW_INTERVALS[REVIEW_STAGES[stage]]*86400000 };
+  // 학습 로그 + 목표
+  state.studyLog[todayKey()]=(state.studyLog[todayKey()]||0)+1;
+  updateStreak();
+  saveState();
+  // 시각적 피드백
+  $("#flipCard").classList.add("flash-done");
+  setTimeout(()=>$("#flipCard").classList.remove("flash-done"),700);
+  toast("학습 완료! "+s.original, "correct");
+  checkBadges();
+  updateGoalChip();
+  renderCard(); renderSidebar();
+}
+
+function updateStreak(){
+  const t=todayKey();
+  if(state.streak.last===t) return;
+  const y=new Date(Date.now()-86400000).toISOString().slice(0,10);
+  state.streak.count = (state.streak.last===y) ? state.streak.count+1 : 1;
+  state.streak.last=t;
+}
+
+/* 오늘의 복습 대상 */
+function dueForReview(){
+  const now=Date.now();
+  return allSentences().filter(s=>{ const p=state.progress[s.id]; return p&&p.due&&p.due<=now; });
+}
+
+/* ----- 오늘의 목표 칩 ----- */
+function updateGoalChip(){
+  const done=state.studyLog[todayKey()]||0;
+  $("#goalChipText").textContent=`목표 ${done}/${state.goal.sentences}`;
+}
+
+/* ============================================================
+   5. 검색 / 필터 / 그리드
+   ============================================================ */
+function searchSentences(q){
+  q=q.trim().toLowerCase(); if(!q) return [];
+  return allSentences().filter(s=>{
+    const w=s.work;
+    const hay=[w.title,w.author,w.period,w.genre,w.difficulty,s.original,s.reading,
+      s.natural_translation,s.literal_translation,
+      ...s.keywords.map(k=>k.word+k.meaning),
+      ...s.grammar.map(g=>g.point+g.explanation)].join(" ").toLowerCase();
+    return hay.includes(q);
+  });
+}
+
+function openGridByCategory(cat){
+  let list=[];
+  const all=allSentences();
+  switch(cat){
+    case "전체 작품": list=all; break;
+    case "고전 산문": list=all.filter(s=>s.work.genre==="고전 산문"); break;
+    case "고전 시가": list=all.filter(s=>s.work.genre==="고전 시가"); break;
+    case "한문 산문": list=all.filter(s=>s.work.genre==="한문 산문"); break;
+    case "설화": list=all.filter(s=>s.work.genre==="설화"); break;
+    case "수필": list=all.filter(s=>s.work.genre==="수필"); break;
+    case "역사문": list=all.filter(s=>s.work.genre==="역사문"); break;
+    case "논설문": list=all.filter(s=>s.work.genre==="논설문"); break;
+    case "시험 빈출 작품": list=all.filter(s=>s.work.exam_frequency==="상"); break;
+    case "내가 저장한 작품": list=all.filter(s=>state.bookmarks.includes(s.id)); break;
+    case "오답 복습": list=all.filter(s=>state.wrongNotes.some(wn=>wn.sentId===s.id)); break;
+    case "오늘의 복습": list=dueForReview(); break;
+    default: list=all;
+  }
+  renderGrid(list, cat);
+}
+
+function applyHeaderFilters(){
+  const g=$("#genreFilter").value, d=$("#diffFilter").value;
+  let list=allSentences();
+  if(g) list=list.filter(s=>s.work.genre===g);
+  if(d) list=list.filter(s=>s.work.difficulty===d);
+  renderGrid(list, `필터 결과 (${g||"전체"} / ${d||"전체"})`);
+}
+
+function renderGrid(list, title){
+  showView("grid");
+  $("#gridTitle").textContent=`${title} · ${list.length}개`;
+  const g=$("#gridResults");
+  if(!list.length){ g.innerHTML='<p class="text-ink/40 col-span-full text-center py-10">결과가 없습니다.</p>'; return; }
+  g.innerHTML="";
+  list.forEach(s=>{
+    const w=s.work;
+    const card=document.createElement("div");
+    card.className="bg-white rounded-xl shadow p-4 cursor-pointer hover:shadow-lg transition border border-transparent hover:border-gold/40";
+    card.innerHTML=`
+      <div class="flex justify-between items-start mb-2">
+        <span class="text-xs font-bold text-brown">${w.title}</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full ${diffColor(w.difficulty)}">${w.difficulty}</span>
+      </div>
+      <p class="han-text text-xl mb-1">${s.original}</p>
+      <p class="text-xs text-navy/60 serif mb-2">${s.reading}</p>
+      <p class="text-xs text-ink/60 line-clamp-2">${s.natural_translation}</p>`;
+    card.onclick=()=>loadWork(w.id, w.sentences.findIndex(z=>z.id===s.id));
+    g.appendChild(card);
+  });
+}
+
+/* ============================================================
+   6. 퀴즈
+   ============================================================ */
+let quizQueue=[], quizPos=0, quizScore=0;
+
+function startQuiz(sentences){
+  // 문장들에서 퀴즈 수집
+  quizQueue=[];
+  sentences.forEach(s=>(s.quiz||[]).forEach(q=>quizQueue.push({...q, sent:s})));
+  if(!quizQueue.length){ toast("이 범위에 퀴즈가 없습니다.","review"); return; }
+  // 섞기
+  quizQueue.sort(()=>Math.random()-0.5);
+  quizPos=0; quizScore=0;
+  openModal("#quizModal");
+  renderQuiz();
+}
+
+function renderQuiz(){
+  const body=$("#quizBody");
+  if(quizPos>=quizQueue.length){
+    body.innerHTML=`<div class="text-center py-6">
+      <p class="text-5xl mb-3">${quizScore===quizQueue.length?"🏆":"📚"}</p>
+      <p class="text-xl font-black text-navy mb-1">퀴즈 완료!</p>
+      <p class="text-ink/60 mb-4">${quizQueue.length}문제 중 <b class="text-correct">${quizScore}</b>개 정답</p>
+      <button class="closeModal bg-navy text-white px-5 py-2 rounded-lg">닫기</button></div>`;
+    bindCloseButtons();
+    checkBadges();
+    return;
+  }
+  const q=quizQueue[quizPos];
+  body.innerHTML=`
+    <div class="mb-3 flex justify-between text-xs text-ink/50">
+      <span>${q.type}</span><span>${quizPos+1} / ${quizQueue.length}</span></div>
+    <p class="font-bold mb-1 text-brown text-sm">${q.sent.work.title}</p>
+    <p class="han-text text-lg mb-3">${q.sent.original}</p>
+    <p class="font-semibold mb-3">${q.q}</p>
+    <div id="quizOpts" class="space-y-2"></div>
+    <div id="quizFeedback" class="mt-3"></div>`;
+  const opts=$("#quizOpts");
+  q.options.forEach((opt,i)=>{
+    const b=document.createElement("button");
+    b.className="w-full text-left px-4 py-2.5 rounded-lg border border-black/10 hover:bg-paper transition";
+    b.innerHTML=`<span class="font-bold text-navy mr-2">${i+1}.</span>${opt}`;
+    b.onclick=()=>answerQuiz(i,q,b);
+    opts.appendChild(b);
+  });
+}
+
+function answerQuiz(choice,q,btn){
+  const ok=choice===q.answer;
+  $$("#quizOpts button").forEach((b,i)=>{
+    b.disabled=true;
+    if(i===q.answer) b.classList.add("bg-correct/15","border-correct","text-correct","font-bold");
+    if(i===choice && !ok) b.classList.add("bg-wrong/15","border-wrong","text-wrong");
+  });
+  // 로그
+  state.quizLog.push({ date:todayKey(), ok, grammarPoint:(q.sent.grammar[0]?.point)||"기타", workId:q.sent.workId });
+  if(ok){ quizScore++; }
+  else { addWrongNote(q,choice); }
+  saveState();
+
+  $("#quizFeedback").innerHTML=`
+    <div class="rounded-lg p-3 ${ok?'bg-correct/10 text-correct':'bg-wrong/10 text-wrong'}">
+      <p class="font-bold mb-1">${ok?'<i class="fa-solid fa-circle-check"></i> 정답입니다!':'<i class="fa-solid fa-circle-xmark"></i> 오답입니다'}</p>
+      <p class="text-sm text-ink/70">${ok?'':'정답: '+(q.answer+1)+'번. '}${q.explain||""}</p>
+      ${ok?'':'<p class="text-xs text-review mt-1"><i class="fa-solid fa-rotate"></i> 오답 노트에 자동 저장되었습니다.</p>'}
+    </div>
+    <button id="quizNext" class="w-full mt-3 bg-navy text-white py-2 rounded-lg font-bold">${quizPos+1>=quizQueue.length?'결과 보기':'다음 문제'}</button>`;
+  $("#quizNext").onclick=()=>{ quizPos++; renderQuiz(); };
+}
+
+function addWrongNote(q,choice){
+  state.wrongNotes.unshift({
+    id:"wn_"+Date.now()+Math.random().toString(36).slice(2,6),
+    sentId:q.sent.id, workTitle:q.sent.work.title, original:q.sent.original,
+    question:q.q, options:q.options, myAnswer:choice, answer:q.answer,
+    explain:q.explain||"", keywords:q.sent.keywords, date:todayKey()
+  });
+  // 복습 예정에 추가(오답 집중 복습)
+  state.progress[q.sent.id]={ status:"오답 집중 복습", reviewStage:4,
+    lastStudied:Date.now(), due:Date.now()+REVIEW_INTERVALS["오답 집중 복습"]*86400000 };
+}
+
+/* ============================================================
+   7. 오답 노트 뷰
+   ============================================================ */
+function renderWrongNotes(){
+  const c=$("#wrongNoteList");
+  if(!state.wrongNotes.length){ c.innerHTML='<p class="text-ink/40 text-center py-10">오답이 없습니다. 퀴즈를 풀어보세요!</p>'; return; }
+  c.innerHTML="";
+  state.wrongNotes.forEach(wn=>{
+    const d=document.createElement("div");
+    d.className="bg-white rounded-xl shadow p-4";
+    d.innerHTML=`
+      <div class="flex justify-between items-start mb-2">
+        <div><span class="text-xs font-bold text-brown">${wn.workTitle}</span>
+          <p class="han-text text-lg">${wn.original}</p></div>
+        <span class="text-[10px] text-ink/40">${wn.date}</span>
+      </div>
+      <p class="text-sm font-semibold mb-2">${wn.question}</p>
+      <div class="text-xs space-y-1 mb-2">
+        <p class="text-wrong"><i class="fa-solid fa-xmark"></i> 내 답: ${wn.myAnswer+1}. ${wn.options[wn.myAnswer]}</p>
+        <p class="text-correct"><i class="fa-solid fa-check"></i> 정답: ${wn.answer+1}. ${wn.options[wn.answer]}</p>
+      </div>
+      <div class="bg-paper rounded-lg p-2 text-xs text-ink/70 mb-3">${wn.explain}</div>
+      <div class="flex gap-2">
+        <button class="text-xs bg-navy text-white px-3 py-1.5 rounded-lg" data-retry="${wn.sentId}"><i class="fa-solid fa-rotate-right"></i> 다시 풀기</button>
+        <button class="text-xs bg-review text-white px-3 py-1.5 rounded-lg" data-focus="${wn.sentId}"><i class="fa-solid fa-bullseye"></i> 오답 집중 복습</button>
+        <button class="text-xs bg-black/5 px-3 py-1.5 rounded-lg" data-del="${wn.id}"><i class="fa-solid fa-trash"></i></button>
+      </div>`;
+    c.appendChild(d);
+  });
+  c.querySelectorAll("[data-retry]").forEach(b=>b.onclick=()=>{ const s=findSentence(b.dataset.retry); if(s) startQuiz([s]); });
+  c.querySelectorAll("[data-focus]").forEach(b=>b.onclick=()=>{ const s=findSentence(b.dataset.focus); if(s){ loadWork(s.workId, findWork(s.workId).sentences.findIndex(z=>z.id===s.id)); }});
+  c.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ state.wrongNotes=state.wrongNotes.filter(x=>x.id!==b.dataset.del); saveState(); renderWrongNotes(); });
+}
+
+/* ============================================================
+   8. 단어장
+   ============================================================ */
+function addCurrentKeywordsToWordbook(){
+  const s=currentSentence(); if(!s) return;
+  const wb=state.wordbooks[state.activeWordbook];
+  let added=0;
+  s.keywords.forEach(k=>{
+    if(!wb.some(x=>x.word===k.word && x.example===s.original)){
+      wb.push({ word:k.word, reading:k.reading, meaning:k.meaning, hanja:k.word,
+        example:s.original, natural:s.natural_translation, work:s.work.title, memo:"", reviewStatus:"처음 학습" });
+      added++;
+    }
+  });
+  saveState();
+  toast(`${added}개 어휘를 '${state.activeWordbook}'에 추가했습니다.`, "gold");
+  checkBadges();
+}
+
+function renderWordbook(){
+  const sel=$("#wbListSelect");
+  sel.innerHTML=Object.keys(state.wordbooks).map(n=>`<option ${n===state.activeWordbook?"selected":""}>${n}</option>`).join("");
+  sel.onchange=()=>{ state.activeWordbook=sel.value; saveState(); renderWordbook(); };
+  const grid=$("#wordbookGrid");
+  const wb=state.wordbooks[state.activeWordbook]||[];
+  if(!wb.length){ grid.innerHTML='<p class="text-ink/40 col-span-full text-center py-10">단어장이 비어 있습니다. 학습 중 \"단어장\" 버튼을 눌러 추가하세요.</p>'; return; }
+  grid.innerHTML="";
+  wb.forEach((k,i)=>{
+    const d=document.createElement("div");
+    d.className="bg-white rounded-xl shadow p-4";
+    d.innerHTML=`
+      <div class="flex justify-between items-start">
+        <div><span class="han-text text-2xl text-brown">${k.word}</span>
+          <span class="text-xs text-ink/50 ml-1">${k.reading}</span></div>
+        <button class="text-xs text-ink/30 hover:text-wrong" data-del="${i}"><i class="fa-solid fa-trash"></i></button>
+      </div>
+      <p class="text-sm mt-1">${k.meaning}</p>
+      <p class="text-xs text-ink/50 mt-2 han-text">예) ${k.example}</p>
+      <p class="text-xs text-ink/40">${k.natural}</p>
+      <p class="text-[10px] text-brown mt-1">${k.work}</p>
+      <input class="w-full mt-2 text-xs border rounded px-2 py-1" placeholder="내 메모…" value="${k.memo||""}" data-memo="${i}">
+      <span class="text-[10px] text-review">복습: ${k.reviewStatus}</span>`;
+    grid.appendChild(d);
+  });
+  grid.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{ state.wordbooks[state.activeWordbook].splice(+b.dataset.del,1); saveState(); renderWordbook(); });
+  grid.querySelectorAll("[data-memo]").forEach(inp=>inp.onchange=()=>{ state.wordbooks[state.activeWordbook][+inp.dataset.memo].memo=inp.value; saveState(); });
+}
+
+/* ============================================================
+   9. 성취 배지
+   ============================================================ */
+const BADGES=[
+  {id:"first_sent", name:"첫 문장 학습", icon:"fa-seedling", test:()=>state.completed.length>=1},
+  {id:"first_work", name:"첫 작품 완료", icon:"fa-trophy", test:()=>allWorks().some(w=>w.sentences.every(s=>state.completed.includes(s.id)))},
+  {id:"sent10", name:"10문장 학습", icon:"fa-10", test:()=>state.completed.length>=10},
+  {id:"sent50", name:"50문장 학습", icon:"fa-fire", test:()=>state.completed.length>=50},
+  {id:"sent100", name:"100문장 학습", icon:"fa-crown", test:()=>state.completed.length>=100},
+  {id:"word100", name:"어휘 100개 저장", icon:"fa-book", test:()=>totalWords()>=100},
+  {id:"quiz50", name:"퀴즈 50문제 풀이", icon:"fa-pen", test:()=>state.quizLog.length>=50},
+  {id:"streak7", name:"7일 연속 학습", icon:"fa-calendar-check", test:()=>state.streak.count>=7},
+  {id:"wrong30", name:"오답 30개 복습 완료", icon:"fa-rotate", test:()=>state.quizLog.filter(q=>!q.ok).length>=30},
+  {id:"adv_work", name:"고급 작품 첫 완료", icon:"fa-mountain", test:()=>allWorks().filter(w=>w.difficulty==="고급").some(w=>w.sentences.every(s=>state.completed.includes(s.id)))},
+  {id:"master", name:"고문 해석 마스터", icon:"fa-graduation-cap", test:()=>state.completed.length>=allSentences().length},
+  {id:"grammar_master", name:"한문 문법 마스터", icon:"fa-spell-check", test:()=>{const g=state.quizLog.filter(q=>q.ok); return g.length>=30;}},
+];
+function totalWords(){ return Object.values(state.wordbooks).reduce((a,b)=>a+b.length,0); }
+
+function checkBadges(){
+  BADGES.forEach(b=>{
+    if(!state.badges.includes(b.id) && b.test()){
+      state.badges.push(b.id); saveState();
+      toast(`🏅 배지 획득: ${b.name}`, "gold", true);
+    }
+  });
+}
+function renderBadges(){
+  const g=$("#badgeGrid"); g.innerHTML="";
+  BADGES.forEach(b=>{
+    const owned=state.badges.includes(b.id);
+    const d=document.createElement("div");
+    d.className=`rounded-xl p-4 text-center shadow ${owned?"bg-gradient-to-br from-gold/20 to-brown/10":"bg-white opacity-50"}`;
+    d.innerHTML=`<div class="text-3xl mb-2 ${owned?"text-gold pop":"text-ink/30"}"><i class="fa-solid ${b.icon}"></i></div>
+      <p class="text-xs font-bold">${b.name}</p>
+      <p class="text-[10px] mt-1 ${owned?"text-correct":"text-ink/40"}">${owned?"획득 완료":"미획득"}</p>`;
+    g.appendChild(d);
+  });
+}
+
+/* ============================================================
+   10. 대시보드 (Chart.js)
+   ============================================================ */
+let charts={};
+function renderDashboard(){
+  // 통계 카드
+  const todayCnt=state.studyLog[todayKey()]||0;
+  const quizOk=state.quizLog.filter(q=>q.ok).length;
+  const quizRate=state.quizLog.length?Math.round(quizOk/state.quizLog.length*100):0;
+  const cards=[
+    {label:"오늘 학습", val:todayCnt+"문장", icon:"fa-calendar-day", c:"text-navy"},
+    {label:"누적 학습", val:state.completed.length+"문장", icon:"fa-layer-group", c:"text-gold"},
+    {label:"누적 퀴즈", val:state.quizLog.length+"문제", icon:"fa-pen", c:"text-review"},
+    {label:"퀴즈 정답률", val:quizRate+"%", icon:"fa-bullseye", c:"text-correct"},
+    {label:"저장 어휘", val:totalWords()+"개", icon:"fa-book", c:"text-brown"},
+    {label:"연속 학습", val:state.streak.count+"일", icon:"fa-fire", c:"text-wrong"},
+    {label:"획득 배지", val:state.badges.length+"개", icon:"fa-medal", c:"text-gold"},
+    {label:"오답 노트", val:state.wrongNotes.length+"개", icon:"fa-circle-xmark", c:"text-wrong"},
+  ];
+  $("#statCards").innerHTML=cards.map(c=>`
+    <div class="bg-white rounded-xl shadow p-4">
+      <i class="fa-solid ${c.icon} ${c.c} text-lg"></i>
+      <p class="text-2xl font-black mt-1 ${c.c}">${c.val}</p>
+      <p class="text-xs text-ink/50">${c.label}</p></div>`).join("");
+
+  // 최근 14일
+  const days=[], cnts=[];
+  for(let i=13;i>=0;i--){ const d=new Date(Date.now()-i*86400000).toISOString().slice(0,10); days.push(d.slice(5)); cnts.push(state.studyLog[d]||0); }
+  drawChart("chart14","line",{labels:days,datasets:[{label:"학습 문장",data:cnts,borderColor:"#1f3a5f",backgroundColor:"rgba(31,58,95,.1)",fill:true,tension:.3}]});
+
+  // 작품별 진도
+  const works=allWorks();
+  drawChart("chartWork","bar",{labels:works.map(w=>w.title.replace(/\(.*\)/,"")),
+    datasets:[{label:"완료 문장",data:works.map(w=>w.sentences.filter(s=>state.completed.includes(s.id)).length),backgroundColor:"#b8860b"}]});
+
+  // 문법 항목별 정답률
+  const gmap={};
+  state.quizLog.forEach(q=>{ gmap[q.grammarPoint]=gmap[q.grammarPoint]||{ok:0,n:0}; gmap[q.grammarPoint].n++; if(q.ok)gmap[q.grammarPoint].ok++; });
+  const gKeys=Object.keys(gmap).slice(0,8);
+  drawChart("chartGrammar","bar",{labels:gKeys.length?gKeys:["데이터 없음"],
+    datasets:[{label:"정답률(%)",data:gKeys.length?gKeys.map(k=>Math.round(gmap[k].ok/gmap[k].n*100)):[0],backgroundColor:"#7c3aed"}]},{indexAxis:"y"});
+
+  // 오답률 높은 작품
+  const wmap={};
+  state.quizLog.forEach(q=>{ wmap[q.workId]=wmap[q.workId]||{wrong:0,n:0}; wmap[q.workId].n++; if(!q.ok)wmap[q.workId].wrong++; });
+  const wKeys=Object.keys(wmap);
+  drawChart("chartWrong","doughnut",{labels:wKeys.length?wKeys.map(id=>(findWork(id)?.title||id).replace(/\(.*\)/,"")):["데이터 없음"],
+    datasets:[{data:wKeys.length?wKeys.map(id=>wmap[id].wrong):[1],backgroundColor:["#dc2626","#b8860b","#1f3a5f","#7c3aed","#6b4f3a"]}]});
+}
+function drawChart(id,type,data,extra={}){
+  const el=document.getElementById(id); if(!el) return;
+  if(charts[id]) charts[id].destroy();
+  charts[id]=new Chart(el,{type,data,options:{responsive:true,plugins:{legend:{display:type!=="bar"||false}},...extra}});
+}
+
+/* ============================================================
+   11. AI 해설 생성 (서버 프록시 권장 안내 포함)
+   ============================================================ */
+async function generateAI(){
+  const s=currentSentence(); if(!s){ toast("문장을 먼저 선택하세요.","wrong"); return; }
+  const key=state.admin.apiKey;
+  const provider=state.admin.apiProvider;
+  // 키가 없으면 템플릿 해설(데모) 생성
+  if(!key){
+    showAIResult(localAIExplanation(s), true);
+    return;
+  }
+  toast("AI 해설 생성 중…","navy");
+  try{
+    const prompt=aiPrompt(s);
+    let text="";
+    if(provider==="claude"){
+      const r=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"content-type":"application/json","x-api-key":key,"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+        body:JSON.stringify({model:"claude-3-5-sonnet-20241022",max_tokens:1500,messages:[{role:"user",content:prompt}]})
+      });
+      const j=await r.json(); text=j.content?.[0]?.text || JSON.stringify(j);
+    }else{
+      const r=await fetch("https://api.openai.com/v1/chat/completions",{
+        method:"POST",
+        headers:{"content-type":"application/json","authorization":"Bearer "+key},
+        body:JSON.stringify({model:"gpt-4o-mini",messages:[{role:"user",content:prompt}]})
+      });
+      const j=await r.json(); text=j.choices?.[0]?.message?.content || JSON.stringify(j);
+    }
+    showAIResult(text.replace(/\n/g,"<br/>"), false);
+  }catch(e){
+    showAIResult("API 호출 실패: "+e.message+"<br/><br/>아래는 내장 해설입니다.<hr/>"+localAIExplanation(s), true);
+  }
+}
+function aiPrompt(s){
+  return `다음 고문 문장을 학습자용으로 해설해줘. 형식: 1.원문 2.끊어읽기 3.직역 4.현대어풀이 5.핵심어휘 6.문법설명 7.문장구조 8.배경지식 9.시험출제포인트 10.학습자용 쉬운 설명 11.심화 학습 질문\n\n원문: ${s.original}\n독음: ${s.reading}`;
+}
+function localAIExplanation(s){
+  return `<b>1. 원문</b><br/><span class="han-text">${s.original}</span><br/>
+  <b>2. 끊어 읽기</b><br/>${s.reading}<br/>
+  <b>3. 직역</b><br/>${s.literal_translation}<br/>
+  <b>4. 자연스러운 현대어 풀이</b><br/>${s.natural_translation}<br/>
+  <b>5. 핵심 어휘</b><br/>${s.keywords.map(k=>`${k.word}(${k.reading}): ${k.meaning}`).join("<br/>")}<br/>
+  <b>6. 문법 설명</b><br/>${s.grammar.map(g=>`${g.point}: ${g.explanation}`).join("<br/>")}<br/>
+  <b>7. 문장 구조</b><br/>주어 ${s.structure.subject} / 서술어 ${s.structure.predicate} / 목적어 ${s.structure.object}<br/>
+  <b>8. 배경 지식</b><br/>${s.background}<br/>
+  <b>9. 시험 출제 포인트</b><br/>${s.exam_point}<br/>
+  <b>10. 쉬운 설명</b><br/>이 문장은 "${s.natural_translation}"라는 뜻으로, 핵심 글자만 알면 쉽게 이해할 수 있어요.<br/>
+  <b>11. 심화 질문</b><br/>이 문장의 문법 요소(${s.grammar[0]?.point})가 쓰인 다른 예문을 찾아볼까요?`;
+}
+function showAIResult(html, isLocal){
+  openModal("#quizModal");
+  $("#quizBody").innerHTML=`
+    <div class="mb-2 text-xs ${isLocal?'text-brown':'text-correct'}">
+      <i class="fa-solid ${isLocal?'fa-circle-info':'fa-robot'}"></i>
+      ${isLocal?'API 키 미설정 — 내장(데모) 해설을 표시합니다. 관리자 화면에서 API 키를 입력하세요.':'AI 생성 해설'}
+    </div>
+    <div class="text-sm leading-relaxed space-y-1 bg-paper rounded-lg p-3">${html}</div>
+    <p class="text-[10px] text-ink/40 mt-3"><i class="fa-solid fa-shield-halved"></i> 실제 배포 시 API 키는 서버 프록시로 처리해 클라이언트에 노출하지 마세요.</p>
+    <button class="closeModal w-full mt-3 bg-navy text-white py-2 rounded-lg">닫기</button>`;
+  bindCloseButtons();
+}
+
+/* ============================================================
+   12. 관리자 대시보드
+   ============================================================ */
+function openAdmin(){
+  const pw=prompt("관리자 비밀번호를 입력하세요 (기본: admin123)");
+  if(pw===null) return;
+  if(pw!==state.admin.pw){ toast("비밀번호가 틀렸습니다.","wrong"); return; }
+  renderAdmin();
+  openModal("#adminModal");
+}
+function renderAdmin(){
+  const qOk=state.quizLog.filter(q=>q.ok).length;
+  $("#adminBody").innerHTML=`
+    <div class="space-y-4 text-sm">
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div class="bg-paper rounded p-2"><b class="block text-lg">${allWorks().length}</b>작품</div>
+        <div class="bg-paper rounded p-2"><b class="block text-lg">${allSentences().length}</b>문장</div>
+        <div class="bg-paper rounded p-2"><b class="block text-lg">${state.quizLog.length}</b>풀이</div>
+      </div>
+
+      <div class="border rounded-lg p-3">
+        <p class="font-bold mb-2"><i class="fa-solid fa-key"></i> API 키 설정</p>
+        <select id="adProvider" class="border rounded px-2 py-1 mb-2 w-full">
+          <option value="claude" ${state.admin.apiProvider==="claude"?"selected":""}>Claude (Anthropic)</option>
+          <option value="openai" ${state.admin.apiProvider==="openai"?"selected":""}>OpenAI</option>
+        </select>
+        <input id="adKey" type="password" class="border rounded px-2 py-1 w-full mb-2" placeholder="API 키" value="${state.admin.apiKey||""}">
+        <p class="text-[10px] text-ink/50 mb-2">localStorage에 저장됩니다. 실제 서비스에서는 서버 환경변수+프록시 사용을 권장합니다.</p>
+        <button id="adSaveKey" class="bg-navy text-white px-3 py-1.5 rounded text-xs">키 저장</button>
+      </div>
+
+      <div class="border rounded-lg p-3">
+        <p class="font-bold mb-2"><i class="fa-solid fa-plus"></i> 작품/문장 추가 (JSON)</p>
+        <textarea id="adWorkJson" class="border rounded w-full h-24 text-xs p-2 han-text" placeholder='{"id":"work_x","title":"새 작품",...,"sentences":[...]}'></textarea>
+        <button id="adAddWork" class="bg-gold text-white px-3 py-1.5 rounded text-xs mt-1">작품 추가</button>
+      </div>
+
+      <div class="border rounded-lg p-3">
+        <p class="font-bold mb-2"><i class="fa-solid fa-lock"></i> 관리자 비밀번호 변경</p>
+        <input id="adNewPw" type="text" class="border rounded px-2 py-1 w-full mb-2" placeholder="새 비밀번호">
+        <button id="adChangePw" class="bg-navy text-white px-3 py-1.5 rounded text-xs">변경</button>
+      </div>
+
+      <div class="border rounded-lg p-3">
+        <p class="font-bold mb-2"><i class="fa-solid fa-chart-simple"></i> 학습 현황(현재 학습자)</p>
+        <p class="text-xs">학습자: ${state.profile.name} · 완료 ${state.completed.length}문장 · 퀴즈 정답 ${qOk}/${state.quizLog.length} · 연속 ${state.streak.count}일</p>
+      </div>
+
+      <div class="border rounded-lg p-3 flex flex-wrap gap-2">
+        <button id="adExport" class="bg-navy text-white px-3 py-1.5 rounded text-xs"><i class="fa-solid fa-download"></i> JSON 내보내기</button>
+        <label class="bg-brown text-white px-3 py-1.5 rounded text-xs cursor-pointer"><i class="fa-solid fa-upload"></i> JSON 가져오기
+          <input id="adImport" type="file" accept=".json" class="hidden"></label>
+        <button id="adReset" class="bg-wrong text-white px-3 py-1.5 rounded text-xs"><i class="fa-solid fa-trash"></i> LocalStorage 초기화</button>
+      </div>
+    </div>`;
+  // 핸들러
+  $("#adSaveKey").onclick=()=>{ state.admin.apiProvider=$("#adProvider").value; state.admin.apiKey=$("#adKey").value.trim(); saveState(); toast("API 키 저장됨","correct"); };
+  $("#adAddWork").onclick=()=>{
+    try{ const w=JSON.parse($("#adWorkJson").value); if(!w.id||!w.sentences) throw new Error("id/sentences 필요");
+      state.customData.push(w); saveState(); renderSidebar(); toast("작품 추가됨: "+w.title,"correct");
+    }catch(e){ toast("JSON 오류: "+e.message,"wrong"); }
+  };
+  $("#adChangePw").onclick=()=>{ const v=$("#adNewPw").value.trim(); if(v){ state.admin.pw=v; saveState(); toast("비밀번호 변경됨","correct"); } };
+  $("#adExport").onclick=exportData;
+  $("#adImport").onchange=importData;
+  $("#adReset").onclick=()=>{ if(confirm("모든 학습 데이터를 삭제하고 초기화할까요?")){ localStorage.removeItem(LS_KEY); state=structuredClone(defaultState); saveState(); location.reload(); } };
+}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="gomun-master-backup.json"; a.click();
+  toast("데이터를 내보냈습니다.","correct");
+}
+function importData(e){
+  const f=e.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{ try{ const d=JSON.parse(r.result); state=Object.assign(structuredClone(defaultState),d); saveState(); toast("가져오기 완료","correct"); location.reload(); }catch(err){ toast("가져오기 실패: "+err.message,"wrong"); } };
+  r.readAsText(f);
+}
+
+/* ============================================================
+   13. 뷰 전환 / 모달 / 토스트
+   ============================================================ */
+function showView(name){
+  ["study","grid","dashboard","wordbook","wrongnote","badges"].forEach(v=>{
+    const el=document.getElementById("view-"+v); if(el) el.hidden = (v!==name);
+  });
+  if(name==="dashboard") renderDashboard();
+  if(name==="wordbook") renderWordbook();
+  if(name==="wrongnote") renderWrongNotes();
+  if(name==="badges"){ renderBadges(); checkBadges(); }
+}
+function openModal(sel){ const m=$(sel); m.classList.remove("hidden"); m.classList.add("flex"); }
+function closeModal(){ $$(".fixed.z-50").forEach(m=>{ m.classList.add("hidden"); m.classList.remove("flex"); }); }
+function bindCloseButtons(){ $$(".closeModal").forEach(b=>b.onclick=closeModal); }
+
+function toast(msg,color="navy",badge=false){
+  const map={navy:"bg-navy",correct:"bg-correct",wrong:"bg-wrong",gold:"bg-gold text-ink",review:"bg-review"};
+  const t=document.createElement("div");
+  t.className=`toast-in ${map[color]||"bg-navy"} text-white px-4 py-2.5 rounded-lg shadow-lg text-sm max-w-xs ${badge?"pop font-bold":""}`;
+  t.innerHTML=msg;
+  $("#toastWrap").appendChild(t);
+  setTimeout(()=>{ t.style.transition="opacity .4s"; t.style.opacity="0"; setTimeout(()=>t.remove(),400); }, badge?3500:2200);
+}
+
+/* 모바일 사이드바 */
+function closeSidebarMobile(){ $("#sidebar").classList.remove("open"); $("#sidebarBackdrop").classList.add("hidden"); }
+function openSidebarMobile(){ $("#sidebar").classList.add("open"); $("#sidebarBackdrop").classList.remove("hidden"); }
+
+/* ============================================================
+   14. 이벤트 바인딩
+   ============================================================ */
+function bindEvents(){
+  // 카드 뒤집기
+  $("#flipCard").onclick=(e)=>{ if(e.target.closest("button")) return; $("#flipCard").classList.toggle("flipped"); };
+  $("#fcQuizBtn").onclick=(e)=>{ e.stopPropagation(); const s=currentSentence(); if(s) startQuiz([s]); };
+
+  // 하단 도구
+  $("#btnPrev").onclick=()=>{ const w=findWork(ctx.workId); if(!w)return; ctx.index=(ctx.index-1+w.sentences.length)%w.sentences.length; renderCard(); };
+  $("#btnNext").onclick=()=>{ const w=findWork(ctx.workId); if(!w)return; ctx.index=(ctx.index+1)%w.sentences.length; renderCard(); };
+  $("#btnBookmark").onclick=()=>{ const s=currentSentence(); if(!s)return; const i=state.bookmarks.indexOf(s.id);
+    if(i>=0) state.bookmarks.splice(i,1); else state.bookmarks.push(s.id); saveState(); renderCard(); };
+  $("#btnAddWord").onclick=addCurrentKeywordsToWordbook;
+  $("#btnAddWord").title="현재 문장의 핵심 어휘를 단어장에 추가";
+  $("#btnHideTrans").onclick=()=>{ ctx.hideTrans=!ctx.hideTrans; renderCard(); };
+  $("#btnHideOrig").onclick=()=>{ ctx.hideOrig=!ctx.hideOrig; renderCard(); };
+  $("#btnQuiz").onclick=()=>{ const w=findWork(ctx.workId); if(w) startQuiz(w.sentences.map(s=>({...s,work:w,workId:w.id}))); else toast("작품을 선택하세요.","wrong"); };
+  $("#btnReview").onclick=()=>{ const due=dueForReview(); if(due.length) startQuiz(due); else toast("복습 예정 문장이 없습니다.","review"); };
+  $("#btnDone").onclick=markCompleted;
+  $("#btnAI").onclick=generateAI;
+
+  // 헤더
+  $("#searchInput").addEventListener("input",e=>{ const q=e.target.value; if(q.trim().length>=1) renderGrid(searchSentences(q), `'${q}' 검색`); else if(!q) showView("study"); });
+  $("#genreFilter").onchange=applyHeaderFilters;
+  $("#diffFilter").onchange=applyHeaderFilters;
+  $("#goalChip").onclick=()=>{ const v=prompt("오늘의 목표(학습할 문장 수)를 입력하세요.", state.goal.sentences); if(v&&+v>0){ state.goal.sentences=+v; saveState(); updateGoalChip(); toast("오늘의 목표를 "+v+"문장으로 설정했습니다.","gold"); } };
+  $("#btnLearner").onclick=()=>{ const v=prompt("학습자 이름을 입력하세요.", state.profile.name); if(v){ state.profile.name=v; saveState(); $("#learnerName").textContent=v; toast("환영합니다, "+v+"님!","navy"); } };
+  $("#btnAdmin").onclick=openAdmin;
+
+  // 사이드바 nav (대시보드 등)
+  $$(".navItem").forEach(b=>b.onclick=()=>{ showView(b.dataset.view); closeSidebarMobile(); });
+
+  // 그리드 뒤로
+  $("#gridBack").onclick=()=>showView("study");
+
+  // 단어장 새 목록
+  $("#wbNewList").onclick=()=>{ const n=prompt("새 단어장 이름 (예: 시험 빈출 어휘, 한문 허사)"); if(n&&!state.wordbooks[n]){ state.wordbooks[n]=[]; state.activeWordbook=n; saveState(); renderWordbook(); } };
+
+  // 모달 닫기
+  bindCloseButtons();
+  $$("#quizModal,#adminModal").forEach(m=>m.onclick=e=>{ if(e.target===m) closeModal(); });
+
+  // 모바일 사이드바
+  $("#btnSidebar").onclick=openSidebarMobile;
+  $("#closeSidebar").onclick=closeSidebarMobile;
+  $("#sidebarBackdrop").onclick=closeSidebarMobile;
+
+  // 키보드 단축키
+  document.addEventListener("keydown",e=>{
+    if(e.target.tagName==="INPUT"||e.target.tagName==="TEXTAREA") return;
+    if(e.key==="ArrowLeft") $("#btnPrev").click();
+    if(e.key==="ArrowRight") $("#btnNext").click();
+    if(e.key===" "){ e.preventDefault(); $("#flipCard").classList.toggle("flipped"); }
+  });
+}
+
+/* ============================================================
+   15. 초기화
+   ============================================================ */
+function init(){
+  renderSidebar();
+  bindEvents();
+  $("#learnerName").textContent=state.profile.name;
+  updateGoalChip();
+  // 첫 작품 자동 로드(빈 화면 방지)
+  loadWork(SAMPLE_DATA[0].id, 0);
+  checkBadges();
+  toast("古文 학습 마스터에 오신 것을 환영합니다! 카드를 클릭해 해석을 확인하세요.","navy");
+}
+init();
+</script>
+</body>
+</html>
