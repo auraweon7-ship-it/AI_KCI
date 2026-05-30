@@ -1460,21 +1460,29 @@ app.post('/api/render/video', async (req, res) => {
             else resolve();
           });
         });
-        // 메인 영상도 동일 코덱으로 재인코딩 후 concat (concat copy는 스트림 호환성 이슈 발생)
-        const concatList = path.join(OUTPUT_DIR, 'video', 'thumb_concat.txt');
-        fs.writeFileSync(concatList, `file '${thumbVid.replace(/\\/g, '/')}'\nfile '${outputPath.replace(/\\/g, '/')}'`);
+        // concat filter (filter_complex)로 변경 — concat demuxer의 AAC noise gain 경고 폭주 회피
+        // 두 입력 모두 명시적으로 video/audio 정규화 → 호환성 보장
         await new Promise((resolve, reject) => {
           execFile('ffmpeg', [
-            '-f', 'concat', '-safe', '0', '-i', concatList,
+            '-i', thumbVid,
+            '-i', outputPath,
+            '-filter_complex',
+              `[0:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,format=yuv420p[v0];` +
+              `[1:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,format=yuv420p[v1];` +
+              `[0:a]aresample=44100,pan=stereo|c0=c0|c1=c0[a0];` +
+              `[1:a]aresample=44100,pan=stereo|c0=c0|c1=c0[a1];` +
+              `[v0][a0][v1][a1]concat=n=2:v=1:a=1[vout][aout]`,
+            '-map', '[vout]', '-map', '[aout]',
             '-c:v', 'libx264', '-preset', 'medium', '-crf', '23', '-pix_fmt', 'yuv420p',
             '-c:a', 'aac', '-b:a', '192k', '-ar', '44100',
+            '-loglevel', 'error',
             '-movflags', '+faststart', '-y', thumbOutput
           ], { timeout: 300000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
-            if (error) reject(new Error(`썸네일 인트로 결합 오류: ${error.message}\n${stderr}`));
+            if (error) reject(new Error(`썸네일 인트로 결합 오류: ${error.message}\n${stderr.substring(0, 2000)}`));
             else resolve();
           });
         });
-        try { fs.unlinkSync(outputPath); fs.unlinkSync(thumbVid); fs.unlinkSync(concatList); } catch(e) {}
+        try { fs.unlinkSync(outputPath); fs.unlinkSync(thumbVid); } catch(e) {}
         fs.renameSync(thumbOutput, outputPath);
         srtOffset = THUMB_INTRO_SEC;  // 자막 타임라인을 3초 뒤로 밀어야 함
       }
