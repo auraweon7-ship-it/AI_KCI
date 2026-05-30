@@ -32,8 +32,51 @@ const OUTPUT_DIR = path.join(__dirname, 'output');
 // ========================
 let anthropic, openai;
 
-try { anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }); } catch(e) { console.warn('Anthropic API 미설정'); }
-try { openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY }); } catch(e) { console.warn('OpenAI API 미설정'); }
+// API 키 정규화 (따옴표/공백 제거)
+function cleanKey(k) {
+  if (!k || typeof k !== 'string') return '';
+  return k.trim().replace(/^["']|["']$/g, '').trim();
+}
+
+const ANTHROPIC_KEY = cleanKey(process.env.ANTHROPIC_API_KEY);
+const OPENAI_KEY = cleanKey(process.env.OPENAI_API_KEY);
+const ELEVENLABS_KEY = cleanKey(process.env.ELEVENLABS_API_KEY);
+const PEXELS_KEY = cleanKey(process.env.PEXELS_API_KEY);
+
+console.log('[Boot] env 검증:');
+console.log('  ANTHROPIC:', ANTHROPIC_KEY ? `set (${ANTHROPIC_KEY.length}자, prefix=${ANTHROPIC_KEY.substring(0,7)}...)` : '❌ 미설정');
+console.log('  OPENAI:', OPENAI_KEY ? `set (${OPENAI_KEY.length}자, prefix=${OPENAI_KEY.substring(0,5)}...)` : '❌ 미설정');
+console.log('  ELEVENLABS:', ELEVENLABS_KEY ? `set (${ELEVENLABS_KEY.length}자)` : '❌ 미설정');
+console.log('  PEXELS:', PEXELS_KEY ? `set (${PEXELS_KEY.length}자)` : '❌ 미설정');
+
+if (ANTHROPIC_KEY) {
+  try { anthropic = new Anthropic({ apiKey: ANTHROPIC_KEY }); }
+  catch(e) { console.error('[Anthropic 초기화 실패]', e.message); }
+} else {
+  console.warn('⚠️  ANTHROPIC_API_KEY 미설정 — Claude API 호출 실패합니다.');
+}
+if (OPENAI_KEY) {
+  try { openai = new OpenAI({ apiKey: OPENAI_KEY }); }
+  catch(e) { console.error('[OpenAI 초기화 실패]', e.message); }
+} else {
+  console.warn('⚠️  OPENAI_API_KEY 미설정 — 이미지 생성 실패합니다.');
+}
+
+// 헬퍼: API 호출 전 키 확인
+function checkAnthropic() {
+  if (!anthropic || !ANTHROPIC_KEY) {
+    const err = new Error('ANTHROPIC_API_KEY 환경변수가 설정되지 않았거나 빈 값입니다. Railway/.env에서 키를 확인하고 서비스를 재배포(redeploy)하세요.');
+    err.code = 'NO_ANTHROPIC_KEY';
+    throw err;
+  }
+}
+function checkOpenAI() {
+  if (!openai || !OPENAI_KEY) {
+    const err = new Error('OPENAI_API_KEY 환경변수가 설정되지 않았거나 빈 값입니다.');
+    err.code = 'NO_OPENAI_KEY';
+    throw err;
+  }
+}
 
 // YouTube OAuth2
 const oauth2Client = new google.auth.OAuth2(
@@ -86,10 +129,17 @@ app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
     apis: {
-      claude: !!process.env.ANTHROPIC_API_KEY,
-      dalle: !!process.env.OPENAI_API_KEY,
-      elevenlabs: !!process.env.ELEVENLABS_API_KEY,
+      claude: !!ANTHROPIC_KEY && !!anthropic,
+      dalle: !!OPENAI_KEY && !!openai,
+      elevenlabs: !!ELEVENLABS_KEY,
+      pexels: !!PEXELS_KEY,
       youtube: !!process.env.YOUTUBE_CLIENT_ID
+    },
+    keyLengths: {
+      anthropic: ANTHROPIC_KEY?.length || 0,
+      openai: OPENAI_KEY?.length || 0,
+      elevenlabs: ELEVENLABS_KEY?.length || 0,
+      pexels: PEXELS_KEY?.length || 0
     },
     ffmpeg: true
   });
@@ -128,6 +178,7 @@ app.get('/api/youtube/trending', async (req, res) => {
 // ========================
 app.post('/api/topics/suggest', async (req, res) => {
   try {
+    checkAnthropic();
     const { category, target, keyword, categories } = req.body;
     const catList = categories || 'history,science,ai,mystery,economy,psychology,nature,crime,culture,philosophy,health';
 
