@@ -236,7 +236,7 @@ body{font-family:'Noto Sans KR','Noto Sans SC',sans-serif;background:var(--bg);c
   <!-- ===== AI GENERATOR ===== -->
   <div class="page" id="page-generator">
     <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1.25rem">AI 강좌 생성</h1>
-    <div id="genApiWarning" class="alert alert-warning" style="display:none">Gemini API 키가 설정되지 않았습니다. <button class="btn btn-secondary btn-sm" onclick="showPage('settings')" style="margin-left:auto">설정으로 이동</button></div>
+    <div id="genApiWarning" class="alert alert-warning" style="display:none">Claude API 키가 설정되지 않았습니다. <button class="btn btn-secondary btn-sm" onclick="showPage('settings')" style="margin-left:auto">설정으로 이동</button></div>
     <div class="card" id="genFormCard">
       <div class="card-title" style="margin-bottom:1rem">새 강좌 자동 생성</div>
       <p style="font-size:.85rem;color:var(--text-light);margin-bottom:1rem">학습 주제를 입력하면 AI가 강좌 구조와 강의 콘텐츠를 자동으로 생성합니다.</p>
@@ -336,14 +336,14 @@ body{font-family:'Noto Sans KR','Noto Sans SC',sans-serif;background:var(--bg);c
     <h1 style="font-size:1.4rem;font-weight:700;margin-bottom:1.25rem">설정</h1>
     <div class="card">
       <div class="card-header">
-        <span class="card-title">Gemini API 키</span>
+        <span class="card-title">Claude API 키</span>
         <span id="apiKeyStatus" class="badge badge-accent">미설정</span>
       </div>
-      <p style="font-size:.85rem;color:var(--text-light);margin-bottom:1rem">강좌/콘텐츠 자동 생성을 위한 Gemini API 키를 입력하세요.</p>
+      <p style="font-size:.85rem;color:var(--text-light);margin-bottom:1rem">강좌/콘텐츠 자동 생성을 위한 Anthropic API 키를 입력하세요.</p>
       <div class="form-group">
         <label>API 키</label>
-        <input type="password" class="input" id="apiKeyInput" placeholder="Gemini API 키 입력...">
-        <div class="help"><a href="https://aistudio.google.com/app/apikey" target="_blank">Google AI Studio에서 키 발급받기 &rarr;</a></div>
+        <input type="password" class="input" id="apiKeyInput" placeholder="sk-ant-... 형식의 API 키 입력">
+        <div class="help"><a href="https://console.anthropic.com/settings/keys" target="_blank">Anthropic Console에서 키 발급받기 &rarr;</a></div>
       </div>
       <div style="display:flex;gap:.5rem">
         <button class="btn btn-primary" onclick="saveApiKey()">저장</button>
@@ -351,13 +351,12 @@ body{font-family:'Noto Sans KR','Noto Sans SC',sans-serif;background:var(--bg);c
       </div>
     </div>
     <div class="card">
-      <div class="card-header"><span class="card-title">Gemini 모델</span></div>
+      <div class="card-header"><span class="card-title">Claude 모델</span></div>
       <div class="form-group">
         <select class="select" id="modelSelect">
-          <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash Lite (빠름/저비용)</option>
-          <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-          <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (권장)</option>
-          <option value="gemini-2.5-pro">Gemini 2.5 Pro (고품질)</option>
+          <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5 (빠름/저비용)</option>
+          <option value="claude-sonnet-4-20250514" selected>Claude Sonnet 4 (권장)</option>
+          <option value="claude-opus-4-20250514">Claude Opus 4 (고품질)</option>
         </select>
       </div>
       <button class="btn btn-primary" onclick="saveModel()">모델 저장</button>
@@ -425,18 +424,21 @@ const DB={
   getLessons(courseId){return this.lessons().filter(l=>l.courseId===courseId).sort((a,b)=>a.order-b.order)},
 };
 
-// ===== GEMINI API =====
+// ===== CLAUDE API =====
 async function callGemini(prompt,system=''){
   const key=localStorage.getItem('dd_api_key');
   if(!key)throw new Error('API 키가 설정되지 않았습니다.');
-  const model=localStorage.getItem('dd_model')||'gemini-2.5-flash';
-  const url=`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
-  const body={contents:[{parts:[{text:prompt}]}],generationConfig:{temperature:.7,topP:.9,maxOutputTokens:65536,responseMimeType:'application/json'}};
-  if(system)body.systemInstruction={parts:[{text:system}]};
-  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const model=localStorage.getItem('dd_model')||'claude-sonnet-4-20250514';
+  const body={model,max_tokens:16384,messages:[{role:'user',content:prompt+'\n\n반드시 유효한 JSON만 출력하세요. JSON 외의 텍스트는 절대 포함하지 마세요.'}]};
+  if(system)body.system=system;
+  const r=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify(body)
+  });
   const d=await r.json();
   if(!r.ok)throw new Error(d.error?.message||`API 오류 (${r.status})`);
-  const text=d.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  const text=d.content?.[0]?.text||'';
   return parseJSON(text);
 }
 function parseJSON(text){
@@ -801,7 +803,7 @@ function renderSettings(){
   const key=localStorage.getItem('dd_api_key');
   document.getElementById('apiKeyStatus').textContent=key?'설정됨 ✓':'미설정';
   document.getElementById('apiKeyStatus').className='badge '+(key?'badge-success':'badge-accent');
-  document.getElementById('modelSelect').value=localStorage.getItem('dd_model')||'gemini-2.5-flash';
+  document.getElementById('modelSelect').value=localStorage.getItem('dd_model')||'claude-sonnet-4-20250514';
 }
 function saveApiKey(){
   const key=document.getElementById('apiKeyInput').value.trim();
