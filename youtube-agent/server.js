@@ -1300,11 +1300,15 @@ app.post('/api/render/video', async (req, res) => {
 
     let ffmpegArgs;
 
+    // 영상 합성 시 narration audio normalize (보장책)
+    // TTS 단계에서 정규화했지만 영상 합성 단계에서도 한 번 더 보장 — narration 명확히 들림
+    // -16 LUFS + dynaudnorm 압축 (작은 부분 ↑)
+    const audioNormFilter = `[__A__:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,loudnorm=I=-16:TP=-1.5:LRA=11,dynaudnorm=f=200:g=15[aout]`;
+
     if (useVideo) {
-      // === 비디오 클립 모드: 각 클립을 durationPerImage 길이로 trim/loop, 1080p 스케일, 전환 적용 ===
+      // === 비디오 클립 모드 ===
       const inputArgs = [];
       images.forEach(clip => {
-        // 클립이 짧으면 loop, 길면 trim (stream_loop+t로 모두 처리)
         inputArgs.push('-stream_loop', '-1', '-t', String(durationPerImage), '-i', path.join(OUTPUT_DIR, sourceDir, clip));
       });
       inputArgs.push('-i', audioPath);
@@ -1325,16 +1329,15 @@ app.post('/api/render/video', async (req, res) => {
           prevLabel = outLabel;
         }
       } else {
-        // 전환 없을 때 단순 concat
         filterComplex += scaledLabels.map(l => `[${l}]`).join('') + `concat=n=${scaledLabels.length}:v=1:a=0[vout];`;
       }
-
-      filterComplex = filterComplex.slice(0, -1);
+      // audio normalize 추가
+      filterComplex += audioNormFilter.replace('__A__', String(images.length));
 
       ffmpegArgs = [
         ...inputArgs,
         '-filter_complex', filterComplex,
-        '-map', '[vout]', '-map', `${images.length}:a`,
+        '-map', '[vout]', '-map', '[aout]',
         '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
         '-c:a', 'aac', '-b:a', '192k',
         '-shortest', '-movflags', '+faststart',
@@ -1363,13 +1366,13 @@ app.post('/api/render/video', async (req, res) => {
         filterComplex += `[${prevLabel}][${scaledLabels[i]}]xfade=transition=${transType}:duration=${transDur}:offset=${offset.toFixed(2)}[${outLabel}];`;
         prevLabel = outLabel;
       }
-
-      filterComplex = filterComplex.slice(0, -1);
+      // audio normalize 추가
+      filterComplex += audioNormFilter.replace('__A__', String(images.length));
 
       ffmpegArgs = [
         ...inputArgs,
         '-filter_complex', filterComplex,
-        '-map', '[vout]', '-map', `${images.length}:a`,
+        '-map', '[vout]', '-map', '[aout]',
         '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
         '-c:a', 'aac', '-b:a', '192k',
         '-shortest', '-movflags', '+faststart',
@@ -1386,7 +1389,8 @@ app.post('/api/render/video', async (req, res) => {
       ffmpegArgs = [
         '-f', 'concat', '-safe', '0', '-i', concatFile,
         '-i', audioPath,
-        '-vf', `scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,zoompan=z='min(zoom+0.0008,1.25)':d=${Math.round(durationPerImage*30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=30`,
+        '-filter_complex', `[0:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,zoompan=z='min(zoom+0.0008,1.25)':d=${Math.round(durationPerImage*30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=30[vout];[1:a]aformat=sample_fmts=fltp:sample_rates=44100:channel_layouts=stereo,loudnorm=I=-16:TP=-1.5:LRA=11,dynaudnorm=f=200:g=15[aout]`,
+        '-map', '[vout]', '-map', '[aout]',
         '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
         '-c:a', 'aac', '-b:a', '192k',
         '-shortest', '-movflags', '+faststart',
@@ -1407,15 +1411,17 @@ app.post('/api/render/video', async (req, res) => {
       });
     });
 
-    // === 단계 2: BGM 믹싱 ===
+    // === 단계 2: BGM 믹싱 (narration 우선, weights 4:1) ===
     if (hasBgm) {
-      console.log(`[Render] 2. BGM 믹싱: ${bgmFile}`);
+      console.log(`[Render] 2. BGM 믹싱: ${bgmFile} (narration 우선)`);
       const bgmOutput = path.join(OUTPUT_DIR, 'video', `bgm_${outputFile}`);
       const vol = bgmVolume || 0.15;
+      // amix weights=4 1 → narration 4배 우선 → BGM에 가려지지 않음
+      // 최종 loudnorm으로 전체 -16 LUFS 보장
       const bgmArgs = [
         '-i', outputPath,
         '-stream_loop', '-1', '-i', bgmPath,
-        '-filter_complex', `[1:a]volume=${vol}[bgm];[0:a][bgm]amix=inputs=2:duration=first:dropout_transition=3[aout]`,
+        '-filter_complex', `[1:a]volume=${vol}[bgm];[0:a][bgm]amix=inputs=2:weights=4 1:duration=first:dropout_transition=3,loudnorm=I=-16:TP=-1.5:LRA=11[aout]`,
         '-map', '0:v', '-map', '[aout]',
         '-c:v', 'copy', '-c:a', 'aac', '-b:a', '192k',
         '-shortest', '-movflags', '+faststart',
