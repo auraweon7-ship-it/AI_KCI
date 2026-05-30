@@ -203,6 +203,18 @@ function toBaihua(original, natural){
   return hint; // 근사치(참고용)
 }
 
+// 한자 -> 한어병음(성조) 사전 (pypinyin으로 생성)
+const PINYIN = require('./dict_pinyin.js');
+// 백화 문자열 -> 병음 문자열
+function toPinyin(text){
+  const out=[];
+  for(const ch of text){
+    if(/[㐀-鿿]/.test(ch)) out.push(PINYIN[ch]||'');
+    else if(/[，,。!?；;：:]/.test(ch)) out.push(','); // 구두점은 쉼표로
+  }
+  return out.filter(Boolean).join(' ');
+}
+
 // 퀴즈 2개 자동 생성: ①현대어 풀이 선택 ②핵심 어휘 뜻 맞히기
 function quizOf(sent, allNaturals, allMeanings){
   const q = [];
@@ -316,6 +328,7 @@ for(const [workKey, arr] of Object.entries(groups)){
     const syn = syntaxMarkup(p.original);          // S/V/O/E 성분 표기
     const evt = eventMeaning(meaningOf(struct.predicate)); // 사건의미
     const logic = logicRelation(p.original);       // 논리관계
+    const baihua = toBaihua(p.original, p.natural);
     const sentObj = {
       id: 'g'+sentCounter,
       original: p.original,
@@ -323,7 +336,8 @@ for(const [workKey, arr] of Object.entries(groups)){
       length,
       literal_translation: p.natural,           // 큐레이션 풀이를 직역에도 활용
       natural_translation: p.natural,
-      baihua: toBaihua(p.original, p.natural),   // 백화(白话) 근사 풀이
+      baihua,                                    // 백화(白话) 근사 풀이
+      pinyin: toPinyin(baihua),                  // 백화의 한어병음(성조)
       keywords,
       grammar: grammarOf(chars),
       structure: struct,
