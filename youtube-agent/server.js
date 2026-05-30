@@ -580,13 +580,28 @@ app.post('/api/tts/full-script', async (req, res) => {
       });
       if (!response.ok) {
         const err = await response.text();
-        // quota 부족 시 명확한 메시지
         if (response.status === 401 || /quota|credit/i.test(err)) {
           throw new Error(`ElevenLabs 크레딧 부족: ${err}. 충전: https://elevenlabs.io/app/subscription`);
         }
         throw new Error(`ElevenLabs 오류: ${response.status} - ${err}`);
       }
-      return Buffer.from(await response.arrayBuffer());
+      // Content-Type 검증 — audio가 아니면 에러 JSON일 가능성
+      const ct = response.headers.get('content-type') || '';
+      if (!ct.includes('audio') && !ct.includes('mpeg') && !ct.includes('octet')) {
+        const body = await response.text();
+        throw new Error(`ElevenLabs 비정상 응답 (content-type=${ct}): ${body.substring(0, 300)}`);
+      }
+      const buf = Buffer.from(await response.arrayBuffer());
+      // mp3 헤더 검증: 첫 바이트가 0xFF 또는 'ID3'
+      if (buf.length < 1024) {
+        throw new Error(`ElevenLabs 응답 너무 작음 (${buf.length}바이트) — 손상된 audio. 본문: ${buf.toString('utf8').substring(0, 200)}`);
+      }
+      const hdr = buf.slice(0, 3);
+      const isMP3 = (hdr[0] === 0xFF && (hdr[1] & 0xE0) === 0xE0) || (hdr.toString('ascii') === 'ID3');
+      if (!isMP3) {
+        throw new Error(`ElevenLabs 응답이 mp3가 아님 (헤더: ${hdr.toString('hex')}). 본문 일부: ${buf.toString('utf8').substring(0, 200)}`);
+      }
+      return buf;
     }
 
     // with-timestamps: 각 글자별 실제 시작/끝 시각 받아 SRT 정확도 향상
@@ -607,8 +622,19 @@ app.post('/api/tts/full-script', async (req, res) => {
         throw new Error(`ElevenLabs with-timestamps 오류: ${response.status} - ${err}`);
       }
       const data = await response.json();
-      // data: { audio_base64, alignment: { characters: [...], character_start_times_seconds: [...], character_end_times_seconds: [...] } }
+      if (!data.audio_base64) {
+        throw new Error(`ElevenLabs with-timestamps 응답에 audio_base64 없음: ${JSON.stringify(data).substring(0, 300)}`);
+      }
       const audio = Buffer.from(data.audio_base64, 'base64');
+      // mp3 헤더 검증
+      if (audio.length < 1024) {
+        throw new Error(`ElevenLabs with-timestamps audio 너무 작음 (${audio.length}바이트)`);
+      }
+      const hdr = audio.slice(0, 3);
+      const isMP3 = (hdr[0] === 0xFF && (hdr[1] & 0xE0) === 0xE0) || (hdr.toString('ascii') === 'ID3');
+      if (!isMP3) {
+        throw new Error(`ElevenLabs with-timestamps audio가 mp3 아님 (헤더: ${hdr.toString('hex')})`);
+      }
       const alignment = data.alignment || data.normalized_alignment || null;
       return { audio, alignment };
     }
