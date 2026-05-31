@@ -204,30 +204,27 @@ app.post('/api/generate-image', async (req, res) => {
   res.json({ success: false, error: 'No image generation API available' });
 });
 
-// Generate video via Higgsfield Seedance (platform.higgsfield.ai)
+// Generate video via Higgsfield DoP (platform.higgsfield.ai)
 app.post('/api/generate-video', async (req, res) => {
   try {
-    const { prompt, image_url, duration = 5, aspect_ratio = '16:9', model = 'seedance_lite' } = req.body;
-    console.log('[HF] Generating video via Seedance...');
+    const { prompt, image_url, duration = 5, aspect_ratio = '16:9', quality = 'standard' } = req.body;
+    const modelMap = { lite: 'dop-lite', turbo: 'dop-turbo', standard: 'dop-preview' };
+    const dopModel = modelMap[quality] || 'dop-preview';
+    console.log(`[HF] Generating video via DoP (${dopModel})...`);
 
-    const params = {
-      model: model === 'seedance_pro' ? 'seedance_pro' : 'seedance_lite',
-      prompt,
-      duration: Math.min(duration, 10),
-      enhance_prompt: true
-    };
+    const params = { model: dopModel, prompt };
     if (image_url) {
-      params.input_image = { type: 'image_url', image_url: image_url };
+      params.input_images = [{ type: 'image_url', image_url: image_url }];
     }
 
-    const result = await hfApi('/v1/image2video/seedance', 'POST', { params });
-    console.log('[HF] Seedance job:', JSON.stringify(result).substring(0, 200));
+    const result = await hfApi('/v1/image2video/dop', 'POST', { params });
+    console.log('[HF] DoP job:', JSON.stringify(result).substring(0, 200));
     if (result?.id) {
       console.log('[HF] Polling job:', result.id);
       const videoUrl = await pollHfJob(result.id);
-      if (videoUrl) return res.json({ success: true, data: { url: videoUrl }, engine: 'higgsfield-seedance' });
+      if (videoUrl) return res.json({ success: true, data: { url: videoUrl }, engine: 'higgsfield-dop' });
     }
-    res.json({ success: true, data: result, engine: 'higgsfield-seedance' });
+    res.json({ success: true, data: result, engine: 'higgsfield-dop' });
   } catch (err) {
     console.error('[HF] Video error:', err.message);
     res.json({ success: false, error: err.message });
