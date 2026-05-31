@@ -1481,32 +1481,26 @@ async function startGeneration() {
     setPipeStatus(4, 'done', '커스텀 URL 사용');
     setProgress(4, 100);
   } else {
-  setPipeStatus(4, 'running', 'Higgsfield DoP Video 생성 중...');
+  const vidQuality = document.getElementById('vidQuality')?.value || 'standard';
+  setPipeStatus(4, 'running', 'Higgsfield DoP 영상 생성 중... (1~3분 소요)');
   let vidProgress = 0;
   const vidInterval = setInterval(() => {
-    vidProgress = Math.min(90, vidProgress + Math.random() * 5);
+    vidProgress = Math.min(90, vidProgress + Math.random() * 3);
     setProgress(4, vidProgress);
-  }, 1500);
+  }, 2000);
 
   try {
     const vidRes = await fetch('/api/generate-video', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: state.vidPrompt, image_url: state.imgUrl, duration: 8 })
+      body: JSON.stringify({ prompt: state.vidPrompt, image_url: state.imgUrl, duration: 5, quality: vidQuality })
     });
     const vidData = await vidRes.json();
     console.log('Video API response:', vidData);
 
     if (vidData.success && vidData.data) {
       const d = vidData.data;
-      const url = d.results?.[0]?.url || d.output?.url || d.url || d.video_url;
-      if (url) {
-        state.vidUrl = url;
-      } else if (d.id || d.job_id) {
-        const jobId = d.id || d.job_id;
-        setPipeStatus(4, 'running', '영상 생성 대기 중... (Job: ' + jobId.substring(0,8) + ')');
-        state.vidUrl = await pollJob(jobId, 'video', (p) => setProgress(4, p));
-      }
+      state.vidUrl = d.url || d.results?.[0]?.results?.raw?.url || d.results?.[0]?.url || '';
     }
   } catch (err) {
     console.error('Video generation error:', err);
@@ -1517,9 +1511,9 @@ async function startGeneration() {
   if (state.vidUrl) {
     document.getElementById('generatedVid').src = state.vidUrl;
     document.getElementById('vidPreview').style.display = '';
-    setPipeStatus(4, 'done', '완료');
+    setPipeStatus(4, 'done', '✅ 영상 생성 완료');
   } else {
-    setPipeStatus(4, 'done', '완료 (이미지만 사용)');
+    setPipeStatus(4, 'done', '⚠️ 영상 생성 실패 — 이미지로 대체');
   }
   } // end if !customVid
 
@@ -2047,34 +2041,36 @@ async function generateVideoOnly() {
   const duration = parseInt(document.getElementById('vidDuration').value) || 5;
   const quality = document.getElementById('vidQuality')?.value || 'standard';
   const aspect = document.getElementById('vidAspect').value || '16:9';
-  document.getElementById('vidGenStatus').textContent = '영상 생성 중...';
+  document.getElementById('vidGenStatus').textContent = 'Higgsfield DoP 영상 생성 중... (1~3분 소요)';
   try {
     const res = await fetch('/api/generate-video', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ prompt, image_url: imageUrl, duration, aspect_ratio: aspect, quality })
     });
     const data = await res.json();
+    console.log('Video API response:', data);
     let url = '';
     if (data.success && data.data) {
       const d = data.data;
-      url = d.results?.[0]?.url || d.results?.[0]?.results?.rawUrl || d.output?.url || d.url || '';
-      if (!url && (d.results?.[0]?.id || d.id)) {
-        const jobId = d.results?.[0]?.id || d.id;
-        document.getElementById('vidGenStatus').textContent = 'Job ' + jobId.substring(0,8) + ' 대기 중...';
-        url = await pollJob(jobId, 'video', () => {});
+      url = d.url || d.results?.[0]?.results?.raw?.url || d.results?.[0]?.results?.min?.url || d.results?.[0]?.url || '';
+      if (!url && (d.id || d.results?.[0]?.id)) {
+        const jobId = d.id || d.results?.[0]?.id;
+        document.getElementById('vidGenStatus').textContent = '영상 렌더링 중... (Job: ' + jobId.substring(0,8) + ')';
       }
     }
     if (url) {
       document.getElementById('vidGenResult').src = url;
       document.getElementById('vidGenPreview').style.display = '';
       document.getElementById('customVidUrl').value = url;
-      document.getElementById('vidGenStatus').textContent = '완료';
-      showToast('영상 생성 완료');
+      document.getElementById('vidGenStatus').textContent = '✅ 완료 (' + (data.engine || '') + ')';
+      showToast('🎬 영상 생성 완료');
     } else {
-      document.getElementById('vidGenStatus').textContent = 'Plus 플랜 필요 — MCP 도구로 생성 후 URL 붙여넣기';
+      const errMsg = data.error || '영상 생성 실패';
+      document.getElementById('vidGenStatus').textContent = '⚠️ ' + errMsg;
+      showToast('영상 생성 실패: ' + errMsg);
     }
   } catch (err) {
-    document.getElementById('vidGenStatus').textContent = 'API 오류: ' + err.message;
+    document.getElementById('vidGenStatus').textContent = '❌ 네트워크 오류: ' + err.message;
   }
 }
 
