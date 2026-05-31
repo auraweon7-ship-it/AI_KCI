@@ -932,15 +932,117 @@ setTimeout(() => {
 }, 500);
 
 // Menu items
-function addMenuItem() {
+function nameToSlug(name) {
+  const hangul = name.replace(/[^가-힣a-zA-Z0-9\s]/g, '').trim();
+  const romanMap = [
+    ['회사소개','about'],['팀소개','team'],['팀원소개','team'],['서비스안내','services'],
+    ['고객사례','cases'],['문의하기','contact'],['연락처','contact'],
+    ['홈','home'],['소개','about'],['서비스','services'],['기술','tech'],
+    ['문의','contact'],['채용','careers'],['팀','team'],['블로그','blog'],
+    ['뉴스','news'],['작업','works'],['갤러리','gallery'],['포트폴리오','portfolio'],
+    ['제품','products'],['가격','pricing'],['요금','pricing'],['예약','reservation'],
+    ['메뉴','menu'],['프로젝트','projects'],['프로그램','program'],['일정','schedule'],
+    ['위치','location'],['회사','company'],['경력','career'],['매장','stores'],
+    ['셰프','chef'],['스토리','story'],['성과','results'],['파트너','partners'],
+    ['고객','clients'],['등록','register'],['FAQ','faq'],['이벤트','events'],
+    ['미션','mission'],['비전','vision'],['역사','history'],['지도','map'],
+    ['후기','reviews'],['리뷰','reviews'],['공지','notice'],['다운로드','download']
+  ];
+  const cleaned = hangul.replace(/\s+/g, '');
+  for (const [kr, en] of romanMap) {
+    if (cleaned.includes(kr)) return '#' + en;
+  }
+  if (/^[a-zA-Z]/.test(hangul)) {
+    return '#' + hangul.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '').substring(0, 20);
+  }
+  const slug = hangul.replace(/\s+/g, '-').toLowerCase().replace(/[^a-z0-9가-힣\-]/g, '').substring(0, 20);
+  return '#' + (slug || 'section');
+}
+
+function createMenuRow(name, link) {
   const row = document.createElement('div');
   row.className = 'menu-item-row';
-  row.style.cssText = 'display:flex;gap:.4rem;align-items:center';
+  row.draggable = true;
+  row.style.cssText = 'display:flex;gap:.35rem;align-items:center;padding:.2rem 0;transition:background .2s,opacity .2s;border-radius:.5rem';
+  const btnStyle = 'width:1.6rem;height:1.6rem;border-radius:.4rem;border:1px solid var(--border);background:transparent;color:var(--text-dim);cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s';
   row.innerHTML = `
-    <input type="text" class="form-input menu-item-name" placeholder="메뉴 이름" style="flex:1;padding:.6rem .9rem;font-size:.82rem">
-    <input type="text" class="form-input menu-item-link" placeholder="링크 (예: #about)" style="flex:1;padding:.6rem .9rem;font-size:.82rem">
-    <button onclick="this.closest('.menu-item-row').remove();updateMenuPreview()" style="width:2rem;height:2rem;border-radius:.5rem;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">&times;</button>`;
+    <span class="drag-handle" style="cursor:grab;color:var(--text-dim);font-size:.8rem;padding:0 .2rem;flex-shrink:0;user-select:none" title="드래그하여 순서 변경">⠿</span>
+    <input type="text" class="form-input menu-item-name" value="${name || ''}" placeholder="메뉴 이름" style="flex:1.2;padding:.5rem .75rem;font-size:.8rem">
+    <input type="text" class="form-input menu-item-link" value="${link || ''}" placeholder="자동 생성" style="flex:1;padding:.5rem .75rem;font-size:.78rem;color:var(--text-muted)" readonly>
+    <button onclick="moveMenuRow(this,-1)" style="${btnStyle}" title="위로">▲</button>
+    <button onclick="moveMenuRow(this,1)" style="${btnStyle}" title="아래로">▼</button>
+    <button onclick="this.closest('.menu-item-row').remove();updateMenuPreview()" style="${btnStyle};color:var(--error)" title="삭제">✕</button>`;
+
+  const nameInput = row.querySelector('.menu-item-name');
+  const linkInput = row.querySelector('.menu-item-link');
+  nameInput.addEventListener('input', () => {
+    const val = nameInput.value.trim();
+    if (val) {
+      linkInput.value = nameToSlug(val);
+      linkInput.style.color = 'var(--accent)';
+    } else {
+      linkInput.value = '';
+      linkInput.style.color = 'var(--text-muted)';
+    }
+    debouncedPreview();
+  });
+  linkInput.addEventListener('dblclick', () => {
+    linkInput.readOnly = false;
+    linkInput.style.color = 'var(--text)';
+    linkInput.focus();
+  });
+  linkInput.addEventListener('blur', () => { linkInput.readOnly = true; });
+
+  row.addEventListener('dragstart', e => {
+    e.dataTransfer.effectAllowed = 'move';
+    row.style.opacity = '.4';
+    row.dataset.dragging = '1';
+  });
+  row.addEventListener('dragend', () => {
+    row.style.opacity = '1';
+    delete row.dataset.dragging;
+    document.querySelectorAll('.menu-item-row').forEach(r => r.style.borderTop = '');
+  });
+  row.addEventListener('dragover', e => {
+    e.preventDefault();
+    const dragging = document.querySelector('[data-dragging]');
+    if (dragging && dragging !== row) row.style.borderTop = '2px solid var(--accent)';
+  });
+  row.addEventListener('dragleave', () => { row.style.borderTop = ''; });
+  row.addEventListener('drop', e => {
+    e.preventDefault();
+    row.style.borderTop = '';
+    const dragging = document.querySelector('[data-dragging]');
+    if (dragging && dragging !== row) {
+      row.parentNode.insertBefore(dragging, row);
+      updateMenuPreview();
+    }
+  });
+
+  return row;
+}
+
+function addMenuItem() {
+  const row = createMenuRow('', '');
   document.getElementById('menuItems').appendChild(row);
+  row.querySelector('.menu-item-name').focus();
+}
+function addMenuItemWithData(name, link) {
+  const row = createMenuRow(name, link);
+  document.getElementById('menuItems').appendChild(row);
+}
+function moveMenuRow(btn, dir) {
+  const row = btn.closest('.menu-item-row');
+  const container = document.getElementById('menuItems');
+  const rows = [...container.querySelectorAll('.menu-item-row')];
+  const idx = rows.indexOf(row);
+  const targetIdx = idx + dir;
+  if (targetIdx < 0 || targetIdx >= rows.length) return;
+  row.style.transition = 'transform .2s var(--ease)';
+  rows[targetIdx].style.transition = 'transform .2s var(--ease)';
+  if (dir === -1) container.insertBefore(row, rows[targetIdx]);
+  else container.insertBefore(rows[targetIdx], row);
+  updateMenuPreview();
 }
 function getMenuItems() {
   return [...document.querySelectorAll('.menu-item-row')].map(row => ({
@@ -952,17 +1054,6 @@ function updateMenuPreview() { debouncedPreview(); }
 
 function clearMenuItems() {
   document.getElementById('menuItems').innerHTML = '';
-}
-
-function addMenuItemWithData(name, link) {
-  const row = document.createElement('div');
-  row.className = 'menu-item-row';
-  row.style.cssText = 'display:flex;gap:.4rem;align-items:center';
-  row.innerHTML = `
-    <input type="text" class="form-input menu-item-name" value="${name}" placeholder="메뉴 이름" style="flex:1;padding:.6rem .9rem;font-size:.82rem">
-    <input type="text" class="form-input menu-item-link" value="${link}" placeholder="링크" style="flex:1;padding:.6rem .9rem;font-size:.82rem">
-    <button onclick="this.closest('.menu-item-row').remove();updateMenuPreview()" style="width:2rem;height:2rem;border-radius:.5rem;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">&times;</button>`;
-  document.getElementById('menuItems').appendChild(row);
 }
 
 function generateMenuFromOverview() {
