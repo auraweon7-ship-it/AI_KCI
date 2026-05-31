@@ -7,20 +7,40 @@ const PORT = 3847;
 app.use(express.json({ limit: '50mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-const HF_KEY = process.env.HIGGSFIELD_API_KEY;
+const HF_API_ID = process.env.HIGGSFIELD_API_ID;
+const HF_SECRET = process.env.HIGGSFIELD_API_SECRET;
 const CLAUDE_KEY = process.env.CLAUDE_API_KEY;
 const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
-// Higgsfield API call
+// Poll Higgsfield job until completed
+async function pollHfJob(jobSetId, maxAttempts = 60) {
+  for (let i = 0; i < maxAttempts; i++) {
+    await new Promise(r => setTimeout(r, 5000));
+    try {
+      const result = await hfApi(`/v1/job-sets/${jobSetId}`, 'GET');
+      const job = result?.jobs?.[0];
+      if (!job) continue;
+      if (job.status === 'completed') return job.results?.raw?.url || job.results?.min?.url || '';
+      if (job.status === 'failed' || job.status === 'nsfw') return '';
+      console.log(`[HF] Job ${jobSetId.substring(0,8)} status: ${job.status}`);
+    } catch {}
+  }
+  return '';
+}
+
+// Higgsfield Platform API (platform.higgsfield.ai)
 async function hfApi(endpoint, method, body) {
+  if (!HF_API_ID || !HF_SECRET) throw new Error('Higgsfield API credentials not set');
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 120000);
   try {
-    const res = await fetch(`https://api.higgsfield.ai/api${endpoint}`, {
+    const res = await fetch(`https://platform.higgsfield.ai${endpoint}`, {
       method,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${HF_KEY}`
+        'Accept': 'application/json',
+        'hf-api-key': HF_API_ID,
+        'hf-secret': HF_SECRET
       },
       ...(body ? { body: JSON.stringify(body) } : {}),
       signal: controller.signal
@@ -163,12 +183,19 @@ app.post('/api/generate-image', async (req, res) => {
     }
   }
 
-  // Fallback: Higgsfield
-  if (HF_KEY) {
+  // Fallback: Higgsfield Soul (platform.higgsfield.ai)
+  if (HF_API_ID && HF_SECRET) {
     try {
-      console.log('[HF] Generating image (fallback)...');
-      const result = await hfApi('/v1/generate/image', 'POST', { model: 'gpt_image_2', prompt, aspect_ratio, count: 1 });
-      return res.json({ success: true, data: result, engine: 'higgsfield' });
+      console.log('[HF] Generating image via Soul...');
+      const hfSizeMap = { '16:9': '2048x1152', '9:16': '1152x2048', '1:1': '1024x1024' };
+      const result = await hfApi('/v1/text2image/soul', 'POST', {
+        params: { prompt, width_and_height: hfSizeMap[aspect_ratio] || '2048x1152', quality: '1080p', batch_size: 1, enhance_prompt: true }
+      });
+      if (result?.id) {
+        const jobUrl = await pollHfJob(result.id);
+        if (jobUrl) return res.json({ success: true, data: { url: jobUrl }, engine: 'higgsfield-soul' });
+      }
+      return res.json({ success: true, data: result, engine: 'higgsfield-soul' });
     } catch (err) {
       console.error('[HF] Error:', err.message);
     }
@@ -177,26 +204,30 @@ app.post('/api/generate-image', async (req, res) => {
   res.json({ success: false, error: 'No image generation API available' });
 });
 
-// Generate video via Higgsfield
+// Generate video via Higgsfield DoP (platform.higgsfield.ai)
 app.post('/api/generate-video', async (req, res) => {
   try {
     const { prompt, image_url, duration = 8, aspect_ratio = '16:9' } = req.body;
-    console.log('[HF] Generating video...');
+    console.log('[HF] Generating video via DoP...');
 
-    let medias = [];
+    const input_images = [];
     if (image_url) {
-      medias = [{ value: image_url, role: 'start_image' }];
+      input_images.push({ type: 'image_url', image_url: image_url });
     }
 
-    const result = await hfApi('/v1/generate/video', 'POST', {
-      model: 'seedance_2_0',
-      prompt,
-      medias,
-      duration,
-      aspect_ratio
+    const result = await hfApi('/v1/image2video/dop', 'POST', {
+      params: {
+        model: 'dop-preview',
+        prompt,
+        input_images
+      }
     });
-    console.log('[HF] Video result:', JSON.stringify(result).substring(0, 200));
-    res.json({ success: true, data: result });
+    console.log('[HF] Video job:', JSON.stringify(result).substring(0, 200));
+    if (result?.id) {
+      const videoUrl = await pollHfJob(result.id);
+      if (videoUrl) return res.json({ success: true, data: { url: videoUrl }, engine: 'higgsfield-dop' });
+    }
+    res.json({ success: true, data: result, engine: 'higgsfield-dop' });
   } catch (err) {
     console.error('[HF] Video error:', err.message);
     res.json({ success: false, error: err.message });
@@ -294,7 +325,7 @@ app.post('/api/deploy-github', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`Website Generator running at http://localhost:${PORT}`);
-  console.log(`Higgsfield API: ${HF_KEY ? 'configured' : 'NOT SET'}`);
+  console.log(`Higgsfield API: ${HF_API_ID && HF_SECRET ? 'configured' : 'NOT SET'}`);
   console.log(`Claude API: ${CLAUDE_KEY ? 'configured' : 'NOT SET'}`);
   console.log(`OpenAI API: ${OPENAI_KEY ? 'configured' : 'NOT SET'}`);
 });
