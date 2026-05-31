@@ -362,7 +362,7 @@ select.form-input option{background:var(--card);color:var(--text)}
     <!-- Tech stack badges -->
     <div class="tech-stack landing-fade-in" style="animation-delay:.8s">
       <span class="tech-badge">🎨 GPT Image 2.0</span>
-      <span class="tech-badge">🎬 Seedance 2.0</span>
+      <span class="tech-badge">🎬 DoP Video</span>
       <span class="tech-badge">🤖 Claude AI</span>
       <span class="tech-badge">⚡ GSAP + Lenis</span>
     </div>
@@ -400,7 +400,7 @@ select.form-input option{background:var(--card);color:var(--text)}
           <div class="step-icon-wrap"><span class="step-emoji">🤖</span></div>
           <div class="step-num">Step 02</div>
           <div class="step-title">AI 생성</div>
-          <div class="step-desc">GPT Image 2.0으로 레퍼런스 이미지 생성 후, Seedance 2.0으로 8초 3D 애니메이션을 생성합니다.</div>
+          <div class="step-desc">GPT Image 2.0으로 레퍼런스 이미지 생성 후, DoP Video으로 8초 3D 애니메이션을 생성합니다.</div>
           <div class="step-arrow">→</div>
         </div>
       </div>
@@ -611,8 +611,8 @@ select.form-input option{background:var(--card);color:var(--text)}
         <div class="form-group">
           <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
             <span style="font-size:.95rem">🎥</span>
-            <span style="font-size:.8rem;font-weight:700;letter-spacing:-.01em">Higgsfield Seedance 2.0</span>
-            <span style="font-size:.55rem;color:#fbbf24;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.15);padding:.15rem .5rem;border-radius:9999px;font-weight:600">3D ANIMATION</span>
+            <span style="font-size:.8rem;font-weight:700;letter-spacing:-.01em">Higgsfield DoP Video</span>
+            <span style="font-size:.55rem;color:#fbbf24;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.15);padding:.15rem .5rem;border-radius:9999px;font-weight:600">AI VIDEO</span>
           </div>
           <div class="bezel" style="margin-bottom:0">
             <div class="bezel-inner" style="padding:1.25rem">
@@ -645,10 +645,11 @@ select.form-input option{background:var(--card);color:var(--text)}
                   </select>
                 </div>
                 <div style="flex:1;min-width:100px">
-                  <label class="form-label">📺 해상도</label>
-                  <select class="form-input" id="vidResolution" style="font-size:.82rem">
-                    <option value="720p">720p</option>
-                    <option value="1080p" selected>1080p</option>
+                  <label class="form-label">🎬 모델</label>
+                  <select class="form-input" id="vidQuality" style="font-size:.82rem">
+                    <option value="lite">DoP Lite (빠름)</option>
+                    <option value="standard" selected>DoP Standard</option>
+                    <option value="turbo">DoP Turbo (고품질)</option>
                   </select>
                 </div>
               </div>
@@ -840,7 +841,7 @@ select.form-input option{background:var(--card);color:var(--text)}
             <div class="pipeline-icon" id="pipeIcon3">3</div>
             <div class="pipeline-info">
               <div class="pipeline-title">영상 프롬프트 생성</div>
-              <div class="pipeline-desc">이미지를 기반으로 Seedance 2.0 3D 애니메이션 프롬프트를 생성합니다</div>
+              <div class="pipeline-desc">이미지를 기반으로 DoP Video 3D 애니메이션 프롬프트를 생성합니다</div>
               <div class="prompt-box" id="vidPromptBox" style="display:none">
                 <div class="prompt-label">Generated Prompt</div>
                 <div id="vidPromptText"></div>
@@ -853,7 +854,7 @@ select.form-input option{background:var(--card);color:var(--text)}
             <div class="pipeline-icon" id="pipeIcon4">4</div>
             <div class="pipeline-info">
               <div class="pipeline-title">3D 애니메이션 생성</div>
-              <div class="pipeline-desc">Seedance 2.0으로 8초 3D 애니메이션 영상을 생성합니다</div>
+              <div class="pipeline-desc">DoP Video으로 8초 3D 애니메이션 영상을 생성합니다</div>
               <div id="vidPreview" style="display:none;margin:.75rem 0">
                 <video id="generatedVid" controls style="width:100%;border-radius:calc(var(--radius) - .75rem);border:1px solid var(--border)"></video>
               </div>
@@ -1472,7 +1473,7 @@ async function startGeneration() {
   document.getElementById('vidPromptBox').style.display = '';
   setPipeStatus(3, 'done', '완료');
 
-  // Step 4: Generate video via Higgsfield Seedance 2.0
+  // Step 4: Generate video via Higgsfield DoP Video
   if (customVid) {
     state.vidUrl = customVid;
     document.getElementById('generatedVid').src = state.vidUrl;
@@ -1480,7 +1481,7 @@ async function startGeneration() {
     setPipeStatus(4, 'done', '커스텀 URL 사용');
     setProgress(4, 100);
   } else {
-  setPipeStatus(4, 'running', 'Higgsfield Seedance 2.0 생성 중...');
+  setPipeStatus(4, 'running', 'Higgsfield DoP Video 생성 중...');
   let vidProgress = 0;
   const vidInterval = setInterval(() => {
     vidProgress = Math.min(90, vidProgress + Math.random() * 5);
@@ -1785,7 +1786,7 @@ function collectProjectData() {
     vidPrompt: document.getElementById('vidPromptInput').value,
     vidDuration: document.getElementById('vidDuration').value,
     vidAspect: document.getElementById('vidAspect').value,
-    vidResolution: document.getElementById('vidResolution').value,
+    vidQuality: document.getElementById('vidQuality').value,
     customImgUrl: document.getElementById('customImgUrl').value,
     customVidUrl: document.getElementById('customVidUrl').value,
     logoUrl: document.getElementById('logoUrl').value,
@@ -1823,7 +1824,7 @@ function applyProjectData(data) {
   if (data.vidPrompt) document.getElementById('vidPromptInput').value = data.vidPrompt;
   if (data.vidDuration) document.getElementById('vidDuration').value = data.vidDuration;
   if (data.vidAspect) document.getElementById('vidAspect').value = data.vidAspect;
-  if (data.vidResolution) document.getElementById('vidResolution').value = data.vidResolution;
+  if (data.vidQuality) document.getElementById('vidQuality').value = data.vidQuality;
   if (data.customImgUrl) document.getElementById('customImgUrl').value = data.customImgUrl;
   if (data.customVidUrl) document.getElementById('customVidUrl').value = data.customVidUrl;
   if (data.logoUrl) {
@@ -2014,7 +2015,7 @@ async function generateImageOnly() {
   }
 }
 
-// Individual Higgsfield Seedance 2.0 controls
+// Individual Higgsfield DoP Video controls
 async function generateVidPromptOnly() {
   const topic = document.getElementById('imgSubject').value.trim() || document.getElementById('topicInput').value.trim();
   if (!topic) { showToast('주제를 입력해주세요'); return; }
@@ -2043,13 +2044,14 @@ async function generateVideoOnly() {
   }
   if (!prompt) { showToast('프롬프트가 없습니다'); return; }
   const imageUrl = document.getElementById('vidRefImage').value.trim() || document.getElementById('customImgUrl').value.trim();
-  const duration = parseInt(document.getElementById('vidDuration').value) || 8;
+  const duration = parseInt(document.getElementById('vidDuration').value) || 5;
+  const quality = document.getElementById('vidQuality')?.value || 'standard';
   const aspect = document.getElementById('vidAspect').value || '16:9';
   document.getElementById('vidGenStatus').textContent = '영상 생성 중...';
   try {
     const res = await fetch('/api/generate-video', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, image_url: imageUrl, duration, aspect_ratio: aspect })
+      body: JSON.stringify({ prompt, image_url: imageUrl, duration, aspect_ratio: aspect, quality })
     });
     const data = await res.json();
     let url = '';
