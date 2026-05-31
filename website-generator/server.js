@@ -9,6 +9,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const HF_KEY = process.env.HIGGSFIELD_API_KEY;
 const CLAUDE_KEY = process.env.CLAUDE_API_KEY;
+const OPENAI_KEY = process.env.OPENAI_API_KEY;
 
 // Higgsfield API call
 async function hfApi(endpoint, method, body) {
@@ -116,23 +117,64 @@ Generate an 8-second 3D cinematic animation prompt that brings this scene to lif
   }
 });
 
-// Generate image via Higgsfield
-app.post('/api/generate-image', async (req, res) => {
+// Generate image — OpenAI (primary) → Higgsfield (fallback)
+async function openaiGenerateImage(prompt, size) {
+  if (!OPENAI_KEY) throw new Error('OPENAI_API_KEY not set');
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 60000);
   try {
-    const { prompt, aspect_ratio = '16:9' } = req.body;
-    console.log('[HF] Generating image...');
-    const result = await hfApi('/v1/generate/image', 'POST', {
-      model: 'gpt_image_2',
-      prompt,
-      aspect_ratio,
-      count: 1
+    const res = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${OPENAI_KEY}` },
+      body: JSON.stringify({ model: 'gpt-image-1', prompt, n: 1, size, quality: 'high' }),
+      signal: controller.signal
     });
-    console.log('[HF] Image result:', JSON.stringify(result).substring(0, 200));
-    res.json({ success: true, data: result });
-  } catch (err) {
-    console.error('[HF] Image error:', err.message);
-    res.json({ success: false, error: err.message });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message || JSON.stringify(data.error));
+    const b64 = data.data?.[0]?.b64_json;
+    const url = data.data?.[0]?.url;
+    if (url) return url;
+    if (b64) {
+      const imgBuf = Buffer.from(b64, 'base64');
+      const fs = require('fs');
+      const fname = 'generated_' + Date.now() + '.png';
+      const fpath = path.join(__dirname, 'public', fname);
+      fs.writeFileSync(fpath, imgBuf);
+      return '/' + fname;
+    }
+    throw new Error('No image in response');
+  } finally { clearTimeout(timeout); }
+}
+
+app.post('/api/generate-image', async (req, res) => {
+  const { prompt, aspect_ratio = '16:9' } = req.body;
+  const sizeMap = { '16:9': '1536x1024', '9:16': '1024x1536', '1:1': '1024x1024' };
+  const size = sizeMap[aspect_ratio] || '1536x1024';
+
+  // Try OpenAI first
+  if (OPENAI_KEY) {
+    try {
+      console.log('[OpenAI] Generating image...');
+      const url = await openaiGenerateImage(prompt, size);
+      console.log('[OpenAI] Image URL:', url?.substring(0, 80));
+      return res.json({ success: true, data: { url }, engine: 'openai' });
+    } catch (err) {
+      console.error('[OpenAI] Error:', err.message);
+    }
   }
+
+  // Fallback: Higgsfield
+  if (HF_KEY) {
+    try {
+      console.log('[HF] Generating image (fallback)...');
+      const result = await hfApi('/v1/generate/image', 'POST', { model: 'gpt_image_2', prompt, aspect_ratio, count: 1 });
+      return res.json({ success: true, data: result, engine: 'higgsfield' });
+    } catch (err) {
+      console.error('[HF] Error:', err.message);
+    }
+  }
+
+  res.json({ success: false, error: 'No image generation API available' });
 });
 
 // Generate video via Higgsfield
@@ -254,4 +296,5 @@ app.listen(PORT, () => {
   console.log(`Website Generator running at http://localhost:${PORT}`);
   console.log(`Higgsfield API: ${HF_KEY ? 'configured' : 'NOT SET'}`);
   console.log(`Claude API: ${CLAUDE_KEY ? 'configured' : 'NOT SET'}`);
+  console.log(`OpenAI API: ${OPENAI_KEY ? 'configured' : 'NOT SET'}`);
 });

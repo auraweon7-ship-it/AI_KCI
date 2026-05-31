@@ -1428,11 +1428,12 @@ async function startGeneration() {
 
     if (imgData.success && imgData.data) {
       const d = imgData.data;
-      const url = d.results?.[0]?.url || d.output?.url || d.url || d.image_url;
+      const url = d.url || d.results?.[0]?.url || d.results?.[0]?.results?.rawUrl || d.output?.url || d.image_url;
+      const engine = imgData.engine || 'unknown';
       if (url) {
         state.imgUrl = url;
+        setPipeStatus(2, 'running', engine + ' 이미지 생성 완료');
       } else if (d.id || d.job_id) {
-        // Async job — poll for result
         const jobId = d.id || d.job_id;
         setPipeStatus(2, 'running', '이미지 생성 대기 중... (Job: ' + jobId.substring(0,8) + ')');
         state.imgUrl = await pollJob(jobId, 'image', (p) => setProgress(2, p));
@@ -1991,7 +1992,7 @@ async function generateImageOnly() {
     let url = '';
     if (data.success && data.data) {
       const d = data.data;
-      url = d.results?.[0]?.url || d.results?.[0]?.results?.rawUrl || d.output?.url || d.url || '';
+      url = d.url || d.results?.[0]?.url || d.results?.[0]?.results?.rawUrl || d.output?.url || '';
       if (!url && (d.results?.[0]?.id || d.id)) {
         const jobId = d.results?.[0]?.id || d.id;
         document.getElementById('imgGenStatus').textContent = 'Job ' + jobId.substring(0,8) + ' 대기 중...';
