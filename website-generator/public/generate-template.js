@@ -50,6 +50,7 @@ function generateWebsite(topic, siteType, features, colorTheme, imgUrl, vidUrl, 
   menuItems = menuItems || [];
   options = options || {};
   const hasGoogleLogin = options.googleLogin || false;
+  const googleClientId = options.googleClientId || '';
   const logoUrl = options.logoUrl || '';
   const palettes = {
     dark: {
@@ -840,7 +841,7 @@ ${hasGoogleLogin ? `
       return;
     }
     google.accounts.id.initialize({
-      client_id: 'YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com',
+      client_id: '${googleClientId}',
       callback: function(response) {
         const payload = JSON.parse(atob(response.credential.split('.')[1]));
         window._googleUser = payload;
