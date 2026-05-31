@@ -1,0 +1,1613 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Website Generator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#08070a;--surface:#0f0e13;--card:#141318;--card-elevated:#1a1920;
+  --border:rgba(255,255,255,.05);--border-hover:rgba(255,255,255,.1);
+  --text:#eae8f0;--text-muted:rgba(234,232,240,.4);--text-dim:rgba(234,232,240,.2);
+  --accent:#a78bfa;--accent-dim:rgba(167,139,250,.1);--accent-glow:rgba(167,139,250,.15);
+  --accent-solid:#8b5cf6;
+  --success:#34d399;--warning:#fbbf24;--error:#f87171;
+  --radius:1.25rem;--radius-inner:calc(1.25rem - 5px);--radius-sm:.75rem;
+  --ease:cubic-bezier(.22,1,.36,1);--ease-spring:cubic-bezier(.34,1.56,.64,1);
+  --shadow-card:0 4px 24px rgba(0,0,0,.3),0 1px 2px rgba(0,0,0,.2);
+  --shadow-glow:0 0 40px rgba(167,139,250,.06);
+}
+html{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);
+  scroll-behavior:smooth;-webkit-font-smoothing:antialiased}
+body{min-height:100dvh;overflow-x:hidden;position:relative}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 80% 60% at 15% 10%,rgba(139,92,246,.04),transparent),
+    radial-gradient(ellipse 60% 50% at 85% 80%,rgba(52,211,153,.03),transparent),
+    radial-gradient(ellipse 40% 40% at 50% 50%,rgba(167,139,250,.02),transparent)}
+body::after{content:'';position:fixed;inset:0;z-index:50;pointer-events:none;opacity:.02;
+  background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}}
+
+.mono{font-family:'JetBrains Mono',monospace}
+
+/* Layout */
+.container{max-width:1200px;margin:0 auto;padding:0 clamp(1rem,4vw,3rem);position:relative;z-index:1}
+
+/* Nav */
+.nav{position:fixed;top:0;left:0;right:0;z-index:40;padding:1rem 0;
+  transition:all .6s var(--ease)}
+.nav.scrolled{background:rgba(8,7,10,.8);backdrop-filter:blur(20px) saturate(1.3);
+  border-bottom:1px solid var(--border)}
+.nav-inner{display:flex;align-items:center;justify-content:space-between;max-width:1200px;
+  margin:0 auto;padding:0 clamp(1rem,4vw,3rem)}
+.logo{font-weight:700;font-size:1.05rem;letter-spacing:-.01em;display:flex;align-items:center;gap:.6rem}
+.logo-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);
+  box-shadow:0 0 10px var(--accent-glow),0 0 20px var(--accent-glow)}
+.nav-status{font-size:.72rem;color:var(--text-muted);display:flex;align-items:center;gap:.5rem}
+.nav-status .pulse{width:5px;height:5px;border-radius:50%;background:var(--success);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* Pill badge */
+.badge{display:inline-flex;align-items:center;gap:.35rem;
+  padding:.3rem .75rem;border-radius:9999px;font-size:.6rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:.16em;
+  background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent-glow)}
+
+/* Sections */
+section{padding:clamp(3rem,8vw,6rem) 0}
+
+/* Hero */
+.hero{padding-top:10rem;padding-bottom:5rem;text-align:center}
+.hero h1{font-size:clamp(2.4rem,6.5vw,5rem);font-weight:800;letter-spacing:-.05em;line-height:1;
+  margin:.75rem 0 1.75rem;color:var(--text)}
+.hero h1 .title-line{color:var(--text);-webkit-text-fill-color:var(--text)}
+.hero p{font-size:clamp(.95rem,1.4vw,1.1rem);color:var(--text-muted);max-width:480px;margin:0 auto;line-height:1.7}
+
+/* Double-bezel card */
+.bezel{background:rgba(255,255,255,.015);border:1px solid var(--border);
+  border-radius:var(--radius);padding:5px;box-shadow:var(--shadow-glow)}
+.bezel-inner{background:var(--card);border-radius:var(--radius-inner);padding:clamp(1.5rem,3vw,2.5rem);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03),var(--shadow-card);position:relative;overflow:hidden}
+.bezel-inner::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(167,139,250,.1),transparent)}
+
+/* Steps */
+.steps-grid{display:grid;grid-template-columns:1fr;gap:1.25rem;margin-top:2.5rem}
+@media(min-width:768px){.steps-grid{grid-template-columns:repeat(3,1fr)}}
+.step-card{opacity:0;transform:translateY(2rem);transition:all .8s var(--ease)}
+.step-card.visible{opacity:1;transform:translateY(0)}
+.step-card .bezel-inner{transition:border-color .4s var(--ease)}
+.step-card:hover .bezel-inner{border-color:var(--border-hover)}
+.step-num{font-size:.65rem;font-weight:600;color:var(--accent);letter-spacing:.16em;
+  text-transform:uppercase;margin-bottom:.75rem}
+.step-title{font-size:1.1rem;font-weight:700;letter-spacing:-.02em;margin-bottom:.5rem}
+.step-desc{font-size:.82rem;color:var(--text-muted);line-height:1.65}
+
+/* Builder Panel */
+.builder{max-width:900px;margin:0 auto}
+.builder-header{text-align:center;margin-bottom:2.5rem}
+.builder-header h2{font-size:clamp(1.6rem,3vw,2.4rem);font-weight:800;letter-spacing:-.04em;margin-top:.75rem}
+
+/* Form elements */
+.form-group{margin-bottom:1.5rem}
+.form-label{display:block;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.13em;
+  color:var(--text-muted);margin-bottom:.6rem}
+.form-input{width:100%;padding:.8rem 1.1rem;background:rgba(255,255,255,.03);
+  border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);
+  font-family:inherit;font-size:.88rem;transition:all .35s var(--ease);outline:none}
+.form-input:focus{border-color:rgba(167,139,250,.35);box-shadow:0 0 0 3px rgba(167,139,250,.08);
+  background:rgba(255,255,255,.04)}
+.form-input::placeholder{color:var(--text-dim)}
+textarea.form-input{resize:vertical;min-height:90px}
+select.form-input{cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='rgba(255,255,255,.25)' viewBox='0 0 16 16'%3E%3Cpath d='M4.5 6l3.5 4 3.5-4'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 1rem center}
+select.form-input option{background:var(--card);color:var(--text)}
+
+/* Chip select */
+.chip-grid{display:flex;flex-wrap:wrap;gap:.4rem}
+.chip{padding:.45rem .95rem;border-radius:9999px;font-size:.78rem;font-weight:500;cursor:pointer;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);color:var(--text-muted);
+  transition:all .35s var(--ease);user-select:none}
+.chip:hover{border-color:var(--border-hover);color:var(--text);background:rgba(255,255,255,.05)}
+.chip.active{background:var(--accent-dim);border-color:var(--accent-glow);color:var(--accent)}
+
+/* CTA Button */
+.btn-primary{display:inline-flex;align-items:center;gap:.6rem;
+  padding:.8rem .95rem .8rem 1.6rem;border-radius:9999px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--accent-solid),var(--accent));
+  color:#fff;font-family:inherit;font-size:.88rem;font-weight:600;
+  transition:all .4s var(--ease);position:relative;overflow:hidden;
+  box-shadow:0 2px 12px rgba(139,92,246,.2)}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 32px rgba(139,92,246,.3)}
+.btn-primary:active{transform:translateY(0) scale(.98)}
+.btn-primary .btn-icon{width:1.85rem;height:1.85rem;border-radius:50%;background:rgba(255,255,255,.15);
+  display:flex;align-items:center;justify-content:center;
+  transition:all .4s var(--ease-spring)}
+.btn-primary:hover .btn-icon{transform:translateX(2px) scale(1.05);background:rgba(255,255,255,.2)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none !important;box-shadow:none !important}
+
+.btn-secondary{display:inline-flex;align-items:center;gap:.5rem;
+  padding:.65rem 1.3rem;border-radius:9999px;border:1px solid var(--border);cursor:pointer;
+  background:transparent;color:var(--text);font-family:inherit;font-size:.82rem;font-weight:500;
+  transition:all .35s var(--ease)}
+.btn-secondary:hover{border-color:var(--border-hover);background:rgba(255,255,255,.03)}
+
+/* Pipeline visualization */
+.pipeline{margin-top:1.5rem}
+.pipeline-step{display:flex;align-items:flex-start;gap:1.15rem;padding:1.15rem 0;
+  border-bottom:1px solid var(--border);position:relative;
+  transition:background .3s var(--ease)}
+.pipeline-step:last-child{border-bottom:none}
+.pipeline-icon{width:2.25rem;height:2.25rem;border-radius:var(--radius-sm);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:600;
+  background:rgba(255,255,255,.03);border:1px solid var(--border);color:var(--text-muted);
+  transition:all .5s var(--ease)}
+.pipeline-icon.active{background:var(--accent-dim);border-color:var(--accent-glow);color:var(--accent)}
+.pipeline-icon.done{background:rgba(52,211,153,.08);border-color:rgba(52,211,153,.15);color:var(--success)}
+.pipeline-info{flex:1;min-width:0}
+.pipeline-title{font-size:.88rem;font-weight:600;margin-bottom:.2rem;letter-spacing:-.01em}
+.pipeline-desc{font-size:.75rem;color:var(--text-muted);line-height:1.55}
+.pipeline-status{font-size:.68rem;font-weight:500;margin-top:.3rem;
+  display:inline-flex;align-items:center;gap:.3rem}
+.pipeline-status.waiting{color:var(--text-dim)}
+.pipeline-status.running{color:var(--warning)}
+.pipeline-status.done{color:var(--success)}
+.pipeline-status.error{color:var(--error)}
+
+/* Progress bar */
+.progress-bar{width:100%;height:2px;background:rgba(255,255,255,.04);border-radius:1px;
+  margin-top:.5rem;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent-solid),var(--accent));
+  border-radius:1px;transition:width .6s var(--ease);width:0}
+
+/* Preview section */
+.preview-frame{width:100%;aspect-ratio:16/9;border-radius:var(--radius-inner);overflow:hidden;
+  background:var(--bg);position:relative;box-shadow:var(--shadow-card)}
+.preview-frame iframe{width:100%;height:100%;border:none}
+
+/* Output tabs */
+.output-tabs{display:flex;gap:2px;margin-bottom:1.5rem;
+  background:rgba(255,255,255,.03);border-radius:9999px;padding:3px;width:fit-content;
+  border:1px solid var(--border)}
+.output-tab{padding:.45rem 1.1rem;border-radius:9999px;font-size:.78rem;font-weight:500;cursor:pointer;
+  color:var(--text-muted);transition:all .3s var(--ease);border:none;background:none;font-family:inherit}
+.output-tab.active{background:var(--accent-dim);color:var(--accent)}
+
+/* Scroll animation preview */
+.scroll-demo{width:100%;height:400px;border-radius:var(--radius-inner);overflow:hidden;
+  background:var(--bg);position:relative}
+.scroll-demo canvas{width:100%;height:100%;object-fit:cover}
+.scroll-indicator{position:absolute;bottom:1rem;left:50%;transform:translateX(-50%);
+  font-size:.68rem;color:var(--text-dim);display:flex;flex-direction:column;align-items:center;gap:.3rem}
+.scroll-arrow{animation:scrollBounce 1.5s infinite}
+@keyframes scrollBounce{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+
+/* Code block */
+.code-block{background:rgba(0,0,0,.5);border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:1.25rem;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:.75rem;
+  line-height:1.75;color:rgba(234,232,240,.6);max-height:400px;overflow-y:auto}
+
+/* Prompt display */
+.prompt-box{background:var(--accent-dim);border:1px solid var(--accent-glow);
+  border-radius:var(--radius-sm);padding:1rem 1.15rem;
+  font-size:.8rem;line-height:1.65;color:rgba(234,232,240,.65);margin:.75rem 0}
+.prompt-label{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.14em;
+  color:var(--accent);margin-bottom:.35rem}
+
+/* Animations */
+.fade-up{opacity:0;transform:translateY(2rem);transition:all .8s var(--ease)}
+.fade-up.visible{opacity:1;transform:translateY(0)}
+
+/* View states */
+.view{display:none}
+.view.active{display:block;animation:viewFadeIn .5s var(--ease)}
+@keyframes viewFadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Loading spinner */
+.spinner{width:.9rem;height:.9rem;border:2px solid rgba(255,255,255,.08);
+  border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Toast */
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(120%);
+  padding:.7rem 1.4rem;border-radius:9999px;background:var(--card-elevated);
+  backdrop-filter:blur(16px);border:1px solid var(--border);font-size:.8rem;
+  z-index:60;transition:transform .5s var(--ease-spring);pointer-events:none;
+  box-shadow:var(--shadow-card)}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Section headers with accent line */
+.builder-header .badge,.builder-header h2{position:relative}
+
+/* Media queries */
+@media(max-width:767px){
+  .hero{padding-top:7rem}
+  .hero h1{font-size:2.2rem}
+  .pipeline-step{flex-direction:column;gap:.6rem}
+  .bezel-inner{padding:1.15rem}
+  .landing-orb{display:none}
+  .tech-stack{gap:.4rem}
+  .tech-badge{font-size:.6rem;padding:.25rem .5rem}
+}
+
+/* Landing page animations */
+@keyframes landingFadeIn{
+  from{opacity:0;transform:translateY(24px);filter:blur(6px)}
+  to{opacity:1;transform:translateY(0);filter:blur(0)}
+}
+.landing-fade-in{opacity:0;animation:landingFadeIn .9s var(--ease) forwards}
+.landing-fade-in[style*="delay"]{animation-delay:var(--delay,.1s)}
+
+.landing-title{display:flex;flex-direction:column;gap:.15rem}
+.title-line{display:block}
+.hero h1 .title-line.title-gradient{
+  background:linear-gradient(135deg,var(--accent) 0%,#c084fc 40%,#f472b6 70%,var(--accent) 100%);
+  background-size:200% auto;
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+  animation:gradientShift 4s ease infinite, landingFadeIn .9s var(--ease) .45s forwards}
+@keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+
+/* Floating orbs */
+.landing-orb{position:fixed;border-radius:50%;pointer-events:none;z-index:1;filter:blur(80px);opacity:.35}
+.orb-1{width:400px;height:400px;background:radial-gradient(circle,rgba(139,92,246,.3),transparent 70%);
+  top:-5%;left:-5%;animation:orbFloat1 12s ease-in-out infinite}
+.orb-2{width:350px;height:350px;background:radial-gradient(circle,rgba(244,114,182,.2),transparent 70%);
+  top:50%;right:-8%;animation:orbFloat2 15s ease-in-out infinite}
+.orb-3{width:300px;height:300px;background:radial-gradient(circle,rgba(52,211,153,.15),transparent 70%);
+  bottom:-5%;left:30%;animation:orbFloat3 18s ease-in-out infinite}
+@keyframes orbFloat1{0%,100%{transform:translate(0,0) scale(1)}25%{transform:translate(60px,40px) scale(1.1)}50%{transform:translate(20px,80px) scale(.95)}75%{transform:translate(-30px,30px) scale(1.05)}}
+@keyframes orbFloat2{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(-50px,-30px) scale(1.08)}66%{transform:translate(-20px,50px) scale(.92)}}
+@keyframes orbFloat3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(40px,-40px) scale(1.1)}}
+
+/* Tech stack badges */
+.tech-stack{display:flex;justify-content:center;gap:.5rem;margin-top:1.5rem;flex-wrap:wrap}
+.tech-badge{padding:.3rem .7rem;border-radius:9999px;font-size:.65rem;font-weight:500;
+  background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--text-muted);
+  transition:all .4s var(--ease);backdrop-filter:blur(4px)}
+.tech-badge:hover{border-color:var(--accent-glow);color:var(--accent);background:var(--accent-dim);
+  transform:translateY(-2px);box-shadow:0 4px 16px var(--accent-glow)}
+
+/* Button glow pulse */
+.btn-glow{position:relative}
+.btn-glow::before{content:'';position:absolute;inset:-2px;border-radius:9999px;
+  background:linear-gradient(135deg,var(--accent-solid),#c084fc,var(--accent));
+  background-size:200% 200%;opacity:0;z-index:-1;filter:blur(12px);
+  transition:opacity .4s;animation:glowPulse 3s ease infinite}
+.btn-glow:hover::before{opacity:.5}
+@keyframes glowPulse{0%,100%{background-position:0% 50%;opacity:.2}50%{background-position:100% 50%;opacity:.4}}
+
+/* Section divider */
+.section-divider{display:flex;align-items:center;gap:1rem;margin:3rem 0 1.5rem}
+.divider-line{flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent)}
+.divider-label{font-size:.6rem;font-weight:700;letter-spacing:.2em;color:var(--text-dim)}
+
+/* Step card enhancements */
+.step-hoverable{transition:all .5s var(--ease);position:relative;overflow:hidden}
+.step-hoverable::after{content:'';position:absolute;inset:0;opacity:0;
+  background:radial-gradient(circle at var(--mx,50%) var(--my,50%),var(--accent-glow),transparent 60%);
+  transition:opacity .4s}
+.step-hoverable:hover{transform:translateY(-4px);border-color:var(--border-hover);
+  box-shadow:0 8px 32px rgba(0,0,0,.3),var(--shadow-glow)}
+.step-hoverable:hover::after{opacity:1}
+.step-icon-wrap{width:3rem;height:3rem;border-radius:1rem;
+  display:flex;align-items:center;justify-content:center;margin-bottom:1rem;
+  background:var(--accent-dim);border:1px solid var(--accent-glow);
+  transition:all .4s var(--ease)}
+.step-hoverable:hover .step-icon-wrap{transform:scale(1.1) rotate(-3deg);
+  box-shadow:0 0 20px var(--accent-glow)}
+.step-emoji{font-size:1.3rem}
+.step-arrow{position:absolute;bottom:1rem;right:1.25rem;font-size:1rem;color:var(--text-dim);
+  transition:all .4s var(--ease);opacity:.3}
+.step-hoverable:hover .step-arrow{opacity:1;color:var(--accent);transform:translateX(4px)}
+</style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav" id="nav">
+  <div class="nav-inner">
+    <div class="logo">
+      <span class="logo-dot"></span>
+      <span>SiteForge</span>
+    </div>
+    <div class="nav-status">
+      <span class="pulse"></span>
+      <span class="mono" id="navStatus">Ready</span>
+    </div>
+  </div>
+</nav>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- View 1: Landing -->
+<div class="view active" id="viewLanding">
+
+  <!-- Animated particle canvas -->
+  <canvas id="particleCanvas" style="position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.6"></canvas>
+
+  <!-- Floating orbs -->
+  <div class="landing-orb orb-1"></div>
+  <div class="landing-orb orb-2"></div>
+  <div class="landing-orb orb-3"></div>
+
+  <section class="hero container" style="position:relative;z-index:2">
+    <div class="badge landing-fade-in" style="animation-delay:.1s">✨ AI-Powered Website Builder</div>
+    <h1 class="landing-title">
+      <span class="title-line landing-fade-in" style="animation-delay:.25s">웹사이트를 생각하면</span>
+      <span class="title-line title-gradient landing-fade-in" style="animation-delay:.45s">AI가 만듭니다</span>
+    </h1>
+    <p class="landing-fade-in" style="animation-delay:.65s">주제만 입력하면 Higgsfield AI가 이미지와 3D 애니메이션을 생성하고, 스크롤 연동 인터랙션이 적용된 프리미엄 웹사이트를 자동으로 빌드합니다.</p>
+
+    <!-- Tech stack badges -->
+    <div class="tech-stack landing-fade-in" style="animation-delay:.8s">
+      <span class="tech-badge">🎨 GPT Image 2.0</span>
+      <span class="tech-badge">🎬 Seedance 2.0</span>
+      <span class="tech-badge">🤖 Claude AI</span>
+      <span class="tech-badge">⚡ GSAP + Lenis</span>
+    </div>
+
+    <div style="margin-top:2.5rem" class="landing-fade-in" style="animation-delay:.95s">
+      <button class="btn-primary btn-glow" onclick="showView('viewBuilder')">
+        🚀 시작하기
+        <span class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- Animated divider -->
+  <div class="container" style="position:relative;z-index:2">
+    <div class="section-divider">
+      <div class="divider-line"></div>
+      <span class="divider-label">HOW IT WORKS</span>
+      <div class="divider-line"></div>
+    </div>
+  </div>
+
+  <section class="container" style="position:relative;z-index:2">
+    <div class="steps-grid">
+      <div class="step-card bezel" data-reveal style="--delay:.1s">
+        <div class="bezel-inner step-hoverable">
+          <div class="step-icon-wrap"><span class="step-emoji">🎯</span></div>
+          <div class="step-num">Step 01</div>
+          <div class="step-title">주제 설정</div>
+          <div class="step-desc">웹사이트 유형, 주요 기능, 테마를 선택합니다. AI가 최적화된 프롬프트를 자동 생성합니다.</div>
+          <div class="step-arrow">→</div>
+        </div>
+      </div>
+      <div class="step-card bezel" data-reveal style="--delay:.2s">
+        <div class="bezel-inner step-hoverable">
+          <div class="step-icon-wrap"><span class="step-emoji">🤖</span></div>
+          <div class="step-num">Step 02</div>
+          <div class="step-title">AI 생성</div>
+          <div class="step-desc">GPT Image 2.0으로 레퍼런스 이미지 생성 후, Seedance 2.0으로 8초 3D 애니메이션을 생성합니다.</div>
+          <div class="step-arrow">→</div>
+        </div>
+      </div>
+      <div class="step-card bezel" data-reveal style="--delay:.3s">
+        <div class="bezel-inner step-hoverable">
+          <div class="step-icon-wrap"><span class="step-emoji">🌐</span></div>
+          <div class="step-num">Step 03</div>
+          <div class="step-title">웹사이트 빌드</div>
+          <div class="step-desc">생성된 영상에서 프레임을 추출하고, 스크롤 연동 애니메이션을 적용한 완성된 웹사이트를 출력합니다.</div>
+          <div class="step-arrow">✓</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer style="padding:3rem 0 2rem;border-top:1px solid var(--border);margin-top:2rem">
+    <div class="container" style="text-align:center">
+      <div style="font-size:.95rem;font-weight:700;letter-spacing:-.01em;margin-bottom:.5rem">
+        박정원 | 朴正元 | Park Jeong Weon
+        <span style="font-size:.78rem;font-weight:500;color:var(--text-muted);margin-left:.4rem">교수</span>
+      </div>
+      <div style="font-size:.78rem;color:var(--text-muted);line-height:1.8">
+        한국외국어대학교 중국학대학 중국언어문화학부
+      </div>
+      <div style="display:flex;justify-content:center;gap:1.5rem;margin-top:.75rem;flex-wrap:wrap">
+        <a href="https://k-ai.it.kr/" target="_blank" rel="noopener" style="font-size:.75rem;color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:.3rem">
+          🌐 K-AI 교육네트워크
+        </a>
+        <a href="https://kletter.kr" target="_blank" rel="noopener" style="font-size:.75rem;color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:.3rem">
+          📱 kletter.kr
+        </a>
+        <a href="https://kteacher.kr" target="_blank" rel="noopener" style="font-size:.75rem;color:var(--accent);text-decoration:none;display:flex;align-items:center;gap:.3rem">
+          📱 kteacher.kr
+        </a>
+      </div>
+      <div style="font-size:.65rem;color:var(--text-dim);margin-top:1.25rem">
+        &copy; 2025 SiteForge &mdash; Powered by Higgsfield AI &amp; Claude API
+      </div>
+    </div>
+  </footer>
+</div>
+
+<!-- View 2: Builder -->
+<div class="view" id="viewBuilder">
+  <section class="container builder" style="padding-top:7rem">
+    <div class="builder-header">
+      <div class="badge">Configure</div>
+      <h2>웹사이트 구성</h2>
+    </div>
+
+    <div class="bezel">
+      <div class="bezel-inner">
+
+        <!-- Section 1: Basic Info -->
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:1.25rem">
+          <span style="font-size:1.1rem">🎯</span>
+          <span style="font-size:.82rem;font-weight:700;letter-spacing:-.01em">기본 설정</span>
+          <div style="flex:1;height:1px;background:var(--border);margin-left:.5rem"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">🌐 웹사이트 유형</label>
+          <select class="form-input" id="siteType">
+            <option value="landing">🚀 랜딩 페이지</option>
+            <option value="portfolio">🎨 포트폴리오</option>
+            <option value="saas">💻 SaaS 제품 소개</option>
+            <option value="brand">✨ 브랜드 쇼케이스</option>
+            <option value="event">🎪 이벤트 / 캠페인</option>
+            <option value="restaurant">🍽️ 레스토랑 / 카페</option>
+            <option value="studio">🎬 크리에이티브 스튜디오</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">⚡ 주요 기능 (복수 선택)</label>
+          <div class="chip-grid" id="featureChips">
+            <div class="chip active" data-val="hero-video">🎥 히어로 영상</div>
+            <div class="chip active" data-val="scroll-anim">🎞️ 스크롤 애니메이션</div>
+            <div class="chip active" data-val="gallery">🖼️ 갤러리</div>
+            <div class="chip active" data-val="testimonial">💬 후기/리뷰</div>
+            <div class="chip active" data-val="pricing">💰 가격표</div>
+            <div class="chip active" data-val="contact">📧 문의 폼</div>
+            <div class="chip" data-val="parallax">🌀 패럴렉스</div>
+            <div class="chip" data-val="dark-mode">🌙 다크 모드</div>
+            <div class="chip" data-val="team">👥 팀 소개</div>
+            <div class="chip" data-val="faq">❓ FAQ</div>
+            <div class="chip" data-val="timeline">📅 타임라인</div>
+            <div class="chip" data-val="partners">🤝 파트너/고객사</div>
+            <div class="chip" data-val="blog">📰 블로그/뉴스</div>
+            <div class="chip" data-val="map">📍 지도/위치</div>
+            <div class="chip" data-val="video-bg">🎬 배경 영상</div>
+            <div class="chip" data-val="cta-banner">🔔 CTA 배너</div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">📝 주제 / 테마</label>
+          <input type="text" class="form-input" id="topicInput" placeholder="예: 미래 도시의 친환경 건축 스튜디오">
+        </div>
+
+        <!-- Section 2: Navigation -->
+        <div style="display:flex;align-items:center;gap:.5rem;margin:2rem 0 1.25rem">
+          <span style="font-size:1.1rem">🧭</span>
+          <span style="font-size:.82rem;font-weight:700;letter-spacing:-.01em">네비게이션 메뉴</span>
+          <div style="flex:1;height:1px;background:var(--border);margin-left:.5rem"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">📋 메뉴 개요</label>
+          <div style="margin-bottom:.75rem">
+            <textarea class="form-input" id="menuOverview" placeholder="메뉴 개요를 입력하세요 (예: 회사소개, 서비스 안내, 포트폴리오, 팀 소개, 블로그, 문의하기)" style="min-height:55px;font-size:.82rem"></textarea>
+          </div>
+          <div style="display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap">
+            <button onclick="autoGenerateMenu()" class="btn-secondary" style="font-size:.72rem;padding:.4rem .85rem">
+              🤖 AI 메뉴 생성
+            </button>
+            <button onclick="generateMenuFromOverview()" class="btn-secondary" style="font-size:.72rem;padding:.4rem .85rem">
+              📄 개요에서 생성
+            </button>
+            <span class="mono" style="font-size:.6rem;color:var(--text-dim);display:flex;align-items:center" id="menuGenStatus"></span>
+          </div>
+          <div id="menuItems" style="display:flex;flex-direction:column;gap:.35rem;margin-bottom:.6rem">
+          </div>
+          <button onclick="addMenuItem()" class="btn-secondary" style="font-size:.72rem;padding:.35rem .8rem">
+            ➕ 메뉴 항목 추가
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">💡 추가 설명 (선택)</label>
+          <textarea class="form-input" id="descInput" placeholder="웹사이트에 담고 싶은 분위기, 색감, 특별한 요구사항을 적어주세요" style="min-height:80px"></textarea>
+        </div>
+
+        <!-- Section 3: AI Image Generation -->
+        <div style="display:flex;align-items:center;gap:.5rem;margin:2rem 0 1.25rem">
+          <span style="font-size:1.1rem">🖼️</span>
+          <span style="font-size:.82rem;font-weight:700;letter-spacing:-.01em">AI 이미지 생성</span>
+          <div style="flex:1;height:1px;background:var(--border);margin-left:.5rem"></div>
+        </div>
+
+        <div class="form-group">
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
+            <span style="font-size:.95rem">🎨</span>
+            <span style="font-size:.8rem;font-weight:700;letter-spacing:-.01em">Higgsfield GPT Image 2.0</span>
+            <span style="font-size:.55rem;color:var(--accent);background:var(--accent-dim);border:1px solid var(--accent-glow);padding:.15rem .5rem;border-radius:9999px;font-weight:600">IMAGE AI</span>
+          </div>
+          <div class="bezel" style="margin-bottom:0">
+            <div class="bezel-inner" style="padding:1.25rem">
+              <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label">🔍 이미지 주제</label>
+                <input type="text" class="form-input" id="imgSubject" placeholder="이미지에 담을 구체적 장면 (비워두면 웹사이트 주제 사용)">
+              </div>
+              <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label">✏️ 이미지 프롬프트 (자동 생성 or 직접 입력)</label>
+                <textarea class="form-input" id="imgPromptInput" placeholder="Claude AI가 자동 생성합니다. 직접 입력하면 해당 프롬프트가 사용됩니다." style="min-height:65px;font-size:.82rem"></textarea>
+              </div>
+              <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
+                <button class="btn-secondary" onclick="generateImgPromptOnly()" style="font-size:.75rem;padding:.45rem .9rem">
+                  ⚡ 프롬프트 생성
+                </button>
+                <button class="btn-primary" onclick="generateImageOnly()" style="font-size:.75rem;padding:.45rem .7rem .45rem 1rem">
+                  🎨 이미지 생성
+                  <span class="btn-icon" style="width:1.5rem;height:1.5rem"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+                </button>
+                <span class="mono" style="font-size:.6rem;color:var(--text-dim)" id="imgGenStatus"></span>
+              </div>
+              <div id="imgGenPreview" style="display:none;margin-top:1rem">
+                <img id="imgGenResult" style="width:100%;border-radius:var(--radius-sm);border:1px solid var(--border)">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: AI Video Generation -->
+        <div style="display:flex;align-items:center;gap:.5rem;margin:2rem 0 1.25rem">
+          <span style="font-size:1.1rem">🎬</span>
+          <span style="font-size:.82rem;font-weight:700;letter-spacing:-.01em">AI 영상 생성</span>
+          <div style="flex:1;height:1px;background:var(--border);margin-left:.5rem"></div>
+        </div>
+
+        <div class="form-group">
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem">
+            <span style="font-size:.95rem">🎥</span>
+            <span style="font-size:.8rem;font-weight:700;letter-spacing:-.01em">Higgsfield Seedance 2.0</span>
+            <span style="font-size:.55rem;color:#fbbf24;background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.15);padding:.15rem .5rem;border-radius:9999px;font-weight:600">3D ANIMATION</span>
+          </div>
+          <div class="bezel" style="margin-bottom:0">
+            <div class="bezel-inner" style="padding:1.25rem">
+              <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label">🖼️ 레퍼런스 이미지</label>
+                <div style="display:flex;gap:.5rem;align-items:center">
+                  <input type="text" class="form-input" id="vidRefImage" placeholder="위 GPT Image 2.0 결과가 자동으로 사용됩니다" style="font-size:.82rem">
+                  <button class="btn-secondary" onclick="document.getElementById('vidRefImage').value=document.getElementById('imgGenResult')?.src||'';showToast('이미지 URL 복사됨')" style="font-size:.68rem;padding:.4rem .7rem;white-space:nowrap">📋 복사</button>
+                </div>
+              </div>
+              <div class="form-group" style="margin-bottom:1rem">
+                <label class="form-label">✏️ 영상 프롬프트 (자동 생성 or 직접 입력)</label>
+                <textarea class="form-input" id="vidPromptInput" placeholder="Claude AI가 자동 생성합니다. 카메라 움직임, 조명 변화, 분위기 등을 묘사하세요." style="min-height:65px;font-size:.82rem"></textarea>
+              </div>
+              <div style="display:flex;gap:.6rem;flex-wrap:wrap;margin-bottom:1rem">
+                <div style="flex:1;min-width:100px">
+                  <label class="form-label">⏱️ 영상 시간</label>
+                  <select class="form-input" id="vidDuration" style="font-size:.82rem">
+                    <option value="5">5초</option>
+                    <option value="8" selected>8초</option>
+                    <option value="10">10초</option>
+                  </select>
+                </div>
+                <div style="flex:1;min-width:100px">
+                  <label class="form-label">📐 비율</label>
+                  <select class="form-input" id="vidAspect" style="font-size:.82rem">
+                    <option value="16:9" selected>16:9</option>
+                    <option value="9:16">9:16</option>
+                    <option value="1:1">1:1</option>
+                  </select>
+                </div>
+                <div style="flex:1;min-width:100px">
+                  <label class="form-label">📺 해상도</label>
+                  <select class="form-input" id="vidResolution" style="font-size:.82rem">
+                    <option value="720p">720p</option>
+                    <option value="1080p" selected>1080p</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display:flex;gap:.6rem;align-items:center;flex-wrap:wrap">
+                <button class="btn-secondary" onclick="generateVidPromptOnly()" style="font-size:.75rem;padding:.45rem .9rem">
+                  ⚡ 프롬프트 생성
+                </button>
+                <button class="btn-primary" onclick="generateVideoOnly()" style="font-size:.75rem;padding:.45rem .7rem .45rem 1rem">
+                  🎬 영상 생성
+                  <span class="btn-icon" style="width:1.5rem;height:1.5rem"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+                </button>
+                <span class="mono" style="font-size:.6rem;color:var(--text-dim)" id="vidGenStatus"></span>
+              </div>
+              <div id="vidGenPreview" style="display:none;margin-top:1rem">
+                <video id="vidGenResult" controls style="width:100%;border-radius:var(--radius-sm);border:1px solid var(--border)"></video>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 5: Theme -->
+        <div style="display:flex;align-items:center;gap:.5rem;margin:2rem 0 1.25rem">
+          <span style="font-size:1.1rem">🎨</span>
+          <span style="font-size:.82rem;font-weight:700;letter-spacing:-.01em">디자인 설정</span>
+          <div style="flex:1;height:1px;background:var(--border);margin-left:.5rem"></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">🎭 색상 테마</label>
+          <div class="chip-grid" id="colorChips">
+            <div class="chip active" data-val="dark">🌑 다크</div>
+            <div class="chip" data-val="light">☀️ 라이트</div>
+            <div class="chip" data-val="warm">🔥 웜톤</div>
+            <div class="chip" data-val="cool">❄️ 쿨톤</div>
+            <div class="chip" data-val="mono">⬛ 모노크롬</div>
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:1.5rem">
+          <label class="form-label" style="display:flex;align-items:center;gap:.5rem;cursor:pointer" onclick="document.getElementById('advancedToggle').classList.toggle('active');document.getElementById('advancedFields').style.display=document.getElementById('advancedFields').style.display==='none'?'':'none'">
+            <svg width="10" height="10" fill="var(--text-muted)" viewBox="0 0 10 10"><path d="M3 1l4 4-4 4"/></svg>
+            고급 설정 (이미지/영상 URL 직접 입력)
+          </label>
+          <div id="advancedFields" style="display:none;margin-top:.75rem">
+            <input type="text" class="form-input" id="customImgUrl" placeholder="히어로 이미지 URL (비워두면 AI 생성)" style="margin-bottom:.5rem;font-size:.8rem">
+            <input type="text" class="form-input" id="customVidUrl" placeholder="영상 URL (비워두면 이미지만 사용)" style="font-size:.8rem">
+          </div>
+        </div>
+
+        <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:2rem;flex-wrap:wrap">
+          <button class="btn-secondary" onclick="showView('viewLanding')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            뒤로
+          </button>
+          <button class="btn-primary" id="btnGenerate" onclick="startGeneration()">
+            생성 시작
+            <span class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Live preview below builder -->
+    <div style="margin-top:2.5rem">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--text-muted)">실시간 미리보기</div>
+        <button class="btn-secondary" onclick="updateLivePreview()" style="font-size:.75rem;padding:.4rem 1rem">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
+          새로고침
+        </button>
+      </div>
+      <div class="bezel">
+        <div class="bezel-inner" style="padding:0;overflow:hidden">
+          <div class="preview-frame" style="height:500px">
+            <iframe id="livePreviewIframe" sandbox="allow-scripts allow-same-origin" style="width:100%;height:100%;border:none;background:#050505"></iframe>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- View 3: Pipeline -->
+<div class="view" id="viewPipeline">
+  <section class="container builder" style="padding-top:7rem">
+    <div class="builder-header">
+      <div class="badge">Generating</div>
+      <h2>AI 생성 파이프라인</h2>
+    </div>
+
+    <div class="bezel">
+      <div class="bezel-inner">
+        <div class="pipeline" id="pipeline">
+          <div class="pipeline-step" id="pipeStep1">
+            <div class="pipeline-icon" id="pipeIcon1">1</div>
+            <div class="pipeline-info">
+              <div class="pipeline-title">이미지 프롬프트 생성</div>
+              <div class="pipeline-desc">주제를 분석하여 GPT Image 2.0에 최적화된 프롬프트를 생성합니다</div>
+              <div class="prompt-box" id="imgPromptBox" style="display:none">
+                <div class="prompt-label">Generated Prompt</div>
+                <div id="imgPromptText"></div>
+              </div>
+              <div class="pipeline-status waiting" id="pipeStatus1"><span>대기 중</span></div>
+            </div>
+          </div>
+
+          <div class="pipeline-step" id="pipeStep2">
+            <div class="pipeline-icon" id="pipeIcon2">2</div>
+            <div class="pipeline-info">
+              <div class="pipeline-title">레퍼런스 이미지 생성</div>
+              <div class="pipeline-desc">Higgsfield GPT Image 2.0으로 고품질 레퍼런스 이미지를 생성합니다</div>
+              <div id="imgPreview" style="display:none;margin:.75rem 0">
+                <img id="generatedImg" style="width:100%;border-radius:calc(var(--radius) - .75rem);border:1px solid var(--border)">
+              </div>
+              <div class="pipeline-status waiting" id="pipeStatus2"><span>대기 중</span></div>
+              <div class="progress-bar" id="progBar2"><div class="progress-fill" id="progFill2"></div></div>
+            </div>
+          </div>
+
+          <div class="pipeline-step" id="pipeStep3">
+            <div class="pipeline-icon" id="pipeIcon3">3</div>
+            <div class="pipeline-info">
+              <div class="pipeline-title">영상 프롬프트 생성</div>
+              <div class="pipeline-desc">이미지를 기반으로 Seedance 2.0 3D 애니메이션 프롬프트를 생성합니다</div>
+              <div class="prompt-box" id="vidPromptBox" style="display:none">
+                <div class="prompt-label">Generated Prompt</div>
+                <div id="vidPromptText"></div>
+              </div>
+              <div class="pipeline-status waiting" id="pipeStatus3"><span>대기 중</span></div>
+            </div>
+          </div>
+
+          <div class="pipeline-step" id="pipeStep4">
+            <div class="pipeline-icon" id="pipeIcon4">4</div>
+            <div class="pipeline-info">
+              <div class="pipeline-title">3D 애니메이션 생성</div>
+              <div class="pipeline-desc">Seedance 2.0으로 8초 3D 애니메이션 영상을 생성합니다</div>
+              <div id="vidPreview" style="display:none;margin:.75rem 0">
+                <video id="generatedVid" controls style="width:100%;border-radius:calc(var(--radius) - .75rem);border:1px solid var(--border)"></video>
+              </div>
+              <div class="pipeline-status waiting" id="pipeStatus4"><span>대기 중</span></div>
+              <div class="progress-bar" id="progBar4"><div class="progress-fill" id="progFill4"></div></div>
+            </div>
+          </div>
+
+          <div class="pipeline-step" id="pipeStep5">
+            <div class="pipeline-icon" id="pipeIcon5">5</div>
+            <div class="pipeline-info">
+              <div class="pipeline-title">웹사이트 빌드</div>
+              <div class="pipeline-desc">프레임 추출 + 스크롤 연동 애니메이션이 적용된 웹사이트를 조립합니다</div>
+              <div class="pipeline-status waiting" id="pipeStatus5"><span>대기 중</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:2rem;display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap" id="pipelineActions" style="display:none">
+          <button class="btn-secondary" onclick="showView('viewBuilder')">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+            다시 설정
+          </button>
+          <button class="btn-primary" id="btnPreview" onclick="showView('viewResult')" style="display:none">
+            결과 보기
+            <span class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- View 4: Result -->
+<div class="view" id="viewResult">
+  <section class="container" style="padding-top:7rem">
+    <div class="builder-header">
+      <div class="badge">Complete</div>
+      <h2>생성 완료</h2>
+    </div>
+
+    <div style="display:flex;gap:.75rem;margin-bottom:1.5rem;flex-wrap:wrap;align-items:center">
+      <div class="output-tabs">
+        <button class="output-tab active" onclick="switchTab('preview',this)">미리보기</button>
+        <button class="output-tab" onclick="switchTab('code',this)">소스 코드</button>
+        <button class="output-tab" onclick="switchTab('scroll',this)">스크롤 데모</button>
+      </div>
+      <div style="flex:1"></div>
+      <button class="btn-secondary" onclick="downloadSite()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        다운로드
+      </button>
+      <button class="btn-primary" onclick="document.getElementById('ghModal').style.display='flex'" style="font-size:.82rem;padding:.65rem .85rem .65rem 1.3rem">
+        <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+        GitHub 배포
+        <span class="btn-icon" style="width:1.5rem;height:1.5rem"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+      </button>
+      <button class="btn-secondary" onclick="showView('viewBuilder')">새로 만들기</button>
+    </div>
+
+    <!-- GitHub Deploy Modal -->
+    <div id="ghModal" style="display:none;position:fixed;inset:0;z-index:100;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(8px)">
+      <div class="bezel" style="max-width:520px;width:calc(100% - 2rem)">
+        <div class="bezel-inner">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
+            <h3 style="font-size:1.1rem;font-weight:700;letter-spacing:-.02em">GitHub 배포</h3>
+            <button onclick="document.getElementById('ghModal').style.display='none'" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.2rem;padding:.25rem">&times;</button>
+          </div>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label class="form-label">Repository URL</label>
+            <input type="text" class="form-input" id="ghRepoUrl" placeholder="https://github.com/username/repo-name">
+          </div>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label class="form-label">브랜치 (기본: main)</label>
+            <input type="text" class="form-input" id="ghBranch" placeholder="main" value="main" style="font-size:.82rem">
+          </div>
+          <div class="form-group" style="margin-bottom:1rem">
+            <label class="form-label">커밋 메시지</label>
+            <input type="text" class="form-input" id="ghCommitMsg" placeholder="Deploy website via SiteForge" style="font-size:.82rem">
+          </div>
+          <div class="form-group" style="margin-bottom:1.25rem">
+            <label class="form-label" style="display:flex;align-items:center;gap:.5rem">
+              <input type="checkbox" id="ghPagesEnabled" checked style="accent-color:var(--accent)">
+              GitHub Pages 자동 활성화
+            </label>
+          </div>
+          <div id="ghStatus" style="display:none;margin-bottom:1rem;padding:.75rem 1rem;border-radius:var(--radius-sm);font-size:.8rem;line-height:1.5"></div>
+          <div style="display:flex;gap:.5rem;justify-content:flex-end">
+            <button class="btn-secondary" onclick="document.getElementById('ghModal').style.display='none'" style="font-size:.8rem">취소</button>
+            <button class="btn-primary" id="ghDeployBtn" onclick="deployToGithub()" style="font-size:.8rem;padding:.6rem .75rem .6rem 1.2rem">
+              배포 시작
+              <span class="btn-icon" style="width:1.5rem;height:1.5rem"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tabPreview" class="bezel">
+      <div class="bezel-inner" style="padding:0;overflow:hidden">
+        <div class="preview-frame">
+          <iframe id="previewIframe" sandbox="allow-scripts allow-same-origin"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div id="tabCode" style="display:none" class="bezel">
+      <div class="bezel-inner" style="padding:0">
+        <pre class="code-block" id="codeOutput"></pre>
+      </div>
+    </div>
+
+    <div id="tabScroll" style="display:none" class="bezel">
+      <div class="bezel-inner" style="padding:0;overflow:hidden">
+        <div class="scroll-demo" id="scrollDemo">
+          <canvas id="scrollCanvas"></canvas>
+          <div class="scroll-indicator">
+            <span>스크롤하여 프레임 확인</span>
+            <span class="scroll-arrow">&#9660;</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script src="generate-template.js"></script>
+<script>
+// State
+const state = {
+  topic: '', siteType: 'landing', features: ['scroll-anim'], colorTheme: 'dark', desc: '',
+  imgPrompt: '', vidPrompt: '', imgUrl: '', vidUrl: '', generatedHtml: '',
+  videoFrames: [], currentFrame: 0
+};
+
+// View management
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  if (id === 'viewBuilder') setTimeout(updateLivePreview, 300);
+}
+
+// Chip toggles
+document.querySelectorAll('#featureChips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    chip.classList.toggle('active');
+    state.features = [...document.querySelectorAll('#featureChips .chip.active')].map(c => c.dataset.val);
+  });
+});
+document.querySelectorAll('#colorChips .chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    document.querySelectorAll('#colorChips .chip').forEach(c => c.classList.remove('active'));
+    chip.classList.add('active');
+    state.colorTheme = chip.dataset.val;
+    debouncedPreview();
+  });
+});
+
+// Live preview
+let previewTimer = null;
+function debouncedPreview() {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(updateLivePreview, 600);
+}
+function updateLivePreview() {
+  const topic = document.getElementById('topicInput').value.trim() || '웹사이트 미리보기';
+  const siteType = document.getElementById('siteType').value;
+  const feats = [...document.querySelectorAll('#featureChips .chip.active')].map(c => c.dataset.val);
+  const colorTheme = (document.querySelector('#colorChips .chip.active') || {}).dataset?.val || 'dark';
+  const fallbackImg = 'https://picsum.photos/seed/' + encodeURIComponent(topic) + '/1920/1080';
+  const html = generateWebsite(topic, siteType, feats, colorTheme, fallbackImg, '', getMenuItems());
+  const iframe = document.getElementById('livePreviewIframe');
+  if (iframe) iframe.srcdoc = html;
+}
+
+// Auto-update preview on input changes
+document.getElementById('topicInput').addEventListener('input', debouncedPreview);
+document.getElementById('siteType').addEventListener('change', debouncedPreview);
+document.querySelectorAll('#featureChips .chip').forEach(chip => {
+  chip.addEventListener('click', debouncedPreview);
+});
+
+// Initial preview when builder loads
+setTimeout(() => {
+  if (document.getElementById('viewBuilder').classList.contains('active')) updateLivePreview();
+}, 500);
+
+// Menu items
+function addMenuItem() {
+  const row = document.createElement('div');
+  row.className = 'menu-item-row';
+  row.style.cssText = 'display:flex;gap:.4rem;align-items:center';
+  row.innerHTML = `
+    <input type="text" class="form-input menu-item-name" placeholder="메뉴 이름" style="flex:1;padding:.6rem .9rem;font-size:.82rem">
+    <input type="text" class="form-input menu-item-link" placeholder="링크 (예: #about)" style="flex:1;padding:.6rem .9rem;font-size:.82rem">
+    <button onclick="this.closest('.menu-item-row').remove();updateMenuPreview()" style="width:2rem;height:2rem;border-radius:.5rem;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">&times;</button>`;
+  document.getElementById('menuItems').appendChild(row);
+}
+function getMenuItems() {
+  return [...document.querySelectorAll('.menu-item-row')].map(row => ({
+    name: row.querySelector('.menu-item-name')?.value.trim(),
+    link: row.querySelector('.menu-item-link')?.value.trim() || '#'
+  })).filter(m => m.name);
+}
+function updateMenuPreview() { debouncedPreview(); }
+
+function clearMenuItems() {
+  document.getElementById('menuItems').innerHTML = '';
+}
+
+function addMenuItemWithData(name, link) {
+  const row = document.createElement('div');
+  row.className = 'menu-item-row';
+  row.style.cssText = 'display:flex;gap:.4rem;align-items:center';
+  row.innerHTML = `
+    <input type="text" class="form-input menu-item-name" value="${name}" placeholder="메뉴 이름" style="flex:1;padding:.6rem .9rem;font-size:.82rem">
+    <input type="text" class="form-input menu-item-link" value="${link}" placeholder="링크" style="flex:1;padding:.6rem .9rem;font-size:.82rem">
+    <button onclick="this.closest('.menu-item-row').remove();updateMenuPreview()" style="width:2rem;height:2rem;border-radius:.5rem;border:1px solid var(--border);background:transparent;color:var(--text-muted);cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">&times;</button>`;
+  document.getElementById('menuItems').appendChild(row);
+}
+
+function generateMenuFromOverview() {
+  const overview = document.getElementById('menuOverview').value.trim();
+  if (!overview) { showToast('메뉴 개요를 입력해주세요'); return; }
+  clearMenuItems();
+  const items = overview.split(/[,，、\n]+/).map(s => s.trim()).filter(Boolean);
+  items.forEach(name => {
+    const slug = name.replace(/\s+/g, '-').toLowerCase()
+      .replace(/[^a-z0-9가-힣\-]/g, '').substring(0, 20);
+    addMenuItemWithData(name, '#' + (slug || 'section'));
+  });
+  updateMenuPreview();
+  showToast(items.length + '개 메뉴 생성됨');
+}
+
+const DEFAULT_MENUS = {
+  landing: ['소개|#about','서비스|#services','성과|#stats','문의|#contact'],
+  portfolio: ['작업|#works','소개|#about','경력|#career','문의|#contact'],
+  saas: ['기능|#features','가격|#pricing','고객사례|#cases','문의|#contact'],
+  brand: ['브랜드|#brand','스토리|#story','제품|#products','매장|#stores'],
+  event: ['프로그램|#program','스피커|#speakers','일정|#schedule','등록|#register'],
+  restaurant: ['메뉴|#menu','셰프|#chef','예약|#reservation','위치|#location'],
+  studio: ['작업|#works','프로세스|#process','팀|#team','문의|#contact'],
+};
+
+async function autoGenerateMenu() {
+  const topic = document.getElementById('topicInput').value.trim();
+  const siteType = document.getElementById('siteType').value;
+  if (!topic) {
+    const defaults = DEFAULT_MENUS[siteType] || DEFAULT_MENUS.landing;
+    clearMenuItems();
+    defaults.forEach(d => { const [n,l] = d.split('|'); addMenuItemWithData(n, l); });
+    updateMenuPreview();
+    showToast('기본 메뉴 생성됨');
+    return;
+  }
+  document.getElementById('menuGenStatus').textContent = 'AI 생성 중...';
+  try {
+    const res = await fetch('/api/generate-menu', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, siteType })
+    });
+    const data = await res.json();
+    if (data.success && data.items && data.items.length > 0) {
+      clearMenuItems();
+      data.items.forEach(item => addMenuItemWithData(item.name, item.link || '#'));
+      updateMenuPreview();
+      document.getElementById('menuGenStatus').textContent = '완료';
+      showToast(data.items.length + '개 AI 메뉴 생성됨');
+      return;
+    }
+    throw new Error('no items');
+  } catch {
+    const defaults = DEFAULT_MENUS[siteType] || DEFAULT_MENUS.landing;
+    clearMenuItems();
+    defaults.forEach(d => { const [n,l] = d.split('|'); addMenuItemWithData(n, l); });
+    updateMenuPreview();
+    document.getElementById('menuGenStatus').textContent = '기본 메뉴 사용';
+    showToast('기본 메뉴 생성됨');
+  }
+}
+
+// Tab switching
+function switchTab(tab, el) {
+  document.querySelectorAll('.output-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['tabPreview','tabCode','tabScroll'].forEach(id => {
+    document.getElementById(id).style.display = id === 'tab' + tab.charAt(0).toUpperCase() + tab.slice(1) ? '' : 'none';
+  });
+}
+
+// Particle canvas
+(function initParticles(){
+  const cv = document.getElementById('particleCanvas');
+  if(!cv) return;
+  const cx = cv.getContext('2d');
+  let w, h, particles = [];
+  function resize(){ w=cv.width=window.innerWidth; h=cv.height=window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  for(let i=0;i<60;i++) particles.push({
+    x:Math.random()*w, y:Math.random()*h,
+    vx:(Math.random()-.5)*.3, vy:(Math.random()-.5)*.3,
+    r:Math.random()*1.5+.5, a:Math.random()*.3+.1
+  });
+  function draw(){
+    cx.clearRect(0,0,w,h);
+    particles.forEach(p=>{
+      p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0)p.x=w; if(p.x>w)p.x=0;
+      if(p.y<0)p.y=h; if(p.y>h)p.y=0;
+      cx.beginPath();
+      cx.arc(p.x,p.y,p.r,0,Math.PI*2);
+      cx.fillStyle='rgba(167,139,250,'+p.a+')';
+      cx.fill();
+    });
+    for(let i=0;i<particles.length;i++){
+      for(let j=i+1;j<particles.length;j++){
+        const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y;
+        const d=Math.sqrt(dx*dx+dy*dy);
+        if(d<120){
+          cx.beginPath();
+          cx.moveTo(particles[i].x,particles[i].y);
+          cx.lineTo(particles[j].x,particles[j].y);
+          cx.strokeStyle='rgba(167,139,250,'+(1-d/120)*.08+')';
+          cx.stroke();
+        }
+      }
+    }
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// Step card mouse tracking glow
+document.querySelectorAll('.step-hoverable').forEach(card => {
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', ((e.clientX-r.left)/r.width*100)+'%');
+    card.style.setProperty('--my', ((e.clientY-r.top)/r.height*100)+'%');
+  });
+});
+
+// Nav scroll effect
+const nav = document.getElementById('nav');
+window.addEventListener('scroll', () => {
+  nav.classList.toggle('scrolled', window.scrollY > 40);
+}, { passive: true });
+
+// Reveal animations
+const revealObs = new IntersectionObserver((entries) => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); revealObs.unobserve(e.target); } });
+}, { threshold: 0.15 });
+document.querySelectorAll('[data-reveal],.step-card,.fade-up').forEach(el => revealObs.observe(el));
+
+// Toast
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// Pipeline status update
+function setPipeStatus(step, status, text) {
+  const icon = document.getElementById('pipeIcon' + step);
+  const statusEl = document.getElementById('pipeStatus' + step);
+  icon.className = 'pipeline-icon ' + (status === 'running' ? 'active' : status === 'done' ? 'done' : '');
+  statusEl.className = 'pipeline-status ' + status;
+  const icons = { waiting: '', running: '<span class="spinner"></span>', done: '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>', error: '' };
+  statusEl.innerHTML = (icons[status] || '') + '<span>' + text + '</span>';
+}
+
+function setProgress(barId, pct) {
+  const fill = document.getElementById('progFill' + barId);
+  if (fill) fill.style.width = pct + '%';
+}
+
+// Prompt generation (local, no API needed)
+function generateImagePrompt(topic, siteType, colorTheme) {
+  const vibeMap = {
+    dark: 'dark moody atmosphere, deep shadows, neon accent lighting, OLED black backgrounds',
+    light: 'bright airy atmosphere, soft natural lighting, white and cream tones, clean minimal',
+    warm: 'warm golden hour lighting, amber and terracotta tones, organic textures',
+    cool: 'cool blue and silver tones, crisp winter light, metallic reflections',
+    mono: 'black and white high contrast, dramatic shadows, architectural precision'
+  };
+  const typeMap = {
+    landing: 'hero product showcase scene, cinematic composition',
+    portfolio: 'creative workspace with artistic elements, dramatic lighting',
+    saas: 'futuristic digital interface floating in space, holographic elements',
+    brand: 'luxury brand environment, premium materials and textures',
+    event: 'spectacular event venue with dynamic lighting effects',
+    restaurant: 'elegant dining atmosphere, warm ambient lighting, culinary art',
+    studio: 'creative studio space with dramatic artistic installations'
+  };
+  return `Ultra high quality 8K photograph, ${typeMap[siteType] || typeMap.landing}, ${topic}, ${vibeMap[colorTheme] || vibeMap.dark}, photorealistic, professional photography, depth of field, volumetric lighting, cinematic color grading, award-winning composition, no text, no watermarks`;
+}
+
+function generateVideoPrompt(topic, siteType) {
+  const motionMap = {
+    landing: 'Slow cinematic dolly forward through the scene, camera gently rising to reveal the full environment',
+    portfolio: 'Smooth orbital camera movement around the subject, subtle parallax depth effect',
+    saas: 'Futuristic camera fly-through, holographic interfaces materializing, data particles flowing',
+    brand: 'Elegant slow-motion reveal, premium materials catching light, luxurious camera sweep',
+    event: 'Dynamic camera movement through the space, dramatic lighting transitions, energy building',
+    restaurant: 'Intimate slow pan across the scene, steam and warmth rising, ambient light flickering',
+    studio: 'Artistic camera glide through creative space, elements coming to life, inspiring atmosphere'
+  };
+  return `${motionMap[siteType] || motionMap.landing}. ${topic}. Cinematic 3D animation, photorealistic rendering, volumetric fog, ray-traced lighting, smooth 24fps motion, professional color grading, 8 seconds duration, seamless loop-friendly ending`;
+}
+
+// generateInfoCards + generateWebsite loaded from generate-template.js
+
+// Main generation flow
+async function startGeneration() {
+  state.topic = document.getElementById('topicInput').value.trim();
+  state.siteType = document.getElementById('siteType').value;
+  state.desc = document.getElementById('descInput').value.trim();
+  const customImg = document.getElementById('customImgUrl').value.trim();
+  const customVid = document.getElementById('customVidUrl').value.trim();
+
+  if (!state.topic) { showToast('주제를 입력해주세요'); return; }
+
+  showView('viewPipeline');
+  document.getElementById('btnPreview').style.display = 'none';
+  document.getElementById('navStatus').textContent = 'Generating...';
+
+  // Reset all statuses
+  for (let i = 1; i <= 5; i++) setPipeStatus(i, 'waiting', '대기 중');
+
+  await sleep(400);
+
+  // Step 1: Generate image prompt via Claude API
+  setPipeStatus(1, 'running', 'Claude AI로 프롬프트 생성 중...');
+  try {
+    const promptRes = await fetch('/api/generate-image-prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic: state.topic, siteType: state.siteType, colorTheme: state.colorTheme, description: state.desc })
+    });
+    const promptData = await promptRes.json();
+    state.imgPrompt = promptData.success ? promptData.prompt : generateImagePrompt(state.topic, state.siteType, state.colorTheme);
+  } catch {
+    state.imgPrompt = generateImagePrompt(state.topic, state.siteType, state.colorTheme);
+  }
+  document.getElementById('imgPromptText').textContent = state.imgPrompt;
+  document.getElementById('imgPromptBox').style.display = '';
+  setPipeStatus(1, 'done', '완료');
+
+  // Step 2: Generate image via Higgsfield GPT Image 2.0
+  if (customImg) {
+    state.imgUrl = customImg;
+    document.getElementById('generatedImg').src = state.imgUrl;
+    document.getElementById('imgPreview').style.display = '';
+    setPipeStatus(2, 'done', '커스텀 URL 사용');
+    setProgress(2, 100);
+  } else {
+  setPipeStatus(2, 'running', 'Higgsfield GPT Image 2.0 생성 중...');
+  let imgProgress = 0;
+  const imgInterval = setInterval(() => {
+    imgProgress = Math.min(90, imgProgress + Math.random() * 8);
+    setProgress(2, imgProgress);
+  }, 1000);
+
+  try {
+    const imgRes = await fetch('/api/generate-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: state.imgPrompt, aspect_ratio: '16:9' })
+    });
+    const imgData = await imgRes.json();
+    console.log('Image API response:', imgData);
+
+    if (imgData.success && imgData.data) {
+      const d = imgData.data;
+      const url = d.results?.[0]?.url || d.output?.url || d.url || d.image_url;
+      if (url) {
+        state.imgUrl = url;
+      } else if (d.id || d.job_id) {
+        // Async job — poll for result
+        const jobId = d.id || d.job_id;
+        setPipeStatus(2, 'running', '이미지 생성 대기 중... (Job: ' + jobId.substring(0,8) + ')');
+        state.imgUrl = await pollJob(jobId, 'image', (p) => setProgress(2, p));
+      } else {
+        state.imgUrl = fallbackImg();
+      }
+    } else {
+      state.imgUrl = fallbackImg();
+    }
+  } catch (err) {
+    console.error('Image generation error:', err);
+    state.imgUrl = fallbackImg();
+  }
+
+  clearInterval(imgInterval);
+  setProgress(2, 100);
+  document.getElementById('generatedImg').src = state.imgUrl;
+  document.getElementById('imgPreview').style.display = '';
+  setPipeStatus(2, 'done', state.imgUrl.includes('picsum') ? '완료 (fallback)' : '완료');
+  } // end if !customImg
+
+  // Step 3: Generate video prompt via Claude API
+  setPipeStatus(3, 'running', 'Claude AI로 영상 프롬프트 생성 중...');
+  try {
+    const vpRes = await fetch('/api/generate-video-prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic: state.topic, siteType: state.siteType, imagePrompt: state.imgPrompt })
+    });
+    const vpData = await vpRes.json();
+    state.vidPrompt = vpData.success ? vpData.prompt : generateVideoPrompt(state.topic, state.siteType);
+  } catch {
+    state.vidPrompt = generateVideoPrompt(state.topic, state.siteType);
+  }
+  document.getElementById('vidPromptText').textContent = state.vidPrompt;
+  document.getElementById('vidPromptBox').style.display = '';
+  setPipeStatus(3, 'done', '완료');
+
+  // Step 4: Generate video via Higgsfield Seedance 2.0
+  if (customVid) {
+    state.vidUrl = customVid;
+    document.getElementById('generatedVid').src = state.vidUrl;
+    document.getElementById('vidPreview').style.display = '';
+    setPipeStatus(4, 'done', '커스텀 URL 사용');
+    setProgress(4, 100);
+  } else {
+  setPipeStatus(4, 'running', 'Higgsfield Seedance 2.0 생성 중...');
+  let vidProgress = 0;
+  const vidInterval = setInterval(() => {
+    vidProgress = Math.min(90, vidProgress + Math.random() * 5);
+    setProgress(4, vidProgress);
+  }, 1500);
+
+  try {
+    const vidRes = await fetch('/api/generate-video', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: state.vidPrompt, image_url: state.imgUrl, duration: 8 })
+    });
+    const vidData = await vidRes.json();
+    console.log('Video API response:', vidData);
+
+    if (vidData.success && vidData.data) {
+      const d = vidData.data;
+      const url = d.results?.[0]?.url || d.output?.url || d.url || d.video_url;
+      if (url) {
+        state.vidUrl = url;
+      } else if (d.id || d.job_id) {
+        const jobId = d.id || d.job_id;
+        setPipeStatus(4, 'running', '영상 생성 대기 중... (Job: ' + jobId.substring(0,8) + ')');
+        state.vidUrl = await pollJob(jobId, 'video', (p) => setProgress(4, p));
+      }
+    }
+  } catch (err) {
+    console.error('Video generation error:', err);
+  }
+
+  clearInterval(vidInterval);
+  setProgress(4, 100);
+  if (state.vidUrl) {
+    document.getElementById('generatedVid').src = state.vidUrl;
+    document.getElementById('vidPreview').style.display = '';
+    setPipeStatus(4, 'done', '완료');
+  } else {
+    setPipeStatus(4, 'done', '완료 (이미지만 사용)');
+  }
+  } // end if !customVid
+
+  // Step 5: Build website
+  setPipeStatus(5, 'running', '웹사이트 빌드 중...');
+  await sleep(500);
+
+  state.generatedHtml = generateWebsite(
+    state.topic, state.siteType, state.features, state.colorTheme,
+    state.imgUrl, state.vidUrl, getMenuItems()
+  );
+
+
+  setPipeStatus(5, 'done', '완료');
+  document.getElementById('navStatus').textContent = 'Complete';
+
+  // Show preview button
+  document.getElementById('btnPreview').style.display = '';
+
+  // Prepare preview
+  const iframe = document.getElementById('previewIframe');
+  iframe.srcdoc = state.generatedHtml;
+  document.getElementById('codeOutput').textContent = state.generatedHtml;
+
+  showToast('웹사이트 생성 완료!');
+
+  // Auto-navigate to result after brief delay
+  await sleep(1500);
+  showView('viewResult');
+}
+
+// Scroll demo in result view
+function initScrollDemo() {
+  const canvas = document.getElementById('scrollCanvas');
+  const ctx = canvas.getContext('2d');
+  const demo = document.getElementById('scrollDemo');
+
+  canvas.width = 960;
+  canvas.height = 540;
+
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.src = state.imgUrl || 'https://picsum.photos/seed/demo/960/540';
+
+  img.onload = () => {
+    let scrollY = 0;
+    demo.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      scrollY = Math.max(0, Math.min(1, scrollY + e.deltaY * 0.001));
+      renderScrollFrame(ctx, img, canvas.width, canvas.height, scrollY);
+    }, { passive: false });
+    renderScrollFrame(ctx, img, canvas.width, canvas.height, 0);
+  };
+}
+
+function renderScrollFrame(ctx, img, w, h, progress) {
+  ctx.clearRect(0, 0, w, h);
+  ctx.save();
+  const scale = 1 + progress * 0.4;
+  ctx.translate(w/2, h/2);
+  ctx.scale(scale, scale);
+  ctx.globalAlpha = 0.2 + progress * 0.8;
+  ctx.drawImage(img, -img.width/2, -img.height/2, img.width, img.height);
+  ctx.restore();
+
+  // Progress indicator
+  ctx.fillStyle = state.colorTheme === 'light' ? '#059669' : '#6ee7b7';
+  ctx.fillRect(0, h - 3, w * progress, 3);
+
+  // Frame counter
+  ctx.fillStyle = 'rgba(255,255,255,.5)';
+  ctx.font = '12px JetBrains Mono, monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText('Frame ' + Math.floor(progress * 120) + '/120', w - 16, 24);
+}
+
+// Download
+function downloadSite() {
+  if (!state.generatedHtml) { showToast('생성된 웹사이트가 없습니다'); return; }
+  const blob = new Blob([state.generatedHtml], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = state.topic.replace(/[^a-zA-Z0-9가-힣]/g, '_').substring(0, 30) + '_website.html';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('다운로드 시작');
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// GitHub deploy
+async function deployToGithub() {
+  const repoUrl = document.getElementById('ghRepoUrl').value.trim();
+  const branch = document.getElementById('ghBranch').value.trim() || 'main';
+  const commitMsg = document.getElementById('ghCommitMsg').value.trim() || 'Deploy website via SiteForge';
+  const enablePages = document.getElementById('ghPagesEnabled').checked;
+  const statusEl = document.getElementById('ghStatus');
+  const btn = document.getElementById('ghDeployBtn');
+
+  if (!repoUrl) { showToast('Repository URL을 입력해주세요'); return; }
+  if (!state.generatedHtml) { showToast('생성된 웹사이트가 없습니다'); return; }
+
+  statusEl.style.display = 'block';
+  statusEl.style.background = 'var(--accent-dim)';
+  statusEl.style.color = 'var(--accent)';
+  statusEl.style.border = '1px solid var(--accent-glow)';
+  statusEl.innerHTML = '<span class="spinner" style="display:inline-block;margin-right:.5rem"></span>배포 중...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/deploy-github', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ repoUrl, branch, commitMessage: commitMsg, html: state.generatedHtml, enablePages })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      statusEl.style.background = 'rgba(52,211,153,.1)';
+      statusEl.style.color = 'var(--success)';
+      statusEl.style.border = '1px solid rgba(52,211,153,.2)';
+      let msg = '배포 완료! ';
+      if (data.url) msg += '<a href="' + data.url + '" target="_blank" rel="noopener" style="color:var(--success);text-decoration:underline">Repository</a>';
+      if (data.pagesUrl) msg += ' &middot; <a href="' + data.pagesUrl + '" target="_blank" rel="noopener" style="color:var(--success);text-decoration:underline">Live Site</a>';
+      statusEl.innerHTML = msg;
+      showToast('GitHub 배포 완료!');
+    } else {
+      statusEl.style.background = 'rgba(248,113,113,.1)';
+      statusEl.style.color = 'var(--error)';
+      statusEl.style.border = '1px solid rgba(248,113,113,.2)';
+      statusEl.textContent = '오류: ' + (data.error || 'Unknown error');
+    }
+  } catch (err) {
+    statusEl.style.background = 'rgba(248,113,113,.1)';
+    statusEl.style.color = 'var(--error)';
+    statusEl.style.border = '1px solid rgba(248,113,113,.2)';
+    statusEl.textContent = '네트워크 오류: ' + err.message;
+  }
+  btn.disabled = false;
+}
+
+// Individual Higgsfield GPT Image 2.0 controls
+async function generateImgPromptOnly() {
+  const topic = document.getElementById('imgSubject').value.trim() || document.getElementById('topicInput').value.trim();
+  if (!topic) { showToast('주제를 입력해주세요'); return; }
+  const siteType = document.getElementById('siteType').value;
+  const colorTheme = (document.querySelector('#colorChips .chip.active') || {}).dataset?.val || 'dark';
+  const desc = document.getElementById('descInput').value.trim();
+  document.getElementById('imgGenStatus').textContent = '프롬프트 생성 중...';
+  try {
+    const res = await fetch('/api/generate-image-prompt', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, siteType, colorTheme, description: desc })
+    });
+    const data = await res.json();
+    document.getElementById('imgPromptInput').value = data.success ? data.prompt : generateImagePrompt(topic, siteType, colorTheme);
+    document.getElementById('imgGenStatus').textContent = '완료';
+  } catch {
+    document.getElementById('imgPromptInput').value = generateImagePrompt(topic, siteType, colorTheme);
+    document.getElementById('imgGenStatus').textContent = 'fallback 사용';
+  }
+}
+
+async function generateImageOnly() {
+  let prompt = document.getElementById('imgPromptInput').value.trim();
+  if (!prompt) {
+    await generateImgPromptOnly();
+    prompt = document.getElementById('imgPromptInput').value.trim();
+  }
+  if (!prompt) { showToast('프롬프트가 없습니다'); return; }
+  document.getElementById('imgGenStatus').textContent = '이미지 생성 중...';
+  try {
+    const res = await fetch('/api/generate-image', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, aspect_ratio: '16:9' })
+    });
+    const data = await res.json();
+    let url = '';
+    if (data.success && data.data) {
+      const d = data.data;
+      url = d.results?.[0]?.url || d.results?.[0]?.results?.rawUrl || d.output?.url || d.url || '';
+      if (!url && (d.results?.[0]?.id || d.id)) {
+        const jobId = d.results?.[0]?.id || d.id;
+        document.getElementById('imgGenStatus').textContent = 'Job ' + jobId.substring(0,8) + ' 대기 중...';
+        url = await pollJob(jobId, 'image', () => {});
+      }
+    }
+    if (url && !url.includes('picsum')) {
+      document.getElementById('imgGenResult').src = url;
+      document.getElementById('imgGenPreview').style.display = '';
+      document.getElementById('customImgUrl').value = url;
+      document.getElementById('vidRefImage').value = url;
+      document.getElementById('imgGenStatus').textContent = '완료';
+      showToast('이미지 생성 완료');
+    } else {
+      document.getElementById('imgGenStatus').textContent = 'API 실패 — MCP 도구로 생성 후 URL 붙여넣기';
+    }
+  } catch (err) {
+    document.getElementById('imgGenStatus').textContent = 'API 오류: ' + err.message;
+  }
+}
+
+// Individual Higgsfield Seedance 2.0 controls
+async function generateVidPromptOnly() {
+  const topic = document.getElementById('imgSubject').value.trim() || document.getElementById('topicInput').value.trim();
+  if (!topic) { showToast('주제를 입력해주세요'); return; }
+  const siteType = document.getElementById('siteType').value;
+  const imgPrompt = document.getElementById('imgPromptInput').value.trim();
+  document.getElementById('vidGenStatus').textContent = '프롬프트 생성 중...';
+  try {
+    const res = await fetch('/api/generate-video-prompt', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, siteType, imagePrompt: imgPrompt })
+    });
+    const data = await res.json();
+    document.getElementById('vidPromptInput').value = data.success ? data.prompt : generateVideoPrompt(topic, siteType);
+    document.getElementById('vidGenStatus').textContent = '완료';
+  } catch {
+    document.getElementById('vidPromptInput').value = generateVideoPrompt(topic, siteType);
+    document.getElementById('vidGenStatus').textContent = 'fallback 사용';
+  }
+}
+
+async function generateVideoOnly() {
+  let prompt = document.getElementById('vidPromptInput').value.trim();
+  if (!prompt) {
+    await generateVidPromptOnly();
+    prompt = document.getElementById('vidPromptInput').value.trim();
+  }
+  if (!prompt) { showToast('프롬프트가 없습니다'); return; }
+  const imageUrl = document.getElementById('vidRefImage').value.trim() || document.getElementById('customImgUrl').value.trim();
+  const duration = parseInt(document.getElementById('vidDuration').value) || 8;
+  const aspect = document.getElementById('vidAspect').value || '16:9';
+  document.getElementById('vidGenStatus').textContent = '영상 생성 중...';
+  try {
+    const res = await fetch('/api/generate-video', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, image_url: imageUrl, duration, aspect_ratio: aspect })
+    });
+    const data = await res.json();
+    let url = '';
+    if (data.success && data.data) {
+      const d = data.data;
+      url = d.results?.[0]?.url || d.results?.[0]?.results?.rawUrl || d.output?.url || d.url || '';
+      if (!url && (d.results?.[0]?.id || d.id)) {
+        const jobId = d.results?.[0]?.id || d.id;
+        document.getElementById('vidGenStatus').textContent = 'Job ' + jobId.substring(0,8) + ' 대기 중...';
+        url = await pollJob(jobId, 'video', () => {});
+      }
+    }
+    if (url) {
+      document.getElementById('vidGenResult').src = url;
+      document.getElementById('vidGenPreview').style.display = '';
+      document.getElementById('customVidUrl').value = url;
+      document.getElementById('vidGenStatus').textContent = '완료';
+      showToast('영상 생성 완료');
+    } else {
+      document.getElementById('vidGenStatus').textContent = 'Plus 플랜 필요 — MCP 도구로 생성 후 URL 붙여넣기';
+    }
+  } catch (err) {
+    document.getElementById('vidGenStatus').textContent = 'API 오류: ' + err.message;
+  }
+}
+
+function fallbackImg() {
+  return 'https://picsum.photos/seed/' + encodeURIComponent(state.topic || 'default') + '/1920/1080';
+}
+
+async function pollJob(jobId, type, onProgress) {
+  const maxAttempts = 60;
+  for (let i = 0; i < maxAttempts; i++) {
+    await sleep(5000);
+    if (onProgress) onProgress(Math.min(90, 10 + (i / maxAttempts) * 80));
+    try {
+      const res = await fetch('/api/status/' + jobId);
+      const data = await res.json();
+      if (data.success && data.data) {
+        const d = data.data;
+        if (d.status === 'completed' || d.status === 'success') {
+          return d.results?.[0]?.url || d.output?.url || d.url || '';
+        }
+        if (d.status === 'failed' || d.status === 'error') {
+          console.error('Job failed:', d);
+          return type === 'image' ? fallbackImg() : '';
+        }
+      }
+    } catch { /* continue polling */ }
+  }
+  return type === 'image' ? fallbackImg() : '';
+}
+
+// Initialize scroll demo when result view shown
+const resultObs = new MutationObserver(() => {
+  if (document.getElementById('viewResult').classList.contains('active')) initScrollDemo();
+});
+resultObs.observe(document.getElementById('viewResult'), { attributes: true, attributeFilter: ['class'] });
+</script>
+</body>
+</html>

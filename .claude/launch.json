@@ -28,6 +28,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["serve-dashboard.js"],
       "port": 3099
+    },
+    {
+      "name": "website-generator",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["website-generator/server.js"],
+      "port": 3847
     }
   ]
 }
