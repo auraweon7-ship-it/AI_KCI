@@ -87,7 +87,19 @@ section{padding:clamp(3rem,8vw,6rem) 0}
 .step-desc{font-size:.82rem;color:var(--text-muted);line-height:1.65}
 
 /* Builder Panel */
-.builder{max-width:900px;margin:0 auto}
+.builder{max-width:1400px;margin:0 auto}
+.builder-layout{display:flex;gap:1.5rem;align-items:flex-start}
+.builder-panel{width:40%;min-width:0;flex-shrink:0}
+.builder-preview{flex:1;position:sticky;top:5rem;min-width:0}
+.builder-preview .bezel{height:calc(100vh - 7rem)}
+.builder-preview .bezel-inner{height:100%;padding:0;overflow:hidden}
+.builder-preview iframe{width:100%;height:100%;border:none;background:var(--bg)}
+@media(max-width:1024px){
+  .builder-layout{flex-direction:column}
+  .builder-panel{width:100%}
+  .builder-preview{position:static;width:100%}
+  .builder-preview .bezel{height:500px}
+}
 .builder-header{text-align:center;margin-bottom:2.5rem}
 .builder-header h2{font-size:clamp(1.6rem,3vw,2.4rem);font-weight:800;letter-spacing:-.04em;margin-top:.75rem}
 
@@ -439,6 +451,8 @@ select.form-input option{background:var(--card);color:var(--text)}
       <h2>웹사이트 구성</h2>
     </div>
 
+    <div class="builder-layout">
+    <div class="builder-panel">
     <div class="bezel">
       <div class="bezel-inner">
 
@@ -756,23 +770,23 @@ select.form-input option{background:var(--card);color:var(--text)}
       </div>
     </div>
 
-    <!-- Live preview below builder -->
-    <div style="margin-top:2.5rem">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-        <div style="font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--text-muted)">실시간 미리보기</div>
-        <button class="btn-secondary" onclick="updateLivePreview()" style="font-size:.75rem;padding:.4rem 1rem">
-          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M23 4v6h-6M1 20v-6h6"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/></svg>
-          새로고침
+    </div><!-- end .builder-panel -->
+
+    <!-- Right: Sticky live preview -->
+    <div class="builder-preview">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+        <div style="font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.14em;color:var(--text-muted)">👁️ 실시간 미리보기</div>
+        <button class="btn-secondary" onclick="updateLivePreview()" style="font-size:.68rem;padding:.3rem .7rem">
+          🔄 새로고침
         </button>
       </div>
       <div class="bezel">
-        <div class="bezel-inner" style="padding:0;overflow:hidden">
-          <div class="preview-frame" style="height:500px">
-            <iframe id="livePreviewIframe" sandbox="allow-scripts allow-same-origin" style="width:100%;height:100%;border:none;background:#050505"></iframe>
-          </div>
+        <div class="bezel-inner">
+          <iframe id="livePreviewIframe" sandbox="allow-scripts allow-same-origin" style="width:100%;height:100%;border:none;background:var(--bg);border-radius:var(--radius-sm)"></iframe>
         </div>
       </div>
     </div>
+    </div><!-- end .builder-layout -->
   </section>
 </div>
 
