@@ -675,13 +675,81 @@ select.form-input option{background:var(--card);color:var(--text)}
           </div>
         </div>
 
+        <!-- Section 6: Favicon/Logo -->
+        <div style="display:flex;align-items:center;gap:.5rem;margin:2rem 0 1.25rem">
+          <span style="font-size:1.1rem">🖼️</span>
+          <span style="font-size:.82rem;font-weight:700;letter-spacing:-.01em">파비콘 / 로고</span>
+          <div style="flex:1;height:1px;background:var(--border);margin-left:.5rem"></div>
+        </div>
+
+        <div class="form-group">
+          <div style="display:flex;gap:1rem;align-items:flex-start;flex-wrap:wrap">
+            <div style="flex:1;min-width:200px">
+              <label class="form-label">✏️ 로고 설명</label>
+              <input type="text" class="form-input" id="logoDesc" placeholder="예: 우주선과 별을 모티브로 한 미니멀 로고" style="font-size:.82rem;margin-bottom:.6rem">
+              <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+                <button class="btn-secondary" onclick="generateLogo()" style="font-size:.72rem;padding:.4rem .8rem">
+                  🎨 AI 로고 생성
+                </button>
+                <span class="mono" style="font-size:.6rem;color:var(--text-dim);display:flex;align-items:center" id="logoGenStatus"></span>
+              </div>
+            </div>
+            <div style="width:80px;height:80px;border-radius:var(--radius-sm);border:1px dashed var(--border);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;background:rgba(255,255,255,.02)">
+              <img id="logoPreview" style="width:100%;height:100%;object-fit:contain;display:none">
+              <span id="logoPlaceholder" style="font-size:2rem;opacity:.2">🖼️</span>
+            </div>
+          </div>
+          <input type="text" class="form-input" id="logoUrl" placeholder="또는 로고 이미지 URL 직접 입력" style="font-size:.78rem;margin-top:.5rem">
+        </div>
+
+        <!-- Section 7: Sub-pages -->
+        <div style="display:flex;align-items:center;gap:.5rem;margin:2rem 0 1.25rem">
+          <span style="font-size:1.1rem">📄</span>
+          <span style="font-size:.82rem;font-weight:700;letter-spacing:-.01em">서브페이지 구성</span>
+          <div style="flex:1;height:1px;background:var(--border);margin-left:.5rem"></div>
+        </div>
+
+        <div class="form-group">
+          <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:.75rem;line-height:1.6">
+            메인 페이지 외 추가 서브페이지를 구성합니다. 각 페이지는 독립 HTML로 생성됩니다.
+          </div>
+          <div id="subPages" style="display:flex;flex-direction:column;gap:.4rem;margin-bottom:.6rem">
+          </div>
+          <button onclick="addSubPage()" class="btn-secondary" style="font-size:.72rem;padding:.35rem .8rem">
+            ➕ 서브페이지 추가
+          </button>
+        </div>
+
+        <!-- Section 8: Project Save/Load -->
+        <div style="display:flex;align-items:center;gap:.5rem;margin:2rem 0 1.25rem">
+          <span style="font-size:1.1rem">💾</span>
+          <span style="font-size:.82rem;font-weight:700;letter-spacing:-.01em">프로젝트 관리</span>
+          <div style="flex:1;height:1px;background:var(--border);margin-left:.5rem"></div>
+        </div>
+
+        <div class="form-group">
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <button onclick="saveProject()" class="btn-secondary" style="font-size:.72rem;padding:.4rem .85rem">
+              💾 프로젝트 저장
+            </button>
+            <button onclick="document.getElementById('loadProjectInput').click()" class="btn-secondary" style="font-size:.72rem;padding:.4rem .85rem">
+              📂 불러오기
+            </button>
+            <button onclick="autoSaveProject()" class="btn-secondary" style="font-size:.72rem;padding:.4rem .85rem">
+              🔄 자동 저장 복원
+            </button>
+            <input type="file" id="loadProjectInput" accept=".json" onchange="loadProject(event)" style="display:none">
+            <span class="mono" style="font-size:.58rem;color:var(--text-dim);display:flex;align-items:center" id="projectStatus"></span>
+          </div>
+        </div>
+
         <div style="display:flex;gap:.75rem;justify-content:flex-end;margin-top:2rem;flex-wrap:wrap">
           <button class="btn-secondary" onclick="showView('viewLanding')">
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
             뒤로
           </button>
           <button class="btn-primary" id="btnGenerate" onclick="startGeneration()">
-            생성 시작
+            🚀 생성 시작
             <span class="btn-icon"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></span>
           </button>
         </div>
@@ -934,8 +1002,11 @@ function updateLivePreview() {
   const feats = [...document.querySelectorAll('#featureChips .chip.active')].map(c => c.dataset.val);
   const colorTheme = (document.querySelector('#colorChips .chip.active') || {}).dataset?.val || 'dark';
   const fallbackImg = 'https://picsum.photos/seed/' + encodeURIComponent(topic) + '/1920/1080';
-  const googleLogin = document.getElementById('googleLoginEnabled')?.checked || false;
-  const html = generateWebsite(topic, siteType, feats, colorTheme, fallbackImg, '', getMenuItems(), {googleLogin});
+  const opts = {
+    googleLogin: document.getElementById('googleLoginEnabled')?.checked || false,
+    logoUrl: document.getElementById('logoUrl')?.value.trim() || ''
+  };
+  const html = generateWebsite(topic, siteType, feats, colorTheme, fallbackImg, '', getMenuItems(), opts);
   const iframe = document.getElementById('livePreviewIframe');
   if (iframe) iframe.srcdoc = html;
 }
@@ -1430,10 +1501,13 @@ async function startGeneration() {
   setPipeStatus(5, 'running', '웹사이트 빌드 중...');
   await sleep(500);
 
-  const googleLogin = document.getElementById('googleLoginEnabled')?.checked || false;
+  const opts = {
+    googleLogin: document.getElementById('googleLoginEnabled')?.checked || false,
+    logoUrl: document.getElementById('logoUrl')?.value.trim() || ''
+  };
   state.generatedHtml = generateWebsite(
     state.topic, state.siteType, state.features, state.colorTheme,
-    state.imgUrl, state.vidUrl, getMenuItems(), {googleLogin}
+    state.imgUrl, state.vidUrl, getMenuItems(), opts
   );
 
 
@@ -1503,17 +1577,298 @@ function renderScrollFrame(ctx, img, w, h, progress) {
 // Download
 function downloadSite() {
   if (!state.generatedHtml) { showToast('생성된 웹사이트가 없습니다'); return; }
-  const blob = new Blob([state.generatedHtml], { type: 'text/html' });
+  const subPages = getSubPages();
+  const prefix = state.topic.replace(/[^a-zA-Z0-9가-힣]/g, '_').substring(0, 30);
+
+  if (subPages.length === 0) {
+    const blob = new Blob([state.generatedHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = prefix + '_website.html';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('📥 다운로드 시작');
+  } else {
+    showToast('📦 멀티페이지 ZIP 생성 중...');
+    generateMultiPageZip(prefix, subPages);
+  }
+}
+
+async function generateMultiPageZip(prefix, subPages) {
+  const opts = {
+    googleLogin: document.getElementById('googleLoginEnabled')?.checked || false,
+    logoUrl: document.getElementById('logoUrl')?.value.trim() || ''
+  };
+  const files = [{ name: 'index.html', content: state.generatedHtml }];
+  for (const page of subPages) {
+    const slug = page.name.replace(/\s+/g, '-').toLowerCase().replace(/[^a-z0-9가-힣\-]/g, '');
+    const pageHtml = generateSubPage(page, state.topic, state.colorTheme, opts);
+    files.push({ name: (slug || 'page') + '.html', content: pageHtml });
+  }
+  const zip = createSimpleZip(files);
+  const blob = new Blob([zip], { type: 'application/zip' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = state.topic.replace(/[^a-zA-Z0-9가-힣]/g, '_').substring(0, 30) + '_website.html';
+  a.download = prefix + '_website.zip';
   a.click();
   URL.revokeObjectURL(url);
-  showToast('다운로드 시작');
+  showToast('📦 ZIP 다운로드 시작 (' + files.length + '개 파일)');
+}
+
+function generateSubPage(page, topic, colorTheme, opts) {
+  const c = { dark:'#08070a', light:'#f5f3f0', warm:'#1a1410', cool:'#0a0e14', mono:'#0c0c0c' };
+  const tc = { dark:'#eae8f0', light:'#1a1816', warm:'#f5efe6', cool:'#e8edf5', mono:'#e5e5e5' };
+  const bg = c[colorTheme] || c.dark;
+  const text = tc[colorTheme] || tc.dark;
+  return '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>' + page.name + ' - ' + topic + '</title>' +
+    (opts.logoUrl ? '<link rel="icon" href="' + opts.logoUrl + '">' : '') +
+    '<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Noto+Sans+KR:wght@400;600;700&display=swap" rel="stylesheet">' +
+    '<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:"Noto Sans KR","Outfit",sans-serif;background:' + bg + ';color:' + text + ';min-height:100vh;-webkit-font-smoothing:antialiased}' +
+    '.container{max-width:900px;margin:0 auto;padding:3rem clamp(1rem,4vw,3rem)}.back{display:inline-flex;align-items:center;gap:.4rem;font-size:.8rem;color:rgba(167,139,250,.8);text-decoration:none;margin-bottom:2rem}' +
+    'h1{font-family:Outfit;font-size:clamp(2rem,4vw,3rem);font-weight:800;letter-spacing:-.03em;margin-bottom:1rem}' +
+    'p{line-height:1.8;font-size:1rem;opacity:.7;max-width:65ch}</style></head><body><div class="container">' +
+    '<a href="index.html" class="back">← ' + topic + '</a>' +
+    '<h1>' + page.name + '</h1>' +
+    '<p>' + (page.content || page.name + ' 페이지 내용이 여기에 들어갑니다.') + '</p>' +
+    '</div></body></html>';
+}
+
+function createSimpleZip(files) {
+  const enc = new TextEncoder();
+  const parts = []; const central = []; let offset = 0;
+  for (const f of files) {
+    const data = enc.encode(f.content);
+    const nameBytes = enc.encode(f.name);
+    const header = new Uint8Array(30 + nameBytes.length);
+    const dv = new DataView(header.buffer);
+    dv.setUint32(0, 0x04034b50, true);
+    dv.setUint16(4, 20, true);
+    dv.setUint16(8, 0, true);
+    dv.setUint32(18, data.length, true);
+    dv.setUint32(22, data.length, true);
+    dv.setUint16(26, nameBytes.length, true);
+    header.set(nameBytes, 30);
+    parts.push(header, data);
+    const ch = new Uint8Array(46 + nameBytes.length);
+    const cv = new DataView(ch.buffer);
+    cv.setUint32(0, 0x02014b50, true);
+    cv.setUint16(4, 20, true);
+    cv.setUint16(6, 20, true);
+    cv.setUint32(20, data.length, true);
+    cv.setUint32(24, data.length, true);
+    cv.setUint16(28, nameBytes.length, true);
+    cv.setUint32(42, offset, true);
+    ch.set(nameBytes, 46);
+    central.push(ch);
+    offset += header.length + data.length;
+  }
+  const centralOffset = offset;
+  let centralSize = 0;
+  central.forEach(c => centralSize += c.length);
+  const end = new Uint8Array(22);
+  const ev = new DataView(end.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(8, files.length, true);
+  ev.setUint16(10, files.length, true);
+  ev.setUint32(12, centralSize, true);
+  ev.setUint32(16, centralOffset, true);
+  const all = [...parts, ...central, end];
+  let total = 0; all.forEach(a => total += a.length);
+  const result = new Uint8Array(total);
+  let pos = 0; all.forEach(a => { result.set(a, pos); pos += a.length; });
+  return result;
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// Logo generation
+async function generateLogo() {
+  const topic = document.getElementById('topicInput').value.trim() || 'brand';
+  const desc = document.getElementById('logoDesc').value.trim();
+  const prompt = desc || topic + ' minimalist logo icon';
+  document.getElementById('logoGenStatus').textContent = '생성 중...';
+  try {
+    const res = await fetch('/api/generate-image', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ prompt: `Clean minimalist logo icon design for "${prompt}", simple geometric shapes, flat design, single icon centered on solid dark background, no text, square format, professional brand mark`, aspect_ratio: '1:1' })
+    });
+    const data = await res.json();
+    let url = '';
+    if (data.success && data.data) {
+      url = data.data.results?.[0]?.results?.rawUrl || data.data.results?.[0]?.url || data.data.url || '';
+    }
+    if (url) {
+      document.getElementById('logoPreview').src = url;
+      document.getElementById('logoPreview').style.display = '';
+      document.getElementById('logoPlaceholder').style.display = 'none';
+      document.getElementById('logoUrl').value = url;
+      document.getElementById('logoGenStatus').textContent = '완료';
+    } else {
+      document.getElementById('logoGenStatus').textContent = 'API 실패 — URL 직접 입력';
+    }
+  } catch { document.getElementById('logoGenStatus').textContent = '오류 발생'; }
+}
+
+// Sub-pages
+function addSubPage() {
+  const container = document.getElementById('subPages');
+  const row = document.createElement('div');
+  row.className = 'subpage-row';
+  row.style.cssText = 'display:flex;gap:.35rem;align-items:center';
+  row.innerHTML = `
+    <input type="text" class="form-input subpage-name" placeholder="페이지 이름 (예: 서비스 소개)" style="flex:1;padding:.5rem .75rem;font-size:.8rem">
+    <select class="form-input subpage-type" style="flex:.7;padding:.5rem .6rem;font-size:.75rem">
+      <option value="about">📋 소개</option>
+      <option value="services">⚡ 서비스</option>
+      <option value="portfolio">🎨 포트폴리오</option>
+      <option value="team">👥 팀</option>
+      <option value="blog">📰 블로그</option>
+      <option value="contact">📧 문의</option>
+      <option value="faq">❓ FAQ</option>
+      <option value="custom">✏️ 커스텀</option>
+    </select>
+    <textarea class="form-input subpage-content" placeholder="페이지 내용 설명" style="flex:1.5;padding:.5rem .75rem;font-size:.78rem;min-height:34px;resize:none"></textarea>
+    <button onclick="this.closest('.subpage-row').remove()" style="width:1.6rem;height:1.6rem;border-radius:.4rem;border:1px solid var(--border);background:transparent;color:var(--error);cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center;flex-shrink:0">✕</button>`;
+  container.appendChild(row);
+}
+function getSubPages() {
+  return [...document.querySelectorAll('.subpage-row')].map(row => ({
+    name: row.querySelector('.subpage-name')?.value.trim(),
+    type: row.querySelector('.subpage-type')?.value,
+    content: row.querySelector('.subpage-content')?.value.trim()
+  })).filter(p => p.name);
+}
+
+// Project save/load
+function collectProjectData() {
+  return {
+    version: '1.0',
+    timestamp: new Date().toISOString(),
+    siteType: document.getElementById('siteType').value,
+    topic: document.getElementById('topicInput').value,
+    features: [...document.querySelectorAll('#featureChips .chip.active')].map(c => c.dataset.val),
+    colorTheme: (document.querySelector('#colorChips .chip.active') || {}).dataset?.val || 'dark',
+    menuOverview: document.getElementById('menuOverview').value,
+    menuItems: getMenuItems(),
+    description: document.getElementById('descInput').value,
+    imgSubject: document.getElementById('imgSubject').value,
+    imgPrompt: document.getElementById('imgPromptInput').value,
+    vidPrompt: document.getElementById('vidPromptInput').value,
+    vidDuration: document.getElementById('vidDuration').value,
+    vidAspect: document.getElementById('vidAspect').value,
+    vidResolution: document.getElementById('vidResolution').value,
+    customImgUrl: document.getElementById('customImgUrl').value,
+    customVidUrl: document.getElementById('customVidUrl').value,
+    logoUrl: document.getElementById('logoUrl').value,
+    logoDesc: document.getElementById('logoDesc').value,
+    googleLogin: document.getElementById('googleLoginEnabled')?.checked || false,
+    subPages: getSubPages()
+  };
+}
+
+function applyProjectData(data) {
+  if (!data) return;
+  if (data.siteType) document.getElementById('siteType').value = data.siteType;
+  if (data.topic) document.getElementById('topicInput').value = data.topic;
+  if (data.features) {
+    document.querySelectorAll('#featureChips .chip').forEach(c => {
+      c.classList.toggle('active', data.features.includes(c.dataset.val));
+    });
+    state.features = data.features;
+  }
+  if (data.colorTheme) {
+    document.querySelectorAll('#colorChips .chip').forEach(c => {
+      c.classList.toggle('active', c.dataset.val === data.colorTheme);
+    });
+    state.colorTheme = data.colorTheme;
+  }
+  if (data.menuOverview) document.getElementById('menuOverview').value = data.menuOverview;
+  if (data.menuItems?.length) {
+    clearMenuItems();
+    data.menuItems.forEach(m => addMenuItemWithData(m.name, m.link));
+  }
+  if (data.description) document.getElementById('descInput').value = data.description;
+  if (data.imgSubject) document.getElementById('imgSubject').value = data.imgSubject;
+  if (data.imgPrompt) document.getElementById('imgPromptInput').value = data.imgPrompt;
+  if (data.vidPrompt) document.getElementById('vidPromptInput').value = data.vidPrompt;
+  if (data.vidDuration) document.getElementById('vidDuration').value = data.vidDuration;
+  if (data.vidAspect) document.getElementById('vidAspect').value = data.vidAspect;
+  if (data.vidResolution) document.getElementById('vidResolution').value = data.vidResolution;
+  if (data.customImgUrl) document.getElementById('customImgUrl').value = data.customImgUrl;
+  if (data.customVidUrl) document.getElementById('customVidUrl').value = data.customVidUrl;
+  if (data.logoUrl) {
+    document.getElementById('logoUrl').value = data.logoUrl;
+    document.getElementById('logoPreview').src = data.logoUrl;
+    document.getElementById('logoPreview').style.display = '';
+    document.getElementById('logoPlaceholder').style.display = 'none';
+  }
+  if (data.logoDesc) document.getElementById('logoDesc').value = data.logoDesc;
+  if (data.googleLogin) document.getElementById('googleLoginEnabled').checked = true;
+  if (data.subPages?.length) {
+    document.getElementById('subPages').innerHTML = '';
+    data.subPages.forEach(p => {
+      addSubPage();
+      const rows = document.querySelectorAll('.subpage-row');
+      const last = rows[rows.length - 1];
+      last.querySelector('.subpage-name').value = p.name;
+      last.querySelector('.subpage-type').value = p.type;
+      last.querySelector('.subpage-content').value = p.content || '';
+    });
+  }
+  debouncedPreview();
+}
+
+function saveProject() {
+  const data = collectProjectData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (data.topic || 'project').replace(/[^a-zA-Z0-9가-힣]/g, '_').substring(0, 30) + '_siteforge.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  localStorage.setItem('siteforge_autosave', JSON.stringify(data));
+  document.getElementById('projectStatus').textContent = '저장됨 ' + new Date().toLocaleTimeString();
+  showToast('💾 프로젝트 저장 완료');
+}
+
+function loadProject(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      applyProjectData(data);
+      document.getElementById('projectStatus').textContent = '불러옴: ' + (data.topic || file.name);
+      showToast('📂 프로젝트 불러오기 완료');
+    } catch { showToast('JSON 파싱 오류'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function autoSaveProject() {
+  const saved = localStorage.getItem('siteforge_autosave');
+  if (saved) {
+    try {
+      const data = JSON.parse(saved);
+      applyProjectData(data);
+      document.getElementById('projectStatus').textContent = '복원됨: ' + (data.timestamp || '').substring(0, 10);
+      showToast('🔄 자동 저장 복원 완료');
+    } catch { showToast('자동 저장 데이터 없음'); }
+  } else { showToast('자동 저장 데이터 없음'); }
+}
+
+// Auto-save every 30s
+setInterval(() => {
+  const topic = document.getElementById('topicInput')?.value;
+  if (topic && document.getElementById('viewBuilder')?.classList.contains('active')) {
+    localStorage.setItem('siteforge_autosave', JSON.stringify(collectProjectData()));
+  }
+}, 30000);
 
 // GitHub deploy
 async function deployToGithub() {

@@ -50,6 +50,7 @@ function generateWebsite(topic, siteType, features, colorTheme, imgUrl, vidUrl, 
   menuItems = menuItems || [];
   options = options || {};
   const hasGoogleLogin = options.googleLogin || false;
+  const logoUrl = options.logoUrl || '';
   const palettes = {
     dark: {
       bg:'#0c0b09', bgInverse:'#f5f3f0', surface:'#151412', card:'rgba(18,16,14,0.82)',
@@ -119,6 +120,7 @@ function generateWebsite(topic, siteType, features, colorTheme, imgUrl, vidUrl, 
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
+${logoUrl ? `<link rel="icon" href="${logoUrl}" type="image/png">` : ''}
 <title>${topic}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
