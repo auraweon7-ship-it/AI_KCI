@@ -159,7 +159,7 @@ app.get('/api/admin/learners', auth, async function (req, res) {
     if (!req.user.admin && !req.user.id) return res.status(403).json({ error: 'Forbidden' });
     try {
         var result = await pool.query(
-            `SELECT u.id, u.name, u.email, u.photo_url, u.last_active, u.approved,
+            `SELECT u.id, u.name, u.email, u.photo_url, u.last_active, u.approved, u.created_at,
                     COUNT(p.id)::int as practice_count
              FROM users u LEFT JOIN practices p ON p.user_id = u.id
              GROUP BY u.id ORDER BY u.last_active DESC`

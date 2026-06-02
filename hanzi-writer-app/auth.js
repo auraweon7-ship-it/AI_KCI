@@ -279,12 +279,16 @@
         };
     }
 
+    var _adminLearners = [];
+    var _adminSortKey = 'last_active';
+    var _adminSortAsc = false;
+
     function loadAllLearners() {
         var listEl = document.getElementById('learnerTableBody');
         var noticeEl = document.getElementById('adminNotice');
         var summaryEl = document.getElementById('adminSummary');
 
-        listEl.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-dim);">로딩 중...</td></tr>';
+        listEl.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-dim);">로딩 중...</td></tr>';
 
         fetch(API_BASE + '/admin/learners', { headers: getAdminHeaders() })
         .then(function(r) {
@@ -293,40 +297,18 @@
         })
         .then(function(learners) {
             noticeEl.style.display = 'none';
+            _adminLearners = learners;
 
             if (learners.length === 0) {
-                listEl.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-dim);">등록된 학습자가 없습니다</td></tr>';
+                listEl.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-dim);">등록된 학습자가 없습니다</td></tr>';
                 summaryEl.innerHTML = '총 학습자: 0명';
                 return;
             }
 
-            summaryEl.innerHTML = '총 학습자: <strong>' + learners.length + '</strong>명';
-            var html = '';
-            learners.forEach(function(d) {
-                var lastActive = d.last_active ? new Date(d.last_active).toLocaleDateString('ko-KR') : '-';
-                var avatar = d.photo_url
-                    ? '<img class="admin-avatar" src="' + d.photo_url + '" onerror="this.style.display=\'none\'">'
-                    : '<div class="admin-avatar-placeholder">?</div>';
-                var approvedBadge = d.approved
-                    ? '<span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);">승인됨</span>'
-                    : '<span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3);">미승인</span>';
-                var approveBtn = d.approved
-                    ? '<button class="btn btn-sm btn-outline" style="color:var(--warning);" onclick="toggleApproval(' + d.id + ', false)">승인취소</button> '
-                    : '<button class="btn btn-sm btn-outline" style="color:var(--success);" onclick="toggleApproval(' + d.id + ', true)">승인</button> ';
-                html += '<tr>'
-                    + '<td data-label="프로필">' + avatar + '</td>'
-                    + '<td data-label="이름">' + (d.name || '-') + ' ' + approvedBadge + '</td>'
-                    + '<td data-label="이메일">' + (d.email || '-') + '</td>'
-                    + '<td data-label="최근활동">' + lastActive + '</td>'
-                    + '<td data-label="">'
-                    + approveBtn
-                    + '<button class="btn btn-sm btn-outline" onclick="viewLearnerDetail(' + d.id + ', this)">상세보기</button> '
-                    + '<button class="btn btn-sm btn-outline" style="color:var(--accent);" onclick="editLearner(' + d.id + ',\'' + (d.name||'').replace(/'/g,"\\'") + '\',\'' + (d.email||'').replace(/'/g,"\\'") + '\')">수정</button> '
-                    + '<button class="btn btn-sm btn-outline" style="color:var(--danger);" onclick="deleteLearner(' + d.id + ',\'' + (d.name||'').replace(/'/g,"\\'") + '\')">삭제</button>'
-                    + '</td>'
-                    + '</tr>';
-            });
-            listEl.innerHTML = html;
+            var approved = learners.filter(function(d) { return d.approved; }).length;
+            summaryEl.innerHTML = '총 학습자: <strong>' + learners.length + '</strong>명 · 승인: <strong style="color:#34d399;">' + approved + '</strong>명 · 미승인: <strong style="color:#f87171;">' + (learners.length - approved) + '</strong>명';
+
+            renderLearnerTable();
             loadAdminCharts();
         })
         .catch(function(e) {
@@ -336,6 +318,64 @@
             showLocalAdminData(listEl, summaryEl);
         });
     }
+
+    function renderLearnerTable() {
+        var listEl = document.getElementById('learnerTableBody');
+        var sorted = _adminLearners.slice().sort(function(a, b) {
+            var va = a[_adminSortKey], vb = b[_adminSortKey];
+            if (_adminSortKey === 'approved') { va = va ? 1 : 0; vb = vb ? 1 : 0; }
+            if (_adminSortKey === 'name') { va = (va || '').toLowerCase(); vb = (vb || '').toLowerCase(); }
+            if (va == null) va = '';
+            if (vb == null) vb = '';
+            if (va < vb) return _adminSortAsc ? -1 : 1;
+            if (va > vb) return _adminSortAsc ? 1 : -1;
+            return 0;
+        });
+
+        // Update sort indicators
+        document.querySelectorAll('.admin-table th.sortable').forEach(function(th) {
+            th.classList.remove('sort-asc', 'sort-desc');
+            if (th.dataset.sort === _adminSortKey) {
+                th.classList.add(_adminSortAsc ? 'sort-asc' : 'sort-desc');
+            }
+        });
+
+        var html = '';
+        sorted.forEach(function(d) {
+            var lastActive = d.last_active ? new Date(d.last_active).toLocaleDateString('ko-KR') : '-';
+            var createdAt = d.created_at ? new Date(d.created_at).toLocaleDateString('ko-KR') : '-';
+            var avatar = d.photo_url
+                ? '<img class="admin-avatar" src="' + d.photo_url + '" onerror="this.style.display=\'none\'">'
+                : '<div class="admin-avatar-placeholder">?</div>';
+            var checkboxHtml = '<input type="checkbox" class="approve-check" '
+                + (d.approved ? 'checked' : '')
+                + ' onchange="toggleApproval(' + d.id + ', this.checked)" title="승인 체크">';
+            html += '<tr>'
+                + '<td data-label="프로필">' + avatar + '</td>'
+                + '<td data-label="이름">' + (d.name || '-') + '</td>'
+                + '<td data-label="이메일">' + (d.email || '-') + '</td>'
+                + '<td data-label="승인" style="text-align:center;">' + checkboxHtml + '</td>'
+                + '<td data-label="가입일">' + createdAt + '</td>'
+                + '<td data-label="최근활동">' + lastActive + '</td>'
+                + '<td data-label="">'
+                + '<button class="btn btn-sm btn-outline" onclick="viewLearnerDetail(' + d.id + ', this)">상세보기</button> '
+                + '<button class="btn btn-sm btn-outline" style="color:var(--accent);" onclick="editLearner(' + d.id + ',\'' + (d.name||'').replace(/'/g,"\\'") + '\',\'' + (d.email||'').replace(/'/g,"\\'") + '\')">수정</button> '
+                + '<button class="btn btn-sm btn-outline" style="color:var(--danger);" onclick="deleteLearner(' + d.id + ',\'' + (d.name||'').replace(/'/g,"\\'") + '\')">삭제</button>'
+                + '</td>'
+                + '</tr>';
+        });
+        listEl.innerHTML = html;
+    }
+
+    window.sortAdminTable = function(key) {
+        if (_adminSortKey === key) {
+            _adminSortAsc = !_adminSortAsc;
+        } else {
+            _adminSortKey = key;
+            _adminSortAsc = true;
+        }
+        renderLearnerTable();
+    };
 
     var adminChartInstances = [];
 
@@ -430,7 +470,7 @@
         var records = JSON.parse(localStorage.getItem('practice_records') || '[]');
         if (records.length === 0) {
             summaryEl.innerHTML = '로컬 학습 기록: 0건';
-            listEl.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-dim);">학습 기록이 없습니다</td></tr>';
+            listEl.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-dim);">학습 기록이 없습니다</td></tr>';
             return;
         }
 
@@ -470,7 +510,7 @@
         var detailRow = document.createElement('tr');
         detailRow.id = 'learnerDetailRow';
         var detailCell = document.createElement('td');
-        detailCell.colSpan = 5;
+        detailCell.colSpan = 7;
         detailCell.style.cssText = 'padding:0;border:none;';
         detailCell.innerHTML = '<div class="learner-detail-panel" style="display:block;"><div style="text-align:center;padding:40px;color:var(--text-dim);">로딩 중...</div></div>';
         detailRow.appendChild(detailCell);

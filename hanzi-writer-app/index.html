@@ -440,6 +440,16 @@
             background: rgba(30,30,60,0.3);
             border-bottom: 1px solid var(--border);
         }
+        .admin-table th.sortable {
+            cursor: pointer; user-select: none; transition: color 0.2s;
+        }
+        .admin-table th.sortable:hover { color: var(--accent); }
+        .admin-table th.sortable.sort-asc::after { content: ' ▲'; font-size: 9px; }
+        .admin-table th.sortable.sort-desc::after { content: ' ▼'; font-size: 9px; }
+        .approve-check {
+            width: 20px; height: 20px; cursor: pointer;
+            accent-color: var(--success);
+        }
 
         .admin-table td {
             padding: 12px 18px;
@@ -2774,18 +2784,20 @@
             </div>
         </div>
         <div class="admin-table-wrap">
-            <table class="admin-table">
+            <table class="admin-table" id="adminTable">
                 <thead>
                     <tr>
                         <th>프로필</th>
-                        <th>이름</th>
+                        <th class="sortable" data-sort="name" onclick="sortAdminTable('name')">이름 ⇅</th>
                         <th>이메일</th>
-                        <th>최근 활동</th>
+                        <th class="sortable" data-sort="approved" onclick="sortAdminTable('approved')">승인 ⇅</th>
+                        <th class="sortable" data-sort="created_at" onclick="sortAdminTable('created_at')">가입일 ⇅</th>
+                        <th class="sortable" data-sort="last_active" onclick="sortAdminTable('last_active')">최근 활동 ⇅</th>
                         <th>관리</th>
                     </tr>
                 </thead>
                 <tbody id="learnerTableBody">
-                    <tr><td colspan="5" style="text-align:center;padding:30px;color:var(--text-dim);">로딩 중...</td></tr>
+                    <tr><td colspan="7" style="text-align:center;padding:30px;color:var(--text-dim);">로딩 중...</td></tr>
                 </tbody>
             </table>
         </div>
