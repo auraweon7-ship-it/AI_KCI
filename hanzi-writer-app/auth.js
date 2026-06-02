@@ -357,7 +357,7 @@
                 + '<td data-label="승인" style="text-align:center;">' + checkboxHtml + '</td>'
                 + '<td data-label="가입일">' + createdAt + '</td>'
                 + '<td data-label="최근활동">' + lastActive + '</td>'
-                + '<td data-label="">'
+                + '<td data-label="" style="white-space:nowrap;">'
                 + '<button class="btn btn-sm btn-outline" onclick="viewLearnerDetail(' + d.id + ', this)">상세보기</button> '
                 + '<button class="btn btn-sm btn-outline" style="color:var(--accent);" onclick="editLearner(' + d.id + ',\'' + (d.name||'').replace(/'/g,"\\'") + '\',\'' + (d.email||'').replace(/'/g,"\\'") + '\')">수정</button> '
                 + '<button class="btn btn-sm btn-outline" style="color:var(--danger);" onclick="deleteLearner(' + d.id + ',\'' + (d.name||'').replace(/'/g,"\\'") + '\')">삭제</button>'
