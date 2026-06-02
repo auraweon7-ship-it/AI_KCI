@@ -26,6 +26,7 @@
 
         updateAuthUI();
         loadMyStats();
+        checkApprovalStatus();
     }
 
     function loadGoogleSignIn() {
@@ -83,6 +84,20 @@
         localStorage.setItem('auth_user', JSON.stringify(currentUser));
         updateAuthUI();
         loadMyStats();
+        checkApprovalStatus();
+    }
+
+    function checkApprovalStatus() {
+        if (!authToken || !currentUser) return;
+        fetch(API_BASE + '/auth/status', {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            currentUser.approved = !!data.approved;
+            localStorage.setItem('auth_user', JSON.stringify(currentUser));
+        })
+        .catch(function() {});
     }
 
     // ===== LOGIN MODAL =====
@@ -292,12 +307,19 @@
                 var avatar = d.photo_url
                     ? '<img class="admin-avatar" src="' + d.photo_url + '" onerror="this.style.display=\'none\'">'
                     : '<div class="admin-avatar-placeholder">?</div>';
+                var approvedBadge = d.approved
+                    ? '<span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(52,211,153,0.15);color:#34d399;border:1px solid rgba(52,211,153,0.3);">승인됨</span>'
+                    : '<span style="display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:600;background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.3);">미승인</span>';
+                var approveBtn = d.approved
+                    ? '<button class="btn btn-sm btn-outline" style="color:var(--warning);" onclick="toggleApproval(' + d.id + ', false)">승인취소</button> '
+                    : '<button class="btn btn-sm btn-outline" style="color:var(--success);" onclick="toggleApproval(' + d.id + ', true)">승인</button> ';
                 html += '<tr>'
                     + '<td data-label="프로필">' + avatar + '</td>'
-                    + '<td data-label="이름">' + (d.name || '-') + '</td>'
+                    + '<td data-label="이름">' + (d.name || '-') + ' ' + approvedBadge + '</td>'
                     + '<td data-label="이메일">' + (d.email || '-') + '</td>'
                     + '<td data-label="최근활동">' + lastActive + '</td>'
                     + '<td data-label="">'
+                    + approveBtn
                     + '<button class="btn btn-sm btn-outline" onclick="viewLearnerDetail(' + d.id + ', this)">상세보기</button> '
                     + '<button class="btn btn-sm btn-outline" style="color:var(--accent);" onclick="editLearner(' + d.id + ',\'' + (d.name||'').replace(/'/g,"\\'") + '\',\'' + (d.email||'').replace(/'/g,"\\'") + '\')">수정</button> '
                     + '<button class="btn btn-sm btn-outline" style="color:var(--danger);" onclick="deleteLearner(' + d.id + ',\'' + (d.name||'').replace(/'/g,"\\'") + '\')">삭제</button>'
@@ -553,6 +575,23 @@
         .catch(function(e) { alert(e.message); });
     };
 
+    window.toggleApproval = function(uid, approve) {
+        fetch(API_BASE + '/admin/learners/' + uid + '/approve', {
+            method: 'PATCH',
+            headers: getAdminHeaders(),
+            body: JSON.stringify({ approved: approve })
+        })
+        .then(function(r) {
+            if (!r.ok) throw new Error('승인 변경 실패');
+            return r.json();
+        })
+        .then(function(data) {
+            showToast(data.name + ' 회원이 ' + (data.approved ? '승인' : '승인취소') + '되었습니다');
+            loadAllLearners();
+        })
+        .catch(function(e) { alert(e.message); });
+    };
+
     window.deleteLearner = function(uid, name) {
         if (!confirm('"' + name + '" 회원을 삭제하시겠습니까?\n\n학습 기록도 모두 삭제됩니다. 이 작업은 되돌릴 수 없습니다.')) return;
 
@@ -603,6 +642,7 @@
 
     window.isUserLoggedIn = function() { return !!currentUser; };
     window.getCurrentUser = function() { return currentUser; };
+    window.isUserApproved = function() { return !!(currentUser && currentUser.approved); };
 
     // ===== INIT ON LOAD =====
     if (document.readyState === 'loading') {

@@ -56,7 +56,7 @@ app.post('/api/auth/google', async function (req, res) {
              ON CONFLICT (google_id) DO UPDATE SET
                name = EXCLUDED.name, email = EXCLUDED.email,
                photo_url = EXCLUDED.photo_url, last_active = NOW()
-             RETURNING id, name, email, photo_url`,
+             RETURNING id, name, email, photo_url, approved`,
             [payload.sub, payload.name, payload.email, payload.picture]
         );
         var user = result.rows[0];
@@ -69,13 +69,13 @@ app.post('/api/auth/google', async function (req, res) {
 
 function makeToken(user) {
     return jwt.sign(
-        { id: user.id, name: user.name, email: user.email, photoURL: user.photo_url || '' },
+        { id: user.id, name: user.name, email: user.email, photoURL: user.photo_url || '', approved: !!user.approved },
         JWT_SECRET, { expiresIn: '7d' }
     );
 }
 
 function userJson(user) {
-    return { id: user.id, name: user.name, email: user.email, photoURL: user.photo_url || '' };
+    return { id: user.id, name: user.name, email: user.email, photoURL: user.photo_url || '', approved: !!user.approved };
 }
 
 // --- Admin Login ---
@@ -159,7 +159,7 @@ app.get('/api/admin/learners', auth, async function (req, res) {
     if (!req.user.admin && !req.user.id) return res.status(403).json({ error: 'Forbidden' });
     try {
         var result = await pool.query(
-            `SELECT u.id, u.name, u.email, u.photo_url, u.last_active,
+            `SELECT u.id, u.name, u.email, u.photo_url, u.last_active, u.approved,
                     COUNT(p.id)::int as practice_count
              FROM users u LEFT JOIN practices p ON p.user_id = u.id
              GROUP BY u.id ORDER BY u.last_active DESC`
@@ -167,6 +167,33 @@ app.get('/api/admin/learners', auth, async function (req, res) {
         res.json(result.rows);
     } catch (e) {
         res.status(500).json({ error: 'Load failed' });
+    }
+});
+
+// --- Admin: Approve / Unapprove User ---
+app.patch('/api/admin/learners/:id/approve', auth, async function (req, res) {
+    if (!req.user.admin) return res.status(403).json({ error: 'Forbidden' });
+    try {
+        var approved = req.body.approved !== false;
+        var result = await pool.query(
+            'UPDATE users SET approved = $1 WHERE id = $2 RETURNING id, name, approved',
+            [approved, req.params.id]
+        );
+        if (result.rows.length === 0) return res.status(404).json({ error: 'Not found' });
+        res.json(result.rows[0]);
+    } catch (e) {
+        res.status(500).json({ error: 'Update failed' });
+    }
+});
+
+// --- Check approval status (for logged-in user) ---
+app.get('/api/auth/status', auth, async function (req, res) {
+    try {
+        var result = await pool.query('SELECT approved FROM users WHERE id = $1', [req.user.id]);
+        if (result.rows.length === 0) return res.json({ approved: false });
+        res.json({ approved: !!result.rows[0].approved });
+    } catch (e) {
+        res.json({ approved: false });
     }
 });
 
@@ -278,9 +305,11 @@ async function initDB() {
             name VARCHAR(255),
             email VARCHAR(255),
             photo_url TEXT,
+            approved BOOLEAN DEFAULT false,
             last_active TIMESTAMP DEFAULT NOW(),
             created_at TIMESTAMP DEFAULT NOW()
         );
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT false;
         CREATE TABLE IF NOT EXISTS practices (
             id SERIAL PRIMARY KEY,
             user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
