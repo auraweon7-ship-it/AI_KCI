@@ -593,24 +593,24 @@
 
 <div class="footer">
   <b>HanDict</b> · 레벨 맞춤 중국어 학습 사전<br>
-  텍스트: gemini-3.1-flash-lite · 이미지: gemini-3.1-flash-image · API 키는 브라우저에만 저장됩니다
+  텍스트: gpt-4o-mini · 이미지: gpt-image-1 · API 키는 브라우저에만 저장됩니다
 </div>
 
 <!-- ============ MODAL: API key ============ -->
 <div class="overlay" id="keyOverlay">
   <div class="modal">
-    <h2>🔑 Gemini API 키</h2>
+    <h2>🔑 OpenAI API 키</h2>
     <p class="desc">
-      단어 풀이·퀴즈·첨삭과 그림 생성에 Google Gemini API를 사용합니다.
+      단어 풀이·퀴즈·첨삭과 그림 생성에 OpenAI API를 사용합니다.
       키는 <b>이 브라우저(localStorage)에만 저장</b>되며 외부로 전송되지 않습니다.
     </p>
     <div style="display:flex; gap:8px;">
-      <input type="password" id="apiKeyInput" placeholder="AIza... 형식의 API 키" autocomplete="off">
+      <input type="password" id="apiKeyInput" placeholder="sk-... 형식의 API 키" autocomplete="off">
       <button class="btn" onclick="saveApiKey()">저장</button>
     </div>
     <p style="font-size:12.5px; color:var(--muted); margin-top:12px; line-height:1.7;">
-      키 발급: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--blue);">Google AI Studio → Get API key</a><br>
-      사용 모델 — 텍스트: <code>gemini-3.1-flash-lite</code> · 이미지: <code>gemini-3.1-flash-image</code>
+      키 발급: <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" style="color:var(--blue);">platform.openai.com → API keys</a><br>
+      사용 모델 — 텍스트: <code>gpt-4o-mini</code> · 이미지: <code>gpt-image-1</code> (미지원 시 <code>dall-e-3</code> 자동 폴백)
     </p>
   </div>
 </div>
@@ -629,9 +629,10 @@
 const LS_KEY = "zhdict_api_key";
 const LS_LEVEL = "zhdict_level";
 const LS_WORDBOOK = "zhdict_wordbook";
-const TEXT_MODEL = "gemini-3.1-flash-lite";
-const IMAGE_MODEL = "gemini-3.1-flash-image";
-const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
+const TEXT_MODEL = "gpt-4o-mini";
+const IMAGE_MODEL = "gpt-image-1";
+const IMAGE_FALLBACK_MODEL = "dall-e-3";
+const API_BASE = "https://api.openai.com/v1";
 
 let apiKey = localStorage.getItem(LS_KEY) || "";
 let userLevel = localStorage.getItem(LS_LEVEL) || "";
@@ -675,10 +676,13 @@ document.addEventListener("click", e => {
   const btn = e.target.closest("[data-tts]");
   if (btn) { e.stopPropagation(); speak(btn.dataset.tts); }
 }, true);
-async function callGemini(model, body) {
-  const res = await fetch(`${API_BASE}${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+async function callOpenAI(endpoint, body) {
+  const res = await fetch(`${API_BASE}${endpoint}`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`
+    },
     body: JSON.stringify(body)
   });
   if (!res.ok) {
@@ -688,21 +692,24 @@ async function callGemini(model, body) {
   }
   return res.json();
 }
-async function geminiJSON(prompt, temperature = 0.4) {
-  const data = await callGemini(TEXT_MODEL, {
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { responseMimeType: "application/json", temperature }
+async function aiJSON(prompt, temperature = 0.4) {
+  const data = await callOpenAI("/chat/completions", {
+    model: TEXT_MODEL,
+    messages: [{ role: "user", content: prompt }],
+    response_format: { type: "json_object" },
+    temperature
   });
-  const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
+  const text = data.choices?.[0]?.message?.content || "";
   const cleaned = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
   return JSON.parse(cleaned);
 }
-async function geminiText(prompt, temperature = 0.6) {
-  const data = await callGemini(TEXT_MODEL, {
-    contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature }
+async function aiText(prompt, temperature = 0.6) {
+  const data = await callOpenAI("/chat/completions", {
+    model: TEXT_MODEL,
+    messages: [{ role: "user", content: prompt }],
+    temperature
   });
-  return data.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
+  return data.choices?.[0]?.message?.content || "";
 }
 
 /* ==================== view routing ==================== */
@@ -884,7 +891,7 @@ async function lookup() {
   document.getElementById("statusText").textContent = `「${word}」을(를) ${userLevel} 수준 중국어로 풀이하는 중…`;
 
   try {
-    const entry = await geminiJSON(buildEntryPrompt(word));
+    const entry = await aiJSON(buildEntryPrompt(word));
     if (entry.error) throw new Error(entry.error);
     currentEntry = entry;
     renderEntry(entry);
@@ -952,15 +959,22 @@ async function loadImage(prompt, word) {
   try {
     const fullPrompt = (prompt || `simple educational illustration of the Chinese word "${word}"`) +
       ". Warm flat illustration style, clean composition, no text or letters in the image.";
-    const data = await callGemini(IMAGE_MODEL, { contents: [{ parts: [{ text: fullPrompt }] }] });
-    const parts = data.candidates?.[0]?.content?.parts || [];
-    for (const p of parts) {
-      if (p.inlineData?.data) {
-        wrap.innerHTML = `<img src="data:${p.inlineData.mimeType || "image/png"};base64,${p.inlineData.data}" alt="${esc(word)} 그림 설명">`;
-        return;
-      }
+    let b64;
+    try {
+      const data = await callOpenAI("/images/generations", {
+        model: IMAGE_MODEL, prompt: fullPrompt, size: "1024x1024", n: 1
+      });
+      b64 = data.data?.[0]?.b64_json;
+    } catch (e1) {
+      // gpt-image-1 미지원 계정이면 dall-e-3로 폴백
+      const data = await callOpenAI("/images/generations", {
+        model: IMAGE_FALLBACK_MODEL, prompt: fullPrompt, size: "1024x1024", n: 1,
+        response_format: "b64_json"
+      });
+      b64 = data.data?.[0]?.b64_json;
     }
-    throw new Error("이미지가 응답에 포함되지 않았습니다.");
+    if (!b64) throw new Error("이미지가 응답에 포함되지 않았습니다.");
+    wrap.innerHTML = `<img src="data:image/png;base64,${b64}" alt="${esc(word)} 그림 설명">`;
   } catch (e) {
     wrap.innerHTML = `<div class="img-loading">⚠️ 그림 생성 실패<br><span style="font-size:12px;">${esc(e.message)}</span></div>`;
   }
@@ -994,7 +1008,7 @@ async function askTutor(preset) {
 - 중국어 예시의 난이도는 학습자 레벨(${userLevel})에 맞추기
 - 핵심만 간결하게, 300자 이내
 - 마크다운 기호(#, *, -) 없이 일반 텍스트로`;
-    const answer = await geminiText(prompt);
+    const answer = await aiText(prompt);
     document.getElementById("tutorPending").outerHTML = `<div class="bubble ai">${esc(answer.trim())}</div>`;
   } catch (e) {
     document.getElementById("tutorPending").outerHTML = `<div class="bubble ai">⚠️ 오류: ${esc(e.message)}</div>`;
@@ -1091,7 +1105,7 @@ async function startQuiz() {
     : `CEFR ${userLevel} 학습자에게 적절한 대표 단어를 직접 선정해 출제`;
 
   try {
-    const data = await geminiJSON(`한국인 중국어 학습자(CEFR ${userLevel})를 위한 복습 퀴즈 5문제를 만드세요.
+    const data = await aiJSON(`한국인 중국어 학습자(CEFR ${userLevel})를 위한 복습 퀴즈 5문제를 만드세요.
 ${source}
 
 문제 유형을 섞으세요: (1) 단어 뜻 고르기 (2) 빈칸에 알맞은 단어 넣기 (3) 동의어/비슷한 단어 중 문맥에 맞는 것 고르기
@@ -1192,7 +1206,7 @@ async function coachWriting() {
   fb.classList.remove("show");
 
   try {
-    const data = await geminiJSON(`당신은 한국인 중국어 학습자를 위한 작문 첨삭 교사입니다.
+    const data = await aiJSON(`당신은 한국인 중국어 학습자를 위한 작문 첨삭 교사입니다.
 학습자 레벨: CEFR ${userLevel}
 ${word ? `학습자가 연습하려는 단어: ${word}` : ""}
 학습자가 쓴 문장: ${sentence}
@@ -1272,6 +1286,12 @@ document.querySelectorAll(".overlay").forEach(ov => {
     if (e.target === ov && ov.id === "testOverlay" && userLevel) ov.classList.remove("show");
   });
 });
+
+/* Gemini 시절 키(AIza...)가 남아 있으면 비우고 OpenAI 키 재입력 요청 */
+if (apiKey && !apiKey.startsWith("sk-")) {
+  apiKey = "";
+  localStorage.removeItem(LS_KEY);
+}
 
 updateLevelChip();
 if (!apiKey) openKeyModal();
