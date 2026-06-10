@@ -3702,7 +3702,10 @@ async function googleLogin(){
     const r = await fetch('/api/google/auth?json=1');
     const d = await r.json();
     if(!d.authUrl){ toast('Google OAuth URL 생성 실패','err'); return; }
-    showAuthUrlModal(d.authUrl);
+    const w = window.open(d.authUrl,'googleAuth','width=500,height=600,left=200,top=100');
+    setTimeout(()=>{
+      if(!w || w.closed || typeof w.closed==='undefined') showAuthUrlModal(d.authUrl);
+    }, 500);
   } catch(e) {
     toast('로그인 URL 생성 실패','err');
   }
