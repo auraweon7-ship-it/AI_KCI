@@ -421,11 +421,63 @@
   .footer b { color: var(--body); }
 
   @media (max-width: 640px) {
-    .nav-tab { padding: 8px 9px; font-size: 13px; }
-    .logo span.txt { display: none; }
-    .hero h2 { font-size: 23px; }
-    .entry-word { font-size: 40px; }
-    .entry-head, .entry-body { padding-left: 20px; padding-right: 20px; }
+    /* --- 상단 네비: 2행 구조 (로고+우측 / 탭 가로 스크롤) --- */
+    .topnav-inner {
+      flex-wrap: wrap;
+      height: auto;
+      padding: 10px 14px 0;
+      row-gap: 4px;
+    }
+    .logo { order: 1; margin-right: auto; }
+    .logo span.txt small { display: none; }
+    .nav-right { order: 2; }
+    .nav-tabs {
+      order: 3;
+      flex: 0 0 100%;
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      padding: 4px 0 8px;
+    }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+    .nav-tab { padding: 7px 12px; font-size: 13.5px; white-space: nowrap; flex-shrink: 0; }
+    .level-chip { padding: 4px 10px 4px 6px; font-size: 12px; }
+    .level-chip .dot { padding: 2px 7px; font-size: 11px; }
+
+    /* --- 히어로/검색 --- */
+    .hero { padding: 32px 16px 48px; }
+    .hero::before { font-size: 130px; top: -28px; }
+    .hero h2 { font-size: 22px; }
+    .hero p.sub { font-size: 13.5px; }
+    .hero-search { border-radius: 12px; }
+    .hero-search input { font-size: 16px; padding: 14px 15px; }
+    .hero-search .btn { padding: 0 18px; font-size: 15px; }
+
+    /* --- 공통 여백/폰트 --- */
+    .container { padding: 20px 14px 70px; }
+    .entry-wrap { margin-top: -30px; }
+    .entry-head { padding: 20px 16px 16px; }
+    .entry-body { padding: 18px 16px; }
+    .entry-grid { gap: 24px; }
+    .entry-word { font-size: 38px; }
+    .entry-pinyin { font-size: 17px; }
+    .sense { padding-left: 30px; }
+    .sense-def { font-size: 16px; }
+    .quiz-card { padding: 20px 16px; }
+    .modal { padding: 22px 18px; border-radius: 14px; }
+    .toolbar h3 { font-size: 17px; }
+    .wb-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+    .wb-card { padding: 14px; }
+    .wb-word { font-size: 22px; }
+    .bubble { max-width: 95%; font-size: 14px; }
+
+    /* iOS 포커스 자동 확대 방지: 입력 폰트 최소 16px */
+    input[type="text"], input[type="password"], textarea { font-size: 16px; }
+
+    /* 터치 타깃 확보 */
+    .tts-btn { min-width: 30px; min-height: 30px; }
+    .quiz-choice, .lt-choice { padding: 13px 14px; }
   }
 </style>
 </head>
