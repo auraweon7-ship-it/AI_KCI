@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>레벨 맞춤 중국어 사전</title>
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --card: #ffffff;
+    --ink: #2b2b2b;
+    --red: #c0392b;
+    --red-dark: #96281b;
+    --gold: #d4a017;
+    --muted: #8a8a8a;
+    --line: #e8e3d8;
+    --green: #27ae60;
+    --blue: #2c6e9e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+  }
+  .container { max-width: 760px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  header.app-header {
+    text-align: center;
+    padding: 28px 0 20px;
+  }
+  header.app-header h1 {
+    font-size: 28px;
+    letter-spacing: -0.5px;
+  }
+  header.app-header h1 .zh { color: var(--red); font-weight: 800; }
+  header.app-header p { color: var(--muted); margin-top: 6px; font-size: 14px; }
+
+  .level-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--red);
+    color: #fff;
+    border-radius: 999px;
+    padding: 5px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    margin-top: 10px;
+    cursor: pointer;
+    border: none;
+  }
+  .level-badge:hover { background: var(--red-dark); }
+  .level-badge .sub { font-weight: 400; opacity: 0.85; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+
+  /* ---------- API key screen ---------- */
+  .key-input-row { display: flex; gap: 8px; margin-top: 14px; }
+  input[type="password"], input[type="text"] {
+    flex: 1;
+    padding: 12px 14px;
+    border: 1.5px solid var(--line);
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+    background: #fffdf9;
+  }
+  input:focus { border-color: var(--red); }
+  .btn {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 10px;
+    background: var(--red);
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: var(--red-dark); }
+  .btn:disabled { background: #ccc; cursor: not-allowed; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--red);
+    border: 1.5px solid var(--red);
+  }
+  .btn-ghost:hover { background: rgba(192,57,43,0.06); }
+  .hint { font-size: 13px; color: var(--muted); margin-top: 10px; line-height: 1.6; }
+  .hint a { color: var(--blue); }
+
+  /* ---------- Level test ---------- */
+  .progress-bar {
+    height: 6px;
+    background: var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  .progress-bar > div {
+    height: 100%;
+    background: var(--gold);
+    width: 0;
+    transition: width 0.3s;
+  }
+  .q-number { font-size: 13px; color: var(--muted); margin-bottom: 8px; font-weight: 600; }
+  .q-text { font-size: 20px; font-weight: 700; margin-bottom: 6px; line-height: 1.5; }
+  .q-text .zh-big { font-size: 26px; color: var(--red); }
+  .q-sub { font-size: 14px; color: var(--muted); margin-bottom: 18px; }
+  .choices { display: flex; flex-direction: column; gap: 10px; }
+  .choice {
+    text-align: left;
+    padding: 14px 16px;
+    border: 1.5px solid var(--line);
+    border-radius: 12px;
+    background: #fffdf9;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .choice:hover { border-color: var(--gold); background: #fffaf0; }
+  .skip-row { margin-top: 16px; text-align: center; }
+  .skip-link {
+    background: none; border: none;
+    color: var(--muted); font-size: 13px;
+    text-decoration: underline; cursor: pointer;
+  }
+
+  .result-level {
+    font-size: 56px;
+    font-weight: 800;
+    color: var(--red);
+    text-align: center;
+    margin: 10px 0;
+  }
+  .result-desc { text-align: center; color: var(--muted); font-size: 15px; line-height: 1.7; margin-bottom: 20px; }
+
+  /* ---------- Dictionary ---------- */
+  .search-row { display: flex; gap: 8px; }
+  .search-row input { font-size: 18px; }
+  .status-msg {
+    text-align: center;
+    color: var(--muted);
+    font-size: 14px;
+    padding: 20px 0;
+    display: none;
+  }
+  .status-msg.show { display: block; }
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 3px solid var(--line);
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: -4px;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .entry { display: none; }
+  .entry.show { display: block; animation: fadeIn 0.3s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  .entry-head { border-bottom: 2px solid var(--red); padding-bottom: 14px; margin-bottom: 18px; }
+  .entry-word { font-size: 42px; font-weight: 800; color: var(--ink); }
+  .entry-pinyin { font-size: 18px; color: var(--red); font-weight: 600; margin-left: 10px; }
+  .entry-meta { margin-top: 6px; font-size: 14px; color: var(--muted); }
+  .pos-tag {
+    display: inline-block;
+    background: #f3ece0;
+    color: #7a6a45;
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    margin-right: 6px;
+  }
+
+  .section { margin-bottom: 22px; }
+  .section-title {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--gold);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+  .sense { margin-bottom: 16px; padding-left: 28px; position: relative; }
+  .sense-num {
+    position: absolute; left: 0; top: 2px;
+    width: 20px; height: 20px;
+    background: var(--red); color: #fff;
+    border-radius: 50%;
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .sense-def { font-size: 18px; line-height: 1.8; }
+  .sense-def-pinyin { font-size: 13px; color: var(--blue); margin-top: 4px; line-height: 1.6; }
+  .sense-def-ko { font-size: 14px; color: var(--muted); margin-top: 4px; line-height: 1.6; }
+
+  .example {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: #faf7f0;
+    border-left: 3px solid var(--gold);
+    border-radius: 0 8px 8px 0;
+  }
+  .example .zh { font-size: 16px; line-height: 1.7; }
+  .example .py { font-size: 12px; color: var(--blue); margin-top: 2px; }
+  .example .ko { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  .syn-item {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 8px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .syn-item:last-child { border-bottom: none; }
+  .syn-word { font-size: 19px; font-weight: 700; color: var(--red); }
+  .syn-pinyin { font-size: 13px; color: var(--blue); }
+  .syn-note { font-size: 14px; color: var(--ink); width: 100%; line-height: 1.7; }
+  .syn-note-ko { font-size: 13px; color: var(--muted); width: 100%; }
+
+  .img-wrap { text-align: center; }
+  .img-wrap img {
+    max-width: 100%;
+    width: 420px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.08);
+  }
+  .img-loading { color: var(--muted); font-size: 14px; padding: 30px 0; }
+
+  .error-box {
+    display: none;
+    background: #fdf0ee;
+    border: 1px solid #f0c3bd;
+    color: var(--red-dark);
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    white-space: pre-wrap;
+  }
+  .error-box.show { display: block; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  .footer-links { text-align: center; margin-top: 24px; font-size: 13px; }
+  .footer-links button {
+    background: none; border: none;
+    color: var(--muted); text-decoration: underline;
+    cursor: pointer; font-size: 13px; margin: 0 8px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="app-header">
+    <h1><span class="zh">汉语</span> 레벨 맞춤 사전</h1>
+    <p>내 수준에 맞는 중국어로 풀이해 주는 학습 사전</p>
+    <button class="level-badge" id="levelBadge" style="display:none" onclick="goToTest()">
+      <span id="levelBadgeText">A1</span><span class="sub">· 레벨 재측정</span>
+    </button>
+  </header>
+
+  <!-- ========== Screen 1: API Key ========== -->
+  <div class="screen" id="screen-key">
+    <div class="card">
+      <h2 style="font-size:20px; margin-bottom:6px;">🔑 Gemini API 키 입력</h2>
+      <p style="font-size:14px; color:var(--muted); line-height:1.7;">
+        단어 설명과 그림 생성에 Google Gemini API를 사용합니다.<br>
+        키는 <b>브라우저(localStorage)에만 저장</b>되며 외부로 전송되지 않습니다.
+      </p>
+      <div class="key-input-row">
+        <input type="password" id="apiKeyInput" placeholder="AIza... 형식의 API 키" autocomplete="off">
+        <button class="btn" onclick="saveApiKey()">저장</button>
+      </div>
+      <p class="hint">
+        키 발급: <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio → Get API key</a><br>
+        텍스트 설명: <code>gemini-2.5-flash</code> · 그림 생성: <code>gemini-3.1-flash-image</code>
+      </p>
+    </div>
+  </div>
+
+  <!-- ========== Screen 2: Level Test ========== -->
+  <div class="screen" id="screen-test">
+    <div class="card" id="testCard">
+      <div class="progress-bar"><div id="testProgress"></div></div>
+      <div id="testBody"></div>
+      <div class="skip-row">
+        <button class="skip-link" onclick="skipTest()">테스트 건너뛰고 직접 레벨 선택</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== Screen 2b: Manual level pick / result ========== -->
+  <div class="screen" id="screen-result">
+    <div class="card" style="text-align:center;">
+      <div id="resultArea"></div>
+      <div id="manualPick" style="display:none;">
+        <h2 style="font-size:20px; margin-bottom:14px;">레벨을 직접 선택하세요</h2>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; justify-content:center;">
+          <button class="btn btn-ghost" onclick="setLevel('A1')">A1 입문</button>
+          <button class="btn btn-ghost" onclick="setLevel('A2')">A2 초급</button>
+          <button class="btn btn-ghost" onclick="setLevel('B1')">B1 중급</button>
+          <button class="btn btn-ghost" onclick="setLevel('B2')">B2 중상급</button>
+          <button class="btn btn-ghost" onclick="setLevel('C1')">C1 고급</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== Screen 3: Dictionary ========== -->
+  <div class="screen" id="screen-dict">
+    <div class="card">
+      <div class="search-row">
+        <input type="text" id="searchInput" placeholder="중국어 단어 입력 (예: 高兴, 突然, 把握)" onkeydown="if(event.key==='Enter')lookup()">
+        <button class="btn" id="searchBtn" onclick="lookup()">검색</button>
+      </div>
+    </div>
+
+    <div class="error-box" id="errorBox"></div>
+
+    <div class="status-msg" id="statusMsg">
+      <span class="spinner"></span><span id="statusText">단어를 분석하는 중…</span>
+    </div>
+
+    <div class="entry card" id="entryCard">
+      <div class="entry-head">
+        <span class="entry-word" id="entryWord"></span>
+        <span class="entry-pinyin" id="entryPinyin"></span>
+        <div class="entry-meta" id="entryMeta"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">释义 · 단어 풀이</div>
+        <div id="sensesArea"></div>
+      </div>
+
+      <div class="section" id="synSection">
+        <div class="section-title">近义词 · 동의어 비교</div>
+        <div id="synArea"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">图解 · 그림으로 보기</div>
+        <div class="img-wrap" id="imgWrap">
+          <div class="img-loading" id="imgLoading"><span class="spinner"></span>그림을 그리는 중…</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-links">
+      <button onclick="goToTest()">레벨 재측정</button>
+      <button onclick="resetKey()">API 키 변경</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+"use strict";
+
+/* ==================== state ==================== */
+const LS_KEY = "zhdict_api_key";
+const LS_LEVEL = "zhdict_level";
+const TEXT_MODEL = "gemini-2.5-flash";
+const IMAGE_MODEL = "gemini-3.1-flash-image";
+const API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/";
+
+let apiKey = localStorage.getItem(LS_KEY) || "";
+let userLevel = localStorage.getItem(LS_LEVEL) || "";
+
+/* ==================== level test data ====================
+   각 문항은 난이도별. 점수 합산으로 CEFR 레벨 판정. */
+const QUESTIONS = [
+  {
+    level: "A1", points: 1,
+    q: '<span class="zh-big">你好</span> 의 뜻은?',
+    sub: "가장 기본적인 인사말입니다.",
+    choices: ["안녕하세요", "감사합니다", "죄송합니다", "안녕히 가세요"],
+    answer: 0
+  },
+  {
+    level: "A1", points: 1,
+    q: '"저는 학생입니다"를 중국어로 하면?',
+    sub: "기초 문장 구조 (주어+是+명사)",
+    choices: ["我是学生", "我有学生", "我去学生", "我在学生"],
+    answer: 0
+  },
+  {
+    level: "A2", points: 2,
+    q: '<span class="zh-big">昨天我去商店买了一些水果。</span><br>이 문장의 뜻은?',
+    sub: "과거 표현과 양사를 확인합니다.",
+    choices: [
+      "어제 나는 상점에 가서 과일을 좀 샀다",
+      "내일 나는 상점에 가서 과일을 살 것이다",
+      "어제 나는 상점에서 과일을 팔았다",
+      "나는 매일 상점에 가서 과일을 산다"
+    ],
+    answer: 0
+  },
+  {
+    level: "A2", points: 2,
+    q: '빈칸에 알맞은 것은?<br><span class="zh-big">他说汉语说____很流利。</span>',
+    sub: "정도보어 구조",
+    choices: ["得", "的", "地", "了"],
+    answer: 0
+  },
+  {
+    level: "B1", points: 3,
+    q: '<span class="zh-big">虽然天气不好，____我们还是决定出发。</span><br>빈칸에 알맞은 것은?',
+    sub: "접속사 호응 관계",
+    choices: ["但是", "因为", "所以", "如果"],
+    answer: 0
+  },
+  {
+    level: "B1", points: 3,
+    q: '<span class="zh-big">把</span>자문으로 올바른 문장은?',
+    sub: "把 구문의 어순을 확인합니다.",
+    choices: ["我把作业做完了", "我把做完了作业", "我做完把作业了", "把我作业做完了"],
+    answer: 0
+  },
+  {
+    level: "B2", points: 4,
+    q: '<span class="zh-big">这个方案固然有它的优点，不过实施起来难度相当大。</span><br>"固然"의 쓰임과 가장 가까운 것은?',
+    sub: "고급 접속사의 뉘앙스",
+    choices: [
+      "일단 인정하지만 뒤에 반전이 옴 (~이긴 하지만)",
+      "강한 부정 (~일 리가 없다)",
+      "추측 (아마 ~일 것이다)",
+      "조건 (만약 ~라면)"
+    ],
+    answer: 0
+  },
+  {
+    level: "B2", points: 4,
+    q: '다음 중 <span class="zh-big">"未免"</span>이 자연스럽게 쓰인 문장은?',
+    sub: "부사의 어감 판단",
+    choices: [
+      "你这样说未免太过分了吧。",
+      "我未免去过北京。",
+      "他未免是我的老师。",
+      "未免你来了，我们开始吧。"
+    ],
+    answer: 0
+  },
+  {
+    level: "C1", points: 5,
+    q: '<span class="zh-big">他对这件事的处理方式，颇有些避重就轻的意味。</span><br>"避重就轻"의 뜻은?',
+    sub: "성어 이해",
+    choices: [
+      "핵심은 피하고 사소한 것만 다루다",
+      "무거운 짐을 들고 가볍게 걷다",
+      "어려움을 무릅쓰고 정면 돌파하다",
+      "중요한 일을 먼저 처리하다"
+    ],
+    answer: 0
+  },
+  {
+    level: "C1", points: 5,
+    q: '<span class="zh-big">与其说他是固执，不如说他是对原则的坚守。</span><br>이 문장이 전달하는 평가는?',
+    sub: "비교 선택 구문의 함의",
+    choices: [
+      "그를 긍정적으로 평가한다 (고집이 아니라 원칙 고수)",
+      "그를 부정적으로 평가한다 (원칙이 아니라 고집)",
+      "그가 고집스럽고 원칙도 없다고 본다",
+      "판단을 유보한다"
+    ],
+    answer: 0
+  }
+];
+
+let testIdx = 0;
+let testScore = 0;
+let maxScore = QUESTIONS.reduce((s, q) => s + q.points, 0);
+
+/* ==================== screen routing ==================== */
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function updateLevelBadge() {
+  const badge = document.getElementById("levelBadge");
+  if (userLevel) {
+    badge.style.display = "inline-flex";
+    document.getElementById("levelBadgeText").textContent = userLevel;
+  } else {
+    badge.style.display = "none";
+  }
+}
+
+function boot() {
+  updateLevelBadge();
+  if (!apiKey) { showScreen("screen-key"); return; }
+  if (!userLevel) { startTest(); return; }
+  showScreen("screen-dict");
+}
+
+/* ==================== API key ==================== */
+function saveApiKey() {
+  const v = document.getElementById("apiKeyInput").value.trim();
+  if (!v) { alert("API 키를 입력하세요."); return; }
+  apiKey = v;
+  localStorage.setItem(LS_KEY, v);
+  boot();
+}
+function resetKey() {
+  if (!confirm("저장된 API 키를 삭제하고 다시 입력할까요?")) return;
+  localStorage.removeItem(LS_KEY);
+  apiKey = "";
+  document.getElementById("apiKeyInput").value = "";
+  showScreen("screen-key");
+}
+
+/* ==================== level test ==================== */
+function goToTest() { startTest(); }
+
+function startTest() {
+  testIdx = 0;
+  testScore = 0;
+  showScreen("screen-test");
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = QUESTIONS[testIdx];
+  document.getElementById("testProgress").style.width =
+    Math.round((testIdx / QUESTIONS.length) * 100) + "%";
+
+  // 보기 순서 섞기 (정답 인덱스 추적)
+  const order = q.choices.map((_, i) => i).sort(() => Math.random() - 0.5);
+
+  const body = document.getElementById("testBody");
+  body.innerHTML = `
+    <div class="q-number">문제 ${testIdx + 1} / ${QUESTIONS.length} · 난이도 ${q.level}</div>
+    <div class="q-text">${q.q}</div>
+    <div class="q-sub">${q.sub}</div>
+    <div class="choices">
+      ${order.map(origIdx =>
+        `<button class="choice" onclick="answerQuestion(${origIdx})">${q.choices[origIdx]}</button>`
+      ).join("")}
+    </div>
+  `;
+}
+
+function answerQuestion(choiceIdx) {
+  const q = QUESTIONS[testIdx];
+  if (choiceIdx === q.answer) testScore += q.points;
+  testIdx++;
+  if (testIdx < QUESTIONS.length) {
+    renderQuestion();
+  } else {
+    finishTest();
+  }
+}
+
+function finishTest() {
+  const ratio = testScore / maxScore; // 0~1
+  let level;
+  if (ratio < 0.15) level = "A1";
+  else if (ratio < 0.35) level = "A2";
+  else if (ratio < 0.55) level = "B1";
+  else if (ratio < 0.78) level = "B2";
+  else level = "C1";
+
+  setLevelInternal(level);
+
+  const descMap = {
+    A1: "입문 단계. 아주 기초적인 단어와 짧은 문장으로 설명해 드릴게요.",
+    A2: "초급 단계. 일상 어휘 중심의 쉬운 중국어로 설명해 드릴게요.",
+    B1: "중급 단계. 익숙한 주제의 자연스러운 중국어로 설명해 드릴게요.",
+    B2: "중상급 단계. 폭넓은 어휘로 뉘앙스까지 설명해 드릴게요.",
+    C1: "고급 단계. 원어민 사전 수준의 정밀한 중국어 풀이를 제공해요."
+  };
+
+  showScreen("screen-result");
+  document.getElementById("manualPick").style.display = "none";
+  document.getElementById("resultArea").innerHTML = `
+    <p style="color:var(--muted); font-size:14px;">측정 결과 (${testScore}/${maxScore}점)</p>
+    <div class="result-level">${level}</div>
+    <p class="result-desc">${descMap[level]}</p>
+    <button class="btn" onclick="showScreen('screen-dict')">사전 시작하기 →</button>
+    <div style="margin-top:14px;">
+      <button class="skip-link" onclick="showManualPick()">다른 레벨로 직접 변경</button>
+    </div>
+  `;
+}
+
+function skipTest() {
+  showScreen("screen-result");
+  document.getElementById("resultArea").innerHTML = "";
+  showManualPick();
+}
+function showManualPick() {
+  document.getElementById("resultArea").innerHTML = "";
+  document.getElementById("manualPick").style.display = "block";
+}
+function setLevel(level) {
+  setLevelInternal(level);
+  showScreen("screen-dict");
+}
+function setLevelInternal(level) {
+  userLevel = level;
+  localStorage.setItem(LS_LEVEL, level);
+  updateLevelBadge();
+}
+
+/* ==================== Gemini calls ==================== */
+async function callGemini(model, body) {
+  const res = await fetch(`${API_BASE}${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    let msg = `HTTP ${res.status}`;
+    try {
+      const err = await res.json();
+      msg += ` — ${err.error?.message || ""}`;
+    } catch (_) {}
+    throw new Error(msg);
+  }
+  return res.json();
+}
+
+/* 레벨별 어휘 제약 설명 (프롬프트용) */
+const LEVEL_GUIDE = {
+  A1: "HSK 1급 수준(약 150단어)의 가장 기초적인 어휘만 사용. 문장은 5~8자 이내로 매우 짧게. 어려운 단어가 불가피하면 괄호로 쉬운 말 덧붙이기.",
+  A2: "HSK 2~3급 수준(약 600단어)의 일상 어휘만 사용. 문장은 짧고 단순하게. 복문 최소화.",
+  B1: "HSK 4급 수준(약 1200단어)의 어휘 사용. 자연스러운 일상 문장 가능. 성어·서면어는 피하기.",
+  B2: "HSK 5급 수준(약 2500단어)의 어휘 사용. 뉘앙스 차이와 용법 설명 포함 가능. 흔한 성어는 사용 가능.",
+  C1: "HSK 6급 이상의 풍부한 어휘 사용 가능. 원어민 학습 사전 수준의 정밀한 풀이. 서면어·성어 자유롭게 사용."
+};
+
+function buildPrompt(word) {
+  return `你是一部专为韩国学习者设计的汉语学习词典。请解释词语「${word}」。
+
+【使用者水平】CEFR ${userLevel}。释义中使用的汉语词汇必须严格遵守以下限制：
+${LEVEL_GUIDE[userLevel]}
+
+【释义风格】
+1. 像 Collins COBUILD 词典那样，用完整的句子"展开式"解释。例如不要写「高兴：快乐」，而要写「如果你感到高兴，就是说你的心情很好，想笑」这种把词放进使用情境里的解释方式。
+2. 像 Longman 词典那样，整理近义词，并说明每个近义词和「${word}」的区别(语气、场合、搭配)。近义词说明也必须遵守上述词汇水平限制。
+3. 每个义项给出1~2个例句。例句难度同样匹配 ${userLevel} 水平。
+
+必须只输出下面结构的 JSON(不要包含其他文字)：
+{
+  "word": "词语本身(简体)",
+  "pinyin": "整词拼音(带声调符号)",
+  "pos": ["词性,如 动词/名词/形容词"],
+  "hsk": "HSK等级估计,如 'HSK 2' 或 '超纲'",
+  "senses": [
+    {
+      "definition_zh": "Collins式展开释义(中文,遵守水平限制)",
+      "definition_pinyin": "释义全文的拼音",
+      "definition_ko": "释义的韩语翻译",
+      "examples": [
+        { "zh": "例句", "pinyin": "例句拼音", "ko": "韩语翻译" }
+      ]
+    }
+  ],
+  "synonyms": [
+    {
+      "word": "近义词",
+      "pinyin": "拼音",
+      "difference_zh": "与目标词的区别说明(中文,遵守水平限制)",
+      "difference_ko": "区别说明的韩语翻译"
+    }
+  ],
+  "image_prompt": "用英文写一个适合给图像生成模型的提示词,描绘一个能直观说明「${word}」含义的简单插图场景。风格: warm flat illustration, simple, educational, no text in image"
+}
+
+如果「${word}」不是有效的汉语词汇,输出: {"error": "原因(韩语)"}`;
+}
+
+async function fetchEntry(word) {
+  const data = await callGemini(TEXT_MODEL, {
+    contents: [{ parts: [{ text: buildPrompt(word) }] }],
+    generationConfig: {
+      responseMimeType: "application/json",
+      temperature: 0.4
+    }
+  });
+  const text = data.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
+  // JSON 파싱 (혹시 코드펜스가 섞여도 처리)
+  const cleaned = text.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+  return JSON.parse(cleaned);
+}
+
+async function fetchImage(prompt) {
+  const data = await callGemini(IMAGE_MODEL, {
+    contents: [{ parts: [{ text: prompt }] }]
+  });
+  const parts = data.candidates?.[0]?.content?.parts || [];
+  for (const p of parts) {
+    if (p.inlineData?.data) {
+      return `data:${p.inlineData.mimeType || "image/png"};base64,${p.inlineData.data}`;
+    }
+  }
+  throw new Error("이미지가 응답에 포함되지 않았습니다.");
+}
+
+/* ==================== dictionary UI ==================== */
+function esc(s) {
+  return String(s ?? "").replace(/[&<>"']/g, c =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+let searching = false;
+
+async function lookup() {
+  const word = document.getElementById("searchInput").value.trim();
+  if (!word || searching) return;
+
+  searching = true;
+  const btn = document.getElementById("searchBtn");
+  btn.disabled = true;
+
+  const errorBox = document.getElementById("errorBox");
+  errorBox.classList.remove("show");
+  document.getElementById("entryCard").classList.remove("show");
+  const status = document.getElementById("statusMsg");
+  status.classList.add("show");
+  document.getElementById("statusText").textContent =
+    `「${word}」을(를) ${userLevel} 수준 중국어로 풀이하는 중…`;
+
+  try {
+    const entry = await fetchEntry(word);
+    if (entry.error) throw new Error(entry.error);
+    renderEntry(entry);
+    status.classList.remove("show");
+
+    // 이미지는 비동기로 (텍스트 먼저 보여주기)
+    loadImage(entry.image_prompt, entry.word);
+  } catch (e) {
+    status.classList.remove("show");
+    errorBox.textContent = "조회 실패: " + e.message +
+      "\n(API 키가 유효한지, 모델 사용 권한이 있는지 확인하세요.)";
+    errorBox.classList.add("show");
+  } finally {
+    searching = false;
+    btn.disabled = false;
+  }
+}
+
+function renderEntry(entry) {
+  document.getElementById("entryWord").textContent = entry.word || "";
+  document.getElementById("entryPinyin").textContent = entry.pinyin || "";
+
+  const posTags = (entry.pos || []).map(p => `<span class="pos-tag">${esc(p)}</span>`).join("");
+  const hsk = entry.hsk ? `<span class="pos-tag" style="background:#e8f0e9;color:#3c6e47;">${esc(entry.hsk)}</span>` : "";
+  document.getElementById("entryMeta").innerHTML =
+    posTags + hsk + `<span class="pos-tag" style="background:#fdeeee;color:var(--red);">${esc(userLevel)} 맞춤 풀이</span>`;
+
+  // senses
+  const sensesArea = document.getElementById("sensesArea");
+  sensesArea.innerHTML = (entry.senses || []).map((s, i) => `
+    <div class="sense">
+      <div class="sense-num">${i + 1}</div>
+      <div class="sense-def">${esc(s.definition_zh)}</div>
+      <div class="sense-def-pinyin">${esc(s.definition_pinyin)}</div>
+      <div class="sense-def-ko">🇰🇷 ${esc(s.definition_ko)}</div>
+      ${(s.examples || []).map(ex => `
+        <div class="example">
+          <div class="zh">${esc(ex.zh)}</div>
+          <div class="py">${esc(ex.pinyin)}</div>
+          <div class="ko">${esc(ex.ko)}</div>
+        </div>
+      `).join("")}
+    </div>
+  `).join("");
+
+  // synonyms
+  const synSection = document.getElementById("synSection");
+  const synArea = document.getElementById("synArea");
+  const syns = entry.synonyms || [];
+  if (syns.length === 0) {
+    synSection.style.display = "none";
+  } else {
+    synSection.style.display = "block";
+    synArea.innerHTML = syns.map(s => `
+      <div class="syn-item">
+        <span class="syn-word">${esc(s.word)}</span>
+        <span class="syn-pinyin">${esc(s.pinyin)}</span>
+        <span class="syn-note">${esc(s.difference_zh)}</span>
+        <span class="syn-note-ko">🇰🇷 ${esc(s.difference_ko)}</span>
+      </div>
+    `).join("");
+  }
+
+  // image placeholder
+  document.getElementById("imgWrap").innerHTML =
+    `<div class="img-loading" id="imgLoading"><span class="spinner"></span>그림을 그리는 중…</div>`;
+
+  document.getElementById("entryCard").classList.add("show");
+}
+
+async function loadImage(prompt, word) {
+  const wrap = document.getElementById("imgWrap");
+  try {
+    const fullPrompt = (prompt || `simple educational illustration of the Chinese word "${word}"`) +
+      ". Warm flat illustration style, clean composition, no text or letters in the image.";
+    const src = await fetchImage(fullPrompt);
+    wrap.innerHTML = `<img src="${src}" alt="${esc(word)} 그림 설명">`;
+  } catch (e) {
+    wrap.innerHTML = `<div class="img-loading">⚠️ 그림 생성 실패: ${esc(e.message)}</div>`;
+  }
+}
+
+/* ==================== init ==================== */
+boot();
+</script>
+</body>
+</html>

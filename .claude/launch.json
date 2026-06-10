@@ -34,6 +34,40 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["website-generator/server.js"],
       "port": 3847
+    },
+    {
+      "name": "univ-dashboard",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["serve-dashboard-univ.js"],
+      "port": 3200
+    },
+    {
+      "name": "ai-course",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "const h=require('http'),f=require('fs'),p=require('path'),m={'html':'text/html','css':'text/css','js':'application/javascript','json':'application/json','png':'image/png','jpg':'image/jpeg','svg':'image/svg+xml'};h.createServer((q,r)=>{let u=q.url.split('?')[0];if(u==='/') u='/index.html';const fp=p.join('C:\\\\Users\\\\park9\\\\ai_course',u);f.readFile(fp,(e,d)=>{if(e){r.writeHead(404);r.end('Not found');return}const ext=p.extname(fp).slice(1);r.writeHead(200,{'Content-Type':m[ext]||'application/octet-stream'});r.end(d)})}).listen(3100,()=>console.log('ai-course on 3100'))"],
+      "port": 3100
+    },
+    {
+      "name": "timeline",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "const h=require('http'),f=require('fs'),p=require('path'),m={'html':'text/html','css':'text/css','js':'application/javascript'};h.createServer((q,r)=>{let u=q.url.split('?')[0];if(u==='/') u='/index.html';const fp=p.join('C:\\\\Users\\\\park9\\\\timeline-maker',u);f.readFile(fp,(e,d)=>{if(e){r.writeHead(404);r.end('Not found');return}const ext=p.extname(fp).slice(1);r.writeHead(200,{'Content-Type':m[ext]||'text/html'});r.end(d)})}).listen(3170,()=>console.log('on 3170'))"],
+      "port": 3170
+    },
+    {
+      "name": "chinese-dictionary",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["-e", "const h=require('http'),f=require('fs');h.createServer((q,r)=>{f.readFile('C:\\\\Users\\\\park9\\\\AI KCI\\\\chinese-dictionary-app.html',(e,d)=>{if(e){r.writeHead(404);r.end('Not found');return}r.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});r.end(d)})}).listen(3220,()=>console.log('chinese-dictionary on 3220'))"],
+      "port": 3220
+    },
+    {
+      "name": "chinese-audiobook",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["C:\\Users\\park9\\AI KCI\\_cab-deploy\\server.js"],
+      "port": 3160,
+      "autoPort": false,
+      "env": {
+        "PORT": "3160"
+      }
     }
   ]
 }
