@@ -483,7 +483,7 @@
           <div class="entry-word zh-serif" id="entryWord"></div>
           <div class="entry-pinyin-row">
             <span class="entry-pinyin" id="entryPinyin"></span>
-            <button class="tts-btn" title="발음 듣기" onclick="speak(currentEntry.word)">🎤</button>
+            <button class="tts-btn" title="발음 듣기" onclick="speak(currentEntry.word)">🔊</button>
           </div>
           <div class="entry-tags" id="entryTags"></div>
         </div>
@@ -670,7 +670,7 @@ function speak(text) {
 /* 중국어 텍스트 앞에 붙는 발음 버튼 HTML (data-tts 위임 방식) */
 function ttsBtn(text, small) {
   const sz = small ? ' style="width:24px;height:24px;font-size:11px;"' : "";
-  return `<button class="tts-btn" title="발음 듣기" data-tts="${esc(text)}"${sz}>🎤</button>`;
+  return `<button class="tts-btn" title="발음 듣기" data-tts="${esc(text)}"${sz}>🔊</button>`;
 }
 document.addEventListener("click", e => {
   const btn = e.target.closest("[data-tts]");
