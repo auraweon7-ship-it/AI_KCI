@@ -4,19 +4,124 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// 서버 크래시 방지: unhandled rejection/exception 잡기
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[FATAL] Unhandled Rejection:', reason?.message || reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[FATAL] Uncaught Exception:', err.message);
+});
+
 const __filename_init = fileURLToPath(import.meta.url);
 const __dirname_init = path.dirname(__filename_init);
 dotenv.config({ path: path.join(__dirname_init, '.env') });
-import { execFile } from 'child_process';
+
+// CJK 폰트 경로 (레포에 포함된 파일 우선)
+import { execSync, execFile } from 'child_process';
+const CJK_FONT_BUNDLED = path.join(__dirname_init, 'assets', 'fonts', 'NotoSansCJKsc-Bold.otf');
+const KR_FONT_BUNDLED = path.join(__dirname_init, 'assets', 'fonts', 'KoPubWorldDotumBold.ttf');
+// TTC (Docker에서 다운로드) → 번들 OTF → 번들 한국어 TTF
+const CJK_TTC_PATHS = [
+  '/usr/share/fonts/opentype/noto/NotoSansCJK-Bold.ttc',
+  '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+  '/usr/share/fonts/truetype/noto/NotoSansCJK-Bold.ttc',
+  '/usr/share/fonts/noto-cjk/NotoSansCJK-Bold.ttc',
+  '/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc'
+];
+let CJK_FONT_PATH = CJK_TTC_PATHS.find(f => fs.existsSync(f))
+                   || (fs.existsSync(CJK_FONT_BUNDLED) ? CJK_FONT_BUNDLED : '')
+                   || (fs.existsSync(KR_FONT_BUNDLED) ? KR_FONT_BUNDLED : '');
+if (!CJK_FONT_PATH) {
+  // 시스템 폰트 검색
+  try {
+    const findResult = execSync('find /usr/share/fonts -name "NotoSansCJK*" 2>/dev/null | head -1', { encoding: 'utf-8', timeout: 5000 }).trim();
+    if (findResult && fs.existsSync(findResult)) CJK_FONT_PATH = findResult;
+  } catch(e) {}
+}
+console.log(`[Font] CJK 폰트: ${CJK_FONT_PATH || '없음 ⚠️'}`);
+// execFile already imported above with execSync
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 import { google } from 'googleapis';
+import cron from 'node-cron';
+import pg from 'pg';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// ========================
+// PostgreSQL 연결 (Railway 또는 로컬)
+// ========================
+let db = null;
+const DATABASE_URL = process.env.DATABASE_URL || process.env.POSTGRES_URL || process.env.DATABASE_PRIVATE_URL || process.env.DATABASE_PUBLIC_URL || process.env.POSTGRES_PRISMA_URL || process.env.POSTGRES_URL_NON_POOLING;
+
+async function initDB() {
+  // 디버그: DB 관련 환경변수 출력
+  const dbEnvKeys = Object.keys(process.env).filter(k => /database|postgres|pg/i.test(k));
+  console.log('[DB] DB 관련 환경변수:', dbEnvKeys.length ? dbEnvKeys.join(', ') : '없음');
+  if (!DATABASE_URL) {
+    console.log('[DB] DATABASE_URL 미설정 — JSON 파일 모드 사용');
+    return;
+  }
+  try {
+    const pool = new pg.Pool({
+      connectionString: DATABASE_URL,
+      ssl: (DATABASE_URL.includes('railway') || DATABASE_URL.includes('postgres')) ? { rejectUnauthorized: false } : false
+    });
+    await pool.query('SELECT 1');
+    db = pool;
+    console.log('[DB] PostgreSQL 연결 성공');
+
+    // 테이블 생성
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS user_settings (
+        email VARCHAR(255) PRIMARY KEY,
+        name VARCHAR(255),
+        picture TEXT,
+        api_keys JSONB DEFAULT '{}',
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS schedules (
+        id SERIAL PRIMARY KEY,
+        topic TEXT,
+        type VARCHAR(20),
+        datetime TIMESTAMP,
+        cron_expr VARCHAR(100),
+        repeat_label VARCHAR(100),
+        settings JSONB DEFAULT '{}',
+        status VARCHAR(20) DEFAULT 'pending',
+        last_run TIMESTAMP,
+        last_error TEXT,
+        last_topic TEXT,
+        run_count INT DEFAULT 0,
+        progress JSONB,
+        created_at TIMESTAMP DEFAULT NOW()
+      )
+    `);
+    console.log('[DB] 테이블 초기화 완료');
+  } catch(e) {
+    console.error('[DB] 연결 실패:', e.message);
+    db = null;
+  }
+}
+await initDB();
+
 const app = express();
 app.use(express.json({ limit: '50mb' }));
+// 개발 모드: HTML/JS 캐시 방지
+app.use((req, res, next) => {
+  if (req.path.endsWith('.html') || req.path.endsWith('.js')) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    res.set('Pragma', 'no-cache');
+  }
+  next();
+});
+// / → landing.html, /app → index.html
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'landing.html')));
+app.get('/app', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/output', express.static(path.join(__dirname, 'output')));
 
@@ -38,10 +143,10 @@ function cleanKey(k) {
   return k.trim().replace(/^["']|["']$/g, '').trim();
 }
 
-const ANTHROPIC_KEY = cleanKey(process.env.ANTHROPIC_API_KEY);
-const OPENAI_KEY = cleanKey(process.env.OPENAI_API_KEY);
-const ELEVENLABS_KEY = cleanKey(process.env.ELEVENLABS_API_KEY);
-const PEXELS_KEY = cleanKey(process.env.PEXELS_API_KEY);
+let ANTHROPIC_KEY = cleanKey(process.env.ANTHROPIC_API_KEY);
+let OPENAI_KEY = cleanKey(process.env.OPENAI_API_KEY);
+let ELEVENLABS_KEY = cleanKey(process.env.ELEVENLABS_API_KEY);
+let PEXELS_KEY = cleanKey(process.env.PEXELS_API_KEY);
 
 console.log('[Boot] env 검증:');
 console.log('  ANTHROPIC:', ANTHROPIC_KEY ? `set (${ANTHROPIC_KEY.length}자, prefix=${ANTHROPIC_KEY.substring(0,7)}...)` : '❌ 미설정');
@@ -80,10 +185,12 @@ function checkOpenAI() {
 
 // YouTube OAuth2
 const oauth2Client = new google.auth.OAuth2(
-  process.env.YOUTUBE_CLIENT_ID,
-  process.env.YOUTUBE_CLIENT_SECRET,
-  process.env.YOUTUBE_REDIRECT_URI || `http://localhost:${PORT}/api/youtube/callback`
+  cleanKey(process.env.YOUTUBE_CLIENT_ID),
+  cleanKey(process.env.YOUTUBE_CLIENT_SECRET),
+  cleanKey(process.env.YOUTUBE_REDIRECT_URI) || `http://localhost:${PORT}/api/google/callback`
 );
+console.log('[OAuth] Client ID:', process.env.YOUTUBE_CLIENT_ID ? `set (${cleanKey(process.env.YOUTUBE_CLIENT_ID).substring(0,10)}...)` : '❌');
+console.log('[OAuth] Redirect URI:', cleanKey(process.env.YOUTUBE_REDIRECT_URI) || `http://localhost:${PORT}/api/google/callback`);
 
 let youtubeTokens = null;
 const TOKEN_PATH = path.join(__dirname, '.youtube-tokens.json');
@@ -125,7 +232,7 @@ function getProject(id) {
 // ========================
 // Health Check
 // ========================
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
   res.json({
     status: 'ok',
     apis: {
@@ -141,7 +248,13 @@ app.get('/api/health', (req, res) => {
       elevenlabs: ELEVENLABS_KEY?.length || 0,
       pexels: PEXELS_KEY?.length || 0
     },
-    ffmpeg: true
+    ffmpeg: await new Promise(resolve => {
+      execFile('ffmpeg', ['-version'], { timeout: 5000 }, (err, stdout) => {
+        resolve(err ? false : stdout.split('\n')[0] || true);
+      });
+    }),
+    database: !!db,
+    cjkFont: CJK_FONT_PATH || false
   });
 });
 
@@ -179,14 +292,17 @@ app.get('/api/youtube/trending', async (req, res) => {
 app.post('/api/topics/suggest', async (req, res) => {
   try {
     checkAnthropic();
-    const { category, target, keyword, categories } = req.body;
+    const { category, target, keyword, categories, language, count } = req.body;
+    const topicCount = Math.min(Math.max(parseInt(count) || 10, 1), 30);
     const catList = categories || 'history,science,ai,mystery,economy,psychology,nature,crime,culture,philosophy,health';
+    const topicLang = language || '한국어';
 
     const prompt = `당신은 100만 구독자를 보유한 전문 유튜브 채널 기획자입니다.
 
-다음 조건에 맞는 유튜브 롱폼 영상 주제 6개를 추천해주세요:
+다음 조건에 맞는 유튜브 롱폼 영상 주제 ${topicCount}개를 추천해주세요:
 - 카테고리: ${category || '자유 (다양한 카테고리에서 골고루)'}
 - 타겟 시청자: ${target || '전 연령'}
+- 출력 언어: ${topicLang} (모든 title과 description을 반드시 ${topicLang}로 작성하세요)
 ${keyword ? `- 관련 키워드: ${keyword}` : ''}
 
 category 필드는 반드시 다음 중 하나를 사용하세요: ${catList}
@@ -204,17 +320,42 @@ category 필드는 반드시 다음 중 하나를 사용하세요: ${catList}
   }
 ]
 
+반드시 정확히 ${topicCount}개를 생성하세요. ${topicCount}개 미만이면 안 됩니다.
 JSON 배열만 반환하세요. 다른 텍스트 없이.`;
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
+      max_tokens: Math.max(4000, topicCount * 400),
       messages: [{ role: 'user', content: prompt }]
     });
 
     const text = message.content[0].text;
     const jsonMatch = text.match(/\[[\s\S]*\]/);
-    const topics = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+    let topics = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+    console.log(`[Topics] 1차: ${topics.length}개 생성`);
+
+    // 요청 수 미만이면 추가 생성
+    if (topics.length < topicCount) {
+      const need = topicCount - topics.length;
+      console.log(`[Topics] ${need}개 추가 생성 중...`);
+      try {
+        const msg2 = await anthropic.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 3000,
+          messages: [{ role: 'user', content: `이전에 ${topics.length}개 주제를 생성했습니다. 추가로 ${need}개를 더 생성하세요.
+기존 주제: ${topics.map(t=>t.title).join(', ')}
+중복되지 않는 새로운 주제 ${need}개를 동일한 JSON 형식으로 생성하세요.
+조건: 카테고리=${category||'자유'}, 타겟=${target||'전 연령'}, 언어=${topicLang}
+JSON 배열만 반환:` }]
+        });
+        const match2 = msg2.content[0].text.match(/\[[\s\S]*\]/);
+        if (match2) {
+          const extra = JSON.parse(match2[0]);
+          topics = topics.concat(extra).slice(0, 10);
+        }
+      } catch(e) { console.warn('[Topics] 추가 생성 실패:', e.message); }
+      console.log(`[Topics] 최종: ${topics.length}개`);
+    }
 
     res.json({ success: true, topics });
   } catch (error) {
@@ -227,7 +368,7 @@ JSON 배열만 반환하세요. 다른 텍스트 없이.`;
 // ========================
 app.post('/api/plan/generate', async (req, res) => {
   try {
-    const { projectId, topic, target, length, tone, style, notes } = req.body;
+    const { projectId, topic, target, length, tone, style, notes, refText } = req.body;
     const project = getProject(projectId);
     project.topic = topic;
     project.target = target;
@@ -242,6 +383,7 @@ app.post('/api/plan/generate', async (req, res) => {
 [톤앤매너]: ${tone || '진지하고 무게감 있는'}
 [비주얼 스타일]: ${style || '유럽풍 애니메이션'}
 ${notes ? `[특별 요청]: ${notes}` : ''}
+${refText ? `\n[참고 대본 텍스트]:\n아래 텍스트를 핵심 자료로 참고하여 기획안을 작성하세요. 이 텍스트의 내용, 구조, 핵심 정보를 최대한 반영하세요.\n---\n${refText.substring(0, 6000)}\n---` : ''}
 
 기획안에 다음을 포함해주세요:
 1. 영상 구조 (기승전결): 오프닝(후킹) - 서론 - 본론1 - 본론2 - 클라이맥스 - 결론(CTA)
@@ -250,6 +392,7 @@ ${notes ? `[특별 요청]: ${notes}` : ''}
 3. Fact-Check 체크리스트
 4. 참고 자료/출처 가이드
 
+중요: 이 영상은 단독 완결형 콘텐츠입니다. "다음 영상", "후속편", "시리즈 다음 편" 등 다음 영상 예고를 절대 포함하지 마세요.
 전문적이고 상세한 기획안을 작성해주세요.`;
 
     const message = await anthropic.messages.create({
@@ -272,7 +415,7 @@ ${notes ? `[특별 요청]: ${notes}` : ''}
 // ========================
 app.post('/api/script/generate', async (req, res) => {
   try {
-    const { projectId, topic, target, wordCount, narration, plan, tone, language } = req.body;
+    const { projectId, topic, target, wordCount, narration, plan, tone, language, refText, targetMinutes } = req.body;
     const project = getProject(projectId);
 
     const prompt = `당신은 100만 구독자를 보유한 전문 유튜브 대본 작가입니다.
@@ -287,9 +430,16 @@ app.post('/api/script/generate', async (req, res) => {
 [출력 언어]: ${language || '한국어'} (이 언어로 모든 본문 나레이션을 작성하세요)
 
 ${plan || project.plan ? `[기획안 참고]:\n${(plan || project.plan).substring(0, 2000)}` : ''}
+${refText ? `\n[참고 대본 텍스트]:\n아래 텍스트를 핵심 자료로 참고하여 대본을 작성하세요. 이 텍스트의 내용, 사실 관계, 핵심 정보를 정확히 반영하되, 유튜브 영상에 적합한 나레이션 형태로 재구성하세요.\n---\n${refText.substring(0, 8000)}\n---` : ''}
 
 대본 작성 규칙:
 1. 구조: 오프닝(강력한 후킹) → 서론 → 본론 → 클라이맥스 → 결론(CTA)
+   [오프닝 30초 — 시청자 이탈 방지 핵심]
+   - 첫 문장부터 충격적 사실, 반전, 또는 강렬한 질문으로 시작 (예: "이것을 알게 된 순간, 당신의 상식이 무너질 것입니다")
+   - 절대 배경 설명이나 인사말로 시작하지 마세요. 곧바로 핵심 미스터리/충격/호기심을 던지세요
+   - 첫 30초(약 120자) 안에 시청자가 "계속 봐야 하는 이유"를 명확히 제시
+   - 오프닝에서 영상 전체의 가장 충격적인 팩트를 미리 암시 (스포일러 아닌 티저)
+   - 짧고 강렬한 문장 연속 사용 (한 문장 20자 이내 권장)
 2. Fact-Check: 실제 역사적 사실/검증된 데이터만 사용
 3. 각 장면을 [장면 1: 제목 | 이미지: 비주얼 묘사] 형식으로 구분 (이미지 묘사는 반드시 [] 대괄호 안에만 포함)
 4. 톤/감정 지시문 금지: "(차분하게)", "(긴장감 있게)" 같은 연출 지시는 절대 작성 금지 (TTS가 그대로 읽음)
@@ -303,16 +453,28 @@ ${plan || project.plan ? `[기획안 참고]:\n${(plan || project.plan).substrin
 8. 절대 문장을 "..." 으로 생략하지 마세요. 모든 문장은 반드시 완전하게 끝맺어야 합니다.
 9. "~것을...", "~했다는..." 같은 미완성 문장은 금지합니다. 마지막 문장까지 완결된 형태로 작성하세요.
 10. 나레이션 본문은 시청자가 들을 음성 텍스트만 작성하세요. 화면 설명/시각 효과 지시/자막 안내/연출 지시/감정 톤 지시는 절대 본문에 쓰지 마세요.
+11. 다음 영상 예고 절대 금지: "다음 영상에서는", "다음 편에서", "다음 시간에", "후속 영상", "2부에서", "시리즈 다음 편", "다음 이야기" 등 다음 영상·후속 콘텐츠를 예고하거나 암시하는 문장을 절대 작성하지 마세요. 이 영상은 단독 완결형 콘텐츠입니다.
 
-${wordCount || 3000}자 이상의 완성된 대본을 작성해주세요. 절대 중간에 끊기지 않도록 끝까지 완성하세요.`;
+[중요 - 분량 엄수 (오차 ±3분 이내)]
+- 목표 영상 길이: 정확히 ${targetMinutes || 15}분 (허용 오차: ±3분)
+- TTS 음성 속도: 약 230자/분 (한국어 ElevenLabs 기준)
+- 따라서 나레이션 본문(장면 헤더 [장면 N:...] 제외)은 반드시 ${wordCount || 3000}자 내외로 작성하세요.
+- 허용 범위: ${Math.round((wordCount||3000)*0.85)}자 ~ ${Math.round((wordCount||3000)*1.15)}자
+- 이 범위를 벗어나면 영상 길이가 목표에서 3분 이상 차이납니다. 반드시 지켜주세요.
+- 절대 중간에 끊기지 않도록 끝까지 완성하세요.`;
 
-    const message = await anthropic.messages.create({
+    // 스트리밍으로 긴 대본 수신 (타임아웃 방지)
+    let script = '';
+    const stream = anthropic.messages.stream({
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 16000,
+      max_tokens: 32000,
       messages: [{ role: 'user', content: prompt }]
     });
-
-    const script = message.content[0].text;
+    for await (const event of stream) {
+      if (event.type === 'content_block_delta' && event.delta?.text) {
+        script += event.delta.text;
+      }
+    }
     project.script = script;
 
     const sceneMatches = script.match(/\[장면\s*\d+[^\]]*\]/g) || [];
@@ -428,12 +590,15 @@ ${fullScript.substring(0, 8000)}
 2. 대본에 언급된 구체적인 인물, 장소, 사건, 시대를 프롬프트에 포함하세요.
 3. 대본 순서대로 장면을 배치하세요 (오프닝 → 본론 → 클라이맥스 → 엔딩).
 4. 각 프롬프트는 50단어 이상, 배경/조명/분위기/구도를 구체적으로 묘사하세요.
-5. search_keywords: Pexels 스톡 영상 검색에 최적화된 짧은 영문 키워드 2~3단어. 다음 규칙 준수:
-   - 구체적이고 일반적인 명사 위주
+5. search_keywords: Pexels 스톡 영상 검색에 최적화된 짧은 영문 키워드 2~4단어. 다음 규칙 준수:
+   - 대본에서 다루는 시대·배경·장소에 정확히 부합하는 키워드 사용
+   - 고대/역사 주제 → 해당 시대 관련 키워드 (예: "ancient temple ruins", "historical manuscript", "old palace courtyard", "medieval village", "silk road caravan")
+   - 현대 주제 → 현대적 키워드 (예: "modern city skyline", "AI technology lab", "smartphone user")
+   - 자연/과학 주제 → 구체적 자연 키워드 (예: "deep ocean underwater", "volcanic eruption", "microscope laboratory")
+   - 각 장면의 핵심 소재·장소·분위기를 구체적으로 반영
    - 한국 고유명사·추상명사 금지
-   - 가능하면 최신 사회 반영 (현대 도시·기술·라이프스타일·소셜미디어·디지털 환경 등)
    - 각 장면마다 서로 다른 키워드 사용 (중복 영상 회피)
-   - 예: "modern city skyline", "smartphone user", "remote work laptop", "diverse team meeting", "AI technology lab", "young professional cafe", "drone city aerial", "neon street night"
+   - 절대 금지 키워드: 폭력, 무기, 범죄, 성인, 음란, 약물, 혐오 관련 단어 일체 사용 금지
 6. 반드시 ${sceneCount}개를 모두 생성하세요.
 
 스타일: ${style || 'european-animation'}
@@ -513,7 +678,7 @@ app.post('/api/tts/generate', async (req, res) => {
 
 app.post('/api/tts/full-script', async (req, res) => {
   try {
-    const { projectId, script, voiceId, stability, similarity } = req.body;
+    const { projectId, script, voiceId, stability, similarity, language } = req.body;
     const project = getProject(projectId);
 
     // 메타 라벨 키워드 통합 패턴
@@ -561,22 +726,29 @@ app.post('/api/tts/full-script', async (req, res) => {
       .replace(/\n{3,}/g, '\n\n')
       .trim();
 
+    // 언어별 외국어 문자 제거 (한국어 선택 시 중국어/일본어 줄 제거)
+    const ttsLang = language || null;
+    const cleanScriptFiltered = ttsLang ? stripForeignLines(cleanScript, ttsLang) : cleanScript;
+
     const apiKey = process.env.ELEVENLABS_API_KEY;
     const vid = voiceId || 'pNInz6obpgDQGcFmaJgB';
     const voiceSettings = {
-      stability: stability || 0.5,
-      similarity_boost: similarity || 0.75,
+      stability: (stability != null && stability !== '') ? Number(stability) : 0.5,
+      similarity_boost: (similarity != null && similarity !== '') ? Number(similarity) : 0.75,
       style: 0.3,
       use_speaker_boost: true
     };
 
-    const CHUNK_LIMIT = 4800;
+    const CHUNK_LIMIT = 4900;
 
-    async function generateTTSChunk(text) {
+    async function generateTTSChunk(text, prevText, nextText) {
+      const payload = { text, model_id: 'eleven_multilingual_v2', voice_settings: voiceSettings };
+      if (prevText) payload.previous_text = prevText.slice(-1000);
+      if (nextText) payload.next_text = nextText.slice(0, 1000);
       const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`, {
         method: 'POST',
         headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: voiceSettings })
+        body: JSON.stringify(payload)
       });
       if (!response.ok) {
         const err = await response.text();
@@ -605,18 +777,21 @@ app.post('/api/tts/full-script', async (req, res) => {
     }
 
     // with-timestamps: 각 글자별 실제 시작/끝 시각 받아 SRT 정확도 향상
-    async function generateTTSChunkWithTimestamps(text) {
+    async function generateTTSChunkWithTimestamps(text, prevText, nextText) {
+      const payload = { text, model_id: 'eleven_multilingual_v2', voice_settings: voiceSettings };
+      if (prevText) payload.previous_text = prevText.slice(-1000);
+      if (nextText) payload.next_text = nextText.slice(0, 1000);
       const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}/with-timestamps`, {
         method: 'POST',
         headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: voiceSettings })
+        body: JSON.stringify(payload)
       });
       if (!response.ok) {
         const err = await response.text();
         // quota 부족 or 권한 부족 시 일반 TTS로 fallback
         if (response.status === 401 || response.status === 402 || /quota|credit/i.test(err)) {
           console.warn(`[TTS] with-timestamps 실패 (${response.status}), 일반 TTS로 fallback`);
-          const audio = await generateTTSChunk(text);
+          const audio = await generateTTSChunk(text, prevText, nextText);
           return { audio, alignment: null, fallback: true };
         }
         throw new Error(`ElevenLabs with-timestamps 오류: ${response.status} - ${err}`);
@@ -656,7 +831,7 @@ app.post('/api/tts/full-script', async (req, res) => {
       return chunks.filter(c => c.length > 0);
     }
 
-    const chunks = splitTextIntoChunks(cleanScript, CHUNK_LIMIT);
+    const chunks = splitTextIntoChunks(cleanScriptFiltered, CHUNK_LIMIT);
     const timestamp = Date.now();
 
     // === 정규화 헬퍼: -16 LUFS (YouTube 권장) + 압축 ===
@@ -680,7 +855,7 @@ app.post('/api/tts/full-script', async (req, res) => {
     let cumulativeOffset = 0;
 
     if (chunks.length === 1) {
-      const { audio, alignment } = await generateTTSChunkWithTimestamps(chunks[0]);
+      const { audio, alignment } = await generateTTSChunkWithTimestamps(chunks[0], null, null);
       const filename = `full_narration_${timestamp}.mp3`;
       const filepath = path.join(OUTPUT_DIR, 'audio', filename);
       // raw audio 임시 저장
@@ -702,12 +877,14 @@ app.post('/api/tts/full-script', async (req, res) => {
       }
       project.audioFiles = [{ index: 0, filename, filepath, full: true }];
       project.ttsAlignment = globalAlignment.characters.length > 0 ? globalAlignment : null;
-      return res.json({ success: true, audioUrl: `/output/audio/${filename}`, filename, charCount: cleanScript.length, chunks: 1, hasTimestamps: !!project.ttsAlignment, normalized: true });
+      return res.json({ success: true, audioUrl: `/output/audio/${filename}`, filename, charCount: cleanScriptFiltered.length, chunks: 1, hasTimestamps: !!project.ttsAlignment, normalized: true });
     }
 
     const chunkFiles = [];
     for (let i = 0; i < chunks.length; i++) {
-      const { audio, alignment } = await generateTTSChunkWithTimestamps(chunks[i]);
+      const prevText = i > 0 ? chunks[i - 1] : null;
+      const nextText = i < chunks.length - 1 ? chunks[i + 1] : null;
+      const { audio, alignment } = await generateTTSChunkWithTimestamps(chunks[i], prevText, nextText);
       const chunkFile = `chunk_${timestamp}_${i}.mp3`;
       fs.writeFileSync(path.join(OUTPUT_DIR, 'audio', chunkFile), audio);
       chunkFiles.push(chunkFile);
@@ -801,7 +978,7 @@ app.post('/api/tts/full-script', async (req, res) => {
 
     res.json({
       success: true, audioUrl: `/output/audio/${filename}`, filename,
-      charCount: cleanScript.length, chunks: chunks.length,
+      charCount: cleanScriptFiltered.length, chunks: chunks.length,
       hasTimestamps: !!project.ttsAlignment
     });
   } catch (error) {
@@ -856,9 +1033,48 @@ app.post('/api/tts/sample', async (req, res) => {
 // ========================
 // 5-1. SRT 자막 생성
 // ========================
+// ========================
+// 숏폼 대본 요약
+// ========================
+app.post('/api/shorts/summarize', async (req, res) => {
+  try {
+    checkAnthropic();
+    const { script, topic, language } = req.body;
+    if (!script) throw new Error('대본이 없습니다');
+
+    const langName = { ko: '한국어', en: '영어', zh: '중국어', ja: '일본어', es: '스페인어' }[language] || '한국어';
+
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: `다음 롱폼 대본에서 가장 흥미롭고 충격적인 내용을 2분 분량(~500자)으로 요약하세요.
+
+원본 대본:
+${script.substring(0, 6000)}
+
+규칙:
+- 출력 언어: ${langName}
+- 첫 5초에 강력한 후킹 (질문/충격적 사실)
+- 핵심 내용 3~4가지만 선택
+- 마지막에 "전체 영상은 채널에서 확인하세요!" CTA
+- 빠른 템포, 짧은 문장
+- [장면 1: 제목 | 이미지: 묘사] 형식으로 장면 구분 (5~6개 장면)
+- 500자 내외 엄수
+- 톤/감정 지시문 금지 (TTS가 읽음)
+
+나레이션 대본만 출력하세요.` }]
+    });
+
+    const shortsScript = message.content[0].text;
+    res.json({ success: true, script: shortsScript, charCount: shortsScript.length });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 app.post('/api/srt/generate', async (req, res) => {
   try {
-    const { projectId, script, duration } = req.body;
+    const { projectId, script, duration, language, ratio } = req.body;
     const project = getProject(projectId);
     const text = script || project.script || '';
     if (!text) throw new Error('대본이 없습니다');
@@ -878,7 +1094,55 @@ app.post('/api/srt/generate', async (req, res) => {
     }
 
     const totalDur = audioDuration > 0 ? audioDuration : (duration || 120);
-    const srtContent = scriptToSrt(text, totalDur, 0, project.ttsAlignment);
+    const lang = language || 'ko';
+    const srtSubMaxLen = ratio === '9:16' ? 18 : 33;
+    let srtContent = scriptToSrt(text, totalDur, 0, project.ttsAlignment, lang, srtSubMaxLen);
+
+    // 외국어(한국어 아님) → 한국어 번역 추가하여 이중 자막
+    if (lang !== 'ko' && anthropic) {
+      console.log(`[SRT] 이중 자막 생성: ${lang} + 한국어 번역`);
+      const srtBlocks = srtContent.trim().split(/\n\n+/).filter(Boolean);
+      const origLines = srtBlocks.map(block => {
+        const lines = block.split('\n');
+        return { idx: lines[0], time: lines[1], text: lines.slice(2).join(' ') };
+      });
+
+      // Claude로 일괄 번역 (원문 → 한국어)
+      const textsToTranslate = origLines.map((l, i) => `[${i}] ${l.text}`).join('\n');
+      const langNames = { en: '영어', zh: '중국어', ja: '일본어', es: '스페인어', fr: '프랑스어', de: '독일어' };
+      const langName = langNames[lang] || lang;
+
+      try {
+        const transMsg = await anthropic.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 8000,
+          messages: [{ role: 'user', content: `다음 ${langName} 자막을 한국어로 번역하세요.
+각 줄의 [번호]를 유지하고, 번역만 작성하세요. 자연스러운 한국어로 번역하세요.
+다른 설명 없이 번역 결과만 출력하세요.
+
+${textsToTranslate}` }]
+        });
+
+        const transText = transMsg.content[0].text;
+        const transMap = {};
+        const transLines = transText.split('\n').filter(l => l.trim());
+        for (const line of transLines) {
+          const match = line.match(/^\[(\d+)\]\s*(.+)$/);
+          if (match) transMap[parseInt(match[1])] = match[2].trim();
+        }
+
+        // 이중 자막 SRT 재구성: 원문 위, 한국어 아래
+        let bilingualSrt = '';
+        origLines.forEach((l, i) => {
+          const koText = transMap[i] || '';
+          bilingualSrt += `${l.idx}\n${l.time}\n${l.text}\n${koText}\n\n`;
+        });
+        srtContent = bilingualSrt;
+        console.log(`[SRT] 이중 자막 완료: ${origLines.length}개 항목`);
+      } catch (e) {
+        console.warn('[SRT] 번역 실패, 원문 자막만 사용:', e.message);
+      }
+    }
 
     const filename = `subtitles_${Date.now()}.srt`;
     fs.writeFileSync(path.join(OUTPUT_DIR, 'srt', filename), srtContent, 'utf-8');
@@ -888,8 +1152,9 @@ app.post('/api/srt/generate', async (req, res) => {
       srtUrl: `/output/srt/${filename}`,
       filename,
       subtitleCount: srtContent.split('\n\n').filter(Boolean).length,
-      preview: srtContent.substring(0, 500),
-      audioDuration: totalDur
+      preview: srtContent.substring(0, 800),
+      audioDuration: totalDur,
+      bilingual: lang !== 'ko'
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -908,7 +1173,8 @@ app.post('/api/clips/generate', async (req, res) => {
     const apiKey = process.env.PEXELS_API_KEY;
     if (!apiKey) throw new Error('PEXELS_API_KEY가 설정되지 않았습니다. .env 파일에 추가하세요. (무료 발급: https://www.pexels.com/api/)');
 
-    const { projectId, scenePrompts, perSceneDuration } = req.body;
+    const { projectId, scenePrompts, perSceneDuration, ratio } = req.body;
+    const pexelsOrientation = ratio === '9:16' ? 'portrait' : 'landscape';
     const project = getProject(projectId);
     const prompts = scenePrompts || project.scenePrompts || [];
     if (!prompts.length) throw new Error('장면 프롬프트가 없습니다. 먼저 프롬프트를 생성하세요.');
@@ -928,7 +1194,7 @@ app.post('/api/clips/generate', async (req, res) => {
 
     // Pexels 검색 + 사용 안 된 결과 반환 헬퍼
     async function searchAvailable(query) {
-      const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=15&orientation=landscape`;
+      const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=15&orientation=${pexelsOrientation}&safe_search=true`;
       const r = await fetch(url, { headers: { Authorization: apiKey } });
       if (!r.ok) return [];
       const data = await r.json();
@@ -1095,6 +1361,21 @@ function stripMetaLabels(text) {
     .replace(/\*{0,2}(?:나레이터|내레이터|해설|화자)\*{0,2}\s*[:：]\s*/g, '');
 }
 
+// 언어별 외국어 문자 필터: 해당 언어가 아닌 문자가 과반인 줄 제거
+function stripForeignLines(text, lang) {
+  if (!lang || lang === 'auto') return text;
+  return text.split('\n').filter(line => {
+    const t = line.replace(/[\s\d.,!?。！？，、:：;；""''「」『』()（）\[\]—\-·…~]/g, '');
+    if (t.length < 2) return true;
+    if (lang === 'ko') {
+      // 한국어: CJK 통합 한자(U+4E00-9FFF) + 일본어 가나가 과반이면 제거
+      const foreign = (t.match(/[一-鿿぀-ゟ゠-ヿ]/g) || []).length;
+      return foreign / t.length < 0.5;
+    }
+    return true;
+  }).join('\n');
+}
+
 // 긴 문장을 자연스러운 단위(30~35자)로 분할
 function splitForSubtitle(sentence, maxLen = 33) {
   const t = sentence.trim();
@@ -1126,8 +1407,9 @@ function splitForSubtitle(sentence, maxLen = 33) {
 
 // alignment 기반 SRT (정확): TTS 글자별 실제 timing 사용
 // fallback: 글자 비례 분배 (alignment 없을 때)
-function scriptToSrt(scriptText, audioDur, offset = 0, alignment = null) {
-  const cleaned = stripMetaLabels(scriptText);
+function scriptToSrt(scriptText, audioDur, offset = 0, alignment = null, lang = null, maxSubLen = 33) {
+  let cleaned = stripMetaLabels(scriptText);
+  if (lang) cleaned = stripForeignLines(cleaned, lang);
 
   // 자막 단위 추출 (30~35자 청크)
   const subtitleChunks = [];
@@ -1149,7 +1431,7 @@ function scriptToSrt(scriptText, audioDur, offset = 0, alignment = null) {
     sentences.forEach((sent) => {
       const t = sent.trim();
       if (!t || t.length < 3) return;
-      const chunks = splitForSubtitle(t, 33);
+      const chunks = splitForSubtitle(t, maxSubLen);
       chunks.forEach(c => subtitleChunks.push(c));
     });
   });
@@ -1233,8 +1515,14 @@ function scriptToSrt(scriptText, audioDur, offset = 0, alignment = null) {
 }
 
 app.post('/api/render/video', async (req, res) => {
+  // Railway 프록시 타임아웃 방지: 30초마다 진행 표시 전송
+  req.setTimeout(1200000); // 20분
+  res.setTimeout(1200000);
   try {
-    const { projectId, duration, bgmFile, bgmVolume, transition, transitionDuration, burnSrt, showThumb, showIntro, kenburns, sourceMode } = req.body;
+    const { projectId, duration, bgmFile, bgmVolume, transition, transitionDuration, burnSrt, showThumb, showIntro, kenburns, sourceMode, language, ratio } = req.body;
+    const isVertical = ratio === '9:16';
+    const outW = isVertical ? 1080 : 1920;
+    const outH = isVertical ? 1920 : 1080;
     const project = getProject(projectId);
 
     // 소스 모드: 'image' (기본) / 'video' (Pexels 스톡 영상)
@@ -1255,11 +1543,28 @@ app.post('/api/render/video', async (req, res) => {
     if (images.length === 0) throw new Error(useVideo
       ? '영상 클립이 없습니다. 먼저 영상 클립을 생성하세요 (/api/clips/generate).'
       : '이미지 파일이 없습니다. 먼저 이미지를 생성하세요.');
-    if (!audioFile) throw new Error('오디오 파일이 없습니다. 먼저 TTS를 생성하세요.');
+    if (!audioFile) {
+      const audioDir = path.join(OUTPUT_DIR, 'audio');
+      const allFiles = fs.existsSync(audioDir) ? fs.readdirSync(audioDir) : [];
+      throw new Error(`오디오 파일 없음. audio/ 폴더: [${allFiles.join(', ')}]`);
+    }
 
     const audioPath = path.join(OUTPUT_DIR, 'audio', audioFile);
+    const audioSize = fs.existsSync(audioPath) ? fs.statSync(audioPath).size : 0;
+    console.log(`[Render] 오디오 파일: ${audioFile}, 크기: ${(audioSize/1024).toFixed(0)}KB`);
+
+    if (audioSize < 1000) throw new Error(`오디오 파일 손상 (${audioSize}바이트): ${audioFile}`);
+
     const audioDuration = await probeDuration(audioPath);
-    if (audioDuration <= 0) throw new Error('오디오 길이를 측정할 수 없습니다.');
+    if (audioDuration <= 0) {
+      // FFmpeg 직접 진단
+      const diagResult = await new Promise(resolve => {
+        execFile('ffmpeg', ['-i', audioPath], { timeout: 10000, maxBuffer: 50*1024*1024 }, (err, stdout, stderr) => {
+          resolve(stderr || err?.message || 'unknown');
+        });
+      });
+      throw new Error(`오디오 길이 측정 실패. 파일: ${audioFile} (${(audioSize/1024).toFixed(0)}KB). FFmpeg: ${diagResult.substring(0, 300)}`);
+    }
 
     console.log(`[Render] 오디오: ${audioFile}, 실제 길이: ${audioDuration.toFixed(2)}초`);
 
@@ -1296,11 +1601,11 @@ app.post('/api/render/video', async (req, res) => {
     ];
 
     function getKenBurns(idx, frames) {
-      if (kbMode === 'none') return `scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1`;
+      if (kbMode === 'none') return `scale=${outW}:${outH}:force_original_aspect_ratio=decrease,pad=${outW}:${outH}:(ow-iw)/2:(oh-ih)/2,setsar=1`;
       const p = kbMode === 'zoom-in'  ? KB_PATTERNS[0]
               : kbMode === 'zoom-out' ? KB_PATTERNS[1]
               : KB_PATTERNS[idx % KB_PATTERNS.length];
-      return `scale=3840:2160:force_original_aspect_ratio=decrease,pad=3840:2160:(ow-iw)/2:(oh-ih)/2,setsar=1,zoompan=z='${p.z}':d=${frames}:x='${p.x}':y='${p.y}':s=1920x1080:fps=30`;
+      return `scale=${outW*2}:${outH*2}:force_original_aspect_ratio=decrease,pad=${outW*2}:${outH*2}:(ow-iw)/2:(oh-ih)/2,setsar=1,zoompan=z='${p.z}':d=${frames}:x='${p.x}':y='${p.y}':s=${outW}x${outH}:fps=30`;
     }
 
     const outputFile = `video_${Date.now()}.mp4`;
@@ -1324,11 +1629,13 @@ app.post('/api/render/video', async (req, res) => {
       let filterComplex = '';
       const scaledLabels = [];
       images.forEach((_, i) => {
-        filterComplex += `[${i}:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,setpts=PTS-STARTPTS[v${i}];`;
+        filterComplex += `[${i}:v]scale=${outW}:${outH}:force_original_aspect_ratio=decrease,pad=${outW}:${outH}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,setpts=PTS-STARTPTS[v${i}];`;
         scaledLabels.push(`v${i}`);
       });
 
-      if (transType !== 'none' && images.length > 1) {
+      // 10개 초과 시 xfade 대신 concat 사용 (메모리 절약)
+      const useXfade = transType !== 'none' && images.length > 1 && images.length <= 10;
+      if (useXfade) {
         let prevLabel = scaledLabels[0];
         for (let i = 1; i < scaledLabels.length; i++) {
           const offset = i * durationPerImage - i * transDur;
@@ -1337,6 +1644,7 @@ app.post('/api/render/video', async (req, res) => {
           prevLabel = outLabel;
         }
       } else {
+        if (images.length > 10) console.log(`[Render] 클립 ${images.length}개 → xfade 대신 concat 사용 (메모리 절약)`);
         filterComplex += scaledLabels.map(l => `[${l}]`).join('') + `concat=n=${scaledLabels.length}:v=1:a=0[vout];`;
       }
       // audio normalize 추가
@@ -1351,8 +1659,8 @@ app.post('/api/render/video', async (req, res) => {
         '-shortest', '-movflags', '+faststart',
         '-y', outputPath
       ];
-    } else if (transType !== 'none' && images.length > 1) {
-      // === 이미지 모드 + 전환 효과 ===
+    } else if (transType !== 'none' && images.length > 1 && images.length <= 10) {
+      // === 이미지 모드 + 전환 효과 (10개 이하) ===
       const inputArgs = [];
       images.forEach(img => {
         inputArgs.push('-loop', '1', '-t', String(durationPerImage), '-i', path.join(OUTPUT_DIR, sourceDir, img));
@@ -1397,7 +1705,7 @@ app.post('/api/render/video', async (req, res) => {
       ffmpegArgs = [
         '-f', 'concat', '-safe', '0', '-i', concatFile,
         '-i', audioPath,
-        '-filter_complex', `[0:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,zoompan=z='min(zoom+0.0008,1.25)':d=${Math.round(durationPerImage*30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=1920x1080:fps=30[vout];[1:a]aresample=44100,pan=stereo|c0=c0|c1=c0,loudnorm=I=-16:TP=-1.5:LRA=11[aout]`,
+        '-filter_complex', `[0:v]scale=${outW*2}:${outH*2}:force_original_aspect_ratio=decrease,pad=${outW*2}:${outH*2}:(ow-iw)/2:(oh-ih)/2,zoompan=z='min(zoom+0.0008,1.25)':d=${Math.round(durationPerImage*30)}:x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':s=${outW}x${outH}:fps=30[vout];[1:a]aresample=44100,pan=stereo|c0=c0|c1=c0,loudnorm=I=-16:TP=-1.5:LRA=11[aout]`,
         '-map', '[vout]', '-map', '[aout]',
         '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
         '-c:a', 'aac', '-b:a', '192k',
@@ -1459,7 +1767,7 @@ app.post('/api/render/video', async (req, res) => {
           execFile('ffmpeg', [
             '-loop', '1', '-t', String(THUMB_INTRO_SEC), '-i', thumbPath,
             '-f', 'lavfi', '-t', String(THUMB_INTRO_SEC), '-i', 'anullsrc=r=44100:cl=stereo',
-            '-vf', 'scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,fps=30',
+            '-vf', `scale=${outW}:${outH}:force_original_aspect_ratio=decrease,pad=${outW}:${outH}:(ow-iw)/2:(oh-ih)/2,fps=30`,
             '-c:v', 'libx264', '-preset', 'medium', '-crf', '23', '-pix_fmt', 'yuv420p',
             '-c:a', 'aac', '-b:a', '192k', '-ar', '44100', '-shortest',
             '-y', thumbVid
@@ -1475,8 +1783,8 @@ app.post('/api/render/video', async (req, res) => {
             '-i', thumbVid,
             '-i', outputPath,
             '-filter_complex',
-              `[0:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,format=yuv420p[v0];` +
-              `[1:v]scale=1920:1080:force_original_aspect_ratio=decrease,pad=1920:1080:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,format=yuv420p[v1];` +
+              `[0:v]scale=${outW}:${outH}:force_original_aspect_ratio=decrease,pad=${outW}:${outH}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,format=yuv420p[v0];` +
+              `[1:v]scale=${outW}:${outH}:force_original_aspect_ratio=decrease,pad=${outW}:${outH}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps=30,format=yuv420p[v1];` +
               `[0:a]aresample=44100,pan=stereo|c0=c0|c1=c0[a0];` +
               `[1:a]aresample=44100,pan=stereo|c0=c0|c1=c0[a1];` +
               `[v0][a0][v1][a1]concat=n=2:v=1:a=1[vout][aout]`,
@@ -1496,22 +1804,74 @@ app.post('/api/render/video', async (req, res) => {
       }
     }
 
-    // === 단계 4: SRT 자막 burn (오디오 길이 기반 즉석 생성 + 썸네일 오프셋 적용) ===
+    // === 단계 4: SRT 자막 burn (기존 SRT 파일 우선 사용 → 이중자막 포함) ===
     if (burnSrt) {
       const scriptText = project.script || '';
       if (scriptText) {
-        console.log(`[Render] 4. SRT 자동 생성 (오프셋 ${srtOffset}초) → burn`);
-        const freshSrtContent = scriptToSrt(scriptText, audioDuration, srtOffset, project.ttsAlignment);
-        const freshSrtFile = `render_${Date.now()}.srt`;
-        const freshSrtPath = path.join(OUTPUT_DIR, 'srt', freshSrtFile);
-        fs.writeFileSync(freshSrtPath, freshSrtContent, 'utf-8');
+        // 기존 SRT 파일 찾기 (이중자막 포함된 파일 우선)
+        const existingSrtFiles = listFilesByMtime(path.join(OUTPUT_DIR, 'srt'), f => f.endsWith('.srt'));
+        let freshSrtPath;
+
+        if (existingSrtFiles.length > 0 && srtOffset === 0) {
+          // 썸네일 인트로 없으면 기존 SRT 사용 (이중자막 포함)
+          freshSrtPath = path.join(OUTPUT_DIR, 'srt', existingSrtFiles[0]);
+          console.log(`[Render] 4. 기존 SRT 사용: ${existingSrtFiles[0]} (이중자막 포함)`);
+        } else {
+          // 새로 생성 (썸네일 오프셋 적용 시)
+          console.log(`[Render] 4. SRT 새로 생성 (오프셋 ${srtOffset}초)`);
+          const isBiSrt = language && language !== 'ko';
+          const srtMaxLen = isVertical ? (isBiSrt ? 14 : 18) : (isBiSrt ? 25 : 33);
+          let freshSrtContent = scriptToSrt(scriptText, audioDuration, srtOffset, project.ttsAlignment, language || null, srtMaxLen);
+
+          // 외국어면 이중자막 추가
+          const lang = language || 'ko';
+          if (lang !== 'ko' && anthropic) {
+            try {
+              console.log(`[Render] SRT 이중자막 생성: ${lang} + 한국어`);
+              const srtBlocks = freshSrtContent.trim().split(/\n\n+/).filter(Boolean);
+              const origLines = srtBlocks.map(block => {
+                const lines = block.split('\n');
+                return { idx: lines[0], time: lines[1], text: lines.slice(2).join(' ') };
+              });
+              const textsToTranslate = origLines.map((l, i) => `[${i}] ${l.text}`).join('\n');
+              const langNameMap = { en: '영어', zh: '중국어', ja: '일본어', es: '스페인어' };
+              const transMsg = await anthropic.messages.create({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 8000,
+                messages: [{ role: 'user', content: `다음 ${langNameMap[lang]||lang} 자막을 한국어로 번역하세요.\n각 줄의 [번호]를 유지하고, 번역만 작성하세요.\n\n${textsToTranslate}` }]
+              });
+              const transText = transMsg.content[0].text;
+              const transMap = {};
+              transText.split('\n').filter(l => l.trim()).forEach(line => {
+                const match = line.match(/^\[(\d+)\]\s*(.+)$/);
+                if (match) transMap[parseInt(match[1])] = match[2].trim();
+              });
+              let biSrt = '';
+              origLines.forEach((l, i) => {
+                biSrt += `${l.idx}\n${l.time}\n${l.text}\n${transMap[i]||''}\n\n`;
+              });
+              freshSrtContent = biSrt;
+            } catch(e) { console.warn('[Render] 이중자막 번역 실패:', e.message); }
+          }
+
+          const freshSrtFile = `render_${Date.now()}.srt`;
+          freshSrtPath = path.join(OUTPUT_DIR, 'srt', freshSrtFile);
+          fs.writeFileSync(freshSrtPath, freshSrtContent, 'utf-8');
+        }
 
         const srtPathEscaped = freshSrtPath.replace(/\\/g, '/').replace(/:/g, '\\:');
+        // 이중자막(2줄) 여부 감지
+        const isBilingual = language && language !== 'ko';
+        // 9:16 세로 + 이중자막: 폰트 더 축소 + 마진 확대
+        const srtFontSize = isVertical ? (isBilingual ? 9 : 10) : (isBilingual ? 13 : 16);
+        const srtMarginLR = isVertical ? (isBilingual ? 10 : 20) : (isBilingual ? 40 : 80);
+        const srtMarginV = isVertical ? (isBilingual ? 30 : 60) : (isBilingual ? 25 : 40);
+        const srtOutline = isVertical ? 1.5 : 2;
         const srtOutput = path.join(OUTPUT_DIR, 'video', `srt_${outputFile}`);
         await new Promise((resolve, reject) => {
           execFile('ffmpeg', [
             '-i', outputPath,
-            '-vf', `subtitles='${srtPathEscaped}':fontsdir='${path.join(__dirname, 'assets', 'fonts').replace(/\\/g, '/').replace(/:/g, '\\:')}':force_style='FontName=KoPubWorld Dotum Bold,Fontname=KoPubWorld Dotum Bold,FontSize=16,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=1,Outline=2,Shadow=1,MarginV=40,MarginL=80,MarginR=80,WrapStyle=2,Bold=1,Italic=0,Alignment=2'`,
+            '-vf', `subtitles='${srtPathEscaped}':fontsdir='${(CJK_FONT_PATH ? path.dirname(CJK_FONT_PATH) : path.join(__dirname, 'assets', 'fonts')).replace(/\\/g, '/').replace(/:/g, '\\:')}':force_style='FontName=Noto Sans CJK SC,Fontname=Noto Sans CJK SC,FontSize=${srtFontSize},PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=1,Outline=${srtOutline},Shadow=1,MarginV=${srtMarginV},MarginL=${srtMarginLR},MarginR=${srtMarginLR},WrapStyle=2,Bold=1,Italic=0,Alignment=2'`,
             '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
             '-movflags', '+faststart', '-y', srtOutput
           ], { timeout: 600000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
@@ -1547,7 +1907,9 @@ app.post('/api/render/video', async (req, res) => {
     }
 
     project.videoFile = outputFile;
+    console.log(`[Render] 최종 파일: ${outputPath}, 존재: ${fs.existsSync(outputPath)}`);
     const stats = fs.statSync(outputPath);
+    console.log(`[Render] 파일 크기: ${(stats.size/1024/1024).toFixed(1)}MB`);
 
     let videoDuration = totalDuration;
     try {
@@ -1626,7 +1988,7 @@ app.post('/api/meta/generate', async (req, res) => {
     const prompt = `유튜브 영상 메타데이터를 생성해주세요.
 
 주제: ${topic || project.topic}
-${(script || project.script) ? `대본 요약:\n${(script || project.script).substring(0, 1500)}` : ''}
+${(script || project.script) ? `대본 요약:\n${(script || project.script).substring(0, 2000)}` : ''}
 
 다음 JSON 형식으로 작성:
 {
@@ -1636,7 +1998,7 @@ ${(script || project.script) ? `대본 요약:\n${(script || project.script).sub
     ${langs.includes('ja') ? ', { "lang": "ja", "options": ["タイトル1", "タイトル2", "タイトル3"] }' : ''}
   ],
   "description": {
-    "ko": "한국어 설명 (타임스탬프 포함, 300자 이상)"
+    "ko": "아래 형식을 정확히 따라 작성하세요"
     ${langs.includes('en') ? ', "en": "English description"' : ''}
     ${langs.includes('ja') ? ', "ja": "日本語の説明"' : ''}
   },
@@ -1645,11 +2007,27 @@ ${(script || project.script) ? `대본 요약:\n${(script || project.script).sub
   "category": "YouTube 카테고리 (Education, Entertainment, etc.)"
 }
 
+[설명(description) 작성 형식 — 반드시 이 형식을 정확히 따르세요]:
+
+🔍 호기심을 자극하는 1~2줄 도입부 (이모지 포함)
+
+대본 내용 기반 2~3줄 핵심 요약 설명
+
+📌 타임스탬프
+00:00 오프닝 - 장면 제목
+01:30 장면 2 제목
+03:45 장면 3 제목
+(대본의 장면 구조를 참고하여 실제 타임스탬프 작성, 최소 5개)
+
+🧬 마무리 한 줄 (시청 유도 문구, 이모지 포함)
+
 규칙:
 - 제목: 호기심 극대화, 클릭률 최적화, 50자 이내
-- 설명: 타임스탬프(00:00 형식) 포함, 검색 최적화
-- 태그: 관련 키워드 15개 이상
+- 설명: 위 형식 정확히 준수. 타임스탬프는 대본 장면 기반으로 작성
+- 태그: 관련 키워드 15개 이상 (# 없이 단어만)
 - 고정 댓글: 시청자 공감 + 댓글 참여 유도
+- 설명에 태그(해시태그)는 포함하지 마세요 (별도 tags 필드에 작성)
+- 설명에 자막/대본 텍스트를 절대 포함하지 마세요. 설명은 요약+타임스탬프만 작성
 
 JSON만 반환하세요.`;
 
@@ -1676,39 +2054,73 @@ JSON만 반환하세요.`;
 // ========================
 app.post('/api/thumbnail/generate', async (req, res) => {
   try {
-    const { projectId, topic, style, text } = req.body;
+    const { projectId, topic, style, text, ratio, language } = req.body;
+    const thumbLang = language || 'ko';
+    const thumbVertical = ratio === '9:16';
+    const thumbW = thumbVertical ? 720 : 1280;
+    const thumbH = thumbVertical ? 1280 : 720;
 
-    let hookText = text;
-    if (!hookText && topic) {
-      const hookMsg = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 150,
-        messages: [{ role: 'user', content: `유튜브 썸네일 문구를 JSON 한 줄만 출력하세요. 다른 설명·옵션·마크다운 절대 금지.
+    // Claude로 제목을 강조 단어(highlight) + 보조 텍스트(sub) + 한국어 번역(ko)으로 분리
+    let hookText = '';
+    var subText = '';
+    var koText = '';
+    const titleForThumb = text || topic || '';
+    const langNames2 = { ko: '한국어', en: '영어', zh: '중국어', ja: '일본어', es: '스페인어' };
+    const isKorean = thumbLang === 'ko';
 
-주제: "${topic}"
+    if (titleForThumb && anthropic) {
+      try {
+        const promptContent = isKorean
+          ? `유튜브 썸네일용 텍스트를 JSON으로 생성하세요.
+
+제목: "${titleForThumb}"
 
 규칙:
-- 한국어
-- main: 8자 이내 (충격/호기심/긴박감)
-- sub: 15자 이내 (보조 설명)
-- 예: {"main":"충격 진실","sub":"역사가 감춘 7가지 비밀"}
+- highlight: 제목에서 가장 강렬한 핵심 키워드 2~4단어 (노란색 강조)
+- sub: 나머지 맥락/설명 (흰색)
+- 예: {"highlight":"충격 진실","sub":"역사가 감춘 7가지 비밀"}
 
-출력 형식 (이것만, 다른 텍스트 0): {"main":"...","sub":"..."}` }]
-      });
-      try {
+JSON만 출력: {"highlight":"...","sub":"..."}`
+          : `유튜브 썸네일용 이중 언어 텍스트를 생성하세요.
+
+원본 제목: "${titleForThumb}"
+영상 언어: ${langNames2[thumbLang] || thumbLang}
+
+중요: highlight와 sub는 반드시 ${langNames2[thumbLang]}로 번역/작성하세요. 한국어로 쓰지 마세요!
+ko는 한국어 번역입니다.
+
+규칙:
+- highlight: ${langNames2[thumbLang]}로 핵심 키워드 2~4단어 (반드시 ${langNames2[thumbLang]} 문자로!)
+- sub: ${langNames2[thumbLang]}로 보조 설명 (반드시 ${langNames2[thumbLang]} 문자로!)
+- ko: 한국어로 제목 전체 번역 (1~2줄)
+- 중국어 예: {"highlight":"震撼真相","sub":"历史隐藏的七个秘密","ko":"역사가 감춘 7가지 충격 진실"}
+- 영어 예: {"highlight":"SHOCKING TRUTH","sub":"7 Secrets Hidden by History","ko":"역사가 감춘 7가지 충격 진실"}
+- 일본어 예: {"highlight":"衝撃の真実","sub":"歴史が隠した7つの秘密","ko":"역사가 감춘 7가지 충격 진실"}
+
+JSON만 출력: {"highlight":"...","sub":"...","ko":"..."}`;
+
+        const hookMsg = await anthropic.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 250,
+          messages: [{ role: 'user', content: promptContent }]
+        });
         const raw = hookMsg.content[0].text.trim();
-        // 첫 번째 완성된 JSON 객체만 비탐욕 매칭
-        const match = raw.match(/\{[^{}]*"main"[^{}]*"sub"[^{}]*\}/);
-        if (!match) throw new Error('no JSON');
-        const parsed = JSON.parse(match[0]);
-        hookText = (parsed.main || '').toString().substring(0, 20);
-        var subText = (parsed.sub || '').toString().substring(0, 30);
+        const match = raw.match(/\{[^{}]*"highlight"[^{}]*\}/);
+        if (match) {
+          const parsed = JSON.parse(match[0]);
+          hookText = (parsed.highlight || '').toString().substring(0, 30);
+          subText = (parsed.sub || '').toString().substring(0, 45);
+          koText = (parsed.ko || '').toString().substring(0, 50);
+        } else {
+          hookText = titleForThumb.substring(0, 15);
+        }
       } catch(e) {
-        // 실패 시 raw text에서 첫 줄만 + 길이 제한
-        const fallback = hookMsg.content[0].text.trim().split('\n')[0].replace(/["""`{}\[\]:,]/g, '').trim();
-        hookText = fallback.substring(0, 12);
-        var subText = '';
+        hookText = titleForThumb.substring(0, 15);
+        subText = titleForThumb.length > 15 ? titleForThumb.substring(15, 50) : '';
       }
+    } else {
+      hookText = titleForThumb.substring(0, 15);
+      subText = titleForThumb.length > 15 ? titleForThumb.substring(15, 50) : '';
     }
 
     const styleGuide = {
@@ -1746,8 +2158,10 @@ app.post('/api/thumbnail/generate', async (req, res) => {
     console.log(`[Thumbnail] 안전 비주얼: "${safeVisual}"`);
 
     // 안전한 시각 묘사 + 스타일 + NO TEXT 명시
+    const thumbAspect = thumbVertical ? '9:16 vertical portrait' : '16:9 horizontal landscape';
+    const thumbImgSize = thumbVertical ? '1024x1536' : '1536x1024';
     function buildPrompt(visual) {
-      return `Professional YouTube thumbnail background image, 16:9 aspect ratio, ${styleGuide[style] || styleGuide.dramatic}, ${visual}. Cinematic composition with empty space in the upper-left and lower-center area. IMPORTANT: NO TEXT, NO LETTERS, NO WORDS, NO TYPOGRAPHY, NO CAPTIONS, NO WRITTEN CONTENT of any kind — pure abstract visual scene only, peaceful and artistic.`;
+      return `Professional YouTube thumbnail background image, ${thumbAspect} aspect ratio, ${styleGuide[style] || styleGuide.dramatic}, ${visual}. Cinematic composition with empty space for text overlay. IMPORTANT: NO TEXT, NO LETTERS, NO WORDS, NO TYPOGRAPHY, NO CAPTIONS, NO WRITTEN CONTENT of any kind — pure abstract visual scene only, peaceful and artistic.`;
     }
 
     // 자동 재시도 (safety violation 시 fallback prompt로)
@@ -1764,7 +2178,7 @@ app.post('/api/thumbnail/generate', async (req, res) => {
           return await openai.images.generate({
             model: 'gpt-image-1',
             prompt: attempts[i],
-            size: '1536x1024',
+            size: thumbImgSize,
             quality: 'high',
             n: 1
           });
@@ -1792,7 +2206,7 @@ app.post('/api/thumbnail/generate', async (req, res) => {
     await new Promise((resolve) => {
       execFile('ffmpeg', [
         '-i', rawPath,
-        '-vf', 'crop=ih*16/9:ih,scale=1280:720',
+        '-vf', thumbVertical ? `crop=iw:iw*16/9,scale=${thumbW}:${thumbH}` : `crop=ih*16/9:ih,scale=${thumbW}:${thumbH}`,
         '-y', croppedPath
       ], { timeout: 30000, maxBuffer: 50 * 1024 * 1024 }, (error) => {
         if (error) { fs.copyFileSync(rawPath, croppedPath); }
@@ -1803,12 +2217,14 @@ app.post('/api/thumbnail/generate', async (req, res) => {
     // 2단계: FFmpeg drawtext로 한글 텍스트 오버레이 — 화면 안에 들어가도록 동적 사이즈/줄바꿈
     const filename = `thumbnail_${Date.now()}.png`;
     const filepath = path.join(OUTPUT_DIR, 'thumbnails', filename);
-    // 커스텀 폰트: KoPubWorld Dotum Bold (한국어 두꺼운 고딕)
-    const fontPath = path.join(__dirname, 'assets', 'fonts', 'KoPubWorldDotumBold.ttf').replace(/\\/g, '/').replace(/:/g, '\\:');
+    // 폰트: 커스텀 파일 우선 → fontconfig name fallback
+    const customFont = path.join(__dirname, 'assets', 'fonts', 'KoPubWorldDotumBold.ttf');
+    const useCustomFont = fs.existsSync(customFont);
+    console.log(`[Thumbnail] 커스텀 폰트: ${useCustomFont ? '있음' : '없음 → Noto Sans CJK 사용'}`);
 
     // 한글 1글자 = 약 fontSize px 폭 차지 (고딕 굵게)
-    // 가용 폭 1280 - 좌우 여백 80 × 2 = 1120
-    const SAFE_W = 1120;
+    // 가용 폭: 16:9→1280-160=1120, 9:16→720-80=640
+    const SAFE_W = thumbVertical ? 580 : 1080;
 
     function wrapLines(text, fontSize) {
       const maxChars = Math.floor(SAFE_W / (fontSize * 0.95));
@@ -1852,69 +2268,91 @@ app.post('/api/thumbnail/generate', async (req, res) => {
     // === 한국 뉴스 스타일 디자인 — 하단 좌측 정렬 + 빨간 단독 라벨 ===
     // 참고: JTBC 뉴스룸, MBC 뉴스.zip 썸네일 디자인
     // 핵심: 좌측 하단 정렬, 흰 굵은 텍스트 + 검정 외곽선, 빨간 [단독] 라벨
-    const mainFontSize = pickFontSize(mainText, 78, 50);
+    const mainFontSize = pickFontSize(mainText, thumbVertical ? 64 : 96, thumbVertical ? 40 : 60);
     const mainLines = wrapLines(mainText, mainFontSize);
 
-    const subFontSize = subTxt ? pickFontSize(subTxt, 56, 36) : 0;
+    const subFontSize = subTxt ? pickFontSize(subTxt, thumbVertical ? 38 : 56, thumbVertical ? 24 : 36) : 0;
     const subLines = subTxt ? wrapLines(subTxt, subFontSize) : [];
+
+    // 한국어 번역 (외국어 선택 시)
+    const koFontSize = koText ? pickFontSize(koText, thumbVertical ? 30 : 44, thumbVertical ? 20 : 30) : 0;
+    const koLines = koText ? wrapLines(koText, koFontSize) : [];
 
     const escapeText = (s) => s.replace(/\\/g, '\\\\').replace(/'/g, "'\\''").replace(/:/g, '\\:').replace(/%/g, '\\%');
 
     const mainLineH = Math.round(mainFontSize * 1.2);
     const subLineH = Math.round(subFontSize * 1.25);
+    const koLineH = Math.round(koFontSize * 1.25);
     const mainTotalH = mainLines.length * mainLineH;
     const subTotalH = subLines.length * subLineH;
+    const koTotalH = koLines.length * koLineH;
 
     // 좌측 여백 + 하단 정렬
-    const LEFT_MARGIN = 50;
-    const BOTTOM_MARGIN = 60;
-    const LABEL_H = 56; // 단독 라벨 높이
-    const LABEL_GAP = 18;
+    const LEFT_MARGIN = thumbVertical ? 60 : 70;
+    const BOTTOM_MARGIN = thumbVertical ? 100 : 60;
+    const LABEL_H = thumbVertical ? 40 : 56;
+    const LABEL_GAP = thumbVertical ? 12 : 18;
 
-    // 전체 텍스트 블록 (라벨 + 메인 + 서브) 하단 정렬
-    const subGap = subLines.length > 0 ? 20 : 0;
+    // 전체 텍스트 블록 (라벨 + 메인 + 서브 + 한국어) 하단 정렬
+    const subGap = subLines.length > 0 ? (thumbVertical ? 14 : 20) : 0;
+    const koGap = koLines.length > 0 ? (thumbVertical ? 10 : 14) : 0;
     const labelGap = LABEL_GAP;
-    const blockH = LABEL_H + labelGap + mainTotalH + subGap + subTotalH;
-    const blockY = 720 - BOTTOM_MARGIN - blockH;
+    const blockH = LABEL_H + labelGap + mainTotalH + subGap + subTotalH + koGap + koTotalH;
+    const blockY = thumbH - BOTTOM_MARGIN - blockH;
 
     const filters = [];
 
     // 1) 하단 그라데이션 비네트 (어두운 영역에 텍스트 — 가독성)
     // 하단 60% 영역 어둡게
-    filters.push(`drawbox=x=0:y=300:w=1280:h=420:color=black@0.55:t=fill`);
+    const darkY = thumbVertical ? Math.round(thumbH * 0.5) : 300;
+    const darkH = thumbVertical ? Math.round(thumbH * 0.5) : 420;
+    filters.push(`drawbox=x=0:y=${darkY}:w=${thumbW}:h=${darkH}:color=black@0.55:t=fill`);
+
+    // 폰트 지정: 전역 감지된 CJK_FONT_PATH 사용
+    const fontFile = useCustomFont ? customFont : CJK_FONT_PATH;
+    const fontSpec = fontFile
+      ? `fontfile='${fontFile.replace(/\\/g, '/').replace(/:/g, '\\:')}'`
+      : `font='Noto Sans CJK SC'`;
+    console.log(`[Thumbnail] 폰트: ${fontFile || 'fontconfig fallback'}`);
 
     // 2) [단독] 빨간 라벨 박스 (좌측 상단 텍스트 블록 위)
     const labelX = LEFT_MARGIN;
     const labelY = blockY;
     const labelText = '단독';
-    const labelFontSize = 36;
+    const labelFontSize = thumbVertical ? 26 : 36;
     const labelEsc = escapeText(labelText);
-    // 빨간 박스 (사각형)
     filters.push(`drawbox=x=${labelX}:y=${labelY}:w=140:h=${LABEL_H}:color=#E50914:t=fill`);
-    // 좌측 흰 라인 액센트
     filters.push(`drawbox=x=${labelX}:y=${labelY}:w=6:h=${LABEL_H}:color=white:t=fill`);
-    // 라벨 텍스트 (흰색, 중앙)
-    filters.push(`drawtext=text='${labelEsc}':fontfile='${fontPath}':fontsize=${labelFontSize}:fontcolor=white:x=${labelX}+(140-text_w)/2:y=${labelY}+(${LABEL_H}-text_h)/2`);
+    filters.push(`drawtext=text='${labelEsc}':${fontSpec}:fontsize=${labelFontSize}:fontcolor=white:x=${labelX}+(140-text_w)/2:y=${labelY}+(${LABEL_H}-text_h)/2`);
 
-    // 3) 메인 텍스트 — 하단 좌측 정렬, 굵은 흰색 + 검정 외곽선
+    // 3) 메인 텍스트 — 하단 좌측 정렬, 굵은 흰색 + 검정 외곽선 + 그림자
     const mainStartY = blockY + LABEL_H + labelGap;
     mainLines.forEach((line, i) => {
       const y = mainStartY + i * mainLineH;
       const esc = escapeText(line);
-      // 그림자 (단순 검정, 3px)
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=black@0.7:x=${LEFT_MARGIN}+4:y=${y}+4`);
-      // 본체 흰색 + 두꺼운 검정 외곽선
-      filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${mainFontSize}:fontcolor=white:borderw=8:bordercolor=black:x=${LEFT_MARGIN}:y=${y}`);
+      filters.push(`drawtext=text='${esc}':${fontSpec}:fontsize=${mainFontSize}:fontcolor=black@0.8:x=${LEFT_MARGIN}+4:y=${y}+4`);
+      filters.push(`drawtext=text='${esc}':${fontSpec}:fontsize=${mainFontSize}:fontcolor=#FFD700:borderw=10:bordercolor=black:x=${LEFT_MARGIN}:y=${y}`);
     });
 
-    // 4) 서브 텍스트 — 하단 좌측, 약간 작은 흰색 + 검정 외곽선
+    // 4) 서브 텍스트 (외국어)
     if (subLines.length > 0) {
       const subStartY = mainStartY + mainTotalH + subGap;
       subLines.forEach((line, i) => {
         const y = subStartY + i * subLineH;
         const esc = escapeText(line);
-        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=black@0.6:x=${LEFT_MARGIN}+3:y=${y}+3`);
-        filters.push(`drawtext=text='${esc}':fontfile='${fontPath}':fontsize=${subFontSize}:fontcolor=white:borderw=6:bordercolor=black:x=${LEFT_MARGIN}:y=${y}`);
+        filters.push(`drawtext=text='${esc}':${fontSpec}:fontsize=${subFontSize}:fontcolor=black@0.6:x=${LEFT_MARGIN}+3:y=${y}+3`);
+        filters.push(`drawtext=text='${esc}':${fontSpec}:fontsize=${subFontSize}:fontcolor=white:borderw=6:bordercolor=black:x=${LEFT_MARGIN}:y=${y}`);
+      });
+    }
+
+    // 5) 한국어 번역 (외국어 선택 시, 하단에 연한 스카이블루)
+    if (koLines.length > 0) {
+      const koStartY = mainStartY + mainTotalH + subGap + subTotalH + koGap;
+      koLines.forEach((line, i) => {
+        const y = koStartY + i * koLineH;
+        const esc = escapeText(line);
+        filters.push(`drawtext=text='${esc}':${fontSpec}:fontsize=${koFontSize}:fontcolor=black@0.5:x=${LEFT_MARGIN}+2:y=${y}+2`);
+        filters.push(`drawtext=text='${esc}':${fontSpec}:fontsize=${koFontSize}:fontcolor=#87CEEB:borderw=4:bordercolor=black:x=${LEFT_MARGIN}:y=${y}`);
       });
     }
 
@@ -1926,7 +2364,7 @@ app.post('/api/thumbnail/generate', async (req, res) => {
         '-vf', drawFilters,
         '-y', filepath
       ], { timeout: 30000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
-        if (error) { console.error('[Thumbnail drawtext]', stderr); fs.copyFileSync(croppedPath, filepath); }
+        if (error) { console.error('[Thumbnail drawtext 실패]', error.message, '\n[stderr]', stderr?.substring(0, 500)); fs.copyFileSync(croppedPath, filepath); }
         resolve();
       });
     });
@@ -2032,6 +2470,274 @@ ${(script || project.script) ? `대본 참고:\n${(script || project.script).sub
 });
 
 // ========================
+// 사용자별 설정 저장 (Google 이메일 기준)
+// ========================
+const USER_SETTINGS_PATH = path.join(__dirname, '.user-settings.json');
+
+// DB 우선, fallback JSON
+async function loadUserKeysDB(email) {
+  if (db) {
+    try {
+      const r = await db.query('SELECT api_keys FROM user_settings WHERE email=$1', [email]);
+      return r.rows[0]?.api_keys || null;
+    } catch(e) { console.error('[DB] loadUserKeys:', e.message); }
+  }
+  // JSON fallback
+  const all = loadUserSettingsJSON();
+  return all[email] || null;
+}
+async function saveUserKeysDB(email, keys, name, picture) {
+  if (db) {
+    try {
+      await db.query(`
+        INSERT INTO user_settings (email, name, picture, api_keys, updated_at)
+        VALUES ($1, $2, $3, $4, NOW())
+        ON CONFLICT (email) DO UPDATE SET
+          api_keys = user_settings.api_keys || $4,
+          name = COALESCE($2, user_settings.name),
+          picture = COALESCE($3, user_settings.picture),
+          updated_at = NOW()
+      `, [email, name || null, picture || null, JSON.stringify(keys)]);
+      return;
+    } catch(e) { console.error('[DB] saveUserKeys:', e.message); }
+  }
+  // JSON fallback
+  const all = loadUserSettingsJSON();
+  if (!all[email]) all[email] = {};
+  Object.assign(all[email], keys);
+  saveUserSettingsJSON(all);
+}
+function loadUserSettingsJSON() {
+  if (fs.existsSync(USER_SETTINGS_PATH)) {
+    try { return JSON.parse(fs.readFileSync(USER_SETTINGS_PATH, 'utf-8')); } catch(e) {}
+  }
+  return {};
+}
+function saveUserSettingsJSON(data) {
+  fs.writeFileSync(USER_SETTINGS_PATH, JSON.stringify(data, null, 2), 'utf-8');
+}
+function applyUserKeys(keys) {
+  if (!keys) return;
+  const envKeys = ['ANTHROPIC_API_KEY','OPENAI_API_KEY','ELEVENLABS_API_KEY','PEXELS_API_KEY','YOUTUBE_CLIENT_ID','YOUTUBE_CLIENT_SECRET','YOUTUBE_REFRESH_TOKEN'];
+  for (const k of envKeys) {
+    if (keys[k]) process.env[k] = keys[k];
+  }
+  // 전역 키 변수 갱신
+  if (keys.ANTHROPIC_API_KEY) {
+    ANTHROPIC_KEY = cleanKey(keys.ANTHROPIC_API_KEY);
+    try { anthropic = new Anthropic({ apiKey: ANTHROPIC_KEY }); } catch(e) {}
+  }
+  if (keys.OPENAI_API_KEY) {
+    OPENAI_KEY = cleanKey(keys.OPENAI_API_KEY);
+    try { openai = new OpenAI({ apiKey: OPENAI_KEY }); } catch(e) {}
+  }
+  if (keys.ELEVENLABS_API_KEY) { ELEVENLABS_KEY = cleanKey(keys.ELEVENLABS_API_KEY); }
+  if (keys.PEXELS_API_KEY) { PEXELS_KEY = cleanKey(keys.PEXELS_API_KEY); }
+  if (keys.YOUTUBE_CLIENT_ID) { oauth2Client._clientId = keys.YOUTUBE_CLIENT_ID; }
+  if (keys.YOUTUBE_CLIENT_SECRET) { oauth2Client._clientSecret = keys.YOUTUBE_CLIENT_SECRET; }
+  if (keys.YOUTUBE_REFRESH_TOKEN) {
+    youtubeTokens = { refresh_token: keys.YOUTUBE_REFRESH_TOKEN };
+    oauth2Client.setCredentials(youtubeTokens);
+    console.log('[Settings] YouTube refresh_token 적용');
+  }
+  console.log('[Settings] 사용자 API 키 적용 완료');
+}
+
+// ========================
+// Settings (API Key 관리)
+// ========================
+function maskKey(key) {
+  if (!key || key.length < 8) return '';
+  return key.substring(0, 6) + '•'.repeat(Math.min(key.length - 10, 20)) + key.substring(key.length - 4);
+}
+
+app.get('/api/settings/status', (req, res) => {
+  res.json({
+    success: true,
+    database: !!db,
+    dbEnvKeys: Object.keys(process.env).filter(k => /database|postgres|pg/i.test(k)),
+    loggedIn: !!googleUser,
+    userEmail: googleUser?.email || null,
+    keys: {
+      anthropic: !!ANTHROPIC_KEY,
+      openai: !!OPENAI_KEY,
+      elevenlabs: !!ELEVENLABS_KEY,
+      pexels: !!PEXELS_KEY,
+      youtube: !!process.env.YOUTUBE_CLIENT_ID
+    },
+    masked: {
+      anthropic: ANTHROPIC_KEY ? maskKey(ANTHROPIC_KEY) : '',
+      openai: OPENAI_KEY ? maskKey(OPENAI_KEY) : '',
+      elevenlabs: ELEVENLABS_KEY ? maskKey(ELEVENLABS_KEY) : '',
+      pexels: PEXELS_KEY ? maskKey(PEXELS_KEY) : '',
+      ytClientId: process.env.YOUTUBE_CLIENT_ID ? maskKey(process.env.YOUTUBE_CLIENT_ID) : ''
+    }
+  });
+});
+
+app.post('/api/settings/save', async (req, res) => {
+  try {
+    const updates = req.body || {};
+    const envKeys = ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'ELEVENLABS_API_KEY', 'PEXELS_API_KEY',
+                     'YOUTUBE_CLIENT_ID', 'YOUTUBE_CLIENT_SECRET', 'YOUTUBE_REDIRECT_URI', 'YOUTUBE_REFRESH_TOKEN', 'PORT'];
+
+    // 1. 메모리에 즉시 반영 (가장 중요)
+    const keysToApply = {};
+    for (const [key, value] of Object.entries(updates)) {
+      if (envKeys.includes(key) && value) { process.env[key] = value; keysToApply[key] = value; }
+    }
+    applyUserKeys(keysToApply);
+
+    // 2. DB에 사용자별 저장 (영구 보존)
+    let dbSaved = false;
+    if (googleUser?.email) {
+      try {
+        await saveUserKeysDB(googleUser.email, keysToApply, googleUser.name, googleUser.picture);
+        dbSaved = true;
+        console.log(`[Settings] DB 저장: ${googleUser.email}`);
+      } catch(e) { console.warn('[Settings] DB 저장 실패:', e.message); }
+    }
+
+    // 3. .env 파일 저장 (로컬용, 실패해도 무시)
+    try {
+      const envPath = path.join(__dirname, '.env');
+      let envContent = '';
+      if (fs.existsSync(envPath)) envContent = fs.readFileSync(envPath, 'utf-8');
+      for (const [key, value] of Object.entries(keysToApply)) {
+        const regex = new RegExp(`^${key}=.*$`, 'm');
+        if (regex.test(envContent)) envContent = envContent.replace(regex, `${key}=${value}`);
+        else envContent += `\n${key}=${value}`;
+      }
+      if (!envContent.includes('PORT=')) envContent += '\nPORT=3003';
+      fs.writeFileSync(envPath, envContent.trim() + '\n', 'utf-8');
+      console.log('[Settings] .env 저장 완료');
+    } catch(e) {
+      console.warn('[Settings] .env 저장 실패 (Railway 읽기 전용?):', e.message);
+    }
+
+    console.log('[Settings] 즉시 반영 완료');
+    res.json({ success: true, message: 'API 키 저장 완료.', dbSaved });
+  } catch (e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// ========================
+// Google Login (프로필 표시용)
+// ========================
+let googleUser = null;
+
+app.get('/api/google/auth', (req, res) => {
+  if (!process.env.YOUTUBE_CLIENT_ID) {
+    return res.send(`<html><head><meta charset="UTF-8"></head>
+    <body style="background:#0f0f13;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+      <div style="text-align:center;max-width:380px;padding:20px">
+        <div style="font-size:48px;margin-bottom:12px">⚠️</div>
+        <h2 style="margin:0 0 12px;font-size:16px">Google 로그인 미설정</h2>
+        <p style="color:#9898a8;font-size:12px;line-height:1.7">Railway Variables에<br><code style="background:#1c1c26;padding:2px 6px;border-radius:4px;color:#ff3b3b">YOUTUBE_CLIENT_ID</code>와<br><code style="background:#1c1c26;padding:2px 6px;border-radius:4px;color:#ff3b3b">YOUTUBE_CLIENT_SECRET</code>을<br>설정 후 Deploy 해주세요.</p>
+        <button onclick="window.close()" style="margin-top:16px;background:#ff3b3b;color:#fff;border:none;padding:8px 24px;border-radius:8px;font-size:12px;cursor:pointer">닫기</button>
+      </div>
+    </body></html>`);
+  }
+  // 동적 redirect URI: 요청 호스트 기반
+  const host = req.get('host');
+  const protocol = req.get('x-forwarded-proto') || req.protocol;
+  const dynamicRedirect = cleanKey(process.env.YOUTUBE_REDIRECT_URI) || `${protocol}://${host}/api/google/callback`;
+  console.log(`[OAuth auth] redirect_uri: ${dynamicRedirect}`);
+  oauth2Client._redirectUri = dynamicRedirect;
+
+  const authUrl = oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    scope: [
+      'https://www.googleapis.com/auth/userinfo.profile',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/youtube.upload',
+      'https://www.googleapis.com/auth/youtube'
+    ],
+    prompt: 'consent',
+    redirect_uri: dynamicRedirect
+  });
+  res.redirect(authUrl);
+});
+
+app.get('/api/google/callback', async (req, res) => {
+  try {
+    const { code } = req.query;
+    // 동적 redirect URI 설정 (getToken 시 필요)
+    const host = req.get('host');
+    const protocol = req.get('x-forwarded-proto') || req.protocol;
+    const dynamicRedirect = cleanKey(process.env.YOUTUBE_REDIRECT_URI) || `${protocol}://${host}/api/google/callback`;
+    console.log(`[OAuth callback] redirect_uri: ${dynamicRedirect}`);
+    const { tokens } = await oauth2Client.getToken({ code, redirect_uri: dynamicRedirect });
+    oauth2Client.setCredentials(tokens);
+    youtubeTokens = tokens;
+    try { fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2)); } catch(e) {}
+    if (tokens.refresh_token) {
+      try {
+        const envPath = path.join(__dirname, '.env');
+        let envContent = fs.existsSync(envPath) ? fs.readFileSync(envPath, 'utf-8') : '';
+        if (envContent.match(/^YOUTUBE_REFRESH_TOKEN=.*/m)) {
+          envContent = envContent.replace(/^YOUTUBE_REFRESH_TOKEN=.*/m, `YOUTUBE_REFRESH_TOKEN=${tokens.refresh_token}`);
+        } else {
+          envContent += `\nYOUTUBE_REFRESH_TOKEN=${tokens.refresh_token}`;
+        }
+        fs.writeFileSync(envPath, envContent);
+        process.env.YOUTUBE_REFRESH_TOKEN = tokens.refresh_token;
+        console.log('[OAuth] refresh_token .env 저장 완료');
+      } catch(e) { console.warn('[OAuth] .env 저장 실패:', e.message); }
+    }
+    // DB에 토큰 저장 (Railway 재배포 대비)
+    if (db) {
+      try {
+        await db.query(`CREATE TABLE IF NOT EXISTS oauth_tokens (id VARCHAR(50) PRIMARY KEY, tokens JSONB, updated_at TIMESTAMP DEFAULT NOW())`);
+        await db.query(`INSERT INTO oauth_tokens (id, tokens, updated_at) VALUES ('youtube', $1, NOW()) ON CONFLICT (id) DO UPDATE SET tokens = $1, updated_at = NOW()`, [JSON.stringify(tokens)]);
+        console.log('[OAuth] YouTube 토큰 DB 저장');
+      } catch(e) { console.warn('[OAuth] 토큰 DB 저장 실패:', e.message); }
+    }
+
+    // 프로필 가져오기
+    const profileRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      headers: { Authorization: `Bearer ${tokens.access_token}` }
+    });
+    if (profileRes.ok) {
+      googleUser = await profileRes.json();
+      console.log(`[Google] 로그인: ${googleUser.name} (${googleUser.email})`);
+      // 사용자별 저장된 API 키 자동 로드 (DB 우선)
+      const userKeys = await loadUserKeysDB(googleUser.email);
+      if (userKeys) {
+        applyUserKeys(userKeys);
+        console.log(`[Google] 사용자 API 키 자동 로드: ${googleUser.email}`);
+      }
+    }
+
+    res.send(`<html><body style="background:#0f0f13;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
+      <div style="text-align:center">
+        <div style="font-size:48px;margin-bottom:12px">✅</div>
+        <h2 style="margin:0 0 8px">Google 로그인 완료!</h2>
+        <p style="color:#999;font-size:14px">${googleUser?.name || ''}</p>
+        <p style="color:#666;font-size:12px">이 창은 자동으로 닫힙니다</p>
+      </div>
+      <script>window.opener?.postMessage('google-login-success','*');setTimeout(()=>window.close(),1500)</script>
+    </body></html>`);
+  } catch (error) {
+    res.status(500).send(`<html><body style="background:#0f0f13;color:#ff3b3b;font-family:sans-serif;padding:40px"><h2>인증 오류</h2><p>${error.message}</p></body></html>`);
+  }
+});
+
+app.get('/api/google/profile', (req, res) => {
+  if (googleUser) {
+    res.json({ loggedIn: true, name: googleUser.name, email: googleUser.email, picture: googleUser.picture });
+  } else {
+    res.json({ loggedIn: false });
+  }
+});
+
+app.get('/api/google/logout', (req, res) => {
+  googleUser = null;
+  res.json({ success: true });
+});
+
+// ========================
 // YouTube OAuth2 + Upload
 // ========================
 app.get('/api/youtube/auth', (req, res) => {
@@ -2078,19 +2784,52 @@ app.post('/api/youtube/upload', async (req, res) => {
       .sort()
       .reverse();
 
-    if (videoFiles.length === 0) throw new Error('업로드할 영상 파일이 없습니다.');
+    if (videoFiles.length === 0) {
+      const videoDir = path.join(OUTPUT_DIR, 'video');
+      const allFiles = fs.existsSync(videoDir) ? fs.readdirSync(videoDir) : [];
+      throw new Error(`업로드할 영상 파일이 없습니다. video/ 폴더: [${allFiles.join(', ')||'비어있음'}], OUTPUT_DIR: ${OUTPUT_DIR}`);
+    }
 
     const videoPath = path.join(OUTPUT_DIR, 'video', project.videoFile || videoFiles[0]);
 
-    const youtube = google.youtube({ version: 'v3', auth: oauth2Client });
+    const fileSize = fs.statSync(videoPath).size;
+    console.log(`[YouTube] 업로드 시작: ${videoPath} (${(fileSize/1024/1024).toFixed(1)}MB)`);
 
-    const uploadRes = await youtube.videos.insert({
-      part: 'snippet,status',
-      requestBody: {
+    // Resumable Upload (googleapis 2MB 제한 우회)
+    let accessToken;
+    try {
+      accessToken = (await oauth2Client.getAccessToken()).token;
+    } catch (tokenErr) {
+      console.error('[YouTube] 토큰 갱신 실패:', tokenErr.message);
+      if (tokenErr.message?.includes('invalid_grant')) {
+        youtubeTokens = null;
+        try { fs.unlinkSync(TOKEN_PATH); } catch(e) {}
+        throw new Error('YouTube 인증이 만료되었습니다. 좌측 메뉴에서 Google 로그인을 다시 해주세요.');
+      }
+      throw tokenErr;
+    }
+    if (!accessToken) {
+      youtubeTokens = null;
+      throw new Error('YouTube Access Token을 가져올 수 없습니다. Google 로그인을 다시 해주세요.');
+    }
+    const videoTitle = title || project.meta?.titles?.[0]?.options?.[0] || project.topic || 'Untitled';
+    const videoDesc = description || project.meta?.description?.ko || '';
+    const videoTags = tags || project.meta?.tags || [];
+
+    // 1단계: 업로드 세션 시작
+    const initRes = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'X-Upload-Content-Type': 'video/mp4',
+        'X-Upload-Content-Length': String(fileSize)
+      },
+      body: JSON.stringify({
         snippet: {
-          title: title || project.meta?.titles?.[0]?.options?.[0] || project.topic,
-          description: description || project.meta?.description?.ko || '',
-          tags: tags || project.meta?.tags || [],
+          title: videoTitle,
+          description: videoDesc,
+          tags: videoTags,
           categoryId: categoryId || '22',
           defaultLanguage: 'ko'
         },
@@ -2098,21 +2837,64 @@ app.post('/api/youtube/upload', async (req, res) => {
           privacyStatus: privacyStatus || 'private',
           selfDeclaredMadeForKids: false
         }
-      },
-      media: {
-        body: fs.createReadStream(videoPath)
-      }
+      })
     });
+
+    if (!initRes.ok) {
+      const err = await initRes.text();
+      throw new Error(`YouTube 업로드 세션 실패 (${initRes.status}): ${err.substring(0, 300)}`);
+    }
+
+    const uploadUrl = initRes.headers.get('location');
+    if (!uploadUrl) throw new Error('YouTube resumable upload URL 없음');
+    console.log(`[YouTube] Resumable URL 획득, 파일 전송 시작...`);
+
+    // 2단계: 파일 스트리밍 전송 (대용량 지원)
+    console.log(`[YouTube] 스트리밍 업로드 시작 (${(fileSize/1024/1024).toFixed(0)}MB)...`);
+    const uploadRes2 = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'video/mp4',
+        'Content-Length': String(fileSize)
+      },
+      body: fs.createReadStream(videoPath),
+      duplex: 'half'
+    });
+
+    if (!uploadRes2.ok) {
+      const err = await uploadRes2.text();
+      throw new Error(`YouTube 파일 전송 실패 (${uploadRes2.status}): ${err.substring(0, 300)}`);
+    }
+
+    const uploadData = await uploadRes2.json();
+    const uploadRes = { data: uploadData };
+    console.log(`[YouTube] 업로드 완료: ${uploadData.id}`);
 
     const videoId = uploadRes.data.id;
 
-    if (thumbnailFile) {
-      const thumbPath = path.join(OUTPUT_DIR, 'thumbnails', thumbnailFile);
+    // 썸네일: 지정 파일 → 최신 썸네일 자동 감지
+    let thumbToUpload = thumbnailFile;
+    if (!thumbToUpload) {
+      const thumbFiles = listFilesByMtime(path.join(OUTPUT_DIR, 'thumbnails'), f => f.startsWith('thumbnail_') && f.endsWith('.png'));
+      if (thumbFiles.length > 0) thumbToUpload = thumbFiles[0];
+    }
+    if (thumbToUpload) {
+      const thumbPath = path.join(OUTPUT_DIR, 'thumbnails', thumbToUpload);
       if (fs.existsSync(thumbPath)) {
-        await youtube.thumbnails.set({
-          videoId,
-          media: { body: fs.createReadStream(thumbPath) }
-        });
+        try {
+          const thumbBuffer = fs.readFileSync(thumbPath);
+          const thumbRes = await fetch(`https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId=${videoId}&uploadType=media`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'image/png',
+              'Content-Length': String(thumbBuffer.length)
+            },
+            body: thumbBuffer
+          });
+          if (thumbRes.ok) console.log(`[YouTube] 썸네일 설정 완료: ${thumbToUpload}`);
+          else console.warn(`[YouTube] 썸네일 설정 실패: ${thumbRes.status}`);
+        } catch(e) { console.warn('[YouTube] 썸네일 오류:', e.message); }
       }
     }
 
@@ -2123,6 +2905,7 @@ app.post('/api/youtube/upload', async (req, res) => {
       studioUrl: `https://studio.youtube.com/video/${videoId}/edit`
     });
   } catch (error) {
+    console.error(`[YouTube] 업로드 실패:`, error.message);
     res.status(500).json({ success: false, error: error.message });
   }
 });
@@ -2196,6 +2979,452 @@ app.post('/api/files/clean', (req, res) => {
 });
 
 // ========================
+// 스케줄 제작 (예약 + 반복)
+// ========================
+const SCHEDULE_PATH = path.join(__dirname, '.schedules.json');
+const schedules = {};
+let scheduleIdCounter = 1;
+
+// 저장/로드
+function saveSchedules() {
+  const data = Object.values(schedules).map(s => ({
+    id: s.id, topic: s.topic, settings: s.settings,
+    type: s.type, datetime: s.datetime, cronExpr: s.cronExpr,
+    repeatLabel: s.repeatLabel, status: s.status,
+    lastRun: s.lastRun, runCount: s.runCount, createdAt: s.createdAt
+  }));
+  fs.writeFileSync(SCHEDULE_PATH, JSON.stringify(data, null, 2), 'utf-8');
+}
+function loadSchedules() {
+  if (!fs.existsSync(SCHEDULE_PATH)) return;
+  try {
+    const data = JSON.parse(fs.readFileSync(SCHEDULE_PATH, 'utf-8'));
+    data.forEach(s => {
+      schedules[s.id] = { ...s, cronJob: null, timeout: null };
+      if (s.id >= scheduleIdCounter) scheduleIdCounter = s.id + 1;
+      if (s.status === 'active') activateSchedule(s.id);
+    });
+    console.log(`[Schedule] ${data.length}개 스케줄 로드`);
+  } catch(e) { console.warn('[Schedule] 로드 실패:', e.message); }
+}
+
+// 자동 제작 실행 (서버 내부에서 API 호출)
+async function executeAutoPipeline(schedule) {
+  const s = schedule;
+  const settings = s.settings || {};
+  console.log(`[Schedule] 실행: "${s.topic || settings.keywords}" (id=${s.id})`);
+  s.status = 'running';
+  s.lastRun = new Date().toISOString();
+  s.runCount = (s.runCount || 0) + 1;
+  s.progress = null;
+  saveSchedules();
+
+  try {
+    const baseUrl = `http://127.0.0.1:${PORT}`;
+    const api = async (apiPath, body) => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 600000); // 10분 타임아웃
+      try {
+        console.log(`[Schedule API] POST ${apiPath}`);
+        const r = await fetch(`${baseUrl}${apiPath}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+          signal: controller.signal
+        });
+        const d = await r.json();
+        if (!d.success) throw new Error(d.error || 'API 실패');
+        return d;
+      } catch(e) {
+        if (e.name === 'AbortError') throw new Error(`${apiPath} 타임아웃 (10분 초과)`);
+        throw new Error(`${apiPath}: ${e.message}`);
+      } finally {
+        clearTimeout(timeout);
+      }
+    };
+
+    const langNames = { ko: '한국어', en: 'English', zh: '中文', ja: '日本語', es: 'Español' };
+    const wordCounts = { 1: '300', 3: '950', 5: '1550', 10: '3100', 15: '4650', 20: '6200', 30: '9300' };
+    const len = settings.length || '15';
+    const lang = settings.language || 'ko';
+
+    // 0. 주제 자동 생성 (키워드 모드)
+    let topic = s.topic;
+    if (!topic && settings.keywords) {
+      console.log(`[Schedule] 0/8 키워드 기반 주제 자동 생성: "${settings.keywords}"`);
+      const topicData = await api('/api/topics/suggest', {
+        keyword: settings.keywords,
+        category: settings.category || '',
+        target: '전 연령'
+      });
+      if (topicData.topics && topicData.topics.length > 0) {
+        // 실행 횟수 기반 다른 주제 선택 (순환)
+        const idx = (s.runCount - 1) % topicData.topics.length;
+        topic = topicData.topics[idx].title;
+        console.log(`[Schedule] 자동 주제 선택 [${idx+1}/${topicData.topics.length}]: "${topic}"`);
+      } else {
+        throw new Error('키워드 기반 주제 생성 실패');
+      }
+    }
+    if (!topic) throw new Error('주제가 없습니다');
+
+    // 진행률 헬퍼
+    const steps = ['기획','대본','프롬프트','이미지/영상','TTS','메타데이터','썸네일','영상 합성'];
+    function setProgress(step) { s.progress = { step, pct: Math.round((step / 8) * 100), label: steps[step-1] || '' }; }
+
+    // 1. Plan
+    setProgress(1);
+    console.log(`[Schedule] 1/8 기획: "${topic}"`);
+    const planData = await api('/api/plan/generate', {
+      topic, target: '전 연령', length: len,
+      tone: '진지하고 무게감 있는', style: settings.style || 'european-animation',
+      notes: `언어: ${langNames[lang]}`, refText: settings.refText || ''
+    });
+
+    // 2. Script
+    setProgress(2);
+    console.log(`[Schedule] 2/8 대본...`);
+    const scriptData = await api('/api/script/generate', {
+      topic, target: '전 연령', plan: planData.plan,
+      wordCount: wordCounts[len] || '3000', narration: '3인칭 나레이터',
+      language: langNames[lang], refText: settings.refText || '', targetMinutes: len
+    });
+
+    // 3. Image prompts + generate
+    setProgress(3);
+    console.log(`[Schedule] 3/8 이미지 프롬프트...`);
+    const promptData = await api('/api/images/generate-prompts', {
+      script: scriptData.script, style: settings.style || 'european-animation',
+      count: settings.imageCount || '8'
+    });
+
+    if (settings.sourceMode === 'video') {
+      setProgress(4);
+      console.log(`[Schedule] 4/8 영상 클립 다운로드...`);
+      await api('/api/clips/generate', {
+        scenePrompts: promptData.prompts, perSceneDuration: 10,
+        ratio: settings.ratio || '16:9'
+      });
+    } else {
+      setProgress(4);
+      console.log(`[Schedule] 4/8 이미지 생성...`);
+      for (let i = 0; i < promptData.prompts.length; i++) {
+        await api('/api/images/generate', {
+          prompt: promptData.prompts[i].prompt,
+          style: settings.style || 'european-animation',
+          ratio: settings.ratio || '16:9', index: i + 1
+        });
+        if (i < promptData.prompts.length - 1) await new Promise(r => setTimeout(r, 1500));
+      }
+    }
+
+    // 5. TTS
+    setProgress(5);
+    console.log(`[Schedule] 5/8 TTS...`);
+    await api('/api/tts/full-script', {
+      script: scriptData.script, voiceId: settings.voiceId || '',
+      stability: settings.stability ?? 1, similarity: settings.similarity ?? 1,
+      language: lang
+    });
+
+    // 6. Meta
+    setProgress(6);
+    console.log(`[Schedule] 6/8 메타데이터...`);
+    await api('/api/meta/generate', { topic, script: scriptData.script });
+
+    // 7. Thumbnail
+    setProgress(7);
+    console.log(`[Schedule] 7/8 썸네일...`);
+    await api('/api/thumbnail/generate', {
+      topic, style: 'dramatic', text: topic,
+      ratio: settings.ratio || '16:9'
+    });
+
+    // 8. Render
+    setProgress(8);
+    console.log(`[Schedule] 8/8 영상 합성...`);
+    await api('/api/render/video', {
+      transition: settings.transition || 'fade',
+      transitionDuration: settings.transitionDuration || 0.8,
+      kenburns: settings.kenburns || 'varied',
+      burnSrt: true, showThumb: true, showIntro: false,
+      sourceMode: settings.sourceMode || 'image',
+      language: lang, ratio: settings.ratio || '16:9'
+    });
+
+    console.log(`[Schedule] ✅ 완료: "${topic}"`);
+    s.status = s.type === 'once' ? 'completed' : 'active';
+    s.progress = { step: 8, pct: 100, label: '완료' };
+    s.lastTopic = topic;
+    s.lastError = null;
+    saveSchedules();
+  } catch(e) {
+    console.error(`[Schedule] ❌ 실패: "${topic || s.settings?.keywords}" — ${e.message}`);
+    s.status = s.type === 'once' ? 'failed' : 'active';
+    s.lastError = e.message;
+    saveSchedules();
+  }
+}
+
+// 스케줄 활성화
+function activateSchedule(id) {
+  const s = schedules[id];
+  if (!s) return;
+
+  if (s.type === 'once' && s.datetime) {
+    const delay = new Date(s.datetime).getTime() - Date.now();
+    if (delay <= 0) {
+      s.status = 'expired';
+      saveSchedules();
+      return;
+    }
+    s.timeout = setTimeout(() => executeAutoPipeline(s), delay);
+    s.status = 'active';
+    console.log(`[Schedule] 예약 등록: "${s.topic}" → ${s.datetime} (${Math.round(delay/60000)}분 후)`);
+  } else if (s.type === 'recurring' && s.cronExpr) {
+    if (!cron.validate(s.cronExpr)) {
+      s.status = 'invalid_cron';
+      saveSchedules();
+      return;
+    }
+    s.cronJob = cron.schedule(s.cronExpr, () => executeAutoPipeline(s), { timezone: 'Asia/Seoul' });
+    s.status = 'active';
+    console.log(`[Schedule] 반복 등록: "${s.topic}" → ${s.cronExpr} (${s.repeatLabel})`);
+  }
+  saveSchedules();
+}
+
+// 스케줄 중지
+function deactivateSchedule(id) {
+  const s = schedules[id];
+  if (!s) return;
+  if (s.timeout) { clearTimeout(s.timeout); s.timeout = null; }
+  if (s.cronJob) { s.cronJob.stop(); s.cronJob = null; }
+  s.status = 'stopped';
+  saveSchedules();
+}
+
+// API: 스케줄 생성
+app.post('/api/schedule/create', (req, res) => {
+  try {
+    const { topic, type, datetime, cronExpr, repeatLabel, settings } = req.body;
+    if (!topic && !(settings && settings.keywords)) throw new Error('주제 또는 키워드를 입력하세요');
+    if (type === 'once' && !datetime) throw new Error('예약 시간을 설정하세요');
+    if (type === 'recurring' && !cronExpr) throw new Error('반복 주기를 설정하세요');
+
+    const id = scheduleIdCounter++;
+    schedules[id] = {
+      id, topic, type, datetime: datetime || null,
+      cronExpr: cronExpr || null, repeatLabel: repeatLabel || '',
+      settings: settings || {},
+      status: 'pending', lastRun: null, lastError: null,
+      runCount: 0, createdAt: new Date().toISOString(),
+      cronJob: null, timeout: null
+    };
+    activateSchedule(id);
+    res.json({ success: true, schedule: { id, topic, type, status: schedules[id].status } });
+  } catch(e) {
+    res.status(400).json({ success: false, error: e.message });
+  }
+});
+
+// API: 스케줄 목록
+app.get('/api/schedule/list', (req, res) => {
+  const list = Object.values(schedules).map(s => ({
+    id: s.id, topic: s.topic, type: s.type,
+    datetime: s.datetime, cronExpr: s.cronExpr,
+    repeatLabel: s.repeatLabel, status: s.status,
+    lastRun: s.lastRun, lastError: s.lastError,
+    runCount: s.runCount, createdAt: s.createdAt,
+    settings: s.settings || {},
+    progress: s.progress || null
+  }));
+  res.json({ success: true, schedules: list });
+});
+
+// API: 스케줄 시간 수정
+app.post('/api/schedule/:id/update', (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const s = schedules[id];
+    if (!s) return res.status(404).json({ success: false, error: '스케줄 없음' });
+    if (s.status === 'running') return res.status(400).json({ success: false, error: '실행 중에는 수정 불가' });
+
+    const { datetime, cronExpr, repeatLabel } = req.body;
+    // 기존 스케줄 중지
+    deactivateSchedule(id);
+
+    if (datetime) {
+      s.datetime = datetime;
+      s.type = 'once';
+    }
+    if (cronExpr) {
+      s.cronExpr = cronExpr;
+      s.repeatLabel = repeatLabel || cronExpr;
+      s.type = 'recurring';
+    }
+
+    // 재활성화
+    activateSchedule(id);
+    res.json({ success: true, status: s.status });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+// API: 스케줄 삭제
+app.delete('/api/schedule/:id', (req, res) => {
+  const id = parseInt(req.params.id);
+  deactivateSchedule(id);
+  delete schedules[id];
+  saveSchedules();
+  res.json({ success: true });
+});
+
+// API: 스케줄 토글 (활성/중지)
+app.post('/api/schedule/:id/toggle', (req, res) => {
+  const id = parseInt(req.params.id);
+  const s = schedules[id];
+  if (!s) return res.status(404).json({ success: false, error: '스케줄 없음' });
+  if (s.status === 'active') {
+    deactivateSchedule(id);
+  } else {
+    activateSchedule(id);
+  }
+  res.json({ success: true, status: s.status });
+});
+
+// 서버 시작 시 저장된 스케줄 로드
+loadSchedules();
+
+// 서버 시작 시 저장된 사용자 키 로드 (마지막 로그인 사용자)
+(async () => {
+  try {
+    if (db) {
+      const r = await db.query('SELECT email, api_keys, name, picture FROM user_settings ORDER BY updated_at DESC LIMIT 1');
+      if (r.rows[0]?.api_keys && Object.keys(r.rows[0].api_keys).length > 0) {
+        applyUserKeys(r.rows[0].api_keys);
+        googleUser = { email: r.rows[0].email, name: r.rows[0].name, picture: r.rows[0].picture };
+        console.log(`[Boot] DB에서 사용자 키 로드: ${r.rows[0].email}`);
+      }
+    } else {
+      const all = loadUserSettingsJSON();
+      const emails = Object.keys(all);
+      if (emails.length > 0) {
+        const lastEmail = emails[emails.length - 1];
+        applyUserKeys(all[lastEmail]);
+        console.log(`[Boot] JSON에서 사용자 키 로드: ${lastEmail}`);
+      }
+    }
+    // YouTube 토큰 복원
+    if (db && !youtubeTokens) {
+      try {
+        const tr = await db.query('SELECT tokens FROM oauth_tokens WHERE id=$1', ['youtube']);
+        if (tr.rows[0]?.tokens) {
+          youtubeTokens = tr.rows[0].tokens;
+          oauth2Client.setCredentials(youtubeTokens);
+          console.log('[Boot] DB에서 YouTube 토큰 복원');
+        }
+      } catch(e) {}
+    }
+  } catch(e) { console.warn('[Boot] 사용자 키 로드 실패:', e.message); }
+})();
+
+// ========================
+// ========================
+// 관리자 모드
+// ========================
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'aura09#$';
+
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body;
+  if (password === ADMIN_PASSWORD) {
+    res.json({ success: true });
+  } else {
+    res.status(401).json({ success: false, error: '비밀번호 오류' });
+  }
+});
+
+app.post('/api/admin/users', async (req, res) => {
+  try {
+    const { password } = req.body;
+    if (password !== ADMIN_PASSWORD) return res.status(401).json({ success: false, error: '인증 필요' });
+
+    if (!db) return res.json({ success: true, users: [] });
+
+    // user_settings 테이블에서 회원 목록
+    const r = await db.query(`
+      SELECT email, name, picture, api_keys,
+             created_at, updated_at,
+             CASE WHEN api_keys IS NOT NULL AND api_keys != '{}'::jsonb THEN true ELSE false END as approved
+      FROM user_settings ORDER BY created_at DESC
+    `);
+
+    const users = r.rows.map(u => {
+      const keys = u.api_keys || {};
+      return {
+        name: u.name || '미입력',
+        email: u.email,
+        picture: u.picture || '',
+        joinDate: u.created_at,
+        lastActive: u.updated_at,
+        approved: !!keys._approved,
+        hasKeys: Object.keys(keys).filter(k => !k.startsWith('_')).length,
+        subscriptionType: keys._subscription || 'none',
+        subscriptionStart: keys._subscriptionStart || null,
+        subscriptionEnd: keys._subscriptionEnd || null
+      };
+    });
+
+    res.json({ success: true, users, total: users.length });
+  } catch(e) {
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
+app.post('/api/admin/user/delete', async (req, res) => {
+  try {
+    const { password, email } = req.body;
+    if (password !== ADMIN_PASSWORD) return res.status(401).json({ success: false });
+    if (!db) return res.json({ success: false, error: 'DB 미연결' });
+    await db.query('DELETE FROM user_settings WHERE email=$1', [email]);
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+app.post('/api/admin/user/update', async (req, res) => {
+  try {
+    const { password, email, field, value } = req.body;
+    if (password !== ADMIN_PASSWORD) return res.status(401).json({ success: false });
+    if (!db) return res.json({ success: false, error: 'DB 미연결' });
+
+    const r = await db.query('SELECT api_keys FROM user_settings WHERE email=$1', [email]);
+    if (r.rows[0]) {
+      const keys = r.rows[0].api_keys || {};
+
+      if (field === '_subscription') {
+        keys._subscription = value;
+        const now = new Date();
+        keys._subscriptionStart = now.toISOString();
+        if (value === 'monthly') {
+          keys._subscriptionEnd = new Date(now.setMonth(now.getMonth() + 1)).toISOString();
+        } else if (value === 'yearly') {
+          keys._subscriptionEnd = new Date(now.setFullYear(now.getFullYear() + 1)).toISOString();
+        } else {
+          keys._subscriptionStart = null;
+          keys._subscriptionEnd = null;
+        }
+        // 구독 시 자동 승인
+        if (value !== 'none') keys._approved = true;
+      } else {
+        keys[field] = value;
+      }
+
+      await db.query('UPDATE user_settings SET api_keys=$1, updated_at=NOW() WHERE email=$2', [JSON.stringify(keys), email]);
+    }
+    res.json({ success: true });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 // Start
 // ========================
 app.listen(PORT, () => {
