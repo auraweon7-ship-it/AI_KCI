@@ -3701,11 +3701,31 @@ async function googleLogin(){
   try {
     const r = await fetch('/api/google/auth?json=1');
     const d = await r.json();
-    if(d.authUrl) window.open(d.authUrl,'_blank','width=500,height=600');
-    else toast('Google OAuth URL 생성 실패','err');
+    if(!d.authUrl){ toast('Google OAuth URL 생성 실패','err'); return; }
+    showAuthUrlModal(d.authUrl);
   } catch(e) {
-    window.open('/api/google/auth','_blank','width=500,height=600');
+    toast('로그인 URL 생성 실패','err');
   }
+}
+function showAuthUrlModal(url){
+  let m = document.getElementById('authUrlModal');
+  if(m) m.remove();
+  m = document.createElement('div');
+  m.id='authUrlModal';
+  m.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:99999';
+  m.innerHTML=`<div style="background:var(--c2,#1c1c26);border-radius:16px;padding:28px;max-width:480px;width:90%;color:var(--t1,#fff);font-family:inherit">
+    <h3 style="margin:0 0 12px;font-size:16px">🔐 Google 로그인</h3>
+    <p style="font-size:12px;color:var(--t2,#9898a8);margin:0 0 12px;line-height:1.6">팝업이 차단되었습니다.<br>아래 URL을 복사하여 <strong>브라우저 주소창</strong>에 붙여넣기 해주세요.</p>
+    <div style="display:flex;gap:6px;margin-bottom:16px">
+      <input id="authUrlInput" readonly value="${url}" style="flex:1;background:var(--c3,#0f0f13);border:1px solid var(--bd,#2a2a3a);border-radius:8px;padding:8px 10px;color:var(--t1,#fff);font-size:10px;font-family:monospace">
+      <button onclick="navigator.clipboard.writeText(document.getElementById('authUrlInput').value);this.textContent='✅ 복사됨';setTimeout(()=>this.textContent='📋 복사',1500)" style="background:var(--info,#3b82f6);color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:11px;cursor:pointer;white-space:nowrap">📋 복사</button>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="document.getElementById('authUrlModal').remove()" style="background:var(--c3,#0f0f13);color:var(--t2,#9898a8);border:1px solid var(--bd,#2a2a3a);border-radius:8px;padding:8px 20px;font-size:12px;cursor:pointer">닫기</button>
+    </div>
+  </div>`;
+  document.body.appendChild(m);
+  m.addEventListener('click',e=>{if(e.target===m)m.remove();});
 }
 function googleLogout(){
   fetch('/api/google/logout').then(()=>{
