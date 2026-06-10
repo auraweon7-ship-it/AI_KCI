@@ -76,6 +76,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
 .fl{font-size:10.5px;font-weight:500;color:var(--t2);margin-bottom:4px;display:block}
 .fi,.ft,.fs{width:100%;padding:8px 11px;background:var(--bgi);border:1px solid var(--bd);border-radius:var(--rs);color:var(--t1);font-size:12.5px;font-family:inherit;outline:none;transition:border-color .2s}
 .fi:focus,.ft:focus,.fs:focus{border-color:var(--acc)}
+input[type="datetime-local"]::-webkit-calendar-picker-indicator{filter:invert(0.7);cursor:pointer;padding:4px}
+input[type="datetime-local"]::-webkit-datetime-edit{color:var(--t1)}
+input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper{color:var(--t1)}
 .ft{min-height:90px;resize:vertical;line-height:1.7}
 .fs option{background:var(--bg3)}
 .fr{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -136,6 +139,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
 /* Spinner */
 .sp{display:inline-block;width:14px;height:14px;border:2px solid var(--bd);border-top-color:var(--acc);border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+@keyframes clockSpin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+.sch-running{display:inline-block;animation:clockSpin 1.5s linear infinite;font-size:18px}
 
 /* Toast */
 .toast{position:fixed;bottom:18px;right:18px;padding:9px 16px;border-radius:var(--rs);font-size:11px;font-weight:500;transform:translateY(50px);opacity:0;transition:all .3s;z-index:999}
@@ -359,6 +364,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
   <nav class="sb-nav">
     <div class="ni act" data-s="home" onclick="goHome()" style="margin:4px 0 2px;font-weight:600;color:var(--t1)"><span>🏠</span> 홈</div>
     <div class="ni" data-s="auto" onclick="go('auto')" style="margin:2px 0 4px;background:linear-gradient(135deg,rgba(255,59,59,.08),rgba(255,107,53,.08));border:1px solid rgba(255,59,59,.15);border-radius:var(--rs)"><span>🤖</span> <strong>자동 제작</strong></div>
+    <div class="ni" style="margin:2px 0 4px;background:linear-gradient(135deg,rgba(96,165,250,.08),rgba(139,92,246,.08));border:1px solid rgba(96,165,250,.15);border-radius:var(--rs);cursor:default"><span>🛠️</span> <strong>수동 제작</strong></div>
     <div class="sb-lbl">📝 기획</div>
     <div class="ni" data-s="topic" onclick="go('topic')"><span class="sn">1</span><span>💡</span> 주제 선정 <span class="req"></span></div>
     <div class="ni" data-s="plan" onclick="go('plan')"><span class="sn">2</span><span>📋</span> 대본 기획 <span class="req"></span></div>
@@ -366,20 +372,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     <div class="sb-lbl">🎬 제작</div>
     <div class="ni" data-s="image" onclick="go('image')"><span class="sn">4</span><span>🎨</span> 이미지, 영상 생성 <span class="req"></span></div>
     <div class="ni" data-s="tts" onclick="go('tts')"><span class="sn">5</span><span>🎙️</span> TTS 음성 <span class="req"></span></div>
-    <div class="ni" data-s="render" onclick="go('render')"><span class="sn">6</span><span>🎬</span> 영상 합성 <span class="req"></span></div>
     <div class="sb-lbl">📢 퍼블리싱</div>
-    <div class="ni" data-s="meta" onclick="go('meta')"><span class="sn">7</span><span>🏷️</span> 제목/설명 <span class="req"></span></div>
+    <div class="ni" data-s="meta" onclick="go('meta')"><span class="sn">7</span><span>🏷️</span> 메타데이터 <span class="req"></span></div>
     <div class="ni" data-s="thumb" onclick="go('thumb')"><span class="sn">8</span><span>🖼️</span> 썸네일</div>
-    <div class="sb-lbl">🔧 확장</div>
-    <div class="ni" data-s="intro" onclick="go('intro')"><span class="sn">9</span><span>🚀</span> 인트로</div>
-    <div class="sb-lbl">✂️ 편집</div>
-    <div class="ni" data-s="timeline" onclick="go('timeline')"><span class="sn">10</span><span>🎞️</span> 타임라인</div>
-    <div class="ni" data-s="srt" onclick="go('srt')"><span class="sn">11</span><span>📝</span> SRT 자막</div>
-    <div class="sb-lbl">⚙️ 관리</div>
-    <div class="ni" data-s="projmgr" onclick="go('projmgr')"><span class="sn">12</span><span>📁</span> 프로젝트</div>
-    <div class="ni" data-s="analytics" onclick="go('analytics')"><span class="sn">13</span><span>📊</span> Analytics</div>
+    <div class="ni" data-s="srt" onclick="go('srt')"><span class="sn">9</span><span>📝</span> SRT 자막</div>
+    <div class="ni" data-s="render" onclick="go('render')"><span class="sn">10</span><span>🎬</span> 영상 합성 <span class="req"></span></div>
     <div class="sb-lbl">☁️ 업로드</div>
-    <div class="ni" data-s="upload" onclick="go('upload')"><span class="sn">14</span><span>📤</span> YouTube <span class="req"></span></div>
+    <div class="ni" data-s="upload" onclick="go('upload')"><span class="sn">11</span><span>📤</span> YouTube 업로드 <span class="req"></span></div>
+    <div class="sb-lbl">⚙️ 관리</div>
+    <div class="ni" data-s="projmgr" onclick="go('projmgr')"><span class="sn">12</span><span>💾</span> 프로젝트 저장</div>
+    <div class="sb-lbl">📖 도움말</div>
+    <div class="ni" data-s="guide" onclick="go('guide')"><span>📖</span> 사용법 + API 설정</div>
   </nav>
   <div class="sb-ft">
     <div class="pr-info"><span>진행률</span><span id="pT">0%</span></div>
@@ -395,9 +398,17 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     <div class="top-t" id="topT">🏠 YouTube 롱폼 제작 에이전트</div>
     <div class="top-a">
       <button class="b bs" id="themeBtn" onclick="toggleTheme()" title="다크/라이트 모드">🌙</button>
-      <button class="b bs" onclick="viewFiles()">📂 파일</button>
-      <button class="b bs" onclick="cleanFiles()">🗑️ 초기화</button>
-      <button class="b bs" onclick="exportAll()">📥 내보내기</button>
+<button class="b bs" onclick="openSettings()" title="API 설정">⚙️ API 설정</button>
+      <button class="b bg" id="adminBtn" onclick="openAdminLogin()" title="관리자" style="font-size:10px;padding:4px 6px;display:none">🔐</button>
+      <div id="googleLoginArea" style="display:flex;align-items:center;gap:6px;margin-left:6px">
+        <button class="b bs" id="googleLoginBtn" onclick="googleLogin()" style="display:flex;align-items:center;gap:4px;font-size:11px">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="14" height="14" alt="G"> 로그인
+        </button>
+        <div id="googleProfile" style="display:none;align-items:center;gap:6px;cursor:pointer" onclick="googleLogout()">
+          <img id="googleAvatar" src="" width="24" height="24" style="border-radius:50%;border:1px solid var(--bd)" alt="">
+          <span id="googleName" style="font-size:10px;color:var(--t2);max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+        </div>
+      </div>
     </div>
   </div>
   <div class="ct">
@@ -405,76 +416,148 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
 
     <!-- ===== Landing ===== -->
     <div class="land act" id="sec-home">
-      <div class="hero">
+      <div class="hero" style="text-align:center;max-width:800px;margin:0 auto">
         <div class="hero-badge"><span class="pdot"></span> AI-Powered Full Production Pipeline</div>
-        <h2>YouTube 롱폼 영상<br><em>원클릭 제작 에이전트</em></h2>
+        <h2>클릭 한 번으로<br><em>YouTube 영상이 완성됩니다</em></h2>
         <p>주제 선정부터 대본 작성, 이미지·음성 생성, 영상 합성, 메타데이터 최적화, YouTube 업로드까지 — AI가 전 과정을 자동화합니다.</p>
+        <div style="margin:16px auto;max-width:520px;background:linear-gradient(135deg,rgba(255,59,59,.06),rgba(251,191,36,.06));border:1px solid rgba(251,191,36,.2);border-radius:12px;padding:14px 20px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--acc),var(--warn),var(--ok))"></div>
+          <div style="font-size:11px;color:var(--t1);line-height:1.8;text-align:center">
+            🔐 구글 로그인 후 <strong style="color:var(--warn)">관리자 승인</strong>이 완료되어야 서비스를 정상적으로 이용할 수 있습니다.<br>
+            <span style="color:var(--t2)">구독료 납부가 확인되면 신청한 구독 기간에 따라 이용 승인이 처리됩니다.</span>
+          </div>
+        </div>
         <div class="hero-btns">
-          <button class="b bp" onclick="go('topic')">🚀 영상 제작 시작</button>
+          <button class="b bp" onclick="go('auto')">🤖 자동 제작</button>
+          <button class="b bs" onclick="go('topic')">🛠️ 수동 제작</button>
           <button class="b bs" onclick="document.getElementById('landFeats').scrollIntoView({behavior:'smooth'})">📖 기능 살펴보기</button>
         </div>
       </div>
 
-      <div class="spec-grid">
-        <div class="spec"><div class="spec-val">4</div><div class="spec-lbl">AI API 통합</div></div>
-        <div class="spec"><div class="spec-val">11</div><div class="spec-lbl">제작 단계</div></div>
-        <div class="spec"><div class="spec-val">E2E</div><div class="spec-lbl">End-to-End 자동화</div></div>
-        <div class="spec"><div class="spec-val">1080p</div><div class="spec-lbl">HD 영상 출력</div></div>
+      <div class="spec-grid" style="max-width:900px;margin:24px auto;grid-template-columns:repeat(6,1fr)">
+        <div class="spec"><div class="spec-val">6</div><div class="spec-lbl">AI API 통합</div></div>
+        <div class="spec"><div class="spec-val">15</div><div class="spec-lbl">제작 단계</div></div>
+        <div class="spec"><div class="spec-val">E2E</div><div class="spec-lbl">End-to-End</div></div>
+        <div class="spec"><div class="spec-val">16:9</div><div class="spec-lbl">가로/세로</div></div>
+        <div class="spec"><div class="spec-val">📦</div><div class="spec-lbl">배치 10편</div></div>
+        <div class="spec"><div class="spec-val">📱</div><div class="spec-lbl">숏폼 동시</div></div>
       </div>
 
-      <div id="landFeats">
-        <div class="sec-header">
-          <div class="sec-header-top"><div class="sec-header-ico">🎯</div><h3><em>핵심 기능</em> 11가지</h3></div>
-          <p>AI 기획부터 영상 렌더링, YouTube 업로드까지 — 4개 API가 유기적으로 연결된 End-to-End 자동화 파이프라인</p>
-          <div class="sec-header-tags"><span>Claude AI</span><span>GPT Image</span><span>ElevenLabs</span><span>FFmpeg</span><span>YouTube API</span></div>
+      <div id="landFeats" style="max-width:900px;margin:0 auto">
+        <div class="sec-header" style="text-align:center">
+          <div class="sec-header-top" style="justify-content:center"><div class="sec-header-ico">🎯</div><h3><em>핵심 기능</em> 16가지</h3></div>
+          <p style="margin:0 auto">AI 기획부터 영상 렌더링, 배치 제작, 숏폼 동시 생성, YouTube 업로드까지 — 6개 API End-to-End 자동화</p>
+          <div class="sec-header-tags" style="justify-content:center"><span>Claude AI</span><span>GPT Image</span><span>ElevenLabs</span><span>Pexels</span><span>FFmpeg</span><span>YouTube API</span></div>
         </div>
-        <div class="feat-grid">
-          <div class="feat"><div class="feat-ico">💡</div><h4>AI 주제 추천</h4><p>카테고리·타겟·키워드 기반으로 조회수 높은 주제를 AI가 분석·추천</p><span class="feat-tag ai">Claude AI</span></div>
-          <div class="feat"><div class="feat-ico">📋</div><h4>대본 기획</h4><p>영상 구조, 장면 구성, 타임라인을 자동 설계하는 프리프로덕션</p><span class="feat-tag ai">Claude AI</span></div>
-          <div class="feat"><div class="feat-ico">✍️</div><h4>대본 작성</h4><p>팩트체크 기반 전문 나레이션 대본을 원하는 분량·톤으로 생성</p><span class="feat-tag ai">Claude AI</span></div>
-          <div class="feat"><div class="feat-ico">🎨</div><h4>이미지 생성</h4><p>장면별 고품질 이미지를 ChatGPT Images 2.0으로 실제 생성 (HD 1536×1024)</p><span class="feat-tag api">GPT Image</span></div>
-          <div class="feat"><div class="feat-ico">🎙️</div><h4>TTS 음성</h4><p>대본을 자연스러운 나레이션으로 변환, 다국어 음성 지원</p><span class="feat-tag api">ElevenLabs</span></div>
-          <div class="feat"><div class="feat-ico">🎬</div><h4>영상 합성</h4><p>이미지+음성을 Ken Burns 효과와 함께 MP4 영상으로 렌더링</p><span class="feat-tag tool">FFmpeg</span></div>
-          <div class="feat"><div class="feat-ico">🏷️</div><h4>SEO 메타데이터</h4><p>클릭률 최적화 제목, 설명, 태그, 고정 댓글을 다국어로 생성</p><span class="feat-tag ai">Claude AI</span></div>
-          <div class="feat"><div class="feat-ico">🖼️</div><h4>썸네일 생성</h4><p>시선을 사로잡는 유튜브 썸네일을 AI로 자동 디자인</p><span class="feat-tag api">GPT Image</span></div>
-          <div class="feat"><div class="feat-ico">🚀</div><h4>인트로 생성</h4><p>시청자 이탈 방지를 위한 후킹 오프닝 자동 작성</p><span class="feat-tag ai">Claude AI</span></div>
-          <div class="feat"><div class="feat-ico">📤</div><h4>YouTube 업로드</h4><p>완성된 영상을 YouTube에 직접 업로드, 썸네일 자동 설정</p><span class="feat-tag api">YouTube API</span></div>
-          <div class="feat"><div class="feat-ico">💾</div><h4>프로젝트 저장</h4><p>작업 상태 자동 저장, 이어하기, JSON 내보내기 지원</p><span class="feat-tag tool">localStorage</span></div>
-        </div>
-      </div>
-
-      <div class="pipe-sec">
-        <div class="sec-header">
-          <div class="sec-header-top"><div class="sec-header-ico">⚡</div><h3><em>단계별</em> 제작 파이프라인</h3></div>
-          <p>주제 선정에서 YouTube 업로드까지, 5단계 자동화 워크플로우가 순차적으로 실행됩니다</p>
-        </div>
-        <div class="pipe-line">
-          <div class="pipe-step"><div class="pipe-dot s1">1</div><div class="pipe-body"><h5>기획 (Pre-Production)</h5><p>주제 선정 → 대본 기획 → 대본 작성<br>Claude AI가 주제 분석, 구조 설계, 나레이션 대본까지 자동 생성</p><div class="pipe-api">Claude API (claude-sonnet-4-20250514)</div></div></div>
-          <div class="pipe-step"><div class="pipe-dot s2">2</div><div class="pipe-body"><h5>시각 소재 (Visual Assets)</h5><p>대본의 장면 지시에 따라 ChatGPT Images 2.0이 고해상도 일러스트를 배치 생성<br>프롬프트 자동 생성 → 개별 검토/수정 → 일괄 또는 개별 이미지 생성</p><div class="pipe-api">GPT Image API (high, 1536×1024)</div></div></div>
-          <div class="pipe-step"><div class="pipe-dot s3">3</div><div class="pipe-body"><h5>음성 제작 (Audio Production)</h5><p>대본 텍스트를 ElevenLabs TTS로 자연스러운 나레이션 음성 변환<br>음성 선택, 안정성/유사도 파라미터 조절 가능</p><div class="pipe-api">ElevenLabs API (eleven_multilingual_v2)</div></div></div>
-          <div class="pipe-step"><div class="pipe-dot s4">4</div><div class="pipe-body"><h5>영상 합성 (Video Rendering)</h5><p>이미지 + 음성 → Ken Burns 줌팬 효과 적용 MP4 영상으로 합성<br>오디오 길이 기반 자동 타이밍, 1080p 렌더링</p><div class="pipe-api">FFmpeg (zoompan, concat)</div></div></div>
-          <div class="pipe-step"><div class="pipe-dot s5">5</div><div class="pipe-body"><h5>퍼블리싱 (Publishing)</h5><p>SEO 최적화 메타데이터 생성 → 썸네일 디자인 → YouTube 직접 업로드<br>인트로 생성까지 원스톱 완료</p><div class="pipe-api">YouTube Data API v3 + OAuth 2.0</div></div></div>
+        <div class="feat-grid" style="grid-template-columns:repeat(auto-fill,minmax(200px,1fr))">
+          <div class="feat" style="text-align:center"><div class="feat-ico">💡</div><h4>AI 주제 추천</h4><p>10개 주제 AI 생성, 카테고리·타겟·키워드 기반</p><span class="feat-tag ai">Claude AI</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">📋</div><h4>대본 기획</h4><p>영상 구조 설계, 흥미/호기심/지식/심도 톤 선택</p><span class="feat-tag ai">Claude AI</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">📄</div><h4>참고 텍스트</h4><p>논문·기사·자료 기반 기획·대본 생성</p><span class="feat-tag ai">Claude AI</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">✍️</div><h4>대본 작성</h4><p>1~60분 분량 자동 조절, 다국어 지원, 스트리밍</p><span class="feat-tag ai">Claude AI</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">🎨</div><h4>이미지 생성</h4><p>30종 스타일, HD 이미지 최대 50장</p><span class="feat-tag api">GPT Image</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">🎬</div><h4>영상 클립</h4><p>Pexels 스톡 영상 최대 50개, 시대 매칭</p><span class="feat-tag api">Pexels</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">🎙️</div><h4>TTS 음성</h4><p>다국어 나레이션, 청크 문맥 연결, 외국어 필터</p><span class="feat-tag api">ElevenLabs</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">🎥</div><h4>영상 합성</h4><p>Ken Burns + 전환효과, 16:9/9:16, 자막 burn</p><span class="feat-tag tool">FFmpeg</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">📝</div><h4>이중 자막</h4><p>외국어 + 한국어 번역, 영상 burn + SRT 파일</p><span class="feat-tag ai">Claude AI</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">🖼️</div><h4>썸네일</h4><p>강조 텍스트(골드) + 한국어 번역(스카이블루)</p><span class="feat-tag api">GPT Image</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">🏷️</div><h4>SEO 메타데이터</h4><p>이모지+타임스탬프+태그, YouTube 설명 최적화</p><span class="feat-tag ai">Claude AI</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">📦</div><h4>배치 제작</h4><p>10개 주제 체크 → 연속 제작+업로드, 결과 표시</p><span class="feat-tag tool">Batch</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">📱</div><h4>숏폼 동시 제작</h4><p>롱폼 완료 후 2분 숏폼 자동 생성 (9:16)</p><span class="feat-tag tool">Auto</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">📅</div><h4>예약/반복 제작</h4><p>키워드 모드, 매일/매주 자동, 진행률 표시</p><span class="feat-tag tool">node-cron</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">📤</div><h4>YouTube 업로드</h4><p>Resumable Upload, 썸네일 자동 설정</p><span class="feat-tag api">YouTube API</span></div>
+          <div class="feat" style="text-align:center"><div class="feat-ico">🔐</div><h4>관리자 모드</h4><p>회원 관리, 구독 승인, 구독 기간 자동 계산</p><span class="feat-tag tool">PostgreSQL</span></div>
         </div>
       </div>
 
-      <div class="land-footer">
-        <div class="prof-name">박정원 | 朴正元 | Park Jeong Weon</div>
-        <div class="prof-sub">교수 · Professor</div>
-        <div class="prof-divider"></div>
-        <div class="prof-sub">
-          한국외국어대학교 중국학대학 중국언어문화학부<br>
-          Division of Chinese Language, Literature and Culture
+      <div style="max-width:900px;margin:24px auto">
+        <div class="sec-header" style="text-align:center">
+          <div class="sec-header-top" style="justify-content:center"><div class="sec-header-ico">⚡</div><h3><em>단계별</em> 제작 파이프라인</h3></div>
+          <p style="margin:0 auto">주제 선정에서 숏폼+롱폼 동시 제작, YouTube 업로드까지 6단계 자동화</p>
         </div>
-        <div class="prof-divider"></div>
-        <div class="prof-roles">
-          <span>국가교육위원회 AI특별위원회 위원</span>
-          <span>교육부 AI인재양성추진단</span>
-          <span>K-AI 교육네트워크</span>
+        <div style="display:flex;gap:0;align-items:stretch;margin-top:16px;overflow-x:auto">
+          <div style="flex:1;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--r) 0 0 var(--r);padding:14px 10px;text-align:center;position:relative;min-width:130px">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--acc);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;margin:0 auto 6px">1</div>
+            <div style="font-size:11px;font-weight:700;margin-bottom:3px">기획</div>
+            <div style="font-size:8px;color:var(--t2);line-height:1.5">AI 주제 10개<br>톤 설정 · 대본</div>
+            <div style="font-size:7px;color:var(--t3);margin-top:4px;font-family:Consolas">Claude AI</div>
+            <div style="position:absolute;right:-10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--acc);z-index:1;font-weight:900">›</div>
+          </div>
+          <div style="flex:1;background:var(--bg3);border:1px solid var(--bd);border-left:0;padding:14px 10px;text-align:center;position:relative;min-width:130px">
+            <div style="width:34px;height:34px;border-radius:50%;background:#ff6b35;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;margin:0 auto 6px">2</div>
+            <div style="font-size:11px;font-weight:700;margin-bottom:3px">시각 소재</div>
+            <div style="font-size:8px;color:var(--t2);line-height:1.5">이미지 50장<br>또는 영상 50클립</div>
+            <div style="font-size:7px;color:var(--t3);margin-top:4px;font-family:Consolas">GPT Image / Pexels</div>
+            <div style="position:absolute;right:-10px;top:50%;transform:translateY(-50%);font-size:16px;color:#ff6b35;z-index:1;font-weight:900">›</div>
+          </div>
+          <div style="flex:1;background:var(--bg3);border:1px solid var(--bd);border-left:0;padding:14px 10px;text-align:center;position:relative;min-width:130px">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--warn);color:#000;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;margin:0 auto 6px">3</div>
+            <div style="font-size:11px;font-weight:700;margin-bottom:3px">음성 + 자막</div>
+            <div style="font-size:8px;color:var(--t2);line-height:1.5">TTS 나레이션<br>이중자막 burn</div>
+            <div style="font-size:7px;color:var(--t3);margin-top:4px;font-family:Consolas">ElevenLabs + Claude</div>
+            <div style="position:absolute;right:-10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--warn);z-index:1;font-weight:900">›</div>
+          </div>
+          <div style="flex:1;background:var(--bg3);border:1px solid var(--bd);border-left:0;padding:14px 10px;text-align:center;position:relative;min-width:130px">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--ok);color:#000;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;margin:0 auto 6px">4</div>
+            <div style="font-size:11px;font-weight:700;margin-bottom:3px">영상 합성</div>
+            <div style="font-size:8px;color:var(--t2);line-height:1.5">Ken Burns · 전환<br>썸네일 인트로</div>
+            <div style="font-size:7px;color:var(--t3);margin-top:4px;font-family:Consolas">FFmpeg</div>
+            <div style="position:absolute;right:-10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--ok);z-index:1;font-weight:900">›</div>
+          </div>
+          <div style="flex:1;background:var(--bg3);border:1px solid var(--bd);border-left:0;padding:14px 10px;text-align:center;position:relative;min-width:130px">
+            <div style="width:34px;height:34px;border-radius:50%;background:var(--info);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;margin:0 auto 6px">5</div>
+            <div style="font-size:11px;font-weight:700;margin-bottom:3px">퍼블리싱</div>
+            <div style="font-size:8px;color:var(--t2);line-height:1.5">메타 · 썸네일<br>YouTube 업로드</div>
+            <div style="font-size:7px;color:var(--t3);margin-top:4px;font-family:Consolas">YouTube API</div>
+            <div style="position:absolute;right:-10px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--info);z-index:1;font-weight:900">›</div>
+          </div>
+          <div style="flex:1;background:var(--bg3);border:1px solid var(--bd);border-left:0;border-radius:0 var(--r) var(--r) 0;padding:14px 10px;text-align:center;min-width:130px">
+            <div style="width:34px;height:34px;border-radius:50%;background:#a78bfa;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;margin:0 auto 6px">6</div>
+            <div style="font-size:11px;font-weight:700;margin-bottom:3px">숏폼 + 배치</div>
+            <div style="font-size:8px;color:var(--t2);line-height:1.5">2분 숏폼 자동<br>10편 연속 제작</div>
+            <div style="font-size:7px;color:var(--t3);margin-top:4px;font-family:Consolas">Auto Pipeline</div>
+          </div>
         </div>
+      </div>
+
+      <div style="max-width:900px;margin:20px auto;background:linear-gradient(135deg,var(--bg2),rgba(255,59,59,.03));border:1px solid var(--bd);border-radius:var(--r);padding:24px;text-align:center">
+        <div style="font-size:14px;font-weight:800;margin-bottom:8px">🔐 이용 안내</div>
+        <p style="font-size:12px;color:var(--t2);line-height:1.8;margin-bottom:14px">
+          구글 로그인 후 <strong style="color:var(--warn)">관리자 승인</strong>이 완료되어야 서비스를 정상적으로 이용할 수 있습니다.<br>
+          구독료 납부가 확인되면 신청한 구독 기간에 따라 이용 승인이 처리됩니다.
+        </p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:16px">
+          <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:16px 28px;min-width:160px">
+            <div style="font-size:10px;color:var(--t3);margin-bottom:4px">월간 구독</div>
+            <div style="font-size:24px;font-weight:900;color:var(--acc)">20<span style="font-size:14px">만원</span></div>
+          </div>
+          <div style="background:var(--bg3);border:1px solid var(--acc);border-radius:10px;padding:16px 28px;min-width:160px;position:relative">
+            <div style="position:absolute;top:-8px;right:-8px;background:var(--acc);color:#fff;font-size:8px;font-weight:700;padding:2px 8px;border-radius:10px">BEST</div>
+            <div style="font-size:10px;color:var(--t3);margin-bottom:4px">연간 구독</div>
+            <div style="font-size:24px;font-weight:900;color:var(--acc)">150<span style="font-size:14px">만원</span></div>
+            <div style="font-size:9px;color:var(--ok);margin-top:2px">월 12.5만원 (37% 할인)</div>
+          </div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:16px;max-width:400px;margin:0 auto;text-align:left">
+          <div style="font-size:12px;font-weight:700;margin-bottom:8px;text-align:center">🏦 입금 안내</div>
+          <div style="font-size:11px;color:var(--t2);line-height:2">
+            <strong style="color:var(--t1)">은행:</strong> KB국민은행<br>
+            <strong style="color:var(--t1)">계좌번호:</strong> <span style="color:var(--info);font-family:Consolas">511301-01-427929</span><br>
+            <strong style="color:var(--t1)">예금주:</strong> 박정원
+          </div>
+          <div style="height:1px;background:var(--bd);margin:10px 0"></div>
+          <div style="font-size:10px;color:var(--t3);line-height:1.7;text-align:center">
+            입금 후 이메일로 <strong style="color:var(--t2)">성함·입금액·이용 기간</strong>을 보내주시면<br>
+            확인 후 계정을 활성화해 드립니다.
+          </div>
+        </div>
+      </div>
+
+      <div class="land-footer" style="max-width:900px;margin:24px auto">
         <div class="prof-links">
           <a href="https://kletter.kr" target="_blank">kletter.kr</a>
           <a href="https://kteacher.kr" target="_blank">kteacher.kr</a>
         </div>
+        <div style="margin-top:12px;font-size:10px;color:var(--t3)">Copyright &copy; A&amp;D AGE. All Rights Reserved.</div>
       </div>
     </div>
 
@@ -486,15 +569,26 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
           <p>주제·시간·언어만 선택하면 대본→이미지→음성→영상→메타데이터→썸네일까지 자동 완료</p>
         </div>
         <div class="cd">
-          <div class="fg"><label class="fl">🎯 영상 주제 *</label>
+          <div class="fg"><label class="fl"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--info);color:#fff;font-size:9px;font-weight:800;margin-right:4px">1</span>🔑 핵심 키워드</label>
             <div style="display:flex;gap:6px;align-items:stretch">
-              <input type="text" class="fi" id="autoTopic" placeholder="예: 베트남 전쟁 속 병사들의 고독과 연대" style="flex:1">
+              <input type="text" class="fi" id="autoTopicKw" placeholder="예: 미스터리, 우주, 고대문명" style="flex:1">
+              <select class="fs" id="autoTopicCount" style="width:70px;flex:none;text-align:center">
+                <option value="3">3개</option>
+                <option value="5">5개</option>
+                <option value="10" selected>10개</option>
+                <option value="15">15개</option>
+                <option value="20">20개</option>
+              </select>
               <button type="button" class="b bp" id="autoTopicAiBtn" onclick="doAutoTopicAi()" style="white-space:nowrap;font-size:11px;padding:0 14px">✨ AI 자동 생성</button>
             </div>
-            <div class="fh" id="autoTopicHint" style="margin-top:4px">선택한 카테고리/언어 기반으로 인기 주제를 자동 추천</div>
+            <div class="fh">키워드 입력 후 AI 자동 생성 클릭 → 선택한 갯수만큼 주제 추천</div>
           </div>
-          <div class="fr3" style="margin-bottom:8px">
-            <div class="fg"><label class="fl">📂 추천 카테고리</label>
+          <div class="fg"><label class="fl"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--info);color:#fff;font-size:9px;font-weight:800;margin-right:4px">2</span>🎯 영상 주제</label>
+            <input type="text" class="fi" id="autoTopic" placeholder="직접 입력하거나 위에서 AI가 추천한 주제를 선택하세요">
+            <div class="fh" id="autoTopicHint" style="margin-top:4px">키워드 또는 주제 중 하나만 입력해도 제작 가능</div>
+          </div>
+          <div class="fr" style="grid-template-columns:repeat(4,1fr)">
+            <div class="fg"><label class="fl"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--info);color:#fff;font-size:9px;font-weight:800;margin-right:4px">3</span>📂 추천 카테고리</label>
               <select class="fs" id="autoTopicCat">
                 <option value="">전체</option>
                 <option value="역사">역사</option>
@@ -510,7 +604,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
                 <option value="건강">건강</option>
               </select>
             </div>
-            <div class="fg"><label class="fl">👥 타겟 시청자</label>
+            <div class="fg"><label class="fl"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--info);color:#fff;font-size:9px;font-weight:800;margin-right:4px">4</span>👥 타겟 시청자</label>
               <select class="fs" id="autoTopicAud">
                 <option value="">전체</option>
                 <option value="10대">10대</option>
@@ -520,23 +614,22 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
                 <option value="50대 이상">50대 이상</option>
               </select>
             </div>
-            <div class="fg"><label class="fl">🔑 핵심 키워드 (선택)</label>
-              <input type="text" class="fi" id="autoTopicKw" placeholder="예: 미스터리, 잊혀진">
-            </div>
-          </div>
-          <div class="fr3">
-            <div class="fg"><label class="fl">⏱️ 영상 길이</label>
+            <div class="fg"><label class="fl"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--info);color:#fff;font-size:9px;font-weight:800;margin-right:4px">5</span>⏱️ 영상 길이</label>
               <select class="fs" id="autoLen">
                 <option value="1">1분 (쇼츠/티저)</option>
                 <option value="3">3분 (짧은 영상)</option>
+                <option value="4">4분</option>
                 <option value="5">5분 (미디엄)</option>
                 <option value="10">10분</option>
                 <option value="15" selected>15분</option>
                 <option value="20">20분</option>
-                <option value="30">30분+</option>
+                <option value="30">30분</option>
+                <option value="40">40분</option>
+                <option value="50">50분</option>
+                <option value="60">60분</option>
               </select>
             </div>
-            <div class="fg"><label class="fl">🌐 영상 언어</label>
+            <div class="fg"><label class="fl"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--info);color:#fff;font-size:9px;font-weight:800;margin-right:4px">6</span>🌐 영상 언어</label>
               <select class="fs" id="autoLang" onchange="updateAutoVoiceOptions()">
                 <option value="ko" selected>🇰🇷 한국어</option>
                 <option value="en">🇺🇸 영어</option>
@@ -546,13 +639,61 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
               </select>
             </div>
           </div>
-          <div class="fr">
-            <div class="fg"><label class="fl">🎞️ 소스 모드 (영상 합성 재료)</label>
+          <div class="fg" style="margin-bottom:8px">
+            <label class="fl"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--info);color:#fff;font-size:9px;font-weight:800;margin-right:4px">7</span>📝 대본 기획 설정</label>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+              <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:4px 10px;border:1px solid var(--bd);border-radius:16px;transition:all .15s" onchange="this.style.borderColor=this.querySelector('input').checked?'var(--acc)':'var(--bd)';this.style.background=this.querySelector('input').checked?'var(--accd)':'transparent'">
+                <input type="checkbox" class="auto-tone-chk" value="흥미 위주" style="accent-color:var(--acc)"> 🎭 흥미 위주
+              </label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:4px 10px;border:1px solid var(--bd);border-radius:16px;transition:all .15s" onchange="this.style.borderColor=this.querySelector('input').checked?'var(--warn)':'var(--bd)';this.style.background=this.querySelector('input').checked?'rgba(251,191,36,.1)':'transparent'">
+                <input type="checkbox" class="auto-tone-chk" value="호기심 위주" style="accent-color:var(--warn)"> 🔍 호기심 위주
+              </label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:4px 10px;border:1px solid var(--bd);border-radius:16px;transition:all .15s" onchange="this.style.borderColor=this.querySelector('input').checked?'var(--info)':'var(--bd)';this.style.background=this.querySelector('input').checked?'rgba(96,165,250,.1)':'transparent'">
+                <input type="checkbox" class="auto-tone-chk" value="지식 위주" style="accent-color:var(--info)"> 📚 지식 위주
+              </label>
+              <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;padding:4px 10px;border:1px solid var(--bd);border-radius:16px;transition:all .15s" onchange="this.style.borderColor=this.querySelector('input').checked?'var(--ok)':'var(--bd)';this.style.background=this.querySelector('input').checked?'rgba(52,211,153,.1)':'transparent'">
+                <input type="checkbox" class="auto-tone-chk" value="내용 심도 위주" style="accent-color:var(--ok)"> 🧠 내용 심도 위주
+              </label>
+            </div>
+            <div class="fh">복수 선택 가능. 미선택 시 균형 잡힌 기본 톤으로 제작</div>
+          </div>
+          <div class="fg" style="margin-bottom:8px">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--t2)">
+              <input type="checkbox" id="autoRefTextChk" onchange="document.getElementById('autoRefTextWrap').style.display=this.checked?'block':'none'"> <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--info);color:#fff;font-size:9px;font-weight:800;margin-right:4px">8</span><span style="color:var(--acc)">📄 대본 텍스트 (참고 자료)</span>
+            </label>
+            <div id="autoRefTextWrap" style="display:none;margin-top:6px">
+              <textarea class="ft" id="autoRefText" rows="6" placeholder="대본 작성 시 참고할 텍스트를 입력하세요. 기획·대본 생성 시 이 내용을 바탕으로 작성합니다." style="min-height:120px"></textarea>
+              <div class="fh">체크 시 기획·대본 생성에 이 텍스트가 참고 자료로 사용됩니다</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:12px">
+            <div class="fg"><label class="fl"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--info);color:#fff;font-size:9px;font-weight:800;margin-right:4px">9</span>🎞️ 소스 모드</label>
               <select class="fs" id="autoSourceMode" onchange="updateSourceModeHint()">
-                <option value="image" selected>🖼️ 이미지 기반 (GPT Image-1 + Ken Burns)</option>
-                <option value="video">🎬 영상 기반 (Pexels 스톡 영상)</option>
+                <option value="image" selected>🖼️ 이미지 기반</option>
+                <option value="video">🎬 영상 기반 (Pexels)</option>
               </select>
-              <div class="fh" id="autoSourceModeHint">AI 생성 이미지에 카메라 움직임을 적용합니다</div>
+              <div class="fh" id="autoSourceModeHint">이미지 + Ken Burns</div>
+            </div>
+            <div class="fg"><label class="fl">📐 해상도</label>
+              <select class="fs" id="autoRatio">
+                <option value="16:9" selected>16:9 (1920×1080)</option>
+                <option value="9:16">9:16 (1080×1920)</option>
+              </select>
+              <div class="fh">가로 또는 세로/쇼츠</div>
+            </div>
+            <div class="fg"><label class="fl">🔢 이미지/영상 수</label>
+              <select class="fs" id="autoImgCnt2">
+                <option value="5">5개</option>
+                <option value="8" selected>8개</option>
+                <option value="10">10개</option>
+                <option value="12">12개</option>
+                <option value="15">15개</option>
+                <option value="20">20개</option>
+                <option value="30">30개</option>
+                <option value="40">40개</option>
+                <option value="50">50개</option>
+              </select>
+              <div class="fh">영상 길이에 따라 자동 조정</div>
             </div>
             <div class="fg"><label class="fl">🎨 이미지 스타일</label>
               <select class="fs" id="autoStyle">
@@ -602,35 +743,23 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
             </div>
           </div>
           <div class="fr">
-            <div class="fg"><label class="fl">🖼️ 이미지 수</label>
-              <select class="fs" id="autoImgCnt">
-                <option value="5">5장</option>
-                <option value="8" selected>8장</option>
-                <option value="10">10장</option>
-                <option value="12">12장</option>
-                <option value="15">15장</option>
-                <option value="20">20장</option>
-                <option value="25">25장</option>
-                <option value="30">30장</option>
-              </select>
-            </div>
-            <div class="fg"><label class="fl">🎙️ 음성 <span style="font-size:9px;color:var(--t3);font-weight:400">(영상 언어에 맞춰 자동 추천)</span></label>
+            <div class="fg"><label class="fl"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--info);color:#fff;font-size:9px;font-weight:800;margin-right:4px">10</span>🎙️ 음성 <span style="font-size:9px;color:var(--t3);font-weight:400">(영상 언어에 맞춰 자동 추천)</span></label>
               <select class="fs" id="autoVoice"></select>
               <div class="fh" id="autoVoiceHint">선택한 언어에 가장 자연스러운 음성을 추천합니다</div>
             </div>
           </div>
           <div class="fr">
             <div class="fg"><label class="fl">🎚️ 음성 안정성 (stability)</label>
-              <input type="range" id="autoTtsSt" min="0" max="1" step="0.05" value="0.5" style="width:100%" oninput="document.getElementById('autoTtsStLbl').textContent=this.value">
-              <div class="fh">낮음=감정적, 높음=일관적 · 현재 <span id="autoTtsStLbl">0.5</span></div>
+              <input type="range" id="autoTtsSt" min="0" max="1" step="0.05" value="1" style="width:100%" oninput="document.getElementById('autoTtsStLbl').textContent=this.value">
+              <div class="fh">낮음=감정적, 높음=일관적 · 현재 <span id="autoTtsStLbl">1</span></div>
             </div>
             <div class="fg"><label class="fl">🔗 음성 유사도 (similarity)</label>
-              <input type="range" id="autoTtsSim" min="0" max="1" step="0.05" value="0.75" style="width:100%" oninput="document.getElementById('autoTtsSimLbl').textContent=this.value">
-              <div class="fh">원본 음성 톤 재현도 · 현재 <span id="autoTtsSimLbl">0.75</span></div>
+              <input type="range" id="autoTtsSim" min="0" max="1" step="0.05" value="1" style="width:100%" oninput="document.getElementById('autoTtsSimLbl').textContent=this.value">
+              <div class="fh">원본 음성 톤 재현도 · 현재 <span id="autoTtsSimLbl">1</span></div>
             </div>
           </div>
           <div class="divider"></div>
-          <div style="font-size:10px;font-weight:600;color:var(--t2);margin-bottom:8px">🎬 영상 편집 옵션</div>
+          <div style="font-size:10px;font-weight:600;color:var(--t2);margin-bottom:8px"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--info);color:#fff;font-size:9px;font-weight:800;margin-right:4px">11</span>🎬 영상 편집 옵션</div>
           <div class="fr3">
             <div class="fg"><label class="fl">✨ 장면 전환</label>
               <select class="fs" id="autoTrans">
@@ -656,8 +785,8 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
           </div>
           <div class="fr">
             <div class="fg"><label class="fl">🔊 BGM 볼륨</label>
-              <input type="range" id="autoBgmVol" min="0.05" max="0.5" step="0.05" value="0.15" style="width:100%" oninput="document.getElementById('autoBgmVolLbl').textContent=Math.round(this.value*100)+'%'">
-              <div class="fh">나레이션 대비 <span id="autoBgmVolLbl">15</span>%</div>
+              <input type="range" id="autoBgmVol" min="0" max="0.5" step="0.05" value="0" style="width:100%" oninput="document.getElementById('autoBgmVolLbl').textContent=Math.round(this.value*100)+'%'">
+              <div class="fh">나레이션 대비 <span id="autoBgmVolLbl">0</span>%</div>
             </div>
             <div class="fg"><label class="fl">📝 SRT 자막</label>
               <select class="fs" id="autoSrt">
@@ -683,24 +812,72 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
             </div>
           </div>
           <div class="divider"></div>
-          <div style="font-size:10px;font-weight:600;color:var(--t2);margin-bottom:8px">📤 YouTube 업로드 (선택)</div>
+          <div style="font-size:10px;font-weight:600;color:var(--t2);margin-bottom:8px"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--info);color:#fff;font-size:9px;font-weight:800;margin-right:4px">12</span>📤 YouTube 업로드 (선택)</div>
           <div class="fr">
             <div class="fg"><label class="fl">📤 자동 업로드</label>
               <select class="fs" id="autoUpload">
-                <option value="no" selected>업로드 안함</option>
-                <option value="yes">자동 업로드</option>
+                <option value="no">업로드 안함</option>
+                <option value="yes" selected>자동 업로드</option>
               </select>
               <div class="fh" id="autoUploadHint" style="margin-top:4px">⚠️ YouTube OAuth 인증 필요</div>
             </div>
             <div class="fg"><label class="fl">🔒 공개 설정</label>
               <select class="fs" id="autoPrivacy">
-                <option value="private" selected>비공개 (private)</option>
+                <option value="private">비공개 (private)</option>
                 <option value="unlisted">미등록 (unlisted)</option>
-                <option value="public">공개 (public)</option>
+                <option value="public" selected>공개 (public)</option>
               </select>
             </div>
           </div>
-          <button class="b bp blg" id="autoBtn" onclick="startAutoPipeline()" style="width:100%;justify-content:center;font-size:14px;padding:12px 0;border-radius:10px;margin-top:6px">🚀 자동 제작 시작</button>
+          <div class="divider"></div>
+          <div style="font-size:10px;font-weight:600;color:var(--t2);margin-bottom:8px"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--info);color:#fff;font-size:9px;font-weight:800;margin-right:4px">13</span>🎬 숏폼 동시 제작</div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;padding:8px 12px;border:1px solid var(--bd);border-radius:8px;background:var(--bg3);transition:all .15s" onchange="this.style.borderColor=this.querySelector('input').checked?'var(--acc)':'var(--bd)';this.style.background=this.querySelector('input').checked?'var(--accd)':'var(--bg3)'">
+            <input type="checkbox" id="autoShorts" style="accent-color:var(--acc)">
+            <div>
+              <strong style="color:var(--acc)">☑️ 롱폼 제작 후 2분 숏폼 자동 생성</strong>
+              <div style="font-size:9px;color:var(--t3);margin-top:2px">Pexels 세로 영상 10개 · 9:16 · 대본 핵심 요약 · 동일 제목</div>
+            </div>
+          </label>
+          <div style="display:flex;gap:8px;margin-top:6px">
+            <button class="b bp blg" id="autoBtn" onclick="startAutoPipeline()" style="flex:1;justify-content:center;font-size:14px;padding:12px 0;border-radius:10px">🚀 자동 제작 시작</button>
+            <button class="b bs blg" id="autoStopBtn" onclick="stopAutoPipeline()" style="display:none;width:140px;justify-content:center;font-size:13px;padding:12px 0;border-radius:10px;color:var(--acc);border-color:var(--acc)">⏹️ 제작 중지</button>
+          </div>
+          <div class="divider"></div>
+          <div style="font-size:10px;font-weight:600;color:var(--t2);margin-bottom:8px">📅 예약/반복 자동 제작</div>
+          <div class="fg"><label class="fl">🔑 스케줄 키워드 <span style="font-size:9px;color:var(--t3);font-weight:400">(입력 시 매번 키워드 기반 다른 주제를 AI가 자동 생성)</span></label>
+            <input type="text" class="fi" id="schKeywords" placeholder="예: 미스터리, 우주, 고대문명">
+            <div class="fh">키워드 입력 시 영상 주제 없이도 스케줄 등록 가능 · 매 실행마다 다른 주제 자동 생성</div>
+          </div>
+          <div class="fr">
+            <div class="fg"><label class="fl">⏰ 제작 유형</label>
+              <select class="fs" id="schType" onchange="updateSchTypeUI()">
+                <option value="once" selected>1회 예약</option>
+                <option value="recurring">반복 스케줄</option>
+              </select>
+            </div>
+            <div class="fg" id="schDateWrap"><label class="fl">📆 예약 일시</label>
+              <input type="datetime-local" class="fi" id="schDatetime" onclick="this.showPicker?.()" style="cursor:pointer">
+            </div>
+            <div class="fg" id="schCronWrap" style="display:none"><label class="fl">🔄 반복 주기</label>
+              <select class="fs" id="schRepeat">
+                <option value="0 9 * * *|매일 오전 9시">매일 오전 9시</option>
+                <option value="0 12 * * *|매일 낮 12시">매일 낮 12시</option>
+                <option value="0 18 * * *|매일 오후 6시">매일 오후 6시</option>
+                <option value="0 9 * * 1|매주 월요일 9시">매주 월요일 9시</option>
+                <option value="0 9 * * 1,3,5|월수금 9시">월·수·금 9시</option>
+                <option value="0 9 * * 1-5|평일 9시">평일 매일 9시</option>
+                <option value="0 9 1 * *|매월 1일 9시">매월 1일 9시</option>
+              </select>
+            </div>
+          </div>
+          <button class="b bs blg" onclick="createScheduleFromAuto()" style="width:100%;justify-content:center;margin-top:4px">📅 스케줄 등록</button>
+          <div style="margin-top:10px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+              <span style="font-size:10px;font-weight:600;color:var(--t2)">📋 등록된 스케줄</span>
+              <button class="b bg" onclick="loadSchedules()" style="font-size:9px;padding:2px 6px">🔄</button>
+            </div>
+            <div id="schList" style="font-size:12px;color:var(--t2)"></div>
+          </div>
         </div>
 
         <div class="auto-steps" id="autoSteps" style="display:none">
@@ -722,7 +899,9 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
           <div class="step-preview" id="prev-render"></div>
           <div class="auto-step" id="as-upload"><div class="as-ico">📤</div><div class="as-body"><div class="as-name">9. YouTube 업로드</div><div class="as-status">대기</div></div><div class="as-time" id="ast-upload"></div></div>
           <div class="step-preview" id="prev-upload"></div>
-          <div class="auto-step" id="as-save"><div class="as-ico">💾</div><div class="as-body"><div class="as-name">10. 프로젝트 저장</div><div class="as-status">대기</div></div><div class="as-time" id="ast-save"></div></div>
+          <div class="auto-step" id="as-shorts"><div class="as-ico">📱</div><div class="as-body"><div class="as-name">10. 숏폼 제작</div><div class="as-status">대기</div></div><div class="as-time" id="ast-shorts"></div></div>
+          <div class="step-preview" id="prev-shorts"></div>
+          <div class="auto-step" id="as-save"><div class="as-ico">💾</div><div class="as-body"><div class="as-name">11. 프로젝트 저장</div><div class="as-status">대기</div></div><div class="as-time" id="ast-save"></div></div>
           <div class="step-preview" id="prev-save"></div>
         </div>
 
@@ -731,7 +910,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     </div>
 
     <!-- ===== 1. 주제 ===== -->
-    <div class="sec act" id="sec-topic">
+    <div class="sec" id="sec-topic">
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">💡 주제 선정</div><div class="cd-s">직접 입력하거나 AI 추천을 받으세요</div></div></div>
         <div class="fg"><label class="fl">🎯 영상 주제 직접 입력</label>
@@ -796,7 +975,10 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
             <option value="10">10분</option>
             <option value="15" selected>15분</option>
             <option value="20">20분</option>
-            <option value="30">30분+</option>
+            <option value="30">30분</option>
+                <option value="40">40분</option>
+                <option value="50">50분</option>
+                <option value="60">60분</option>
           </select></div>
           <div class="fg"><label class="fl">🌐 영상 언어</label><select class="fs" id="planLang">
             <option value="ko" selected>🇰🇷 한국어</option>
@@ -872,12 +1054,16 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
         <div class="fr3">
           <div class="fg"><label class="fl">📏 분량</label><select class="fs" id="scriptWc">
             <option value="250">~250자 (1분 쇼츠)</option>
-            <option value="700">~700자 (3분)</option>
-            <option value="1200">~1,200자 (5분)</option>
-            <option value="2000">~2,000자 (10분)</option>
-            <option value="3000" selected>~3,000자 (15분)</option>
-            <option value="4500">~4,500자 (20분)</option>
-            <option value="6000">~6,000자 (30분)</option>
+            <option value="760">~760자 (3분)</option>
+            <option value="1020">~1,020자 (4분)</option>
+            <option value="1270">~1,270자 (5분)</option>
+            <option value="2530">~2,530자 (10분)</option>
+            <option value="3800" selected>~3,800자 (15분)</option>
+            <option value="5060">~5,060자 (20분)</option>
+            <option value="7600">~7,600자 (30분)</option>
+            <option value="10120">~10,120자 (40분)</option>
+            <option value="12650">~12,650자 (50분)</option>
+            <option value="15180">~15,180자 (60분)</option>
           </select></div>
           <div class="fg"><label class="fl">🎤 나레이션</label><select class="fs" id="scriptNar">
             <option value="3인칭 나레이터">3인칭 나레이터</option>
@@ -958,7 +1144,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
             </optgroup>
           </select></div>
           <div class="fg"><label class="fl">📐 비율</label><select class="fs" id="imgRatio"><option value="16:9" selected>16:9</option><option value="9:16">9:16 (세로)</option><option value="1:1">1:1</option></select></div>
-          <div class="fg"><label class="fl">🔢 장면 수</label><select class="fs" id="imgCnt"><option value="5">5개</option><option value="8" selected>8개</option><option value="10">10개</option><option value="12">12개</option><option value="15">15개</option><option value="20">20개</option><option value="25">25개</option><option value="30">30개</option></select></div>
+          <div class="fg"><label class="fl">🔢 장면 수</label><select class="fs" id="imgCnt"><option value="5">5개</option><option value="8" selected>8개</option><option value="10">10개</option><option value="12">12개</option><option value="15">15개</option><option value="20">20개</option><option value="25">25개</option><option value="30">30개</option><option value="40">40개</option><option value="50">50개</option></select></div>
         </div>
         <div style="display:flex;gap:6px;flex-wrap:wrap">
           <button class="b bs blg" id="imgPBtn" onclick="doImgPrompts()">① 프롬프트 생성 (Claude)</button>
@@ -1125,20 +1311,7 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div id="thumbOut"></div>
     </div>
 
-    <!-- ===== 9. 인트로 ===== -->
-    <div class="sec" id="sec-intro">
-      <div class="cd">
-        <div class="cd-h"><div><div class="cd-t">🚀 인트로 생성 (Claude AI)</div><div class="cd-s">시청자를 사로잡는 오프닝</div></div></div>
-        <div class="fr">
-          <div class="fg"><label class="fl">⏱️ 길이</label><select class="fs" id="intLen"><option value="15">15초</option><option value="30" selected>30초</option><option value="45">45초</option></select></div>
-          <div class="fg"><label class="fl">🎭 유형</label><select class="fs" id="intType"><option value="질문형">질문형</option><option value="충격적 사실">충격적 사실</option><option value="미니 스토리">스토리텔링</option><option value="통계/데이터">통계/데이터</option></select></div>
-        </div>
-        <button class="b bp blg" id="intBtn" onclick="doIntro()">🚀 인트로 생성</button>
-      </div>
-      <div id="introOut"></div>
-    </div>
-
-    <!-- ===== 11. 업로드 ===== -->
+    <!-- ===== 업로드 ===== -->
     <div class="sec" id="sec-upload">
       <div id="uploadReq"></div>
       <div class="cd">
@@ -1157,26 +1330,204 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
       <div id="uploadOut"></div>
     </div>
 
-    <!-- ===== 타임라인 편집기 ===== -->
-    <div class="sec" id="sec-timeline">
+    <!-- ===== 사용법 + API 설정 ===== -->
+    <div class="sec" id="sec-guide">
+      <div class="sec-header" style="text-align:center">
+        <div class="sec-header-top" style="justify-content:center"><div class="sec-header-ico">📖</div><h3><em>사용법</em> + API 설정 가이드</h3></div>
+        <p>YouTube 쇼츠, 롱폼 자동 제작 에이전트 사용 방법과 API 설정을 안내합니다</p>
+      </div>
+
       <div class="cd">
-        <div class="cd-h"><div><div class="cd-t">🎞️ 비주얼 타임라인 편집기</div><div class="cd-s">장면별 시간 배분과 순서를 조정하세요</div></div>
-          <button class="b bs" onclick="loadTimeline()">🔄 새로고침</button>
-        </div>
-        <div id="tlInfo" class="alert alert-info" style="display:none"></div>
-        <div class="tl-wrap">
-          <div class="tl-track" id="tlTrack"></div>
-          <div class="tl-time" id="tlTime"></div>
-          <div class="tl-ruler" id="tlRuler"></div>
-        </div>
-        <div style="margin-top:10px;display:flex;gap:6px;align-items:center">
-          <button class="b bs" onclick="tlDistributeEvenly()">⚖️ 균등 배분</button>
-          <span style="font-size:10px;color:var(--t3)">총 시간: <strong id="tlTotal">0</strong>초</span>
+        <div class="cd-t" style="margin-bottom:12px">🚀 빠른 시작 (3단계)</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:200px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:14px;text-align:center">
+            <div style="font-size:28px;margin-bottom:6px">1️⃣</div>
+            <div style="font-size:12px;font-weight:700;margin-bottom:4px">Google 로그인</div>
+            <div style="font-size:10px;color:var(--t2)">우측 상단 <strong>G 로그인</strong> 클릭<br>→ Google 계정 선택</div>
+          </div>
+          <div style="flex:1;min-width:200px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:14px;text-align:center">
+            <div style="font-size:28px;margin-bottom:6px">2️⃣</div>
+            <div style="font-size:12px;font-weight:700;margin-bottom:4px">API 키 설정</div>
+            <div style="font-size:10px;color:var(--t2)">우측 상단 <strong>⚙️ 설정</strong> 클릭<br>→ API 키 입력 → 저장</div>
+          </div>
+          <div style="flex:1;min-width:200px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:14px;text-align:center">
+            <div style="font-size:28px;margin-bottom:6px">3️⃣</div>
+            <div style="font-size:12px;font-weight:700;margin-bottom:4px">영상 제작</div>
+            <div style="font-size:10px;color:var(--t2)">사이드바 <strong>자동 제작</strong> 클릭<br>→ 주제 입력 → 🚀 시작</div>
+          </div>
         </div>
       </div>
+
       <div class="cd">
-        <div class="cd-t" style="margin-bottom:10px">📷 이미지 프리뷰</div>
-        <div class="prev-grid" id="prevGrid"></div>
+        <div class="cd-t" style="margin-bottom:12px">🔑 API 키 발급 가이드</div>
+
+        <div style="border-left:3px solid var(--acc);padding:12px 16px;margin-bottom:14px;background:var(--bg2);border-radius:0 8px 8px 0">
+          <div style="font-size:13px;font-weight:700;color:var(--acc);margin-bottom:4px">1. Anthropic (Claude AI) — 필수</div>
+          <div style="font-size:11px;color:var(--t2);line-height:1.8">
+            <strong>용도:</strong> 주제 추천, 대본 기획, 대본 작성, 메타데이터, 이중 자막 번역<br>
+            <strong>발급:</strong><br>
+            ① <a href="https://console.anthropic.com/" target="_blank" style="color:var(--info)">console.anthropic.com</a> 회원가입<br>
+            ② Settings → API Keys → <strong>Create Key</strong><br>
+            ③ <code>sk-ant-api03-...</code> 형태 키 복사<br>
+            ④ ⚙️ 설정 → Anthropic 란에 붙여넣기 → 💾 저장<br>
+            <strong>비용:</strong> ~$0.10/영상 (15분 기준)
+          </div>
+        </div>
+
+        <div style="border-left:3px solid #ff6b35;padding:12px 16px;margin-bottom:14px;background:var(--bg2);border-radius:0 8px 8px 0">
+          <div style="font-size:13px;font-weight:700;color:#ff6b35;margin-bottom:4px">2. OpenAI (GPT Image) — 이미지 생성 시 필수</div>
+          <div style="font-size:11px;color:var(--t2);line-height:1.8">
+            <strong>용도:</strong> 장면별 이미지 생성, 썸네일 이미지<br>
+            <strong>발급:</strong><br>
+            ① <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--info)">platform.openai.com</a> 로그인<br>
+            ② API Keys → <strong>Create new secret key</strong><br>
+            ③ <code>sk-...</code> 형태 키 복사<br>
+            ④ ⚙️ 설정에 붙여넣기 → 저장<br>
+            <strong>비용:</strong> ~$0.08/이미지 (HD), 8장+썸네일 ≈ $0.80
+          </div>
+        </div>
+
+        <div style="border-left:3px solid var(--warn);padding:12px 16px;margin-bottom:14px;background:var(--bg2);border-radius:0 8px 8px 0">
+          <div style="font-size:13px;font-weight:700;color:var(--warn);margin-bottom:4px">3. ElevenLabs (TTS) — 음성 생성 시 필수</div>
+          <div style="font-size:11px;color:var(--t2);line-height:1.8">
+            <strong>용도:</strong> 대본 → 나레이션 음성 변환 (다국어)<br>
+            <strong>발급:</strong><br>
+            ① <a href="https://elevenlabs.io/" target="_blank" style="color:var(--info)">elevenlabs.io</a> 회원가입<br>
+            ② Profile → API Key → 복사<br>
+            ③ ⚙️ 설정에 붙여넣기 → 저장<br>
+            <strong>비용:</strong> 월 무료 10,000자 / 15분 영상 ≈ 3,800자
+          </div>
+        </div>
+
+        <div style="border-left:3px solid var(--ok);padding:12px 16px;margin-bottom:14px;background:var(--bg2);border-radius:0 8px 8px 0">
+          <div style="font-size:13px;font-weight:700;color:var(--ok);margin-bottom:4px">4. Pexels (스톡 영상) — 무료</div>
+          <div style="font-size:11px;color:var(--t2);line-height:1.8">
+            <strong>용도:</strong> 영상 기반 모드에서 스톡 영상 다운로드<br>
+            <strong>발급:</strong><br>
+            ① <a href="https://www.pexels.com/api/" target="_blank" style="color:var(--info)">pexels.com/api</a> 회원가입<br>
+            ② API Key 즉시 발급<br>
+            ③ ⚙️ 설정에 붙여넣기 → 저장<br>
+            <strong>비용:</strong> 완전 무료 (200회/시간)
+          </div>
+        </div>
+
+        <div style="border-left:3px solid var(--info);padding:12px 16px;margin-bottom:14px;background:var(--bg2);border-radius:0 8px 8px 0">
+          <div style="font-size:13px;font-weight:700;color:var(--info);margin-bottom:4px">5. YouTube (업로드) — 선택</div>
+          <div style="font-size:11px;color:var(--t2);line-height:1.8">
+            <strong>용도:</strong> 완성된 영상 YouTube 자동 업로드<br>
+            <strong>필요 항목:</strong> Client ID, Client Secret, Refresh Token<br>
+            <strong>설정 방법:</strong><br>
+            ① <a href="https://console.cloud.google.com/" target="_blank" style="color:var(--info)">Google Cloud Console</a> → 프로젝트 생성<br>
+            ② YouTube Data API v3 활성화<br>
+            ③ OAuth 2.0 Client ID 생성 (웹 애플리케이션)<br>
+            ④ 승인된 리디렉션 URI 추가:<br>
+            <code style="font-size:9px">https://도메인/api/google/callback</code><br>
+            <code style="font-size:9px">http://localhost:3003/api/google/callback</code><br>
+            <code style="font-size:9px">https://developers.google.com/oauthplayground</code><br>
+            ⑤ OAuth 동의 화면 → 테스트 사용자에 이메일 추가<br>
+            ⑥ <a href="https://developers.google.com/oauthplayground/" target="_blank" style="color:var(--info)">OAuth Playground</a>에서 Refresh Token 발급<br>
+            ⑦ ⚙️ 설정에 Client ID / Secret / Refresh Token 입력<br>
+            <strong>비용:</strong> 무료 (일 6회 업로드, 할당량 증가 요청 가능)
+          </div>
+        </div>
+      </div>
+
+      <div class="cd">
+        <div class="cd-t" style="margin-bottom:12px">🎬 제작 모드 안내</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="background:var(--bg2);border:1px solid var(--acc);border-radius:8px;padding:14px">
+            <div style="font-size:13px;font-weight:700;color:var(--acc);margin-bottom:6px">🤖 자동 제작</div>
+            <div style="font-size:10px;color:var(--t2);line-height:1.7">
+              주제 입력 → 모든 단계 자동 실행<br>
+              기획 → 대본 → 이미지/영상 → TTS<br>
+              → 메타 → 썸네일 → 자막 → 합성 → 업로드<br>
+              <strong>배치 제작:</strong> 10개 주제 체크 → 연속 제작
+            </div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--info);border-radius:8px;padding:14px">
+            <div style="font-size:13px;font-weight:700;color:var(--info);margin-bottom:6px">🛠️ 수동 제작 (12단계)</div>
+            <div style="font-size:10px;color:var(--t2);line-height:1.7">
+              1.주제 → 2.기획 → 3.대본 → 4.이미지/영상<br>
+              5.TTS → 6.메타 → 7.썸네일 → 8.SRT<br>
+              9.영상 합성 → 10.업로드 → 11.YouTube → 12.저장<br>
+              각 단계 결과 확인/수정 가능
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:14px">
+          <div style="font-size:13px;font-weight:700;color:var(--warn);margin-bottom:6px">📅 예약/반복 제작</div>
+          <div style="font-size:10px;color:var(--t2);line-height:1.7">
+            자동 제작 하단에서 스케줄 등록<br>
+            • <strong>1회 예약:</strong> 날짜/시간 선택 → 해당 시각에 자동 실행<br>
+            • <strong>반복 스케줄:</strong> 매일/매주/평일 반복<br>
+            • <strong>키워드 모드:</strong> 키워드만 입력 → 매번 다른 주제 AI 생성
+          </div>
+        </div>
+      </div>
+
+      <div class="cd">
+        <div class="cd-t" style="margin-bottom:12px">💡 주요 기능 설정</div>
+        <div style="font-size:11px;color:var(--t2);line-height:2">
+          <strong style="color:var(--t1)">📝 대본 기획 설정</strong> — 흥미/호기심/지식/심도 위주 선택 (복수 가능)<br>
+          <strong style="color:var(--t1)">📄 대본 텍스트</strong> — 논문/기사 참고 자료 입력 시 기획·대본에 반영<br>
+          <strong style="color:var(--t1)">🎞️ 소스 모드</strong> — 이미지 기반(GPT Image) 또는 영상 기반(Pexels)<br>
+          <strong style="color:var(--t1)">📐 해상도</strong> — 16:9(일반) 또는 9:16(쇼츠/릴스)<br>
+          <strong style="color:var(--t1)">🌐 영상 언어</strong> — 한국어/영어/중국어/일본어/스페인어<br>
+          <strong style="color:var(--t1)">📝 이중 자막</strong> — 외국어 선택 시 외국어+한국어 자막 자동<br>
+          <strong style="color:var(--t1)">🎬 숏폼 동시 제작</strong> — 롱폼 완료 후 2분 숏폼 자동 생성<br>
+          <strong style="color:var(--t1)">📦 배치 제작</strong> — AI 주제 10개 생성 → 체크 → 연속 제작+업로드
+        </div>
+      </div>
+
+      <div class="cd">
+        <div class="cd-t" style="margin-bottom:12px">📋 영상 길이별 설정</div>
+        <table style="width:100%;font-size:11px;border-collapse:collapse">
+          <tr style="background:var(--bg3)"><th style="padding:6px;border:1px solid var(--bd)">길이</th><th style="padding:6px;border:1px solid var(--bd)">대본</th><th style="padding:6px;border:1px solid var(--bd)">클립 수</th><th style="padding:6px;border:1px solid var(--bd)">용도</th></tr>
+          <tr><td style="padding:6px;border:1px solid var(--bd)">1분</td><td style="padding:6px;border:1px solid var(--bd)">250자</td><td style="padding:6px;border:1px solid var(--bd)">5개</td><td style="padding:6px;border:1px solid var(--bd)">쇼츠</td></tr>
+          <tr><td style="padding:6px;border:1px solid var(--bd)">3~4분</td><td style="padding:6px;border:1px solid var(--bd)">760~1020자</td><td style="padding:6px;border:1px solid var(--bd)">10~12개</td><td style="padding:6px;border:1px solid var(--bd)">숏폼</td></tr>
+          <tr><td style="padding:6px;border:1px solid var(--bd)">10~15분</td><td style="padding:6px;border:1px solid var(--bd)">2530~3800자</td><td style="padding:6px;border:1px solid var(--bd)">30~40개</td><td style="padding:6px;border:1px solid var(--bd)">일반 영상</td></tr>
+          <tr><td style="padding:6px;border:1px solid var(--bd)">30~60분</td><td style="padding:6px;border:1px solid var(--bd)">7600~15180자</td><td style="padding:6px;border:1px solid var(--bd)">50개</td><td style="padding:6px;border:1px solid var(--bd)">롱폼</td></tr>
+        </table>
+      </div>
+
+      <div class="cd">
+        <div class="cd-t" style="margin-bottom:12px">💰 API 비용 요약 (15분 영상 기준)</div>
+        <table style="width:100%;font-size:11px;border-collapse:collapse">
+          <tr style="background:var(--bg3)"><th style="padding:6px;border:1px solid var(--bd)">API</th><th style="padding:6px;border:1px solid var(--bd)">비용</th><th style="padding:6px;border:1px solid var(--bd)">비고</th></tr>
+          <tr><td style="padding:6px;border:1px solid var(--bd)">Claude (Anthropic)</td><td style="padding:6px;border:1px solid var(--bd)">~$0.10</td><td style="padding:6px;border:1px solid var(--bd)">기획+대본+메타+번역</td></tr>
+          <tr><td style="padding:6px;border:1px solid var(--bd)">GPT Image (OpenAI)</td><td style="padding:6px;border:1px solid var(--bd)">~$0.80</td><td style="padding:6px;border:1px solid var(--bd)">이미지 8장+썸네일</td></tr>
+          <tr><td style="padding:6px;border:1px solid var(--bd)">ElevenLabs TTS</td><td style="padding:6px;border:1px solid var(--bd)">3800자</td><td style="padding:6px;border:1px solid var(--bd)">월 무료 10,000자</td></tr>
+          <tr><td style="padding:6px;border:1px solid var(--bd)">Pexels</td><td style="padding:6px;border:1px solid var(--bd)">무료</td><td style="padding:6px;border:1px solid var(--bd)">200회/시간</td></tr>
+          <tr><td style="padding:6px;border:1px solid var(--bd)">YouTube API</td><td style="padding:6px;border:1px solid var(--bd)">무료</td><td style="padding:6px;border:1px solid var(--bd)">일 6회 업로드</td></tr>
+          <tr style="background:var(--bg3)"><td style="padding:6px;border:1px solid var(--bd);font-weight:700">합계</td><td style="padding:6px;border:1px solid var(--bd);font-weight:700;color:var(--acc)">~$0.90</td><td style="padding:6px;border:1px solid var(--bd)">영상 1편당</td></tr>
+        </table>
+      </div>
+
+      <div class="cd" style="background:linear-gradient(135deg,var(--bg3),rgba(255,59,59,.03))">
+        <div class="cd-t" style="margin-bottom:10px;text-align:center">🔐 이용 안내</div>
+        <div style="font-size:11px;color:var(--t2);line-height:1.8;text-align:center;margin-bottom:12px">
+          구글 로그인 후 <strong style="color:var(--warn)">관리자 승인</strong>이 완료되어야 서비스를 정상적으로 이용할 수 있습니다.<br>
+          구독료 납부가 확인되면 신청한 구독 기간에 따라 이용 승인이 처리됩니다.
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:14px">
+          <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:12px 24px;text-align:center">
+            <div style="font-size:9px;color:var(--t3)">월간 구독</div>
+            <div style="font-size:20px;font-weight:900;color:var(--acc)">20<span style="font-size:12px">만원</span></div>
+          </div>
+          <div style="background:var(--bg2);border:1px solid var(--acc);border-radius:8px;padding:12px 24px;text-align:center;position:relative">
+            <div style="position:absolute;top:-6px;right:-6px;background:var(--acc);color:#fff;font-size:7px;font-weight:700;padding:1px 6px;border-radius:8px">BEST</div>
+            <div style="font-size:9px;color:var(--t3)">연간 구독</div>
+            <div style="font-size:20px;font-weight:900;color:var(--acc)">150<span style="font-size:12px">만원</span></div>
+            <div style="font-size:8px;color:var(--ok)">월 12.5만원 (37% 할인)</div>
+          </div>
+        </div>
+        <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:8px;padding:12px;max-width:360px;margin:0 auto;font-size:11px;color:var(--t2);line-height:1.9">
+          <strong style="color:var(--t1)">🏦 입금 안내</strong><br>
+          은행: KB국민은행 · 계좌: <span style="color:var(--info);font-family:Consolas">511301-01-427929</span> · 예금주: 박정원<br>
+          <span style="font-size:10px;color:var(--t3)">입금 후 이메일로 성함·입금액·이용 기간을 보내주시면 확인 후 계정을 활성화해 드립니다.</span>
+        </div>
       </div>
     </div>
 
@@ -1184,9 +1535,21 @@ body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--t1);
     <div class="sec" id="sec-srt">
       <div class="cd">
         <div class="cd-h"><div><div class="cd-t">📝 SRT 자막 생성</div><div class="cd-s">대본에서 자동으로 타임스탬프 자막 생성</div></div></div>
-        <div class="fg"><label class="fl">⏱️ 기준 영상 길이 (초)</label>
-          <input type="number" class="fi" id="srtDuration" value="120" min="30">
-          <div class="fh">영상 합성 시 사용한 시간과 동일하게 설정하세요</div>
+        <div class="fr">
+          <div class="fg"><label class="fl">⏱️ 기준 영상 길이 (초)</label>
+            <input type="number" class="fi" id="srtDuration" value="120" min="30">
+            <div class="fh">영상 합성 시 사용한 시간과 동일하게 설정하세요</div>
+          </div>
+          <div class="fg"><label class="fl">🌐 대본 언어</label>
+            <select class="fs" id="srtLang">
+              <option value="ko" selected>🇰🇷 한국어</option>
+              <option value="en">🇺🇸 영어</option>
+              <option value="zh">🇨🇳 중국어</option>
+              <option value="ja">🇯🇵 일본어</option>
+              <option value="es">🇪🇸 스페인어</option>
+            </select>
+            <div class="fh">한국어 외 선택 시 한국어 번역 자막 자동 추가</div>
+          </div>
         </div>
         <button class="b bp blg" id="srtBtn" onclick="doSrt()">📝 SRT 자막 생성</button>
       </div>
@@ -1246,8 +1609,8 @@ const S = {
   done: new Set(), langs:['ko']
 };
 
-const SECS = ['auto','topic','plan','script','image','tts','render','meta','thumb','intro','timeline','srt','projmgr','analytics','upload'];
-const NAMES = {auto:'🤖 자동 제작',topic:'💡 주제 선정',plan:'📋 대본 기획',script:'✍️ 대본 작성',image:'🎨 이미지, 영상 생성',tts:'🎙️ TTS 음성',render:'🎬 영상 합성',meta:'🏷️ 제목/설명',thumb:'🖼️ 썸네일',intro:'🚀 인트로',timeline:'🎞️ 타임라인',srt:'📝 SRT 자막',projmgr:'📁 프로젝트',analytics:'📊 Analytics',upload:'📤 업로드'};
+const SECS = ['auto','topic','plan','script','image','tts','meta','thumb','srt','render','upload','projmgr','guide'];
+const NAMES = {auto:'🤖 자동 제작',topic:'💡 주제 선정',plan:'📋 대본 기획',script:'✍️ 대본 작성',image:'🎨 이미지, 영상 생성',tts:'🎙️ TTS 음성',meta:'🏷️ 메타데이터',thumb:'🖼️ 썸네일',srt:'📝 SRT 자막',render:'🎬 영상 합성',upload:'📤 YouTube 업로드',projmgr:'📁 프로젝트',guide:'📖 사용법'};
 const PREREQS = {plan:['topic'],script:['plan'],image:['script'],tts:['script'],render:['image','tts'],meta:['script'],upload:['render'],srt:['script'],timeline:['image']};
 
 // === Nav ===
@@ -1376,13 +1739,18 @@ function go(id) {
   else document.getElementById('ban').style.display='none';
   checkPrereqs(id);
   if(id==='plan') { document.getElementById('planTopic').value=S.topic; const tv=document.getElementById('topTar').value; if(tv) document.getElementById('planTarget').value=tv; }
-  if(id==='auto') { loadAutoBgmList(); updateSourceModeHint(); }
+  if(id==='auto') {
+    loadAutoBgmList(); updateSourceModeHint(); loadSchedules();
+    const dtEl=document.getElementById('schDatetime');
+    if(dtEl&&!dtEl.value){const d=new Date();d.setDate(d.getDate()+1);d.setHours(9,0,0,0);dtEl.value=d.toISOString().slice(0,16)}
+  }
   if(id==='image') updateImgSourceMode();
   if(id==='tts') prepareTTS();
   if(id==='render') { prepareRender(); loadBgmList(); }
   if(id==='upload') prepareUpload();
   if(id==='timeline') loadTimeline();
   if(id==='projmgr') loadProjectList();
+  if(id==='schedule') loadSchedules();
   if(id==='analytics') loadAnalytics();
   if(id==='srt') { const dur=S.videoDuration||(parseFloat(document.getElementById('renderDur')?.value||2)*60); document.getElementById('srtDuration').value=Math.round(dur); }
   updateNav();
@@ -1423,11 +1791,18 @@ function cp(t){navigator.clipboard.writeText(t).then(()=>toast('복사 완료'))
 function esc(s){return String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function togLang(e){e.classList.toggle('sel');S.langs=[...document.querySelectorAll('#langTags .tag.sel')].map(t=>t.dataset.l)}
 
-async function api(url,body){
-  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,projectId:S.pid})});
-  const d=await r.json();
-  if(!d.success)throw new Error(d.error||'오류');
-  return d;
+async function api(url,body,timeoutMs=600000){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),timeoutMs);
+  try{
+    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...body,projectId:S.pid}),signal:controller.signal});
+    const d=await r.json();
+    if(!d.success)throw new Error(d.error||'오류');
+    return d;
+  }catch(e){
+    if(e.name==='AbortError')throw new Error('요청 타임아웃 (10분 초과). 서버가 처리 중일 수 있습니다.');
+    throw e;
+  }finally{clearTimeout(timer)}
 }
 
 function loading(id,on,txt){
@@ -2020,7 +2395,7 @@ function exportAll(){
 }
 
 // === Auto Pipeline ===
-const AUTO_STEPS = ['plan','script','image','tts','meta','thumb','srt','render','upload','save'];
+const AUTO_STEPS = ['plan','script','image','tts','meta','thumb','srt','render','upload','shorts','save'];
 const AUTO_LABELS = {plan:'대본 기획',script:'대본 작성',image:'이미지 생성',tts:'TTS 음성',render:'영상 합성',meta:'메타데이터',thumb:'썸네일',srt:'SRT 자막',save:'프로젝트 저장'};
 let autoRunning = false;
 
@@ -2204,46 +2579,195 @@ async function doAutoTopicAi(){
     const aud=document.getElementById('autoTopicAud').value;
     const kw=document.getElementById('autoTopicKw').value;
     const lang=document.getElementById('autoLang').value;
-    const langNames={ko:'한국어',en:'영어',zh:'중국어'};
+    const langNames={ko:'한국어',en:'영어',zh:'중국어',ja:'일본어',es:'스페인어'};
     const d=await api('/api/topics/suggest',{
       category:cat||'전체',
       target:aud||'전 연령',
       keyword:kw||'',
       language:langNames[lang]||'한국어',
-      count:5
+      count:parseInt(document.getElementById('autoTopicCount')?.value)||10
     });
     const topics=d.topics||[];
     if(!topics.length){toast('주제 생성 실패','err');return}
     // 추천 주제 메모리 저장 (클릭 시 메타 자동 적용)
     window._aiTopics=topics;
-    // 5개 중 첫 번째를 input에 자동 입력 + 카테고리/타겟 설정
+    // 첫 번째를 input에 자동 입력
     applyAiTopic(0);
-    // 나머지는 hint에 행별 분리 카드로 표시
-    if(topics.length>1){
-      const others=topics.slice(1).map((t,i)=>{
-        const label=(t.title||t.topic||t);
-        const desc=t.description?` <span style="font-size:9px;color:var(--t3);font-weight:400">${t.description.replace(/"/g,'&quot;')}</span>`:'';
-        const catBadge=t.category?`<span style="font-size:9px;background:rgba(255,107,53,0.15);color:var(--acc);padding:1px 6px;border-radius:4px;margin-right:4px">${t.category}</span>`:'';
-        const tgtBadge=t.target?`<span style="font-size:9px;background:rgba(150,150,255,0.15);color:#8aa4ff;padding:1px 6px;border-radius:4px;margin-right:4px">${t.target}</span>`:'';
-        return `<div style="display:block;padding:8px 10px;margin:4px 0;border:1px solid var(--bd);border-radius:6px;background:rgba(255,255,255,0.02);cursor:pointer;color:var(--t1);font-size:11px;line-height:1.5" onclick="applyAiTopic(${i+1});this.parentNode.querySelectorAll('div').forEach(d=>d.style.borderColor='var(--bd)');this.style.borderColor='var(--acc)'" onmouseover="this.style.background='rgba(255,107,53,0.08)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'"><strong style="color:var(--acc)">${i+2}.</strong> ${catBadge}${tgtBadge}${label}${desc}</div>`;
-      }).join('');
-      document.getElementById('autoTopicHint').innerHTML='<div style="font-weight:600;margin:8px 0 4px;font-size:11px;color:var(--t2)">💡 다른 추천 (클릭하면 카테고리·타겟이 자동 적용됩니다):</div><div style="display:flex;flex-direction:column;gap:0">'+others+'</div>';
-    }
-    toast('AI가 주제를 추천했습니다 ✨','ok');
+    // 체크박스 목록 표시
+    const topicListHtml=topics.map((t,i)=>{
+      const label=(t.title||t.topic||t);
+      const desc=t.description?` <span style="font-size:9px;color:var(--t3)">${esc(t.description).substring(0,50)}</span>`:'';
+      const catBadge=t.category?`<span style="font-size:8px;background:rgba(255,107,53,0.15);color:var(--acc);padding:1px 5px;border-radius:4px">${esc(t.category)}</span> `:'';
+      return `<label style="display:flex;align-items:flex-start;gap:8px;padding:6px 8px;margin:2px 0;border:1px solid var(--bd);border-radius:6px;cursor:pointer;font-size:11px;line-height:1.5;transition:all .15s" onmouseover="this.style.borderColor='var(--acc)'" onmouseout="this.style.borderColor=this.querySelector('input').checked?'var(--ok)':'var(--bd)'">
+        <input type="checkbox" class="batch-topic-chk" data-idx="${i}" style="margin-top:3px;accent-color:var(--ok)" onchange="applyAiTopic(${i});this.closest('label').style.borderColor=this.checked?'var(--ok)':'var(--bd)'">
+        <div><strong style="color:var(--acc)">${i+1}.</strong> ${catBadge}${esc(label)}${desc}</div>
+      </label>`;
+    }).join('');
+    document.getElementById('autoTopicHint').innerHTML=`
+      <div style="display:flex;align-items:center;justify-content:space-between;margin:8px 0 4px">
+        <span style="font-weight:600;font-size:11px;color:var(--t2)">💡 AI 추천 주제 ${topics.length}개 (체크 후 배치 제작)</span>
+        <span style="display:flex;gap:4px">
+          <button class="b bg" onclick="document.querySelectorAll('.batch-topic-chk').forEach(c=>{c.checked=true;c.closest('label').style.borderColor='var(--ok)'})" style="font-size:9px;padding:2px 6px">전체 선택</button>
+          <button class="b bg" onclick="document.querySelectorAll('.batch-topic-chk').forEach(c=>{c.checked=false;c.closest('label').style.borderColor='var(--bd)'})" style="font-size:9px;padding:2px 6px">전체 해제</button>
+        </span>
+      </div>
+      <div style="max-height:300px;overflow-y:auto">${topicListHtml}</div>
+      <button class="b bp blg" onclick="startBatchPipeline()" style="width:100%;justify-content:center;margin-top:8px;border-radius:8px">🚀 체크된 주제 연속 제작 + 업로드</button>
+      <div id="batchProgress" style="margin-top:6px;font-size:11px;color:var(--t2)"></div>
+    `;
+    toast(`AI가 ${topics.length}개 주제를 추천했습니다 ✨`);
   }catch(e){toast('AI 생성 실패: '+e.message,'err')}
   finally{btn.disabled=false;btn.innerHTML=orig}
 }
 
-async function startAutoPipeline(){
-  const topic=document.getElementById('autoTopic').value.trim();
-  if(!topic){toast('주제를 입력하세요','err');return}
+async function startBatchPipeline(){
+  const checks=document.querySelectorAll('.batch-topic-chk:checked');
+  if(!checks.length){toast('체크된 주제가 없습니다','err');return}
   if(autoRunning){toast('이미 실행 중','err');return}
+
+  const indices=[...checks].map(c=>parseInt(c.dataset.idx));
+  const topics=indices.map(i=>window._aiTopics[i]);
+  const total=topics.length;
+  const progEl=document.getElementById('batchProgress');
+  batchMode=true;
+  const batchResults=[];
+
+  for(let n=0;n<total;n++){
+    const t=topics[n];
+    const topicTitle=t.title||t.topic||t;
+    const startTime=Date.now();
+
+    // 진행 상황 + 이전 결과 목록 표시
+    const resultsHtml=batchResults.map((r,i)=>`
+      <div style="display:flex;align-items:center;gap:6px;padding:4px 8px;font-size:10px;border-bottom:1px solid var(--bd)">
+        <span style="font-size:14px">${r.ok?'✅':'❌'}</span>
+        <span style="color:var(--t1);flex:1"><strong>${i+1}.</strong> ${esc(r.topic.substring(0,40))}${r.topic.length>40?'...':''}</span>
+        <span style="color:var(--t3)">${r.time}</span>
+        ${r.videoId?`<a href="https://youtu.be/${r.videoId}" target="_blank" style="color:var(--info);font-size:9px">▶ YouTube</a>`:''}
+        ${r.error?`<span style="color:var(--acc);font-size:9px">${esc(r.error.substring(0,30))}</span>`:''}
+      </div>
+    `).join('');
+
+    progEl.innerHTML=`
+      <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:6px;padding:10px;margin:4px 0">
+        <div style="display:flex;align-items:center;justify-content:space-between">
+          <strong style="color:var(--warn)">📦 배치 제작 ${n+1}/${total}</strong>
+          <span style="font-size:9px;color:var(--t3)">${batchResults.filter(r=>r.ok).length}성공 / ${batchResults.filter(r=>!r.ok).length}실패</span>
+        </div>
+        <div style="font-size:11px;color:var(--t1);margin-top:4px">🎬 ${esc(topicTitle)}</div>
+        <div style="height:4px;background:var(--bg);border-radius:2px;margin-top:6px;overflow:hidden">
+          <div style="height:100%;background:linear-gradient(90deg,var(--acc),var(--warn));width:${Math.round((n/total)*100)}%;transition:width .3s"></div>
+        </div>
+      </div>
+      ${resultsHtml?`<div style="background:var(--bg2);border:1px solid var(--bd);border-radius:6px;margin-top:4px;max-height:200px;overflow-y:auto">${resultsHtml}</div>`:''}
+    `;
+
+    // 주제 설정 후 자동 제작 실행
+    document.getElementById('autoTopic').value=topicTitle;
+    S.topic=topicTitle;
+
+    // 파일 초기화
+    try{await api('/api/files/clean',{})}catch(e){}
+
+    autoRunning=false;
+    let batchError=null;
+
+    try{
+      await startAutoPipeline();
+    }catch(e){
+      batchError=e.message;
+      console.warn(`[Batch] ${n+1}/${total} 실패:`,e.message);
+    }
+    // 완료 대기
+    await new Promise(resolve=>{
+      const check=setInterval(()=>{
+        if(!autoRunning){clearInterval(check);resolve()}
+      },2000);
+      setTimeout(()=>{clearInterval(check);autoRunning=false;resolve()},1800000);
+    });
+
+    const elapsed=Math.round((Date.now()-startTime)/1000);
+    const mins=Math.floor(elapsed/60);
+    const secs=elapsed%60;
+    const uploadResult=window._lastUploadResult||null;
+    window._lastUploadResult=null;
+
+    batchResults.push({
+      topic:topicTitle,
+      ok:!batchError,
+      error:batchError,
+      time:`${mins}분 ${secs}초`,
+      videoId:uploadResult?.videoId||null
+    });
+
+    toast(`${batchError?'❌':'✅'} ${n+1}/${total}: ${topicTitle.substring(0,20)}...`);
+
+    if(n<total-1) await new Promise(r=>setTimeout(r,3000));
+  }
+
+  batchMode=false;
+  autoRunning=false;
+  const okCnt=batchResults.filter(r=>r.ok).length;
+  const failCnt=batchResults.filter(r=>!r.ok).length;
+  const finalResultsHtml=batchResults.map((r,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;font-size:11px;border-bottom:1px solid var(--bd)">
+      <span style="font-size:16px">${r.ok?'✅':'❌'}</span>
+      <span style="color:var(--t1);flex:1"><strong>${i+1}.</strong> ${esc(r.topic)}</span>
+      <span style="color:var(--t3);font-size:10px">${r.time}</span>
+      ${r.videoId?`<a href="https://youtu.be/${r.videoId}" target="_blank" style="color:var(--info);font-size:10px;text-decoration:none">▶ YouTube</a>`:''}
+      ${r.error?`<span style="color:var(--acc);font-size:9px">${esc(r.error.substring(0,40))}</span>`:''}
+    </div>
+  `).join('');
+  progEl.innerHTML=`
+    <div style="background:rgba(52,211,153,.1);border:1px solid var(--ok);border-radius:6px;padding:12px;margin-bottom:6px">
+      <strong style="color:var(--ok);font-size:14px">🎉 배치 제작 완료!</strong>
+      <span style="font-size:12px;color:var(--t2);margin-left:8px">${okCnt}성공 / ${failCnt}실패 (총 ${total}개)</span>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:6px;max-height:300px;overflow-y:auto">${finalResultsHtml}</div>
+  `;
+  toast(`🎉 배치 완료! ${okCnt}성공 / ${failCnt}실패`);
+}
+
+let batchMode=false;
+let autoStopped=false;
+function stopAutoPipeline(){
+  autoStopped=true;
+  batchMode=false;
+  autoRunning=false;
+  document.getElementById('autoStopBtn').style.display='none';
+  document.getElementById('autoBtn').style.display='';
+  document.getElementById('autoBtn').disabled=false;
+  document.getElementById('autoBtn').innerHTML='🚀 자동 제작 시작';
+  toast('⏹️ 제작 중지됨');
+}
+async function startAutoPipeline(){
+  let topic=document.getElementById('autoTopic').value.trim();
+  const kw=document.getElementById('autoTopicKw')?.value.trim()||'';
+  // 주제 없으면 키워드로 AI 자동 생성
+  if(!topic&&kw){
+    toast('키워드로 주제 자동 생성 중...','ok');
+    try{
+      const d=await api('/api/topics/suggest',{keyword:kw,category:document.getElementById('autoTopicCat')?.value||'',target:document.getElementById('autoTopicAud')?.value||'',language:{ko:'한국어',en:'영어',zh:'중국어',ja:'일본어',es:'스페인어'}[document.getElementById('autoLang')?.value]||'한국어',count:1});
+      if(d.topics?.length){
+        topic=d.topics[0].title||d.topics[0].topic;
+        document.getElementById('autoTopic').value=topic;
+      }
+    }catch(e){}
+  }
+  if(!topic){toast('주제 또는 키워드를 입력하세요','err');return}
+  if(autoRunning&&!batchMode){toast('이미 실행 중','err');return}
   autoRunning=true;
+  autoStopped=false;
+  document.getElementById('autoStopBtn').style.display='flex';
 
   const len=document.getElementById('autoLen').value;
   const lang=document.getElementById('autoLang').value;
   const style=document.getElementById('autoStyle').value;
-  const imgCnt=document.getElementById('autoImgCnt').value;
+  // 영상 길이에 따라 이미지/클립 수 자동 계산 (10초당 1개, 최소 5, 최대 50)
+  const manualImgCnt=parseInt(document.getElementById('autoImgCnt2').value)||8;
+  const autoImgCntByLen={1:5,3:10,4:12,5:15,10:30,15:40,20:50,30:50,40:50,50:50,60:50};
+  const imgCnt=Math.max(manualImgCnt, autoImgCntByLen[len]||Math.min(50,Math.round(len*60/10)));
+  console.log(`[Auto] 영상 ${len}분 → 이미지/클립 ${imgCnt}개`);
   const voiceId=document.getElementById('autoVoice').value;
   const transition=document.getElementById('autoTrans').value;
   const transDur=parseFloat(document.getElementById('autoTransDur').value)||0.8;
@@ -2257,8 +2781,14 @@ async function startAutoPipeline(){
   const ttsSt=parseFloat(document.getElementById('autoTtsSt')?.value||0.5);
   const ttsSim=parseFloat(document.getElementById('autoTtsSim')?.value||0.75);
   const sourceMode=document.getElementById('autoSourceMode')?.value||'image';
+  const toneSettings=[...document.querySelectorAll('.auto-tone-chk:checked')].map(c=>c.value);
+  const toneStr=toneSettings.length?toneSettings.join(', '):'균형 잡힌 톤';
+  const ratio=document.getElementById('autoRatio')?.value||'16:9';
+  const useRefText=document.getElementById('autoRefTextChk')?.checked||false;
+  const refText=useRefText?(document.getElementById('autoRefText')?.value||'').trim():'';
   const langNames={ko:'한국어',en:'English',zh:'中文'};
-  const wordCounts={1:'250',3:'700',5:'1200',10:'2000',15:'4500',20:'6000',30:'9000'};
+  // 한국어 TTS ~230자/분 기준, 장면 헤더 제거분 ~10% 감안
+  const wordCounts={1:'250',3:'760',4:'1020',5:'1270',10:'2530',15:'3800',20:'5060',30:'7600',40:'10120',50:'12650',60:'15180'};
 
   S.topic=topic;
   document.getElementById('autoSteps').style.display='block';
@@ -2281,24 +2811,29 @@ async function startAutoPipeline(){
   let lastResult={};
 
   try{
+    // 중지 체크 헬퍼
+    function checkStop(){if(autoStopped)throw new Error('사용자가 제작을 중지했습니다')}
+
     // 1. Plan
     let t1=Date.now();
     autoStatus('plan','running','Claude AI 기획 중...');
-    const planData=await api('/api/plan/generate',{topic,target:'전 연령',length:len,tone:'진지하고 무게감 있는',style,notes:`언어: ${langNames[lang]}`});
+    const planData=await api('/api/plan/generate',{topic,target:'전 연령',length:len,tone:toneStr,style,notes:`언어: ${langNames[lang]}`,refText});
     S.plan=planData.plan;markOk('topic');markOk('plan');save();
     autoTime('plan',Math.round((Date.now()-t1)/1000));
     autoStatus('plan','done','기획 완료');
     setPreview('plan','<div class="sp-txt">'+esc(S.plan.substring(0,1200))+(S.plan.length>1200?'\n... (전체 '+S.plan.length+'자)':'')+'</div>');
 
+    checkStop();
     // 2. Script
     t1=Date.now();
     autoStatus('script','running','Claude AI 대본 작성 중...');
-    const scriptData=await api('/api/script/generate',{topic,target:'전 연령',plan:S.plan,wordCount:wordCounts[len]||'3000',narration:'3인칭 나레이터',language:langNames[lang]});
+    const scriptData=await api('/api/script/generate',{topic,target:'전 연령',plan:S.plan,wordCount:wordCounts[len]||'3000',narration:'3인칭 나레이터',tone:toneStr,language:langNames[lang],refText,targetMinutes:len});
     S.script=scriptData.script;markOk('script');save();
     autoTime('script',Math.round((Date.now()-t1)/1000));
     autoStatus('script','done',`대본 완료 (${S.script.length}자)`);
     setPreview('script','<div class="sp-txt">'+esc(S.script.substring(0,1500))+(S.script.length>1500?'\n... (전체 '+S.script.length+'자, '+(scriptData.sceneCount||'?')+'장면)':'')+'</div>');
 
+    checkStop();
     // 3. Images / Video Clips
     t1=Date.now();
     autoStatus('image','running','프롬프트 생성 중...');
@@ -2308,14 +2843,14 @@ async function startAutoPipeline(){
       // 비디오 모드: Pexels 스톡 영상 다운로드
       autoStatus('image','running','Pexels 영상 검색·다운로드 중...');
       try{
-        const clipData=await api('/api/clips/generate',{scenePrompts:S.imgPrompts,perSceneDuration:10});
+        const clipData=await api('/api/clips/generate',{scenePrompts:S.imgPrompts,perSceneDuration:10,ratio});
         const ok=clipData.clips.filter(c=>c.filename).length;
         const fail=clipData.clips.length-ok;
         markOk('image');save();
         autoTime('image',Math.round((Date.now()-t1)/1000));
         autoStatus('image','done',`${ok}/${clipData.clips.length} 영상 클립 다운로드 완료${fail>0?` (실패 ${fail})`:''}`);
         // preview: 영상 클립 grid
-        const clipsHtml=clipData.clips.filter(c=>c.url).slice(0,8).map(c=>`<video src="${c.url}" muted></video>`).join('');
+        const clipsHtml=clipData.clips.filter(c=>c.url).map(c=>`<video src="${c.url}" muted></video>`).join('');
         setPreview('image',`<div>🎬 ${ok}개 클립</div><div class="sp-grid">${clipsHtml}</div>`);
       }catch(e){autoStatus('image','fail',e.message);throw e}
     } else {
@@ -2323,7 +2858,7 @@ async function startAutoPipeline(){
       autoStatus('image','running',`0/${imgCnt} 이미지 생성 중...`);
       for(let i=0;i<S.imgPrompts.length;i++){
         autoStatus('image','running',`${i+1}/${S.imgPrompts.length} 이미지 생성 중...`);
-        try{await api('/api/images/generate',{prompt:S.imgPrompts[i].prompt,style,ratio:'16:9',index:i+1})}catch(e){}
+        try{await api('/api/images/generate',{prompt:S.imgPrompts[i].prompt,style,ratio,index:i+1})}catch(e){}
         if(i<S.imgPrompts.length-1)await new Promise(r=>setTimeout(r,1500));
       }
       markOk('image');save();
@@ -2332,17 +2867,18 @@ async function startAutoPipeline(){
       // preview: 이미지 grid
       try{
         const fl=await fetch('/api/files/list').then(r=>r.json());
-        const imgs=(fl.files.images||[]).filter(f=>f.name.startsWith('scene_')).slice(0,12);
+        const imgs=(fl.files.images||[]).filter(f=>f.name.startsWith('scene_'));
         const imgHtml=imgs.map(im=>`<img src="${im.url}">`).join('');
         setPreview('image',`<div>🖼️ ${imgs.length}장</div><div class="sp-grid">${imgHtml}</div>`);
       }catch(e){}
     }
 
+    checkStop();
     // 4. TTS
     t1=Date.now();
     autoStatus('tts','running','ElevenLabs TTS 변환 중...');
     const cleanScript=cleanTTSScript(S.script);
-    const ttsData=await api('/api/tts/full-script',{script:cleanScript,voiceId,stability:ttsSt,similarity:ttsSim});
+    const ttsData=await api('/api/tts/full-script',{script:cleanScript,voiceId,stability:ttsSt,similarity:ttsSim,language:lang});
     S.audioFile=ttsData.filename;markOk('tts');save();
     let audioDur=parseInt(len)*60;
     try{const dr=await fetch('/api/audio/duration/'+ttsData.filename).then(r=>r.json());if(dr.duration>0)audioDur=Math.ceil(dr.duration)}catch(e){}
@@ -2350,6 +2886,7 @@ async function startAutoPipeline(){
     autoStatus('tts','done',`음성 완료 (${ttsData.charCount}자${ttsData.chunks>1?`, ${ttsData.chunks}청크`:''})`);
     setPreview('tts',`<div>🎙️ ${ttsData.charCount}자 · ${ttsData.chunks||1}청크${ttsData.hasTimestamps?' · with-timestamps':''}</div><audio controls src="${ttsData.audioUrl}" style="width:100%;margin-top:6px"></audio>`);
 
+    checkStop();
     // 5. Meta (영상 합성 전에 생성 → 썸네일 텍스트, 업로드 메타데이터에 사용)
     t1=Date.now();
     autoStatus('meta','running','메타데이터 생성 중...');
@@ -2362,13 +2899,14 @@ async function startAutoPipeline(){
       const titles=metaData.meta?.titles?.[0]?.options||[];
       const desc=Object.values(metaData.meta?.description||{})[0]||'';
       const tags=metaData.meta?.tags||[];
+      // SRT 자막 미리보기 (외국어 선택 시 이중자막)
       setPreview('meta',`<div><strong>📌 제목 후보:</strong><br>${titles.map(t=>'• '+esc(t)).join('<br>')}</div><div style="margin-top:6px"><strong>📝 설명:</strong><br><span style="font-size:10px">${esc(desc.substring(0,300))}${desc.length>300?'...':''}</span></div><div style="margin-top:6px"><strong>🏷️ 태그 (${tags.length}):</strong> <span style="font-size:10px">${tags.slice(0,15).map(esc).join(', ')}</span></div>`);
     }
 
     // 6. Thumbnail (영상 합성 전에 생성 → 인트로 prepend에 사용)
     t1=Date.now();
     autoStatus('thumb','running','썸네일 생성 중...');
-    const thumbData=await api('/api/thumbnail/generate',{topic,style:'dramatic',text:''});
+    const thumbData=await api('/api/thumbnail/generate',{topic,style:'dramatic',text:topic,ratio,language:lang});
     S.thumbFile=thumbData.filename;markOk('thumb');save();
     lastResult.thumb=thumbData;
     autoTime('thumb',Math.round((Date.now()-t1)/1000));
@@ -2380,16 +2918,18 @@ async function startAutoPipeline(){
       t1=Date.now();
       autoStatus('srt','running','SRT 자막 생성 중...');
       try{
-        const srtData=await api('/api/srt/generate',{script:S.script,duration:audioDur});
+        const srtData=await api('/api/srt/generate',{script:S.script,duration:audioDur,language:lang});
         lastResult.srt=srtData;markOk('srt');
         autoTime('srt',Math.round((Date.now()-t1)/1000));
-        autoStatus('srt','done',`자막 완료 (${srtData.subtitleCount}개)`);
-        setPreview('srt',`<div>📝 ${srtData.subtitleCount}개 자막</div><div class="sp-txt">${esc(srtData.preview||'')}</div>`);
+        const biLabel=srtData.bilingual?` · 이중자막 (${lang.toUpperCase()}+KO)`:'';
+        autoStatus('srt','done',`자막 완료 (${srtData.subtitleCount}개${biLabel})`);
+        setPreview('srt',`<div>📝 ${srtData.subtitleCount}개 자막${biLabel}</div><div class="sp-txt" style="max-height:200px;overflow-y:auto">${esc(srtData.preview||'')}</div>`);
       }catch(e){autoStatus('srt','fail',e.message)}
     }else{
       autoStatus('srt','done','건너뜀');
     }
 
+    checkStop();
     // 8. Render (썸네일 인트로 + SRT burn + 인트로 텍스트 모두 적용)
     t1=Date.now();
     const burnDesc=[doSrtAuto?'자막':'',doThumbIntro?'썸네일':''].filter(Boolean).join('+')||'없음';
@@ -2402,7 +2942,9 @@ async function startAutoPipeline(){
       burnSrt:doSrtAuto,
       showThumb:doThumbIntro,
       showIntro:false,
-      sourceMode
+      sourceMode,
+      language:lang,
+      ratio
     });
     lastResult.video=renderData;markOk('render');save();
     autoTime('render',Math.round((Date.now()-t1)/1000));
@@ -2416,11 +2958,14 @@ async function startAutoPipeline(){
       try{
         const authStat=await fetch('/api/youtube/status').then(r=>r.json());
         if(!authStat.authenticated){
-          autoStatus('upload','fail','YouTube OAuth 인증 필요. /api/youtube/auth 접속하세요.');
+          autoStatus('upload','fail','YouTube 인증 필요. 상단 G 로그인을 먼저 해주세요.');
         }else{
           const ytTitle=S.meta?.titles?.[0]?.options?.[0]||topic;
-          const ytDesc=Object.values(S.meta?.description||{})[0]||'';
+          let ytDesc=Object.values(S.meta?.description||{})[0]||'';
           const ytTags=S.meta?.tags||[];
+          // 태그 텍스트
+          const ytTagsText=ytTags.length?'\n\n'+ytTags.map(t=>'#'+t).join(' '):'';
+          ytDesc+=ytTagsText;
           const upData=await api('/api/youtube/upload',{
             title:ytTitle,
             description:ytDesc,
@@ -2430,6 +2975,7 @@ async function startAutoPipeline(){
             thumbnailFile:S.thumbFile
           });
           lastResult.upload=upData;markOk('upload');
+          window._lastUploadResult=upData;
           autoTime('upload',Math.round((Date.now()-t1)/1000));
           autoStatus('upload','done',`업로드 완료: ${upData.videoUrl||upData.videoId||''}`);
           setPreview('upload',`<div>📤 YouTube 업로드 완료</div><a href="${upData.videoUrl}" target="_blank" style="color:var(--acc)">${upData.videoUrl}</a>`);
@@ -2440,6 +2986,81 @@ async function startAutoPipeline(){
     }
 
     // 10. Project Save
+    // 10. 숏폼 제작 (옵션)
+    const doShorts=document.getElementById('autoShorts')?.checked;
+    if(doShorts){
+      t1=Date.now();
+      autoStatus('shorts','running','숏폼 대본 요약 중...');
+      try{
+        // 파일 초기화
+        try{await api('/api/files/clean',{})}catch(e){}
+
+        // 1) 대본 2분 요약
+        const shortsData=await api('/api/shorts/summarize',{script:S.script,topic,language:lang});
+        const shortsScript=shortsData.script;
+        setPreview('shorts',`<div>📱 숏폼 대본 (${shortsData.charCount}자)</div><div class="sp-txt" style="max-height:100px;overflow-y:auto">${esc(shortsScript.substring(0,300))}...</div>`);
+
+        // 2) 이미지 프롬프트 생성
+        autoStatus('shorts','running','숏폼 프롬프트 생성...');
+        const shortsPrompts=await api('/api/images/generate-prompts',{script:shortsScript,style,count:10});
+
+        // 3) Pexels 세로 영상 10개
+        autoStatus('shorts','running','숏폼 영상 다운로드...');
+        await api('/api/clips/generate',{scenePrompts:shortsPrompts.prompts,perSceneDuration:12,ratio:'9:16'});
+
+        // 4) TTS
+        autoStatus('shorts','running','숏폼 TTS 생성...');
+        await api('/api/tts/full-script',{script:shortsScript,voiceId,stability:ttsSt,similarity:ttsSim,language:lang});
+
+        // 5) SRT
+        autoStatus('shorts','running','숏폼 자막 생성...');
+        try{await api('/api/srt/generate',{script:shortsScript,language:lang,ratio:'9:16'})}catch(e){}
+
+        // 6) 썸네일
+        autoStatus('shorts','running','숏폼 썸네일...');
+        try{await api('/api/thumbnail/generate',{topic,style:'dramatic',text:topic,ratio:'9:16',language:lang})}catch(e){}
+
+        // 7) 렌더
+        autoStatus('shorts','running','숏폼 영상 합성...');
+        const shortsRender=await api('/api/render/video',{
+          transition:'fade',transitionDuration:0.5,
+          kenburns:'none',burnSrt:true,showThumb:true,showIntro:false,
+          sourceMode:'video',language:lang,ratio:'9:16'
+        });
+
+        // 8) YouTube 업로드
+        if(doUpload){
+          autoStatus('shorts','running','숏폼 YouTube 업로드...');
+          try{
+            const authStat=await fetch('/api/youtube/status').then(r=>r.json());
+            if(authStat.authenticated){
+              const ytTitle=S.meta?.titles?.[0]?.options?.[0]||topic;
+              const ytDesc=Object.values(S.meta?.description||{})[0]||'';
+              const ytTags=S.meta?.tags||[];
+              const ytTagsText=ytTags.length?'\n\n'+ytTags.map(t=>'#'+t).join(' '):'';
+              await api('/api/youtube/upload',{
+                title:ytTitle,
+                description:ytDesc+ytTagsText,
+                tags:ytTags,
+                categoryId:'22',
+                privacyStatus:privacy
+              });
+            }
+          }catch(e){console.warn('[Shorts] 업로드 실패:',e.message)}
+        }
+
+        autoTime('shorts',Math.round((Date.now()-t1)/1000));
+        autoStatus('shorts','done',`숏폼 완료 (${shortsRender.fileSize})`);
+        setPreview('shorts',`<div>📱 숏폼 완료 · ${shortsRender.fileSize}</div><video src="${shortsRender.videoUrl}" controls style="max-height:200px"></video>`);
+      }catch(e){
+        autoStatus('shorts','fail',e.message);
+        autoTime('shorts',Math.round((Date.now()-t1)/1000));
+      }
+    }else{
+      autoStatus('shorts','done','건너뜀');
+    }
+
+    // 11. 프로젝트 저장
     t1=Date.now();
     autoStatus('save','running','프로젝트 저장 중...');
     const projName=topic.substring(0,30);
@@ -2476,7 +3097,7 @@ async function startAutoPipeline(){
         ${lastResult.srt?`<a href="${lastResult.srt.srtUrl}" download class="b bs">📝 자막 다운로드</a>`:''}
         <button class="b bp" onclick="applyAutoMeta();go('upload')">📤 YouTube 업로드</button>
         <button class="b bs" onclick="go('script')">✍️ 대본 확인/수정</button>
-        <button class="b bs" onclick="go('timeline')">🎞️ 타임라인 편집</button>
+        <button class="b bs" onclick="downloadMeta()">📋 메타데이터 다운로드</button>
       </div>
     </div>`;
     toast('자동 제작 완료! 🎉');
@@ -2503,12 +3124,32 @@ async function startAutoPipeline(){
   autoRunning=false;
   document.getElementById('autoBtn').disabled=false;
   document.getElementById('autoBtn').innerHTML='🚀 자동 제작 시작';
+  document.getElementById('autoStopBtn').style.display='none';
 }
 
 function applyAutoMeta(){
   if(S.meta?.titles?.[0]?.options?.[0])document.getElementById('upTitle').value=S.meta.titles[0].options[0];
   if(S.meta?.description)document.getElementById('upDesc').value=Object.values(S.meta.description)[0]||'';
   if(S.meta?.tags)document.getElementById('upTags').value=S.meta.tags.join(', ');
+}
+
+function downloadMeta(){
+  const meta = S.meta || {};
+  const data = {
+    title: meta.titles?.[0]?.options?.[0] || S.topic || '',
+    description: meta.description ? Object.values(meta.description)[0] || '' : '',
+    tags: meta.tags || [],
+    hashtags: meta.hashtags || [],
+    category: S.category || '',
+    language: S.language || 'ko'
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `metadata_${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('메타데이터 다운로드 완료');
 }
 
 // === BGM ===
@@ -2579,7 +3220,8 @@ async function doSrt() {
   loading('srtBtn', true, 'SRT 생성 중...');
   try {
     const dur = parseInt(document.getElementById('srtDuration').value) || 120;
-    const d = await api('/api/srt/generate', { script: S.script, duration: dur });
+    const srtLang = document.getElementById('srtLang')?.value || 'ko';
+    const d = await api('/api/srt/generate', { script: S.script, duration: dur, language: srtLang });
     document.getElementById('srtOut').innerHTML = `<div class="cd">
       <div class="cd-t" style="margin-bottom:10px;color:var(--ok)">✅ SRT 자막 생성 완료 (${d.subtitleCount}개 항목)</div>
       <div class="otb">
@@ -2773,7 +3415,516 @@ async function init(){
   renderRecentTopics();
   updateAutoVoiceOptions();
 }
+// 랜딩에서 서비스 시작 클릭 시 홈 건너뛰고 자동 제작으로
+const _urlParams=new URLSearchParams(window.location.search);
+const _goto=_urlParams.get('goto');
+if(_goto){
+  document.getElementById('sec-home').classList.remove('act');
+  document.getElementById('sec-home').style.display='none';
+  history.replaceState(null,'','/app');
+}
 init();
+if(_goto){
+  setTimeout(()=>{
+    go(_goto);
+    // 홈 확실히 숨김
+    document.getElementById('sec-home').style.display='none';
+    document.querySelectorAll('.land').forEach(l=>l.classList.remove('act'));
+  },100);
+}
+
+// === 스케줄 ===
+function updateSchTypeUI(){
+  const t=document.getElementById('schType').value;
+  document.getElementById('schDateWrap').style.display=t==='once'?'':'none';
+  document.getElementById('schCronWrap').style.display=t==='recurring'?'':'none';
+}
+
+async function createScheduleFromAuto(){
+  const topic=document.getElementById('autoTopic').value.trim();
+  const schKeywords=document.getElementById('schKeywords')?.value.trim()||document.getElementById('autoTopicKw')?.value.trim()||'';
+  if(!topic&&!schKeywords){toast('영상 주제 또는 키워드를 입력하세요','err');return}
+  const type=document.getElementById('schType').value;
+  let datetime=null,cronExpr=null,repeatLabel='';
+  if(type==='once'){
+    datetime=document.getElementById('schDatetime').value;
+    if(!datetime){toast('예약 일시를 선택하세요','err');return}
+    if(new Date(datetime)<=new Date()){toast('미래 시간을 선택하세요','err');return}
+  }else{
+    const v=document.getElementById('schRepeat').value.split('|');
+    cronExpr=v[0];repeatLabel=v[1]||cronExpr;
+  }
+  const settings={
+    length:document.getElementById('autoLen').value,
+    language:document.getElementById('autoLang').value,
+    style:document.getElementById('autoStyle').value,
+    sourceMode:document.getElementById('autoSourceMode')?.value||'image',
+    ratio:document.getElementById('autoRatio')?.value||'16:9',
+    imageCount:document.getElementById('autoImgCnt2').value,
+    voiceId:document.getElementById('autoVoice')?.value||'',
+    stability:parseFloat(document.getElementById('autoTtsSt')?.value||1),
+    similarity:parseFloat(document.getElementById('autoTtsSim')?.value||1),
+    transition:document.getElementById('autoTrans').value,
+    transitionDuration:parseFloat(document.getElementById('autoTransDur').value)||0.8,
+    kenburns:document.getElementById('autoKenburns')?.value||'varied',
+    keywords:schKeywords,
+    upload:document.getElementById('autoUpload')?.value==='yes',
+    privacy:document.getElementById('autoPrivacy')?.value||'private',
+    category:document.getElementById('autoTopicCat')?.value||'',
+    refText:(document.getElementById('autoRefTextChk')?.checked?document.getElementById('autoRefText')?.value:'')?.trim()||''
+  };
+  try{
+    const displayName=topic||('🔑 '+schKeywords);
+    const d=await api('/api/schedule/create',{topic:topic||'',type,datetime,cronExpr,repeatLabel,settings});
+    toast(`스케줄 등록: ${displayName}`);
+    document.getElementById('schKeywords').value='';
+    loadSchedules();
+  }catch(e){toast(e.message,'err')}
+}
+
+async function createSchedule(){
+  const topic=document.getElementById('schTopic').value.trim();
+  if(!topic){toast('주제를 입력하세요','err');return}
+  const type=document.getElementById('schType').value;
+  let datetime=null,cronExpr=null,repeatLabel='';
+
+  if(type==='once'){
+    datetime=document.getElementById('schDatetime').value;
+    if(!datetime){toast('예약 일시를 선택하세요','err');return}
+    if(new Date(datetime)<=new Date()){toast('미래 시간을 선택하세요','err');return}
+  }else{
+    const v=document.getElementById('schRepeat').value.split('|');
+    cronExpr=v[0];repeatLabel=v[1]||cronExpr;
+  }
+
+  const settings={
+    length:document.getElementById('autoLen').value,
+    language:document.getElementById('autoLang').value,
+    style:document.getElementById('autoStyle').value,
+    sourceMode:document.getElementById('autoSourceMode')?.value||'image',
+    ratio:document.getElementById('autoRatio')?.value||'16:9',
+    imageCount:document.getElementById('autoImgCnt2').value,
+    voiceId:document.getElementById('autoVoice')?.value||'',
+    stability:parseFloat(document.getElementById('autoTtsSt')?.value||1),
+    similarity:parseFloat(document.getElementById('autoTtsSim')?.value||1),
+    transition:document.getElementById('autoTrans').value,
+    transitionDuration:parseFloat(document.getElementById('autoTransDur').value)||0.8,
+    kenburns:document.getElementById('autoKenburns')?.value||'varied',
+    keywords:schKeywords,
+    upload:document.getElementById('autoUpload')?.value==='yes',
+    privacy:document.getElementById('autoPrivacy')?.value||'private',
+    category:document.getElementById('autoTopicCat')?.value||'',
+    refText:(document.getElementById('autoRefTextChk')?.checked?document.getElementById('autoRefText')?.value:'')?.trim()||''
+  };
+
+  try{
+    const displayName=topic||('🔑 '+schKeywords);
+    const d=await api('/api/schedule/create',{topic:topic||'',type,datetime,cronExpr,repeatLabel,settings});
+    toast(`스케줄 등록: ${displayName}`);
+    document.getElementById('schKeywords').value='';
+    loadSchedules();
+  }catch(e){toast(e.message,'err')}
+}
+
+async function loadSchedules(){
+  try{
+    const d=await fetch('/api/schedule/list').then(r=>r.json());
+    const el=document.getElementById('schList');
+    if(!d.schedules||!d.schedules.length){
+      el.innerHTML='<div style="text-align:center;color:var(--t3);padding:20px">등록된 스케줄이 없습니다</div>';
+      return;
+    }
+    const statusEmoji={active:'🟢',running:'<span class="sch-running">⏳</span>',completed:'✅',failed:'❌',stopped:'⏸️',expired:'⏰'};
+    const statusLabel={active:'활성',running:'<strong style="color:var(--warn)">작동중</strong>',completed:'완료',failed:'실패',stopped:'중지',expired:'만료'};
+    const langLabel={ko:'🇰🇷 한국어',en:'🇺🇸 영어',zh:'🇨🇳 중국어',ja:'🇯🇵 일본어',es:'🇪🇸 스페인어'};
+    const srcLabel={image:'🖼️ 이미지',video:'🎬 Pexels 영상'};
+    el.innerHTML=d.schedules.map(s=>{
+      const st=s.settings||{};
+      return `
+      <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);padding:12px;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="text-align:center;min-width:36px">${statusEmoji[s.status]||'⚪'}${s.status==='running'&&s.progress?'<div style="font-size:8px;font-weight:700;color:var(--warn);margin-top:2px">'+s.progress.pct+'%</div>':''}</div>
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:12px">${s.topic?esc(s.topic):'<span style="color:var(--warn)">🔑 키워드 모드</span>'}</div>
+            <div style="font-size:10px;color:var(--t3);margin-top:2px">
+              ${s.type==='once'?'📆 '+new Date(s.datetime).toLocaleString('ko-KR'):'🔄 '+esc(s.repeatLabel)}
+              · ${statusLabel[s.status]||s.status}${s.status==='running'&&s.progress?' ('+s.progress.step+'/8 '+esc(s.progress.label)+')':''}
+              ${s.runCount>0?' · 실행 '+s.runCount+'회':''}
+              ${s.lastRun?' · 최근 '+new Date(s.lastRun).toLocaleString('ko-KR'):''}
+            </div>
+          </div>
+          <button class="b bs" onclick="toggleSchedule(${s.id})" style="font-size:10px;padding:4px 8px">${s.status==='active'?'⏸️ 중지':s.status==='running'?'⏳ 작동중':'▶️ 시작'}</button>
+          <button class="b bg" onclick="editScheduleTime(${s.id},'${s.type}','${s.datetime||''}','${s.cronExpr||''}','${esc(s.repeatLabel||'')}')" style="font-size:10px;padding:4px 8px" ${s.status==='running'?'disabled':''}>✏️</button>
+          <button class="b bg" onclick="deleteSchedule(${s.id})" style="font-size:10px;padding:4px 8px;color:var(--acc)">🗑️</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;padding-left:28px">
+          ${st.keywords?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:rgba(251,191,36,.15);color:var(--warn)">🔑 '+esc(st.keywords)+'</span>':''}
+          ${st.length?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t2)">⏱️ '+st.length+'분</span>':''}
+          ${st.language?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t2)">'+(langLabel[st.language]||st.language)+'</span>':''}
+          ${st.sourceMode?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t2)">'+(srcLabel[st.sourceMode]||st.sourceMode)+'</span>':'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t2)">🖼️ 이미지</span>'}
+          ${st.ratio?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t2)">📐 '+st.ratio+'</span>':'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t2)">📐 16:9</span>'}
+          ${st.voiceId?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t2)">🎙️ '+esc(st.voiceId.substring(0,8))+'…</span>':''}
+          ${(st.sourceMode||'image')!=='video'&&st.style?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t2)">🎨 '+esc(st.style)+'</span>':''}
+          ${(st.sourceMode||'image')!=='video'?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t2)">🖼️ '+(st.imageCount||'8')+'장</span>':''}
+          ${(st.sourceMode||'image')==='video'?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t2)">🎬 '+(st.imageCount||'8')+'클립</span>':''}
+          ${st.transition?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t2)">✨ '+st.transition+'</span>':'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t2)">✨ fade</span>'}
+          ${st.kenburns&&st.kenburns!=='varied'?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t2)">🎥 '+st.kenburns+'</span>':''}
+          ${st.upload?'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:rgba(255,59,59,.15);color:var(--acc)">📤 업로드 ('+esc(st.privacy||'private')+')</span>':'<span style="font-size:9px;padding:1px 6px;border-radius:8px;background:var(--bg4);color:var(--t3)">📤 업로드 안함</span>'}
+        </div>
+        ${s.lastError?'<div style="font-size:9px;color:var(--acc);margin-top:4px;padding-left:28px">⚠️ '+esc(s.lastError.substring(0,80))+'</div>':''}
+      </div>`;
+    }).join('');
+    // running 상태 있으면 5초마다 자동 새로고침
+    if(d.schedules.some(s=>s.status==='running')){
+      clearTimeout(window._schAutoRefresh);
+      window._schAutoRefresh=setTimeout(loadSchedules,5000);
+    }
+  }catch(e){document.getElementById('schList').innerHTML='<div style="color:var(--acc)">로드 실패</div>'}
+}
+
+function editScheduleTime(id,type,datetime,cronExpr,repeatLabel){
+  const el=document.getElementById('schList');
+  const editHtml=type==='once'
+    ?`<div style="background:var(--bg2);border:1px solid var(--acc);border-radius:var(--rs);padding:12px;margin:6px 0">
+        <div style="font-size:11px;font-weight:600;margin-bottom:6px">✏️ 예약 시간 수정 (ID: ${id})</div>
+        <input type="datetime-local" class="fi" id="schEditDt_${id}" value="${datetime}" onclick="this.showPicker?.()" style="cursor:pointer;margin-bottom:6px">
+        <div style="display:flex;gap:4px"><button class="b bp" onclick="saveScheduleTime(${id},'once')" style="font-size:10px">저장</button><button class="b bs" onclick="loadSchedules()" style="font-size:10px">취소</button></div>
+      </div>`
+    :`<div style="background:var(--bg2);border:1px solid var(--acc);border-radius:var(--rs);padding:12px;margin:6px 0">
+        <div style="font-size:11px;font-weight:600;margin-bottom:6px">✏️ 반복 주기 수정 (ID: ${id})</div>
+        <select class="fs" id="schEditCron_${id}" style="margin-bottom:6px">
+          <option value="0 9 * * *|매일 오전 9시" ${cronExpr==='0 9 * * *'?'selected':''}>매일 오전 9시</option>
+          <option value="0 12 * * *|매일 낮 12시" ${cronExpr==='0 12 * * *'?'selected':''}>매일 낮 12시</option>
+          <option value="0 18 * * *|매일 오후 6시" ${cronExpr==='0 18 * * *'?'selected':''}>매일 오후 6시</option>
+          <option value="0 9 * * 1|매주 월요일 9시" ${cronExpr==='0 9 * * 1'?'selected':''}>매주 월요일 9시</option>
+          <option value="0 9 * * 1,3,5|월수금 9시" ${cronExpr==='0 9 * * 1,3,5'?'selected':''}>월·수·금 9시</option>
+          <option value="0 9 * * 1-5|평일 9시" ${cronExpr==='0 9 * * 1-5'?'selected':''}>평일 매일 9시</option>
+          <option value="0 9 1 * *|매월 1일 9시" ${cronExpr==='0 9 1 * *'?'selected':''}>매월 1일 9시</option>
+        </select>
+        <div style="display:flex;gap:4px"><button class="b bp" onclick="saveScheduleTime(${id},'recurring')" style="font-size:10px">저장</button><button class="b bs" onclick="loadSchedules()" style="font-size:10px">취소</button></div>
+      </div>`;
+  // 해당 스케줄 카드 뒤에 편집 UI 삽입
+  const cards=el.querySelectorAll(':scope > div');
+  const arr=Array.from(document.querySelectorAll('#schList > div'));
+  // 간단하게: 목록 끝에 편집 UI 추가
+  const existing=document.getElementById('schEditBox');
+  if(existing) existing.remove();
+  const box=document.createElement('div');
+  box.id='schEditBox';
+  box.innerHTML=editHtml;
+  el.appendChild(box);
+}
+
+async function saveScheduleTime(id,type){
+  try{
+    let body={};
+    if(type==='once'){
+      const dt=document.getElementById('schEditDt_'+id)?.value;
+      if(!dt){toast('시간을 선택하세요','err');return}
+      if(new Date(dt)<=new Date()){toast('미래 시간을 선택하세요','err');return}
+      body={datetime:dt};
+    }else{
+      const v=document.getElementById('schEditCron_'+id)?.value.split('|');
+      body={cronExpr:v[0],repeatLabel:v[1]||v[0]};
+    }
+    await api('/api/schedule/'+id+'/update',body);
+    toast('스케줄 시간 수정 완료');
+    loadSchedules();
+  }catch(e){toast(e.message,'err')}
+}
+
+async function toggleSchedule(id){
+  try{await api('/api/schedule/'+id+'/toggle',{});loadSchedules();toast('스케줄 상태 변경')}
+  catch(e){toast(e.message,'err')}
+}
+
+async function deleteSchedule(id){
+  try{await fetch('/api/schedule/'+id,{method:'DELETE'});loadSchedules();toast('스케줄 삭제')}
+  catch(e){toast(e.message,'err')}
+}
+
+
+// === Settings ===
+async function openSettings(){
+  document.getElementById('settingsModal').style.display='flex';
+  // 현재 키 상태 로드
+  try{
+    const d=await fetch('/api/settings/status').then(r=>r.json());
+    const st=document.getElementById('settingsStatus');
+    const keys=['anthropic','openai','elevenlabs','pexels','youtube'];
+    const labels={'anthropic':'Claude','openai':'GPT Image','elevenlabs':'ElevenLabs','pexels':'Pexels','youtube':'YouTube'};
+    st.innerHTML=keys.map(k=>{
+      const ok=d.keys?.[k];
+      return `<span style="display:inline-block;font-size:9px;padding:2px 8px;border-radius:8px;margin:2px;${ok?'background:rgba(52,211,153,.15);color:var(--ok)':'background:rgba(255,59,59,.1);color:#ff5252'}">${labels[k]} ${ok?'✅':'❌'}</span>`;
+    }).join('');
+    // 마스킹된 키 표시 (placeholder)
+    if(d.masked){
+      if(d.masked.anthropic) document.getElementById('setAnthropicKey').placeholder=d.masked.anthropic;
+      if(d.masked.openai) document.getElementById('setOpenaiKey').placeholder=d.masked.openai;
+      if(d.masked.elevenlabs) document.getElementById('setElevenlabsKey').placeholder=d.masked.elevenlabs;
+      if(d.masked.pexels) document.getElementById('setPexelsKey').placeholder=d.masked.pexels;
+      if(d.masked.ytClientId) document.getElementById('setYtClientId').placeholder=d.masked.ytClientId;
+    }
+  }catch(e){}
+}
+function closeSettings(){
+  document.getElementById('settingsModal').style.display='none';
+}
+async function saveSettings(){
+  const body={};
+  const ak=document.getElementById('setAnthropicKey').value.trim();
+  const ok=document.getElementById('setOpenaiKey').value.trim();
+  const ek=document.getElementById('setElevenlabsKey').value.trim();
+  const pk=document.getElementById('setPexelsKey').value.trim();
+  const yci=document.getElementById('setYtClientId').value.trim();
+  const ycs=document.getElementById('setYtClientSecret').value.trim();
+  const yrt=document.getElementById('setYtRefreshToken').value.trim();
+  if(ak) body.ANTHROPIC_API_KEY=ak;
+  if(ok) body.OPENAI_API_KEY=ok;
+  if(ek) body.ELEVENLABS_API_KEY=ek;
+  if(pk) body.PEXELS_API_KEY=pk;
+  if(yci) body.YOUTUBE_CLIENT_ID=yci;
+  if(ycs) body.YOUTUBE_CLIENT_SECRET=ycs;
+  if(yrt) body.YOUTUBE_REFRESH_TOKEN=yrt;
+  if(!Object.keys(body).length){toast('변경할 키를 입력하세요','err');return}
+  try{
+    const d=await api('/api/settings/save',body);
+    toast('API 키 저장 완료! 즉시 반영됨.');
+    closeSettings();
+    // 상태 배지 갱신
+    checkGoogleLogin();
+  }catch(e){toast(e.message,'err')}
+}
+
+// === Google Login ===
+function googleLogin(){
+  window.open('/api/google/auth','_blank','width=500,height=600');
+}
+function googleLogout(){
+  fetch('/api/google/logout').then(()=>{
+    document.getElementById('googleLoginBtn').style.display='flex';
+    document.getElementById('googleProfile').style.display='none';
+    toast('로그아웃 완료');
+  });
+}
+async function checkGoogleLogin(){
+  try{
+    const d=await fetch('/api/google/profile').then(r=>r.json());
+    if(d.loggedIn){
+      document.getElementById('googleLoginBtn').style.display='none';
+      document.getElementById('googleProfile').style.display='flex';
+      document.getElementById('googleAvatar').src=d.picture||'';
+      document.getElementById('googleName').textContent=d.name||d.email||'';
+      document.getElementById('googleName').title=d.email||'';
+      // 관리자 이메일만 🔐 버튼 표시
+      if(d.email==='auraweon7@gmail.com'){
+        document.getElementById('adminBtn').style.display='';
+      }
+    }else{
+      document.getElementById('adminBtn').style.display='none';
+    }
+  }catch(e){}
+}
+checkGoogleLogin();
+// Google OAuth 콜백 후 부모 창 갱신
+window.addEventListener('message',e=>{
+  if(e.data==='google-login-success') checkGoogleLogin();
+});
+// === Admin ===
+let adminPw='';
+function openAdminLogin(){
+  document.getElementById('adminModal').style.display='flex';
+  document.getElementById('adminPw').value='';
+  document.getElementById('adminLoginMsg').innerHTML='';
+  if(adminPw){
+    document.getElementById('adminLoginArea').style.display='none';
+    document.getElementById('adminDashboard').style.display='block';
+    loadAdminUsers();
+  }else{
+    document.getElementById('adminLoginArea').style.display='block';
+    document.getElementById('adminDashboard').style.display='none';
+  }
+}
+async function adminLogin(){
+  const pw=document.getElementById('adminPw').value;
+  try{
+    const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pw})});
+    const d=await r.json();
+    if(d.success){
+      adminPw=pw;
+      document.getElementById('adminLoginArea').style.display='none';
+      document.getElementById('adminDashboard').style.display='block';
+      loadAdminUsers();
+    }else{
+      document.getElementById('adminLoginMsg').innerHTML='<span style="color:var(--acc)">❌ 비밀번호 오류</span>';
+    }
+  }catch(e){document.getElementById('adminLoginMsg').innerHTML='<span style="color:var(--acc)">'+e.message+'</span>'}
+}
+async function loadAdminUsers(){
+  try{
+    const r=await fetch('/api/admin/users',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:adminPw})});
+    const d=await r.json();
+    document.getElementById('adminTotalUsers').textContent=d.total||0;
+    document.getElementById('adminApproved').textContent=(d.users||[]).filter(u=>u.approved).length;
+    document.getElementById('adminDbStatus').textContent=d.users?'연결':'미연결';
+    const tbody=document.getElementById('adminUserTable');
+    if(!d.users||!d.users.length){
+      tbody.innerHTML='';
+      document.getElementById('adminNoUsers').style.display='block';
+      return;
+    }
+    document.getElementById('adminNoUsers').style.display='none';
+    tbody.innerHTML=d.users.map(u=>{
+      const subType=u.subscriptionType||'none';
+      const subStart=u.subscriptionStart?new Date(u.subscriptionStart).toLocaleDateString('ko-KR'):'';
+      const subEnd=u.subscriptionEnd?new Date(u.subscriptionEnd).toLocaleDateString('ko-KR'):'';
+      const isExpired=u.subscriptionEnd&&new Date(u.subscriptionEnd)<new Date();
+      const subColor=subType==='yearly'?'#a78bfa':subType==='monthly'?'var(--info)':'var(--t3)';
+      const subLabel=subType==='yearly'?'연간':subType==='monthly'?'월간':'미구독';
+      return `
+      <tr>
+        <td style="padding:5px;border:1px solid var(--bd)"><img src="${u.picture||''}" width="26" height="26" style="border-radius:50%;border:1px solid var(--bd)" onerror="this.style.display='none'" alt=""></td>
+        <td style="padding:5px;border:1px solid var(--bd);font-weight:600;font-size:11px">${esc(u.name)}</td>
+        <td style="padding:5px;border:1px solid var(--bd);color:var(--info);font-size:10px">${esc(u.email)}</td>
+        <td style="padding:5px;border:1px solid var(--bd);color:var(--t3);font-size:9px;text-align:center">${u.joinDate?new Date(u.joinDate).toLocaleDateString('ko-KR'):'-'}</td>
+        <td style="padding:5px;border:1px solid var(--bd);text-align:center">
+          <input type="checkbox" ${u.approved?'checked':''} onchange="adminSetApprove('${u.email}',this.checked)" style="accent-color:var(--ok);cursor:pointer">
+        </td>
+        <td style="padding:5px;border:1px solid var(--bd);text-align:center">
+          <select onchange="adminSetSubscription('${u.email}',this.value)" style="font-size:9px;background:var(--bg3);color:var(--t1);border:1px solid var(--bd);border-radius:4px;padding:2px">
+            <option value="none" ${subType==='none'?'selected':''}>미구독</option>
+            <option value="monthly" ${subType==='monthly'?'selected':''}>월간</option>
+            <option value="yearly" ${subType==='yearly'?'selected':''}>연간</option>
+          </select>
+        </td>
+        <td style="padding:5px;border:1px solid var(--bd);text-align:center;font-size:9px;color:var(--t2)">${subStart||'-'}</td>
+        <td style="padding:5px;border:1px solid var(--bd);text-align:center;font-size:9px;color:${isExpired?'var(--acc)':'var(--t2)'}">${subEnd||'-'}${isExpired?' ⚠️':''}</td>
+        <td style="padding:5px;border:1px solid var(--bd);text-align:center;font-size:10px">${u.hasKeys||0}</td>
+        <td style="padding:5px;border:1px solid var(--bd);text-align:center;font-size:9px;color:var(--t3)">${u.lastActive?new Date(u.lastActive).toLocaleDateString('ko-KR'):'-'}</td>
+        <td style="padding:5px;border:1px solid var(--bd);text-align:center">
+          <button class="b bg" onclick="adminDeleteUser('${u.email}')" style="font-size:9px;padding:2px 5px;color:var(--acc)" title="삭제">🗑️</button>
+        </td>
+      </tr>`;
+    }).join('');
+  }catch(e){console.error('[Admin]',e)}
+}
+async function adminSetApprove(email,approved){
+  await fetch('/api/admin/user/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:adminPw,email,field:'_approved',value:approved})});
+  loadAdminUsers();
+}
+async function adminSetSubscription(email,type){
+  await fetch('/api/admin/user/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:adminPw,email,field:'_subscription',value:type})});
+  loadAdminUsers();
+}
+async function adminDeleteUser(email){
+  if(!confirm(`${email} 회원을 삭제하시겠습니까?`)) return;
+  await fetch('/api/admin/user/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:adminPw,email})});
+  loadAdminUsers();
+  toast('회원 삭제 완료');
+}
 </script>
+<!-- ===== 설정 모달 ===== -->
+<div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;display:none;align-items:center;justify-content:center" onclick="if(event.target===this)closeSettings()">
+  <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:24px;width:90%;max-width:550px;max-height:85vh;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:15px;font-weight:700">⚙️ API 설정</div>
+      <button class="b bg" onclick="closeSettings()" style="font-size:16px;padding:2px 8px">✕</button>
+    </div>
+    <div class="alert alert-info" style="margin-bottom:14px">API 키는 서버 <code>.env</code> 파일에 저장됩니다. 저장 후 서버가 자동 재시작됩니다.</div>
+    <div id="settingsStatus" style="margin-bottom:12px"></div>
+
+    <div class="fg"><label class="fl">🧠 Anthropic (Claude AI) <span class="badge badge-ai">필수</span></label>
+      <input type="password" class="fi" id="setAnthropicKey" placeholder="sk-ant-api03-...">
+      <div class="fh">대본 기획, 작성, 메타데이터, 이중 자막 번역</div>
+    </div>
+    <div class="fg"><label class="fl">🎨 OpenAI (GPT Image) <span class="badge badge-api">이미지 생성</span></label>
+      <input type="password" class="fi" id="setOpenaiKey" placeholder="sk-...">
+      <div class="fh">장면별 이미지 생성, 썸네일</div>
+    </div>
+    <div class="fg"><label class="fl">🎙️ ElevenLabs (TTS) <span class="badge badge-api">음성 생성</span></label>
+      <input type="password" class="fi" id="setElevenlabsKey" placeholder="xi-...">
+      <div class="fh">대본 → 나레이션 음성 변환</div>
+    </div>
+    <div class="fg"><label class="fl">🎬 Pexels (스톡 영상) <span class="badge badge-key">무료</span></label>
+      <input type="password" class="fi" id="setPexelsKey" placeholder="...">
+      <div class="fh">영상 기반 모드에서 스톡 영상 다운로드</div>
+    </div>
+
+    <div class="divider"></div>
+    <div style="font-size:10px;font-weight:600;color:var(--t2);margin-bottom:8px">📤 YouTube OAuth (선택)</div>
+    <div class="fg"><label class="fl">Client ID</label>
+      <input type="text" class="fi" id="setYtClientId" placeholder="xxxxx.apps.googleusercontent.com">
+    </div>
+    <div class="fg"><label class="fl">Client Secret</label>
+      <input type="password" class="fi" id="setYtClientSecret" placeholder="GOCSPX-...">
+    </div>
+    <div class="fg"><label class="fl">Refresh Token <span style="font-size:9px;color:var(--t3);font-weight:400">(OAuth Playground에서 발급)</span></label>
+      <input type="password" class="fi" id="setYtRefreshToken" placeholder="1//0xxxxxxxxxxxxxxx">
+      <div class="fh">YouTube 업로드용. OAuth Playground에서 발급 후 입력</div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button class="b bp blg" onclick="saveSettings()" style="flex:1;justify-content:center">💾 저장</button>
+      <button class="b bs" onclick="closeSettings()" style="padding:10px 20px">취소</button>
+    </div>
+  </div>
+</div>
+<!-- 관리자 모달 -->
+<div id="adminModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center" onclick="if(event.target===this)this.style.display='none'">
+  <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);width:98%;max-width:1200px;max-height:92vh;overflow-y:auto;padding:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-size:16px;font-weight:800">🔐 관리자 모드</div>
+      <button class="b bg" onclick="document.getElementById('adminModal').style.display='none'" style="font-size:16px;padding:2px 8px">✕</button>
+    </div>
+
+    <!-- 로그인 -->
+    <div id="adminLoginArea">
+      <div class="fg"><label class="fl">비밀번호</label>
+        <input type="password" class="fi" id="adminPw" placeholder="관리자 비밀번호" onkeydown="if(event.key==='Enter')adminLogin()">
+      </div>
+      <button class="b bp" onclick="adminLogin()" style="width:100%;justify-content:center;margin-top:8px">🔓 로그인</button>
+      <div id="adminLoginMsg" style="margin-top:6px;font-size:11px"></div>
+    </div>
+
+    <!-- 대시보드 -->
+    <div id="adminDashboard" style="display:none">
+      <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+        <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:14px 20px;text-align:center;flex:1;min-width:120px">
+          <div style="font-size:22px;font-weight:900;color:var(--acc)" id="adminTotalUsers">0</div>
+          <div style="font-size:10px;color:var(--t3)">총 회원</div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:14px 20px;text-align:center;flex:1;min-width:120px">
+          <div style="font-size:22px;font-weight:900;color:var(--ok)" id="adminApproved">0</div>
+          <div style="font-size:10px;color:var(--t3)">승인됨</div>
+        </div>
+        <div style="background:var(--bg3);border:1px solid var(--bd);border-radius:8px;padding:14px 20px;text-align:center;flex:1;min-width:120px">
+          <div style="font-size:22px;font-weight:900;color:var(--info)" id="adminDbStatus">-</div>
+          <div style="font-size:10px;color:var(--t3)">DB 상태</div>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead>
+            <tr style="background:var(--bg3)">
+              <th style="padding:6px;text-align:left;border:1px solid var(--bd);font-size:10px">프로필</th>
+              <th style="padding:6px;text-align:left;border:1px solid var(--bd);font-size:10px">성명</th>
+              <th style="padding:6px;text-align:left;border:1px solid var(--bd);font-size:10px">이메일</th>
+              <th style="padding:6px;text-align:center;border:1px solid var(--bd);font-size:10px">가입일</th>
+              <th style="padding:6px;text-align:center;border:1px solid var(--bd);font-size:10px">승인</th>
+              <th style="padding:6px;text-align:center;border:1px solid var(--bd);font-size:10px">구독 유형</th>
+              <th style="padding:6px;text-align:center;border:1px solid var(--bd);font-size:10px">구독 시작</th>
+              <th style="padding:6px;text-align:center;border:1px solid var(--bd);font-size:10px">구독 종료</th>
+              <th style="padding:6px;text-align:center;border:1px solid var(--bd);font-size:10px">API</th>
+              <th style="padding:6px;text-align:center;border:1px solid var(--bd);font-size:10px">최근 활동</th>
+              <th style="padding:6px;text-align:center;border:1px solid var(--bd);font-size:10px">관리</th>
+            </tr>
+          </thead>
+          <tbody id="adminUserTable"></tbody>
+        </table>
+      </div>
+      <div id="adminNoUsers" style="display:none;text-align:center;color:var(--t3);padding:20px">등록된 회원이 없습니다</div>
+    </div>
+  </div>
+</div>
 </body>
 </html>
