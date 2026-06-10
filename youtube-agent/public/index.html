@@ -3697,8 +3697,15 @@ async function saveSettings(){
 }
 
 // === Google Login ===
-function googleLogin(){
-  window.open('/api/google/auth','_blank','width=500,height=600');
+async function googleLogin(){
+  try {
+    const r = await fetch('/api/google/auth?json=1');
+    const d = await r.json();
+    if(d.authUrl) window.open(d.authUrl,'_blank','width=500,height=600');
+    else toast('Google OAuth URL 생성 실패','err');
+  } catch(e) {
+    window.open('/api/google/auth','_blank','width=500,height=600');
+  }
 }
 function googleLogout(){
   fetch('/api/google/logout').then(()=>{

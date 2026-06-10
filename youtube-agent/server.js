@@ -2657,7 +2657,11 @@ app.get('/api/google/auth', (req, res) => {
     prompt: 'consent',
     redirect_uri: dynamicRedirect
   });
-  res.redirect(authUrl);
+  if (req.query.json === '1') {
+    res.json({ authUrl });
+  } else {
+    res.redirect(authUrl);
+  }
 });
 
 app.get('/api/google/callback', async (req, res) => {
