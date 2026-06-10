@@ -483,7 +483,7 @@
           <div class="entry-word zh-serif" id="entryWord"></div>
           <div class="entry-pinyin-row">
             <span class="entry-pinyin" id="entryPinyin"></span>
-            <button class="tts-btn" title="발음 듣기" onclick="speak(currentEntry.word)">🔊</button>
+            <button class="tts-btn" title="발음 듣기" onclick="speak(currentEntry.word)">🎤</button>
           </div>
           <div class="entry-tags" id="entryTags"></div>
         </div>
@@ -666,6 +666,15 @@ function speak(text) {
   u.rate = 0.85;
   speechSynthesis.speak(u);
 }
+/* 중국어 텍스트 앞에 붙는 발음 버튼 HTML (data-tts 위임 방식) */
+function ttsBtn(text, small) {
+  const sz = small ? ' style="width:24px;height:24px;font-size:11px;"' : "";
+  return `<button class="tts-btn" title="발음 듣기" data-tts="${esc(text)}"${sz}>🎤</button>`;
+}
+document.addEventListener("click", e => {
+  const btn = e.target.closest("[data-tts]");
+  if (btn) { e.stopPropagation(); speak(btn.dataset.tts); }
+}, true);
 async function callGemini(model, body) {
   const res = await fetch(`${API_BASE}${model}:generateContent?key=${encodeURIComponent(apiKey)}`, {
     method: "POST",
@@ -904,12 +913,12 @@ function renderEntry(entry) {
   document.getElementById("sensesArea").innerHTML = (entry.senses || []).map((s, i) => `
     <div class="sense">
       <div class="sense-num">${i + 1}</div>
-      <div class="sense-def">${esc(s.definition_zh)}</div>
+      <div class="sense-def" style="display:flex; align-items:baseline; gap:8px;">${ttsBtn(s.definition_zh, true)}<span>${esc(s.definition_zh)}</span></div>
       <div class="sense-def-pinyin">${esc(s.definition_pinyin)}</div>
       <div class="sense-def-ko">🇰🇷 ${esc(s.definition_ko)}</div>
       ${(s.examples || []).map(ex => `
         <div class="example">
-          <div class="zh"><button class="tts-btn" onclick="speak('${esc(ex.zh).replace(/'/g, "\\'")}')">🔊</button> ${esc(ex.zh)}</div>
+          <div class="zh">${ttsBtn(ex.zh, true)} ${esc(ex.zh)}</div>
           <div class="py">${esc(ex.pinyin)}</div>
           <div class="ko">${esc(ex.ko)}</div>
         </div>`).join("")}
@@ -921,6 +930,7 @@ function renderEntry(entry) {
   document.getElementById("synArea").innerHTML = syns.map(s => `
     <div class="syn-item">
       <div class="syn-head">
+        ${ttsBtn(s.word, true)}
         <span class="syn-word" title="이 단어 검색" onclick="quickSearch('${esc(s.word)}')">${esc(s.word)}</span>
         <span class="syn-pinyin">${esc(s.pinyin)}</span>
       </div>
@@ -1034,7 +1044,7 @@ function renderWordbook() {
   grid.innerHTML = wordbook.map((w, i) => `
     <div class="wb-card fade-up" onclick="openFromWordbook('${esc(w.word)}')">
       <button class="wb-del" title="삭제" onclick="event.stopPropagation(); removeWord(${i})">✕</button>
-      <div class="wb-word zh-serif">${esc(w.word)}</div>
+      <div style="display:flex; align-items:center; gap:8px;">${ttsBtn(w.word, true)}<span class="wb-word zh-serif">${esc(w.word)}</span></div>
       <div class="wb-pinyin">${esc(w.pinyin)}</div>
       <div class="wb-ko">${esc(w.ko)}</div>
     </div>
@@ -1215,7 +1225,7 @@ JSON만 출력:
         <h4>교정문</h4>
         <div class="wc-corrected">
           <div class="body zh zh-serif" style="display:flex;align-items:baseline;gap:8px;">
-            <button class="tts-btn" style="width:28px;height:28px;font-size:12px;flex-shrink:0;" onclick="speak('${esc(data.corrected_zh).replace(/'/g, "\\'")}')">🔊</button>
+            ${ttsBtn(data.corrected_zh, true)}
             <span>${esc(data.corrected_zh)}</span>
           </div>
           <div style="font-size:12.5px; color:var(--blue); margin-top:4px; font-family:Inter,sans-serif;">${esc(data.corrected_pinyin)}</div>
@@ -1235,7 +1245,7 @@ JSON만 출력:
       ${data.upgrade_zh ? `
       <div class="wc-block">
         <h4>⬆ 한 단계 업그레이드</h4>
-        <div class="body zh zh-serif">${esc(data.upgrade_zh)}</div>
+        <div class="body zh zh-serif" style="display:flex;align-items:baseline;gap:8px;">${ttsBtn(data.upgrade_zh, true)}<span>${esc(data.upgrade_zh)}</span></div>
         <div style="font-size:12.5px; color:var(--blue); margin-top:3px; font-family:Inter,sans-serif;">${esc(data.upgrade_pinyin)}</div>
         <div style="font-size:13px; color:var(--muted); margin-top:2px;">🇰🇷 ${esc(data.upgrade_ko)}</div>
       </div>` : ""}
