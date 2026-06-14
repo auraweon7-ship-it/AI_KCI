@@ -4,7 +4,8 @@
   "description": "AI KCI - AI 기반 학술연구 지원 대시보드",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "cd youtube-agent && node server.js",
+    "build": "cd youtube-agent && npm install"
   },
   "engines": {
     "node": ">=18.0.0"
