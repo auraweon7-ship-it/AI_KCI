@@ -5,7 +5,8 @@
   "main": "server.js",
   "scripts": {
     "start": "cd youtube-agent && node server.js",
-    "build": "cd youtube-agent && npm install"
+    "build": "cd youtube-agent && npm install",
+    "postinstall": "cd youtube-agent && npm install"
   },
   "engines": {
     "node": ">=18.0.0"
