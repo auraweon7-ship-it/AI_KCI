@@ -148,6 +148,7 @@
           <div class="mut" id="meRole" style="font-size:11px"></div>
         </div>
       </div>
+      <button class="logout" onclick="myProfileForm()" style="margin-top:10px">내 정보 수정</button>
       <button class="logout" onclick="signOut()">로그아웃</button>
     </div>
   </aside>
@@ -703,6 +704,34 @@ async function saveEmp(id){
     status:$('#es').value, annual_leave_total:Number($('#el').value)||0
   }).eq('id',id);
   if(error)return err(error); closeModal(); toast('저장 완료'); viewAdmin();
+}
+
+// ===================== 내 정보 수정 =====================
+function myProfileForm(){
+  modal(`<button class="x" onclick="closeModal()">×</button><h3>내 정보 수정</h3>
+    <p class="mut">${esc(ME.email)}</p>
+    <label class="f">이름</label><input id="mf" value="${esc(ME.full_name)||''}">
+    <label class="f">부서</label><select id="md"><option value="">미지정</option>${Object.entries(DEPT).map(([k,v])=>`<option value="${k}" ${ME.department===k?'selected':''}>${v}</option>`).join('')}</select>
+    <label class="f">입사일</label><input id="mh" type="date" value="${ME.hire_date||''}">
+    <div style="margin-top:14px;padding:12px;background:var(--panel2);border-radius:9px;font-size:12px" class="mut">
+      권한: <b style="color:var(--txt)">${ROLE[ME.role]}</b> · 상태: <b style="color:var(--txt)">${({active:'활성',pending:'대기',inactive:'비활성'})[ME.status]}</b><br>
+      연차: <b style="color:var(--txt)">${(ME.annual_leave_total-ME.annual_leave_used).toFixed(1)}/${ME.annual_leave_total}일</b>
+      <div style="margin-top:6px">※ 권한·상태·연차는 관리자만 변경할 수 있습니다.</div>
+    </div>
+    <div class="row" style="margin-top:18px;justify-content:flex-end">
+      <button class="btn ghost" onclick="closeModal()">취소</button>
+      <button class="btn" onclick="saveMyProfile()">저장</button>
+    </div>`);
+}
+async function saveMyProfile(){
+  const full_name=$('#mf').value.trim();
+  if(!full_name) return toast('이름을 입력하세요',true);
+  const upd={full_name, department:$('#md').value||null, hire_date:$('#mh').value||null};
+  const {error}=await sb.from('profiles').update(upd).eq('id',ME.id);
+  if(error) return err(error);
+  const {data:fresh}=await sb.from('profiles').select('*').eq('id',ME.id).single();
+  if(fresh) ME=fresh;
+  closeModal(); renderShell(); toast('내 정보 저장 완료'); go(CURRENT);
 }
 
 // ===================== START =====================
