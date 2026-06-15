@@ -121,7 +121,11 @@
       <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.8-6.8C35.6 2.4 30.2 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.9 6.1C12.3 13.2 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9.1h12.4c-.5 2.9-2.1 5.4-4.6 7l7.1 5.5c4.2-3.9 6.6-9.6 6.6-16z"/><path fill="#FBBC05" d="M10.4 28.6c-.5-1.5-.8-3-.8-4.6s.3-3.1.8-4.6l-7.9-6.1C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.1-5.5c-2 1.3-4.5 2.1-8.8 2.1-6.3 0-11.7-3.7-13.6-9.9l-7.9 6.1C6.4 42.6 14.6 48 24 48z"/></svg>
       Google 계정으로 로그인
     </button>
-    <p class="mut" style="margin-top:18px;font-size:12px">회사 구글 계정으로만 로그인할 수 있습니다.</p>
+    <p class="mut" style="margin-top:14px;font-size:12px">회사 구글 계정으로 로그인하세요.</p>
+    <div style="display:flex;align-items:center;gap:10px;margin:18px 0 6px"><div style="flex:1;height:1px;background:var(--line)"></div><span class="mut" style="font-size:11px">또는 관리자 로그인</span><div style="flex:1;height:1px;background:var(--line)"></div></div>
+    <input id="liEmail" placeholder="아이디 또는 이메일" style="margin-top:8px" autocomplete="username" onkeydown="if(event.key==='Enter')signInPw()">
+    <input id="liPw" type="password" placeholder="비밀번호" style="margin-top:8px" autocomplete="current-password" onkeydown="if(event.key==='Enter')signInPw()">
+    <button class="btn" style="width:100%;margin-top:10px;padding:12px" onclick="signInPw()">로그인</button>
   </div>
 </div>
 
@@ -203,6 +207,14 @@ function closeModal(){$('#modalRoot').innerHTML='';}
 async function signIn(){
   const {error} = await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});
   if(error) err(error);
+}
+async function signInPw(){
+  let email=($('#liEmail').value||'').trim(); const password=$('#liPw').value||'';
+  if(!email||!password) return toast('아이디·비밀번호를 입력하세요',true);
+  if(!email.includes('@')) email=email+'@adage-erp.com';
+  const {error}=await sb.auth.signInWithPassword({email,password});
+  if(error){ toast('로그인 실패: 아이디/비밀번호 확인',true); return; }
+  boot();
 }
 async function signOut(){ await sb.auth.signOut(); location.reload(); }
 
@@ -442,10 +454,14 @@ async function viewLeave(){
   v.appendChild(bar);
 
   const p=el(`<div class="panel"><h3>내 휴가 신청 내역</h3></div>`);
-  const t=el(`<table><thead><tr><th>유형</th><th>기간</th><th>일수</th><th>사유</th><th>상태</th></tr></thead><tbody></tbody></table>`);
+  const t=el(`<table><thead><tr><th>유형</th><th>기간</th><th>일수</th><th>사유</th><th>상태</th><th></th></tr></thead><tbody></tbody></table>`);
   const tb=t.querySelector('tbody');
-  (mine||[]).forEach(r=>tb.appendChild(el(`<tr><td>${LTYPE[r.type]}</td><td>${r.start_date} ~ ${r.end_date}</td><td>${r.days}</td><td>${esc(r.reason)||'-'}</td><td>${chip(ASTATUS,r.status)}</td></tr>`)));
-  if(!(mine||[]).length) tb.innerHTML=`<tr><td colspan="5" class="mut">신청 내역이 없습니다.</td></tr>`;
+  (mine||[]).forEach(r=>{
+    const tr=el(`<tr><td>${LTYPE[r.type]}</td><td>${r.start_date} ~ ${r.end_date}</td><td>${r.days}</td><td>${esc(r.reason)||'-'}</td><td>${chip(ASTATUS,r.status)}</td><td></td></tr>`);
+    if(r.status==='pending'){ const c=el(`<button class="btn ghost sm">취소</button>`); c.onclick=()=>cancelLeave(r.id); tr.lastChild.appendChild(c); }
+    tb.appendChild(tr);
+  });
+  if(!(mine||[]).length) tb.innerHTML=`<tr><td colspan="6" class="mut">신청 내역이 없습니다.</td></tr>`;
   p.appendChild(t); v.appendChild(p);
 
   if(isMgr()){
@@ -489,6 +505,11 @@ async function decideLeave(id,status){
   const {error}=await sb.from('leaves').update({status,approver_id:ME.id}).eq('id',id);
   if(error)return err(error); toast(status==='approved'?'승인 완료':'반려 완료'); viewLeave();
 }
+async function cancelLeave(id){
+  if(!confirm('휴가 신청을 취소할까요?')) return;
+  const {error}=await sb.from('leaves').delete().eq('id',id);
+  if(error)return err(error); toast('취소 완료'); viewLeave();
+}
 
 // ===================== PROJECT =====================
 async function viewProject(){
@@ -519,6 +540,7 @@ function projectForm(){
     <label class="f">유형</label><select id="pt">${Object.entries(PTYPE).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
     <label class="f">예상 금액(원)</label><input id="pa" type="number" value="0">
     <label class="f">시작일</label><input id="ps" type="date" value="${todayStr()}">
+    <label class="f">설명 (선택)</label><textarea id="pd" placeholder="프로젝트 개요"></textarea>
     <div class="row" style="margin-top:18px;justify-content:flex-end">
       <button class="btn ghost" onclick="closeModal()">취소</button>
       <button class="btn" onclick="submitProject()">등록</button>
@@ -527,32 +549,54 @@ function projectForm(){
 async function submitProject(){
   const client_name=$('#pc').value.trim(), name=$('#pn').value.trim();
   if(!client_name||!name)return toast('고객사·프로젝트명 입력',true);
-  const {error}=await sb.from('projects').insert({client_name,name,type:$('#pt').value,expected_amount:Number($('#pa').value)||0,start_date:$('#ps').value,owner_id:ME.id});
+  const {error}=await sb.from('projects').insert({client_name,name,type:$('#pt').value,expected_amount:Number($('#pa').value)||0,start_date:$('#ps').value||null,description:$('#pd').value||null,owner_id:ME.id});
   if(error)return err(error); closeModal(); toast('프로젝트 등록 완료'); viewProject();
 }
 async function projectDetail(id){
   const {data:pr}=await sb.from('projects').select('*').eq('id',id).single();
   const {data:asg}=await sb.from('assignments').select('*,profiles(full_name,department)').eq('project_id',id);
-  const rows=(asg||[]).map(a=>`<tr><td>${esc(a.profiles?.full_name)}</td><td>${DEPT[a.profiles?.department]||'-'}</td><td>${a.allocation_pct}%</td><td>${esc(a.role_in_project)||'-'}</td></tr>`).join('')||`<tr><td colspan="4" class="mut">투입 인력 없음</td></tr>`;
+  const canEdit = isMgr()||pr.owner_id===ME.id;
+  // 수동 상태 변경(계약/파기는 결재로만): planning, plan_approved, in_progress, completed
+  const manualStates=['planning','plan_approved','in_progress','completed'];
+  const stateOpts=manualStates.map(s=>`<option value="${s}" ${pr.status===s?'selected':''}>${PSTATUS[s]}</option>`).join('')
+    + (['contracted','canceled'].includes(pr.status)?`<option value="${pr.status}" selected>${PSTATUS[pr.status]}</option>`:'');
+  const rows=(asg||[]).map(a=>`<tr><td>${esc(a.profiles?.full_name)}</td><td>${DEPT[a.profiles?.department]||'-'}</td><td>${a.allocation_pct}%</td><td>${esc(a.role_in_project)||'-'}</td><td>${isMgr()?`<button class="btn bad sm" onclick="removeAssign('${a.id}','${id}')">해제</button>`:''}</td></tr>`).join('')||`<tr><td colspan="5" class="mut">투입 인력 없음</td></tr>`;
   modal(`<button class="x" onclick="closeModal()">×</button><h3>${esc(pr.name)}</h3>
     <p class="mut">${esc(pr.client_name)} · ${PTYPE[pr.type]} · ${chip(PSTATUS,pr.status)}</p>
     ${isAdmin()?`<p>예상 ${won(pr.expected_amount)} / 계약 ${won(pr.contract_amount)}</p>`:''}
-    <label class="f">진행률 (${pr.progress}%)</label>
-    <input type="range" min="0" max="100" value="${pr.progress}" id="prog" ${isMgr()||pr.owner_id===ME.id?'':'disabled'} oninput="document.getElementById('progv').textContent=this.value+'%'">
-    <div class="spread"><span class="mut" id="progv">${pr.progress}%</span>${isMgr()||pr.owner_id===ME.id?`<button class="btn sm" onclick="saveProgress('${id}')">진행률 저장</button>`:''}</div>
+    ${pr.start_date||pr.end_date?`<p class="mut" style="font-size:12px">기간: ${pr.start_date||'-'} ~ ${pr.end_date||'미정'}</p>`:''}
+    ${pr.description?`<p style="font-size:13px;white-space:pre-wrap">${esc(pr.description)}</p>`:''}
+    ${canEdit?`<label class="f">상태</label><select id="pst">${stateOpts}</select>`:''}
+    <label class="f">진행률 (<span id="progv">${pr.progress}%</span>)</label>
+    <input type="range" min="0" max="100" value="${pr.progress}" id="prog" ${canEdit?'':'disabled'} oninput="document.getElementById('progv').textContent=this.value+'%'">
+    <label class="f">종료(예정)일</label><input type="date" id="pend" value="${pr.end_date||''}" ${canEdit?'':'disabled'}>
+    ${canEdit?`<div class="row" style="margin-top:10px;justify-content:flex-end"><button class="btn sm" onclick="saveProjectEdit('${id}')">변경사항 저장</button></div>`:''}
     <h3 style="margin-top:20px">투입 인력</h3>
-    <table><thead><tr><th>이름</th><th>부서</th><th>투입율</th><th>역할</th></tr></thead><tbody>${rows}</tbody></table>
+    <table><thead><tr><th>이름</th><th>부서</th><th>투입율</th><th>역할</th><th></th></tr></thead><tbody>${rows}</tbody></table>
     ${isMgr()?`<div style="margin-top:14px"><button class="btn ghost sm" onclick="assignForm('${id}')">+ 인력 배정</button></div>`:''}
-    ${isMgr()?`<div class="row" style="margin-top:18px;flex-wrap:wrap">
-      <button class="btn warn sm" onclick="approvalFor('planning','${id}',${pr.expected_amount})">기획 승인 상신</button>
-      <button class="btn ok sm" onclick="approvalFor('contract','${id}',${pr.expected_amount})">계약(선계약금) 상신</button>
-      <button class="btn bad sm" onclick="approvalFor('cancel','${id}',0)">파기 상신</button>
-    </div>`:''}`);
+    ${isMgr()?`<h3 style="margin-top:20px">전자결재 상신</h3>
+    <div class="row" style="flex-wrap:wrap">
+      <button class="btn warn sm" onclick="approvalFor('planning','${id}',${pr.expected_amount})">기획 승인</button>
+      <button class="btn ok sm" onclick="approvalFor('contract','${id}',${pr.expected_amount})">계약(선계약금)</button>
+      <button class="btn bad sm" onclick="approvalFor('cancel','${id}',0)">파기</button>
+    </div>`:''}
+    ${isAdmin()?`<div style="margin-top:22px;border-top:1px solid var(--line);padding-top:14px"><button class="btn bad sm" onclick="deleteProject('${id}')">프로젝트 삭제</button> <span class="mut" style="font-size:11px">관련 결재·매출·인력배정도 함께 삭제됩니다.</span></div>`:''}`);
 }
-async function saveProgress(id){
-  const p=Number($('#prog').value);
-  const {error}=await sb.from('projects').update({progress:p}).eq('id',id);
-  if(error)return err(error); toast('진행률 저장'); closeModal(); viewProject();
+async function saveProjectEdit(id){
+  const upd={progress:Number($('#prog').value), end_date:$('#pend').value||null};
+  const stEl=$('#pst'); if(stEl) upd.status=stEl.value;
+  const {error}=await sb.from('projects').update(upd).eq('id',id);
+  if(error)return err(error); toast('저장 완료'); closeModal(); viewProject();
+}
+async function removeAssign(aid,pid){
+  if(!confirm('이 인력 배정을 해제할까요?')) return;
+  const {error}=await sb.from('assignments').delete().eq('id',aid);
+  if(error)return err(error); toast('배정 해제'); projectDetail(pid);
+}
+async function deleteProject(id){
+  if(!confirm('프로젝트를 삭제하면 관련 결재·매출·인력배정이 모두 삭제됩니다. 진행할까요?')) return;
+  const {error}=await sb.from('projects').delete().eq('id',id);
+  if(error)return err(error); toast('프로젝트 삭제'); closeModal(); viewProject();
 }
 async function assignForm(pid){
   const {data:people}=await sb.from('profiles').select('id,full_name,department').eq('status','active');
@@ -589,17 +633,19 @@ async function viewApproval(){
   }
 }
 function apprTable(rows,actions){
-  const t=el(`<table><thead><tr><th>종류</th><th>대상 프로젝트</th>${actions?'<th>상신자</th>':''}<th>금액</th><th>상태</th>${actions?'<th></th>':''}</tr></thead><tbody></tbody></table>`);
+  const t=el(`<table><thead><tr><th>종류</th><th>대상 프로젝트</th>${actions?'<th>상신자</th>':''}<th>금액</th><th>상태</th><th></th></tr></thead><tbody></tbody></table>`);
   const tb=t.querySelector('tbody');
   (rows||[]).forEach(r=>{
     const tr=el(`<tr><td><span class="chip c-${r.type==='cancel'?'canceled':r.type==='contract'?'in_progress':'plan_approved'}">${ATYPE[r.type]}</span></td>
       <td>${esc(r.projects?.name)||'-'}<div class="mut" style="font-size:11px">${esc(r.projects?.client_name)||''}</div></td>
       ${actions?`<td>${esc(r.profiles?.full_name)||'-'}</td>`:''}
-      <td>${won_m(r.amount)}</td><td>${chip(ASTATUS,r.status)}</td>${actions?'<td class="row"></td>':''}</tr>`);
+      <td>${won_m(r.amount)}</td><td>${chip(ASTATUS,r.status)}</td><td class="row"></td></tr>`);
     if(actions){
       const ok=el(`<button class="btn ok sm">승인</button>`); const no=el(`<button class="btn bad sm">반려</button>`);
       ok.onclick=()=>decideApproval(r.id,'approved',r.type); no.onclick=()=>decideApproval(r.id,'rejected');
       tr.lastChild.appendChild(ok); tr.lastChild.appendChild(no);
+    } else if(r.status==='pending'){
+      const c=el(`<button class="btn ghost sm">취소</button>`); c.onclick=()=>cancelApproval(r.id); tr.lastChild.appendChild(c);
     }
     tb.appendChild(tr);
   });
@@ -624,6 +670,11 @@ async function submitApproval(type,projectId){
     title:$('#apt').value, amount:Number($('#apa').value)||0, note:$('#apn').value
   });
   if(error)return err(error); closeModal(); toast('결재 상신 완료'); go('approval');
+}
+async function cancelApproval(id){
+  if(!confirm('상신한 결재를 취소(삭제)할까요?')) return;
+  const {error}=await sb.from('approvals').delete().eq('id',id);
+  if(error)return err(error); toast('결재 취소'); viewApproval();
 }
 async function decideApproval(id,status,type){
   if(status==='approved' && (type==='contract'||type==='cancel')){
