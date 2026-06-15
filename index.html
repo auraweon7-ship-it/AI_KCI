@@ -9709,6 +9709,12 @@ function onGoogleSignIn(response) {
     sub: payload.sub,
   };
   localStorage.setItem('aikci_user', JSON.stringify(currentUser));
+  // DB에 사용자 등록/업데이트
+  fetch('/api/user/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(currentUser)
+  }).catch(e => console.warn('DB login sync failed:', e));
   updateLoginUI();
   loadUserProfile();
 }
@@ -9725,26 +9731,62 @@ function saveUserProfile() {
     apiKey: document.getElementById('claudeApiKeyInput').value.trim(),
   };
   localStorage.setItem('aikci_profile_' + currentUser.sub, JSON.stringify(profile));
-  alert('프로필이 저장되었습니다. 다시 로그인해도 자동으로 불러옵니다.');
+  // DB 저장
+  fetch('/api/user/profile', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sub: currentUser.sub, ...profile })
+  }).then(r => r.json()).then(d => {
+    alert(d.db === false
+      ? '프로필이 로컬에 저장되었습니다. (DB 미연결)'
+      : '프로필이 저장되었습니다. 다시 로그인해도 자동으로 불러옵니다.');
+  }).catch(() => {
+    alert('프로필이 로컬에 저장되었습니다.');
+  });
 }
 
 function loadUserProfile() {
   if (!currentUser) return;
+  // DB에서 먼저 로드 시도, 실패 시 localStorage 폴백
+  fetch('/api/user/profile?sub=' + encodeURIComponent(currentUser.sub))
+    .then(r => r.json())
+    .then(d => {
+      const p = d.profile;
+      if (p) {
+        applyProfile({
+          name: p.name, univ: p.univ, major: p.major,
+          keywords: p.keywords, stage: p.stage, interest: p.interest,
+          apiKey: p.api_key
+        });
+        localStorage.setItem('aikci_profile_' + currentUser.sub, JSON.stringify({
+          name: p.name, univ: p.univ, major: p.major,
+          keywords: p.keywords, stage: p.stage, interest: p.interest,
+          apiKey: p.api_key
+        }));
+        return;
+      }
+      applyProfileFromLocal();
+    })
+    .catch(() => applyProfileFromLocal());
+}
+function applyProfileFromLocal() {
+  if (!currentUser) return;
   const saved = localStorage.getItem('aikci_profile_' + currentUser.sub);
   if (!saved) return;
-  try {
-    const p = JSON.parse(saved);
-    if (p.name) document.getElementById('userName').value = p.name;
-    if (p.univ) document.getElementById('userUniv').value = p.univ;
-    if (p.major) document.getElementById('userMajor').value = p.major;
-    if (p.keywords) document.getElementById('userKeywords').value = p.keywords;
-    if (p.stage) document.getElementById('userStage').value = p.stage;
-    if (p.interest) document.getElementById('userInterest').value = p.interest;
-    if (p.apiKey) {
-      document.getElementById('claudeApiKeyInput').value = p.apiKey;
-      CLAUDE_CONFIG.API_KEY = p.apiKey;
-    }
-  } catch(e) { /* ignore corrupt data */ }
+  try { applyProfile(JSON.parse(saved)); } catch(e) {}
+}
+function applyProfile(p) {
+  if (!p) return;
+  if (p.name) document.getElementById('userName').value = p.name;
+  if (p.univ) document.getElementById('userUniv').value = p.univ;
+  if (p.major) document.getElementById('userMajor').value = p.major;
+  if (p.keywords) document.getElementById('userKeywords').value = p.keywords;
+  if (p.stage) document.getElementById('userStage').value = p.stage;
+  if (p.interest) document.getElementById('userInterest').value = p.interest;
+  if (p.apiKey) {
+    document.getElementById('claudeApiKeyInput').value = p.apiKey;
+    CLAUDE_CONFIG.API_KEY = p.apiKey;
+  }
 }
 
 function handleLogout() {
@@ -9898,13 +9940,44 @@ function saveSelectedToHistory() {
   const merged = [...existing, ...newItems];
   localStorage.setItem(key, JSON.stringify(merged));
 
+  // DB 동기화
+  if (currentUser && newItems.length > 0) {
+    fetch('/api/user/history', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sub: currentUser.sub, items: newItems })
+    }).catch(e => console.warn('DB history save failed:', e));
+  }
+
   loadSavedHistory();
   renderRhResults();
 }
 
 function loadSavedHistory() {
+  if (currentUser) {
+    fetch('/api/user/history?sub=' + encodeURIComponent(currentUser.sub))
+      .then(r => r.json())
+      .then(d => {
+        if (d.history && d.history.length > 0) {
+          // DB 데이터로 localStorage 동기화
+          const key = `aikci_history_${currentUser.sub}`;
+          localStorage.setItem(key, JSON.stringify(d.history));
+          renderSavedHistory(d.history);
+        } else {
+          renderSavedHistoryFromLocal();
+        }
+      })
+      .catch(() => renderSavedHistoryFromLocal());
+  } else {
+    renderSavedHistoryFromLocal();
+  }
+}
+function renderSavedHistoryFromLocal() {
   const key = currentUser ? `aikci_history_${currentUser.sub}` : 'aikci_history_guest';
   const data = JSON.parse(localStorage.getItem(key) || '[]');
+  renderSavedHistory(data);
+}
+function renderSavedHistory(data) {
   const listEl = document.getElementById('rhSavedList');
   const totalEl = document.getElementById('rhSavedTotal');
 
@@ -9929,8 +10002,14 @@ function loadSavedHistory() {
 function removeHistoryItem(idx) {
   const key = currentUser ? `aikci_history_${currentUser.sub}` : 'aikci_history_guest';
   const data = JSON.parse(localStorage.getItem(key) || '[]');
-  data.splice(idx, 1);
+  const removed = data.splice(idx, 1)[0];
   localStorage.setItem(key, JSON.stringify(data));
+  // DB에서도 삭제
+  if (currentUser && removed && removed.id) {
+    fetch('/api/user/history?sub=' + encodeURIComponent(currentUser.sub) + '&articleId=' + encodeURIComponent(removed.id), {
+      method: 'DELETE'
+    }).catch(e => console.warn('DB history delete failed:', e));
+  }
   loadSavedHistory();
   if (document.getElementById('rhResultsArea').style.display !== 'none') {
     renderRhResults();
