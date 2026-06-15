@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>A&D AGE ERP</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
+    --txt:#e6e9ef; --mut:#8b93a5; --brand:#4f7cff; --brand2:#6c8cff;
+    --ok:#27c093; --warn:#f5a623; --bad:#ef5350; --chip:#252a35;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Pretendard',-apple-system,'Segoe UI',Roboto,'Malgun Gothic',sans-serif;
+    background:var(--bg);color:var(--txt);font-size:14px}
+  a{color:inherit}
+  button{font-family:inherit;cursor:pointer}
+  .hide{display:none!important}
+  .mut{color:var(--mut)}
+  .row{display:flex;gap:12px;align-items:center}
+  .spread{display:flex;justify-content:space-between;align-items:center}
+  .grid{display:grid;gap:16px}
+
+  /* ===== Login ===== */
+  #login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+  .login-card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:40px;max-width:400px;width:100%;text-align:center}
+  .logo{font-size:26px;font-weight:800;letter-spacing:-.5px}
+  .logo span{color:var(--brand2)}
+  .gbtn{margin-top:24px;width:100%;padding:13px;border-radius:10px;border:1px solid var(--line);
+    background:#fff;color:#222;font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center;gap:10px}
+  .gbtn:hover{background:#f1f1f1}
+
+  /* ===== App layout ===== */
+  #app{display:flex;min-height:100vh}
+  .side{width:230px;background:var(--panel);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .side .logo{font-size:20px;padding:6px 8px 18px}
+  .nav{display:flex;flex-direction:column;gap:4px;flex:1}
+  .nav button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;color:var(--mut);padding:11px 12px;border-radius:9px;font-size:14px;font-weight:500}
+  .nav button .ic{width:20px;text-align:center}
+  .nav button:hover{background:var(--panel2);color:var(--txt)}
+  .nav button.active{background:var(--brand);color:#fff}
+  .me{border-top:1px solid var(--line);padding-top:14px;font-size:13px}
+  .me .av{width:34px;height:34px;border-radius:50%;background:var(--chip);display:flex;align-items:center;justify-content:center;font-weight:700;overflow:hidden}
+  .me .av img{width:100%;height:100%;object-fit:cover}
+  .logout{margin-top:10px;width:100%;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--mut)}
+  .logout:hover{color:var(--bad);border-color:var(--bad)}
+
+  .main{flex:1;padding:26px 30px;max-width:1200px}
+  h1.page{font-size:22px;margin:0 0 4px}
+  .sub{color:var(--mut);margin-bottom:22px}
+
+  /* ===== Components ===== */
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px}
+  .card .k{color:var(--mut);font-size:13px}
+  .card .v{font-size:26px;font-weight:800;margin-top:6px}
+  .card .v.sm{font-size:20px}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:16px}
+  .panel h3{margin:0 0 14px;font-size:15px}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600;font-size:12px}
+  tr:last-child td{border-bottom:none}
+  .chip{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+  .c-planning{background:#33373f;color:#cfd6e4}
+  .c-plan_approved{background:#2a3a5a;color:#9fc2ff}
+  .c-contracted,.c-in_progress{background:#163a30;color:#5fe0b6}
+  .c-completed{background:#26323a;color:#7fb6d6}
+  .c-canceled{background:#3a2326;color:#ff9a9a}
+  .c-pending{background:#3a3320;color:#f5cd7a}
+  .c-approved{background:#163a30;color:#5fe0b6}
+  .c-rejected{background:#3a2326;color:#ff9a9a}
+
+  input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+    padding:10px 12px;border-radius:9px;font-size:14px;font-family:inherit}
+  textarea{resize:vertical;min-height:70px}
+  label.f{display:block;font-size:12px;color:var(--mut);margin:12px 0 5px}
+  .btn{background:var(--brand);color:#fff;border:none;padding:10px 16px;border-radius:9px;font-weight:600;font-size:14px}
+  .btn:hover{background:var(--brand2)}
+  .btn.ghost{background:var(--panel2);border:1px solid var(--line);color:var(--txt)}
+  .btn.ok{background:var(--ok)} .btn.bad{background:var(--bad)} .btn.warn{background:var(--warn);color:#1a1a1a}
+  .btn.sm{padding:6px 11px;font-size:12px}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+
+  /* modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+  .modal .box{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:24px;max-width:480px;width:100%;max-height:90vh;overflow:auto}
+  .modal h3{margin:0 0 4px}
+  .modal .x{float:right;background:none;border:none;color:var(--mut);font-size:20px}
+
+  /* toast */
+  #toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);
+    padding:12px 20px;border-radius:10px;z-index:99;opacity:0;transition:.3s;pointer-events:none}
+  #toast.show{opacity:1}
+  #toast.err{border-color:var(--bad);color:#ffb4b4}
+
+  .pending-box{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
+  .att-big{display:flex;gap:14px;flex-wrap:wrap}
+  .att-big .btn{flex:1;min-width:140px;padding:22px;font-size:16px}
+  @media(max-width:820px){
+    #app{flex-direction:column}
+    .side{width:100%;height:auto;position:relative;flex-direction:column}
+    .nav{flex-direction:row;flex-wrap:wrap}
+    .main{padding:18px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="login">
+  <div class="login-card">
+    <div class="logo">A&amp;D <span>AGE</span> ERP</div>
+    <p class="mut" style="margin-top:8px">사내 통합 경영 시스템</p>
+    <button class="gbtn" onclick="signIn()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.8-6.8C35.6 2.4 30.2 0 24 0 14.6 0 6.4 5.4 2.5 13.3l7.9 6.1C12.3 13.2 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.1 24.6c0-1.6-.1-3.1-.4-4.6H24v9.1h12.4c-.5 2.9-2.1 5.4-4.6 7l7.1 5.5c4.2-3.9 6.6-9.6 6.6-16z"/><path fill="#FBBC05" d="M10.4 28.6c-.5-1.5-.8-3-.8-4.6s.3-3.1.8-4.6l-7.9-6.1C.9 16.5 0 20.1 0 24s.9 7.5 2.5 10.7l7.9-6.1z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.1-5.5c-2 1.3-4.5 2.1-8.8 2.1-6.3 0-11.7-3.7-13.6-9.9l-7.9 6.1C6.4 42.6 14.6 48 24 48z"/></svg>
+      Google 계정으로 로그인
+    </button>
+    <p class="mut" style="margin-top:18px;font-size:12px">회사 구글 계정으로만 로그인할 수 있습니다.</p>
+  </div>
+</div>
+
+<!-- ========== PENDING ========== -->
+<div id="pending" class="pending-box hide">
+  <div class="login-card">
+    <div class="logo">승인 대기중</div>
+    <p class="mut" style="margin-top:12px">계정이 등록되었습니다.<br>관리자 승인 후 이용할 수 있습니다.</p>
+    <p id="pendingEmail" class="mut" style="margin-top:10px;font-size:12px"></p>
+    <button class="logout" style="max-width:200px;margin:20px auto 0" onclick="signOut()">로그아웃</button>
+  </div>
+</div>
+
+<!-- ========== APP ========== -->
+<div id="app" class="hide">
+  <aside class="side">
+    <div class="logo">A&amp;D <span>AGE</span></div>
+    <nav class="nav" id="nav"></nav>
+    <div class="me">
+      <div class="row">
+        <div class="av" id="meAv"></div>
+        <div style="overflow:hidden">
+          <div id="meName" style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+          <div class="mut" id="meRole" style="font-size:11px"></div>
+        </div>
+      </div>
+      <button class="logout" onclick="signOut()">로그아웃</button>
+    </div>
+  </aside>
+  <main class="main" id="view"></main>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toast"></div>
+
+<script>
+// ===================== CONFIG =====================
+const SUPABASE_URL = 'https://kaupqakpfnxheegykxfg.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_STP03xYbUg16ziET8eQ1PQ_z24abwDJ';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const DEPT = {ceo:'대표',planning_marketing:'기획/마케팅',webapp_dev:'웹앱개발',webplatform_dev:'웹플랫폼개발',design_content:'디자인/콘텐츠',operation:'운영'};
+const ROLE = {admin:'관리자',manager:'중간관리자',member:'사용자'};
+const PSTATUS = {planning:'기획',plan_approved:'기획승인',contracted:'계약',in_progress:'개발진행',completed:'완료',canceled:'파기'};
+const PTYPE = {webapp:'웹앱',webplatform:'웹플랫폼',etc:'기타'};
+const LTYPE = {annual:'연차',half_am:'오전반차',half_pm:'오후반차',sick:'병가',special:'경조'};
+const ATYPE = {planning:'프로젝트 기획 승인',contract:'선계약금 승인(계약)',cancel:'프로젝트 파기 승인'};
+const ASTATUS = {draft:'작성중',pending:'대기',approved:'승인',rejected:'반려'};
+
+let ME = null;          // my profile
+let CURRENT = 'dash';
+
+// ===================== HELPERS =====================
+const $ = s => document.querySelector(s);
+const el = (h)=>{const d=document.createElement('div');d.innerHTML=h.trim();return d.firstChild};
+const won = n => (Number(n)||0).toLocaleString('ko-KR')+'원';
+const won_m = n => { n=Number(n)||0; return n>=1e8 ? (n/1e8).toFixed(1).replace(/\.0$/,'')+'억' : n>=1e4 ? Math.round(n/1e4)+'만' : n+''; };
+const fmtDate = d => d ? new Date(d).toLocaleDateString('ko-KR',{month:'2-digit',day:'2-digit'}) : '-';
+const fmtTime = d => d ? new Date(d).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}) : '-';
+const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const chip = (map,k) => `<span class="chip c-${k}">${map[k]||k}</span>`;
+function toast(msg,err){const t=$('#toast');t.textContent=msg;t.className='show'+(err?' err':'');setTimeout(()=>t.className='',2600);}
+function err(e){console.error(e);toast((e&&e.message)||'오류가 발생했습니다',true);}
+const isMgr = ()=> ME && (ME.role==='admin'||ME.role==='manager');
+const isAdmin = ()=> ME && ME.role==='admin';
+
+function modal(html){
+  const root=$('#modalRoot');
+  root.innerHTML='';
+  const m=el(`<div class="modal"><div class="box">${html}</div></div>`);
+  m.addEventListener('click',e=>{if(e.target===m)root.innerHTML='';});
+  root.appendChild(m);
+}
+function closeModal(){$('#modalRoot').innerHTML='';}
+
+// ===================== AUTH =====================
+async function signIn(){
+  const {error} = await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname}});
+  if(error) err(error);
+}
+async function signOut(){ await sb.auth.signOut(); location.reload(); }
+
+async function boot(){
+  const {data:{session}} = await sb.auth.getSession();
+  if(!session){ show('login'); return; }
+  const {data:prof,error} = await sb.from('profiles').select('*').eq('id',session.user.id).single();
+  if(error){ err(error); show('login'); return; }
+  ME = prof;
+  if(ME.status!=='active'){
+    $('#pendingEmail').textContent = ME.email;
+    show('pending'); return;
+  }
+  renderShell();
+  show('app');
+  go(CURRENT);
+}
+function show(which){
+  for(const id of ['login','pending','app']) $('#'+id).classList.toggle('hide', id!==which);
+}
+sb.auth.onAuthStateChange((ev)=>{ if(ev==='SIGNED_IN') boot(); });
+
+// ===================== SHELL / NAV =====================
+function navItems(){
+  const items=[
+    ['dash','📊','대시보드'],
+    ['attend','🕒','근태'],
+    ['leave','🌴','휴가'],
+    ['project','📁','프로젝트'],
+    ['approval','✍️','전자결재'],
+  ];
+  if(isAdmin()){ items.push(['revenue','💰','매출']); items.push(['admin','⚙️','직원관리']); }
+  return items;
+}
+function renderShell(){
+  $('#meName').textContent = ME.full_name||ME.email;
+  $('#meRole').textContent = `${ROLE[ME.role]}${ME.department?' · '+DEPT[ME.department]:''}`;
+  const av=$('#meAv');
+  av.innerHTML = ME.avatar_url ? `<img src="${esc(ME.avatar_url)}">` : esc((ME.full_name||'?')[0]);
+  const nav=$('#nav'); nav.innerHTML='';
+  navItems().forEach(([k,ic,label])=>{
+    const b=el(`<button data-k="${k}"><span class="ic">${ic}</span>${label}</button>`);
+    b.onclick=()=>go(k);
+    nav.appendChild(b);
+  });
+}
+function go(k){
+  CURRENT=k;
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.k===k));
+  const v=$('#view'); v.innerHTML='<p class="mut">불러오는 중…</p>';
+  ({dash:viewDash,attend:viewAttend,leave:viewLeave,project:viewProject,approval:viewApproval,revenue:viewRevenue,admin:viewAdmin}[k])();
+}
+
+// ===================== DASHBOARD =====================
+async function viewDash(){
+  const v=$('#view');
+  const [proj, asg, att, appr] = await Promise.all([
+    sb.from('projects').select('*'),
+    sb.from('assignments').select('*'),
+    sb.from('attendance').select('*').eq('user_id',ME.id).eq('work_date',todayStr()).maybeSingle(),
+    sb.from('approvals').select('*').eq('status','pending'),
+  ]);
+  const projects = proj.data||[];
+  const active = projects.filter(p=>['plan_approved','contracted','in_progress'].includes(p.status));
+  const myToday = att.data;
+  let revTotal=0;
+  if(isAdmin()){
+    const r=await sb.from('revenue').select('amount');
+    revTotal=(r.data||[]).reduce((s,x)=>s+Number(x.amount),0);
+  }
+  const myAsg=(asg.data||[]).filter(a=>a.user_id===ME.id).length;
+
+  v.innerHTML='';
+  v.appendChild(el(`<div><h1 class="page">대시보드</h1><div class="sub">${esc(ME.full_name||'')} 님, 환영합니다 · ${todayStr()}</div></div>`));
+  const cards=el(`<div class="cards"></div>`);
+  const C=(k,val,sm)=>cards.appendChild(el(`<div class="card"><div class="k">${k}</div><div class="v ${sm?'sm':''}">${val}</div></div>`));
+  C('진행중 프로젝트', active.length);
+  C('전체 프로젝트', projects.length);
+  C('오늘 근무', myToday? (myToday.check_out?'퇴근완료':'근무중') : '미출근', true);
+  C('내 투입 프로젝트', myAsg);
+  if(isAdmin()) C('누적 매출', won_m(revTotal), true);
+  if(isMgr()) C('결재 대기', (appr.data||[]).length);
+  v.appendChild(cards);
+
+  // pipeline
+  const pipe=el(`<div class="panel"><h3>프로젝트 파이프라인</h3></div>`);
+  const order=['planning','plan_approved','contracted','in_progress','completed','canceled'];
+  const tbl=el(`<table><thead><tr><th>고객사</th><th>프로젝트</th><th>유형</th><th>상태</th><th>진행률</th>${isAdmin()?'<th>계약금</th>':''}</tr></thead><tbody></tbody></table>`);
+  const tb=tbl.querySelector('tbody');
+  projects.sort((a,b)=>order.indexOf(a.status)-order.indexOf(b.status));
+  if(!projects.length) tb.innerHTML=`<tr><td colspan="6" class="mut">프로젝트가 없습니다.</td></tr>`;
+  projects.slice(0,10).forEach(p=>{
+    tb.appendChild(el(`<tr><td>${esc(p.client_name)}</td><td>${esc(p.name)}</td><td>${PTYPE[p.type]}</td><td>${chip(PSTATUS,p.status)}</td><td>${p.progress}%</td>${isAdmin()?`<td>${won_m(p.contract_amount)}</td>`:''}</tr>`));
+  });
+  pipe.appendChild(tbl);
+  v.appendChild(pipe);
+}
+
+// ===================== ATTENDANCE =====================
+async function viewAttend(){
+  const v=$('#view');
+  const today=todayStr();
+  const {data:rec}=await sb.from('attendance').select('*').eq('user_id',ME.id).eq('work_date',today).maybeSingle();
+  const {data:hist}=await sb.from('attendance').select('*').eq('user_id',ME.id).order('work_date',{ascending:false}).limit(20);
+
+  v.innerHTML='';
+  v.appendChild(el(`<div><h1 class="page">근태</h1><div class="sub">오늘 ${today}</div></div>`));
+
+  const box=el(`<div class="panel"><h3>출퇴근 기록</h3></div>`);
+  const big=el(`<div class="att-big"></div>`);
+  const inBtn=el(`<button class="btn">🟢 출근하기</button>`);
+  const outBtn=el(`<button class="btn warn">🔴 퇴근하기</button>`);
+  inBtn.disabled = !!(rec&&rec.check_in);
+  outBtn.disabled = !(rec&&rec.check_in) || !!(rec&&rec.check_out);
+  inBtn.onclick=async()=>{
+    const now=new Date().toISOString();
+    const late = new Date().getHours()>=10;
+    const {error}=await sb.from('attendance').upsert({user_id:ME.id,work_date:today,check_in:now,status:late?'late':'normal'},{onConflict:'user_id,work_date'});
+    if(error)return err(error); toast('출근 기록 완료'); viewAttend();
+  };
+  outBtn.onclick=async()=>{
+    const {error}=await sb.from('attendance').update({check_out:new Date().toISOString()}).eq('user_id',ME.id).eq('work_date',today);
+    if(error)return err(error); toast('퇴근 기록 완료'); viewAttend();
+  };
+  big.appendChild(inBtn); big.appendChild(outBtn);
+  box.appendChild(big);
+  box.appendChild(el(`<p class="mut" style="margin-top:14px">오늘 출근: <b style="color:var(--txt)">${rec?fmtTime(rec.check_in):'-'}</b> · 퇴근: <b style="color:var(--txt)">${rec?fmtTime(rec.check_out):'-'}</b>${rec?' · '+chip({normal:'정상',late:'지각',early_leave:'조퇴',absent:'결근',remote:'재택'},rec.status):''}</p>`));
+  v.appendChild(box);
+
+  const h=el(`<div class="panel"><h3>최근 근태 (20건)</h3></div>`);
+  const t=el(`<table><thead><tr><th>날짜</th><th>출근</th><th>퇴근</th><th>근무시간</th><th>상태</th></tr></thead><tbody></tbody></table>`);
+  const tb=t.querySelector('tbody');
+  (hist||[]).forEach(r=>{
+    let dur='-';
+    if(r.check_in&&r.check_out){const ms=new Date(r.check_out)-new Date(r.check_in);dur=(ms/3.6e6).toFixed(1)+'h';}
+    tb.appendChild(el(`<tr><td>${r.work_date}</td><td>${fmtTime(r.check_in)}</td><td>${fmtTime(r.check_out)}</td><td>${dur}</td><td>${chip({normal:'정상',late:'지각',early_leave:'조퇴',absent:'결근',remote:'재택'},r.status)}</td></tr>`));
+  });
+  if(!(hist||[]).length) tb.innerHTML=`<tr><td colspan="5" class="mut">기록이 없습니다.</td></tr>`;
+  h.appendChild(t); v.appendChild(h);
+
+  // manager: team attendance today
+  if(isMgr()){
+    const {data:team}=await sb.from('attendance').select('*,profiles(full_name,department)').eq('work_date',today);
+    const m=el(`<div class="panel"><h3>오늘 전사 근태</h3></div>`);
+    const tt=el(`<table><thead><tr><th>이름</th><th>부서</th><th>출근</th><th>퇴근</th><th>상태</th></tr></thead><tbody></tbody></table>`);
+    const tbb=tt.querySelector('tbody');
+    (team||[]).forEach(r=>tbb.appendChild(el(`<tr><td>${esc(r.profiles?.full_name)}</td><td>${DEPT[r.profiles?.department]||'-'}</td><td>${fmtTime(r.check_in)}</td><td>${fmtTime(r.check_out)}</td><td>${chip({normal:'정상',late:'지각',early_leave:'조퇴',absent:'결근',remote:'재택'},r.status)}</td></tr>`)));
+    if(!(team||[]).length) tbb.innerHTML=`<tr><td colspan="5" class="mut">출근 기록 없음</td></tr>`;
+    m.appendChild(tt); v.appendChild(m);
+  }
+}
+
+// ===================== LEAVE =====================
+async function viewLeave(){
+  const v=$('#view');
+  const {data:mine}=await sb.from('leaves').select('*').eq('user_id',ME.id).order('created_at',{ascending:false});
+  v.innerHTML='';
+  v.appendChild(el(`<div><h1 class="page">휴가</h1><div class="sub">잔여 연차 <b style="color:var(--ok)">${(ME.annual_leave_total-ME.annual_leave_used).toFixed(1)}</b> / ${ME.annual_leave_total}일</div></div>`));
+
+  const bar=el(`<div class="toolbar"></div>`);
+  const newBtn=el(`<button class="btn">+ 휴가 신청</button>`); newBtn.onclick=leaveForm; bar.appendChild(newBtn);
+  v.appendChild(bar);
+
+  const p=el(`<div class="panel"><h3>내 휴가 신청 내역</h3></div>`);
+  const t=el(`<table><thead><tr><th>유형</th><th>기간</th><th>일수</th><th>사유</th><th>상태</th></tr></thead><tbody></tbody></table>`);
+  const tb=t.querySelector('tbody');
+  (mine||[]).forEach(r=>tb.appendChild(el(`<tr><td>${LTYPE[r.type]}</td><td>${r.start_date} ~ ${r.end_date}</td><td>${r.days}</td><td>${esc(r.reason)||'-'}</td><td>${chip(ASTATUS,r.status)}</td></tr>`)));
+  if(!(mine||[]).length) tb.innerHTML=`<tr><td colspan="5" class="mut">신청 내역이 없습니다.</td></tr>`;
+  p.appendChild(t); v.appendChild(p);
+
+  if(isMgr()){
+    const {data:pend}=await sb.from('leaves').select('*,profiles!leaves_user_id_fkey(full_name,department)').eq('status','pending').order('created_at');
+    const m=el(`<div class="panel"><h3>휴가 승인 대기</h3></div>`);
+    const tt=el(`<table><thead><tr><th>이름</th><th>유형</th><th>기간</th><th>일수</th><th>사유</th><th></th></tr></thead><tbody></tbody></table>`);
+    const tbb=tt.querySelector('tbody');
+    (pend||[]).filter(r=>r.user_id!==ME.id).forEach(r=>{
+      const tr=el(`<tr><td>${esc(r.profiles?.full_name)}</td><td>${LTYPE[r.type]}</td><td>${r.start_date}~${r.end_date}</td><td>${r.days}</td><td>${esc(r.reason)||'-'}</td><td class="row"></td></tr>`);
+      const ok=el(`<button class="btn ok sm">승인</button>`); const no=el(`<button class="btn bad sm">반려</button>`);
+      ok.onclick=()=>decideLeave(r.id,'approved'); no.onclick=()=>decideLeave(r.id,'rejected');
+      tr.lastChild.appendChild(ok); tr.lastChild.appendChild(no);
+      tbb.appendChild(tr);
+    });
+    if(!(pend||[]).filter(r=>r.user_id!==ME.id).length) tbb.innerHTML=`<tr><td colspan="6" class="mut">대기중인 휴가 신청이 없습니다.</td></tr>`;
+    m.appendChild(tt); v.appendChild(m);
+  }
+}
+function leaveForm(){
+  modal(`<button class="x" onclick="closeModal()">×</button><h3>휴가 신청</h3>
+    <label class="f">유형</label><select id="lt">${Object.entries(LTYPE).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
+    <label class="f">시작일</label><input type="date" id="ls" value="${todayStr()}">
+    <label class="f">종료일</label><input type="date" id="le" value="${todayStr()}">
+    <label class="f">사유</label><textarea id="lr" placeholder="사유 입력"></textarea>
+    <div class="row" style="margin-top:18px;justify-content:flex-end">
+      <button class="btn ghost" onclick="closeModal()">취소</button>
+      <button class="btn" onclick="submitLeave()">신청</button>
+    </div>`);
+}
+async function submitLeave(){
+  const type=$('#lt').value, s=$('#ls').value, e=$('#le').value, reason=$('#lr').value;
+  if(!s||!e)return toast('기간을 입력하세요',true);
+  let days;
+  if(type==='half_am'||type==='half_pm') days=0.5;
+  else days=Math.round((new Date(e)-new Date(s))/8.64e7)+1;
+  if(days<=0)return toast('종료일이 시작일보다 빠릅니다',true);
+  const {error}=await sb.from('leaves').insert({user_id:ME.id,type,start_date:s,end_date:e,days,reason});
+  if(error)return err(error); closeModal(); toast('휴가 신청 완료'); viewLeave();
+}
+async function decideLeave(id,status){
+  const {error}=await sb.from('leaves').update({status,approver_id:ME.id}).eq('id',id);
+  if(error)return err(error); toast(status==='approved'?'승인 완료':'반려 완료'); viewLeave();
+}
+
+// ===================== PROJECT =====================
+async function viewProject(){
+  const v=$('#view');
+  const {data:projects}=await sb.from('projects').select('*').order('created_at',{ascending:false});
+  v.innerHTML='';
+  v.appendChild(el(`<div><h1 class="page">프로젝트</h1><div class="sub">수주 · 진행 · 인력 투입 현황</div></div>`));
+  const bar=el(`<div class="toolbar"></div>`);
+  if(isMgr()){ const b=el(`<button class="btn">+ 프로젝트 등록</button>`); b.onclick=projectForm; bar.appendChild(b); }
+  v.appendChild(bar);
+
+  const p=el(`<div class="panel"><h3>프로젝트 목록</h3></div>`);
+  const t=el(`<table><thead><tr><th>고객사</th><th>프로젝트</th><th>유형</th><th>상태</th><th>진행률</th>${isAdmin()?'<th>예상/계약</th>':''}<th></th></tr></thead><tbody></tbody></table>`);
+  const tb=t.querySelector('tbody');
+  (projects||[]).forEach(pr=>{
+    const tr=el(`<tr><td>${esc(pr.client_name)}</td><td>${esc(pr.name)}</td><td>${PTYPE[pr.type]}</td><td>${chip(PSTATUS,pr.status)}</td><td>${pr.progress}%</td>${isAdmin()?`<td class="mut">${won_m(pr.expected_amount)} / ${won_m(pr.contract_amount)}</td>`:''}<td></td></tr>`);
+    const open=el(`<button class="btn ghost sm">상세</button>`); open.onclick=()=>projectDetail(pr.id);
+    tr.lastChild.appendChild(open);
+    tb.appendChild(tr);
+  });
+  if(!(projects||[]).length) tb.innerHTML=`<tr><td colspan="7" class="mut">프로젝트가 없습니다.</td></tr>`;
+  p.appendChild(t); v.appendChild(p);
+}
+function projectForm(){
+  modal(`<button class="x" onclick="closeModal()">×</button><h3>프로젝트 등록</h3>
+    <label class="f">고객사</label><input id="pc" placeholder="고객사명">
+    <label class="f">프로젝트명</label><input id="pn" placeholder="프로젝트명">
+    <label class="f">유형</label><select id="pt">${Object.entries(PTYPE).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
+    <label class="f">예상 금액(원)</label><input id="pa" type="number" value="0">
+    <label class="f">시작일</label><input id="ps" type="date" value="${todayStr()}">
+    <div class="row" style="margin-top:18px;justify-content:flex-end">
+      <button class="btn ghost" onclick="closeModal()">취소</button>
+      <button class="btn" onclick="submitProject()">등록</button>
+    </div>`);
+}
+async function submitProject(){
+  const client_name=$('#pc').value.trim(), name=$('#pn').value.trim();
+  if(!client_name||!name)return toast('고객사·프로젝트명 입력',true);
+  const {error}=await sb.from('projects').insert({client_name,name,type:$('#pt').value,expected_amount:Number($('#pa').value)||0,start_date:$('#ps').value,owner_id:ME.id});
+  if(error)return err(error); closeModal(); toast('프로젝트 등록 완료'); viewProject();
+}
+async function projectDetail(id){
+  const {data:pr}=await sb.from('projects').select('*').eq('id',id).single();
+  const {data:asg}=await sb.from('assignments').select('*,profiles(full_name,department)').eq('project_id',id);
+  const rows=(asg||[]).map(a=>`<tr><td>${esc(a.profiles?.full_name)}</td><td>${DEPT[a.profiles?.department]||'-'}</td><td>${a.allocation_pct}%</td><td>${esc(a.role_in_project)||'-'}</td></tr>`).join('')||`<tr><td colspan="4" class="mut">투입 인력 없음</td></tr>`;
+  modal(`<button class="x" onclick="closeModal()">×</button><h3>${esc(pr.name)}</h3>
+    <p class="mut">${esc(pr.client_name)} · ${PTYPE[pr.type]} · ${chip(PSTATUS,pr.status)}</p>
+    ${isAdmin()?`<p>예상 ${won(pr.expected_amount)} / 계약 ${won(pr.contract_amount)}</p>`:''}
+    <label class="f">진행률 (${pr.progress}%)</label>
+    <input type="range" min="0" max="100" value="${pr.progress}" id="prog" ${isMgr()||pr.owner_id===ME.id?'':'disabled'} oninput="document.getElementById('progv').textContent=this.value+'%'">
+    <div class="spread"><span class="mut" id="progv">${pr.progress}%</span>${isMgr()||pr.owner_id===ME.id?`<button class="btn sm" onclick="saveProgress('${id}')">진행률 저장</button>`:''}</div>
+    <h3 style="margin-top:20px">투입 인력</h3>
+    <table><thead><tr><th>이름</th><th>부서</th><th>투입율</th><th>역할</th></tr></thead><tbody>${rows}</tbody></table>
+    ${isMgr()?`<div style="margin-top:14px"><button class="btn ghost sm" onclick="assignForm('${id}')">+ 인력 배정</button></div>`:''}
+    ${isMgr()?`<div class="row" style="margin-top:18px;flex-wrap:wrap">
+      <button class="btn warn sm" onclick="approvalFor('planning','${id}',${pr.expected_amount})">기획 승인 상신</button>
+      <button class="btn ok sm" onclick="approvalFor('contract','${id}',${pr.expected_amount})">계약(선계약금) 상신</button>
+      <button class="btn bad sm" onclick="approvalFor('cancel','${id}',0)">파기 상신</button>
+    </div>`:''}`);
+}
+async function saveProgress(id){
+  const p=Number($('#prog').value);
+  const {error}=await sb.from('projects').update({progress:p}).eq('id',id);
+  if(error)return err(error); toast('진행률 저장'); closeModal(); viewProject();
+}
+async function assignForm(pid){
+  const {data:people}=await sb.from('profiles').select('id,full_name,department').eq('status','active');
+  modal(`<button class="x" onclick="closeModal()">×</button><h3>인력 배정</h3>
+    <label class="f">직원</label><select id="au">${(people||[]).map(p=>`<option value="${p.id}">${esc(p.full_name)} (${DEPT[p.department]||'-'})</option>`).join('')}</select>
+    <label class="f">투입율(%)</label><input id="ap" type="number" value="100" min="0" max="100">
+    <label class="f">역할</label><input id="ar" placeholder="예: 프론트엔드">
+    <div class="row" style="margin-top:18px;justify-content:flex-end">
+      <button class="btn ghost" onclick="closeModal()">취소</button>
+      <button class="btn" onclick="submitAssign('${pid}')">배정</button>
+    </div>`);
+}
+async function submitAssign(pid){
+  const {error}=await sb.from('assignments').upsert({project_id:pid,user_id:$('#au').value,allocation_pct:Number($('#ap').value)||100,role_in_project:$('#ar').value},{onConflict:'project_id,user_id'});
+  if(error)return err(error); toast('배정 완료'); projectDetail(pid);
+}
+
+// ===================== APPROVAL (전자결재) =====================
+async function viewApproval(){
+  const v=$('#view');
+  v.innerHTML='';
+  v.appendChild(el(`<div><h1 class="page">전자결재</h1><div class="sub">기획 승인 · 선계약금 승인 · 파기 승인</div></div>`));
+
+  const {data:mine}=await sb.from('approvals').select('*,projects(name,client_name)').eq('requester_id',ME.id).order('created_at',{ascending:false});
+  const p1=el(`<div class="panel"><h3>내 상신 내역</h3></div>`);
+  p1.appendChild(apprTable(mine,false));
+  v.appendChild(p1);
+
+  if(isMgr()){
+    const {data:inbox}=await sb.from('approvals').select('*,projects(name,client_name),profiles!approvals_requester_id_fkey(full_name)').eq('status','pending').order('created_at');
+    const p2=el(`<div class="panel"><h3>결재함 (승인 대기)</h3></div>`);
+    p2.appendChild(apprTable(inbox,true));
+    v.appendChild(p2);
+  }
+}
+function apprTable(rows,actions){
+  const t=el(`<table><thead><tr><th>종류</th><th>대상 프로젝트</th>${actions?'<th>상신자</th>':''}<th>금액</th><th>상태</th>${actions?'<th></th>':''}</tr></thead><tbody></tbody></table>`);
+  const tb=t.querySelector('tbody');
+  (rows||[]).forEach(r=>{
+    const tr=el(`<tr><td><span class="chip c-${r.type==='cancel'?'canceled':r.type==='contract'?'in_progress':'plan_approved'}">${ATYPE[r.type]}</span></td>
+      <td>${esc(r.projects?.name)||'-'}<div class="mut" style="font-size:11px">${esc(r.projects?.client_name)||''}</div></td>
+      ${actions?`<td>${esc(r.profiles?.full_name)||'-'}</td>`:''}
+      <td>${won_m(r.amount)}</td><td>${chip(ASTATUS,r.status)}</td>${actions?'<td class="row"></td>':''}</tr>`);
+    if(actions){
+      const ok=el(`<button class="btn ok sm">승인</button>`); const no=el(`<button class="btn bad sm">반려</button>`);
+      ok.onclick=()=>decideApproval(r.id,'approved',r.type); no.onclick=()=>decideApproval(r.id,'rejected');
+      tr.lastChild.appendChild(ok); tr.lastChild.appendChild(no);
+    }
+    tb.appendChild(tr);
+  });
+  if(!(rows||[]).length) tb.innerHTML=`<tr><td colspan="6" class="mut">내역이 없습니다.</td></tr>`;
+  return t;
+}
+function approvalFor(type,projectId,amount){
+  closeModal();
+  modal(`<button class="x" onclick="closeModal()">×</button><h3>${ATYPE[type]} 상신</h3>
+    <label class="f">제목</label><input id="apt" value="${ATYPE[type]}">
+    <label class="f">금액(원) ${type==='contract'?'· 선계약금':''}</label><input id="apa" type="number" value="${amount||0}" ${type==='cancel'?'disabled':''}>
+    <label class="f">사유 / 메모</label><textarea id="apn" placeholder="결재 사유"></textarea>
+    <p class="mut" style="font-size:12px;margin-top:8px">${type==='contract'?'승인 시 매출이 자동 반영되고 프로젝트가 개발진행 상태로 전환됩니다.':type==='cancel'?'승인 시 프로젝트가 파기되고 관련 매출이 취소됩니다.':'승인 시 프로젝트가 기획승인 상태가 됩니다.'}</p>
+    <div class="row" style="margin-top:16px;justify-content:flex-end">
+      <button class="btn ghost" onclick="closeModal()">취소</button>
+      <button class="btn" onclick="submitApproval('${type}','${projectId}')">상신</button>
+    </div>`);
+}
+async function submitApproval(type,projectId){
+  const {error}=await sb.from('approvals').insert({
+    type, project_id:projectId, requester_id:ME.id,
+    title:$('#apt').value, amount:Number($('#apa').value)||0, note:$('#apn').value
+  });
+  if(error)return err(error); closeModal(); toast('결재 상신 완료'); go('approval');
+}
+async function decideApproval(id,status,type){
+  if(status==='approved' && (type==='contract'||type==='cancel')){
+    if(!confirm(type==='contract'?'승인하면 매출이 자동 반영됩니다. 진행할까요?':'승인하면 프로젝트가 파기됩니다. 진행할까요?')) return;
+  }
+  const {error}=await sb.from('approvals').update({status,decided_by:ME.id}).eq('id',id);
+  if(error)return err(error); toast(status==='approved'?'승인 처리 완료':'반려 처리'); viewApproval();
+}
+
+// ===================== REVENUE (admin) =====================
+async function viewRevenue(){
+  const v=$('#view');
+  const {data:rev}=await sb.from('revenue').select('*,projects(name,client_name)').order('recognized_date',{ascending:false});
+  const total=(rev||[]).reduce((s,r)=>s+Number(r.amount),0);
+  const byMonth={};
+  (rev||[]).forEach(r=>{const m=(r.recognized_date||'').slice(0,7);byMonth[m]=(byMonth[m]||0)+Number(r.amount);});
+  v.innerHTML='';
+  v.appendChild(el(`<div><h1 class="page">매출</h1><div class="sub">계약 승인 시 자동 집계 · 관리자 전용</div></div>`));
+  const cards=el(`<div class="cards"></div>`);
+  cards.appendChild(el(`<div class="card"><div class="k">누적 매출</div><div class="v">${won_m(total)}</div></div>`));
+  const months=Object.keys(byMonth).sort().reverse();
+  if(months[0]) cards.appendChild(el(`<div class="card"><div class="k">${months[0]} 매출</div><div class="v sm">${won_m(byMonth[months[0]])}</div></div>`));
+  cards.appendChild(el(`<div class="card"><div class="k">매출 건수</div><div class="v">${(rev||[]).length}</div></div>`));
+  v.appendChild(cards);
+
+  const p=el(`<div class="panel"><h3>매출 상세</h3></div>`);
+  const t=el(`<table><thead><tr><th>인식일</th><th>프로젝트</th><th>고객사</th><th>구분</th><th style="text-align:right">금액</th></tr></thead><tbody></tbody></table>`);
+  const tb=t.querySelector('tbody');
+  (rev||[]).forEach(r=>tb.appendChild(el(`<tr><td>${r.recognized_date}</td><td>${esc(r.projects?.name)}</td><td class="mut">${esc(r.projects?.client_name)}</td><td>${({advance:'선계약금',balance:'잔금',etc:'조정'})[r.type]}</td><td style="text-align:right;${r.amount<0?'color:var(--bad)':''}">${won(r.amount)}</td></tr>`)));
+  if(!(rev||[]).length) tb.innerHTML=`<tr><td colspan="5" class="mut">매출 내역이 없습니다. (계약 결재 승인 시 자동 생성)</td></tr>`;
+  p.appendChild(t); v.appendChild(p);
+}
+
+// ===================== ADMIN (직원관리) =====================
+async function viewAdmin(){
+  const v=$('#view');
+  const {data:people}=await sb.from('profiles').select('*').order('created_at');
+  v.innerHTML='';
+  v.appendChild(el(`<div><h1 class="page">직원관리</h1><div class="sub">계정 승인 · 권한 · 부서 관리</div></div>`));
+  const pend=(people||[]).filter(p=>p.status==='pending');
+  if(pend.length){
+    const pp=el(`<div class="panel"><h3>승인 대기 (${pend.length})</h3></div>`);
+    const t=el(`<table><thead><tr><th>이메일</th><th>이름</th><th></th></tr></thead><tbody></tbody></table>`);
+    const tb=t.querySelector('tbody');
+    pend.forEach(p=>{
+      const tr=el(`<tr><td>${esc(p.email)}</td><td>${esc(p.full_name)}</td><td></td></tr>`);
+      const b=el(`<button class="btn ok sm">승인</button>`); b.onclick=()=>{ closeModal(); empForm(p.id,true); };
+      tr.lastChild.appendChild(b); tb.appendChild(tr);
+    });
+    pp.appendChild(t); v.appendChild(pp);
+  }
+  const p=el(`<div class="panel"><h3>전체 직원 (${(people||[]).length})</h3></div>`);
+  const t=el(`<table><thead><tr><th>이름</th><th>이메일</th><th>부서</th><th>권한</th><th>상태</th><th>연차</th><th></th></tr></thead><tbody></tbody></table>`);
+  const tb=t.querySelector('tbody');
+  (people||[]).forEach(p=>{
+    const tr=el(`<tr><td>${esc(p.full_name)}</td><td class="mut">${esc(p.email)}</td><td>${DEPT[p.department]||'-'}</td><td>${ROLE[p.role]}</td><td>${chip({active:'approved',pending:'pending',inactive:'rejected'},p.status==='active'?'approved':p.status==='pending'?'pending':'rejected')}</td><td>${(p.annual_leave_total-p.annual_leave_used).toFixed(1)}/${p.annual_leave_total}</td><td></td></tr>`);
+    const b=el(`<button class="btn ghost sm">수정</button>`); b.onclick=()=>empForm(p.id,false);
+    tr.lastChild.appendChild(b); tb.appendChild(tr);
+  });
+  p.appendChild(t); v.appendChild(p);
+}
+async function empForm(id,activate){
+  const {data:p}=await sb.from('profiles').select('*').eq('id',id).single();
+  modal(`<button class="x" onclick="closeModal()">×</button><h3>직원 정보</h3><p class="mut">${esc(p.email)}</p>
+    <label class="f">이름</label><input id="ef" value="${esc(p.full_name)||''}">
+    <label class="f">부서</label><select id="ed">${Object.entries(DEPT).map(([k,v])=>`<option value="${k}" ${p.department===k?'selected':''}>${v}</option>`).join('')}</select>
+    <label class="f">권한</label><select id="er">${Object.entries(ROLE).map(([k,v])=>`<option value="${k}" ${p.role===k?'selected':''}>${v}</option>`).join('')}</select>
+    <label class="f">상태</label><select id="es">${Object.entries({active:'활성',pending:'대기',inactive:'비활성'}).map(([k,v])=>`<option value="${k}" ${p.status===k||(activate&&k==='active')?'selected':''}>${v}</option>`).join('')}</select>
+    <label class="f">연차 총량(일)</label><input id="el" type="number" step="0.5" value="${p.annual_leave_total}">
+    <div class="row" style="margin-top:18px;justify-content:flex-end">
+      <button class="btn ghost" onclick="closeModal()">취소</button>
+      <button class="btn" onclick="saveEmp('${id}')">저장</button>
+    </div>`);
+}
+async function saveEmp(id){
+  const {error}=await sb.from('profiles').update({
+    full_name:$('#ef').value, department:$('#ed').value, role:$('#er').value,
+    status:$('#es').value, annual_leave_total:Number($('#el').value)||0
+  }).eq('id',id);
+  if(error)return err(error); closeModal(); toast('저장 완료'); viewAdmin();
+}
+
+// ===================== START =====================
+boot();
+</script>
+</body>
+</html>
