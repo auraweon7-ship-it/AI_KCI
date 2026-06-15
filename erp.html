@@ -549,14 +549,19 @@ function projectForm(){
     <label class="f">설명 (선택)</label><textarea id="pd" placeholder="프로젝트 개요"></textarea>
     <div class="row" style="margin-top:18px;justify-content:flex-end">
       <button class="btn ghost" onclick="closeModal()">취소</button>
-      <button class="btn" onclick="submitProject()">등록</button>
+      <button class="btn" id="pSubmit" onclick="submitProject()">등록</button>
     </div>`);
 }
+let _busy=false;
 async function submitProject(){
+  if(_busy) return;
   const client_name=$('#pc').value.trim(), name=$('#pn').value.trim();
   if(!client_name||!name)return toast('고객사·프로젝트명 입력',true);
-  const {error}=await sb.from('projects').insert({client_name,name,type:$('#pt').value,expected_amount:Number($('#pa').value)||0,start_date:$('#ps').value||null,description:$('#pd').value||null,owner_id:ME.id});
-  if(error)return err(error); closeModal(); toast('프로젝트 등록 완료'); viewProject();
+  _busy=true; const btn=$('#pSubmit'); if(btn){btn.disabled=true;btn.textContent='등록 중…';}
+  const {data,error}=await sb.from('projects').insert({client_name,name,type:$('#pt').value,expected_amount:Number($('#pa').value)||0,start_date:$('#ps').value||null,description:$('#pd').value||null,owner_id:ME.id}).select();
+  _busy=false;
+  if(error){ if(btn){btn.disabled=false;btn.textContent='등록';} return err(error); }
+  closeModal(); toast('프로젝트 등록 완료'); go('project');
 }
 async function projectDetail(id){
   const {data:pr}=await sb.from('projects').select('*').eq('id',id).single();
