@@ -69,10 +69,28 @@ ERP 앱(`erp.html`)을 실제로 쓰려면 **구글 로그인 1회 설정**이 �
 
 ---
 
-## 7. 배포 (선택)
-- `erp.html` 단일 파일 → 어디든 정적 호스팅 가능
-- 추천: Vercel / Netlify / Railway 정적, 또는 회사 도메인 서브경로
-- 배포 후 주소를 **3번 Redirect URLs**에 반드시 추가
+## 7. 배포
+`erp.html` 단일 파일 → 어디든 정적 호스팅 가능. 셋 중 택1.
+
+### (A) Netlify Drop — 가장 빠름 (30초, 무료, HTTPS 자동)
+1. https://app.netlify.com/drop 접속
+2. `erp.html` **파일을 드래그&드롭** (또는 erp.html 든 폴더)
+3. 즉시 `https://랜덤이름.netlify.app` 주소 생성
+4. 사이트 설정에서 도메인 이름 변경 가능 (예: `and-age-erp.netlify.app`)
+5. ⚠️ 파일명이 `index.html`이 아니면 주소는 `.../erp.html`. 헷갈리면 erp.html → index.html 로 복사 후 드롭
+
+### (B) Vercel
+1. https://vercel.com → New Project → 이 GitHub 저장소 import
+2. Output 디렉토리 루트, 빌드 없음(Other) → Deploy
+3. `erp.html` 경로로 접근
+
+### (C) Railway (기존 사용중)
+- 정적 서빙 서비스 추가 또는 youtube-agent처럼 express에 정적 라우트 추가
+
+### 배포 후 필수
+배포 주소를 **3번 URL Configuration**의 Site URL + Redirect URLs에 추가
+(예: `https://and-age-erp.netlify.app`, `https://and-age-erp.netlify.app/erp.html`)
+안 하면 구글 로그인 후 리디렉션이 막힌다.
 
 ---
 

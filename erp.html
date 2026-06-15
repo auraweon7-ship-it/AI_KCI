@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>A&D AGE ERP</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
 <style>
   :root{
     --bg:#0f1115; --panel:#171a21; --panel2:#1e222b; --line:#2a2f3a;
@@ -40,6 +41,8 @@
   .nav button .ic{width:20px;text-align:center}
   .nav button:hover{background:var(--panel2);color:var(--txt)}
   .nav button.active{background:var(--brand);color:#fff}
+  .nav button .badge{margin-left:auto;background:var(--bad);color:#fff;font-size:10px;font-weight:800;border-radius:10px;padding:1px 7px;min-width:18px;text-align:center}
+  .nav button.active .badge{background:#fff;color:var(--brand)}
   .me{border-top:1px solid var(--line);padding-top:14px;font-size:13px}
   .me .av{width:34px;height:34px;border-radius:50%;background:var(--chip);display:flex;align-items:center;justify-content:center;font-weight:700;overflow:hidden}
   .me .av img{width:100%;height:100%;object-fit:cover}
@@ -240,16 +243,31 @@ function renderShell(){
   av.innerHTML = ME.avatar_url ? `<img src="${esc(ME.avatar_url)}">` : esc((ME.full_name||'?')[0]);
   const nav=$('#nav'); nav.innerHTML='';
   navItems().forEach(([k,ic,label])=>{
-    const b=el(`<button data-k="${k}"><span class="ic">${ic}</span>${label}</button>`);
+    const b=el(`<button data-k="${k}"><span class="ic">${ic}</span>${label}<span class="badge hide" data-badge="${k}">0</span></button>`);
     b.onclick=()=>go(k);
     nav.appendChild(b);
   });
+  refreshBadges();
+}
+async function refreshBadges(){
+  if(!isMgr()) return;
+  const [ap,lv]=await Promise.all([
+    sb.from('approvals').select('id',{count:'exact',head:true}).eq('status','pending'),
+    sb.from('leaves').select('id',{count:'exact',head:true}).eq('status','pending').neq('user_id',ME.id),
+  ]);
+  setBadge('approval', ap.count||0);
+  setBadge('leave', lv.count||0);
+}
+function setBadge(k,n){
+  const b=document.querySelector(`[data-badge="${k}"]`);
+  if(!b)return; b.textContent=n; b.classList.toggle('hide', !n);
 }
 function go(k){
   CURRENT=k;
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.k===k));
   const v=$('#view'); v.innerHTML='<p class="mut">불러오는 중…</p>';
   ({dash:viewDash,attend:viewAttend,leave:viewLeave,project:viewProject,approval:viewApproval,revenue:viewRevenue,admin:viewAdmin}[k])();
+  refreshBadges();
 }
 
 // ===================== DASHBOARD =====================
@@ -295,6 +313,66 @@ async function viewDash(){
   });
   pipe.appendChild(tbl);
   v.appendChild(pipe);
+
+  // ===== 차트 + 인력 투입 현황 =====
+  const charts=el(`<div class="grid" style="grid-template-columns:1fr 1fr;margin-top:16px"></div>`);
+  // 프로젝트 상태 분포 (전원)
+  const c1=el(`<div class="panel"><h3>프로젝트 상태 분포</h3><canvas id="chStatus" height="200"></canvas></div>`);
+  charts.appendChild(c1);
+  // 관리자: 월별 매출 추이 / 그 외: 빈자리
+  let revData=null;
+  if(isAdmin()){
+    const r=await sb.from('revenue').select('amount,recognized_date');
+    revData=r.data||[];
+    charts.appendChild(el(`<div class="panel"><h3>월별 매출 추이</h3><canvas id="chRev" height="200"></canvas></div>`));
+  }
+  v.appendChild(charts);
+
+  // 인력 투입 현황 (관리자/중간관리자)
+  if(isMgr()){
+    const {data:people}=await sb.from('profiles').select('id,full_name,department').eq('status','active');
+    const activeIds=new Set(active.map(p=>p.id));
+    const load={};
+    (asg.data||[]).forEach(a=>{ if(activeIds.has(a.project_id)) load[a.user_id]=(load[a.user_id]||0)+a.allocation_pct; });
+    const wp=el(`<div class="panel"><h3>인력 투입 현황 (진행중 프로젝트 기준)</h3></div>`);
+    const wt=el(`<table><thead><tr><th>이름</th><th>부서</th><th>투입율 합계</th><th>상태</th></tr></thead><tbody></tbody></table>`);
+    const wtb=wt.querySelector('tbody');
+    (people||[]).sort((a,b)=>(load[b.id]||0)-(load[a.id]||0)).forEach(p=>{
+      const pct=load[p.id]||0;
+      const st = pct>100?'<span class="chip c-canceled">과부하</span>':pct===0?'<span class="chip c-planning">여유</span>':pct>=80?'<span class="chip c-in_progress">적정</span>':'<span class="chip c-plan_approved">보통</span>';
+      const bar=`<div style="background:var(--panel2);border-radius:6px;overflow:hidden;height:8px;margin-top:4px"><div style="width:${Math.min(pct,100)}%;height:100%;background:${pct>100?'var(--bad)':'var(--brand)'}"></div></div>`;
+      wtb.appendChild(el(`<tr><td>${esc(p.full_name)}</td><td>${DEPT[p.department]||'-'}</td><td>${pct}%${bar}</td><td>${st}</td></tr>`));
+    });
+    if(!(people||[]).length) wtb.innerHTML=`<tr><td colspan="4" class="mut">직원 없음</td></tr>`;
+    wp.appendChild(wt); v.appendChild(wp);
+  }
+
+  // draw charts
+  drawCharts(projects, revData);
+}
+let _charts=[];
+function drawCharts(projects, revData){
+  _charts.forEach(c=>{try{c.destroy()}catch(e){}}); _charts=[];
+  const txt='#8b93a5';
+  // 상태 분포 doughnut
+  const cnt={};
+  projects.forEach(p=>cnt[p.status]=(cnt[p.status]||0)+1);
+  const sEl=document.getElementById('chStatus');
+  if(sEl) _charts.push(new Chart(sEl,{type:'doughnut',
+    data:{labels:Object.keys(cnt).map(k=>PSTATUS[k]),datasets:[{data:Object.values(cnt),
+      backgroundColor:['#33373f','#4f7cff','#27c093','#27c093','#7fb6d6','#ef5350']}]},
+    options:{plugins:{legend:{labels:{color:txt}}}}}));
+  // 매출 추이 line
+  const rEl=document.getElementById('chRev');
+  if(rEl&&revData){
+    const bm={};
+    revData.forEach(r=>{const m=(r.recognized_date||'').slice(0,7);bm[m]=(bm[m]||0)+Number(r.amount);});
+    const months=Object.keys(bm).sort();
+    _charts.push(new Chart(rEl,{type:'line',
+      data:{labels:months,datasets:[{label:'매출(원)',data:months.map(m=>bm[m]),
+        borderColor:'#4f7cff',backgroundColor:'rgba(79,124,255,.15)',fill:true,tension:.3}]},
+      options:{plugins:{legend:{display:false}},scales:{x:{ticks:{color:txt}},y:{ticks:{color:txt,callback:v=>won_m(v)}}}}}));
+  }
 }
 
 // ===================== ATTENDANCE =====================
