@@ -4,15 +4,10 @@
   "description": "AI KCI - AI 기반 학술연구 지원 대시보드",
   "main": "server.js",
   "scripts": {
-    "start": "cd youtube-agent && node server.js",
-    "build": "cd youtube-agent && npm install",
-    "postinstall": "cd youtube-agent && npm install"
+    "start": "node server.js"
   },
   "engines": {
     "node": ">=18.0.0"
   },
-  "dependencies": {
-    "pptxgenjs": "^4.0.1",
-    "puppeteer": "^25.0.4"
-  }
+  "dependencies": {}
 }
