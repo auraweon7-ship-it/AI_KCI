@@ -719,7 +719,10 @@ async function viewAdmin(){
   const v=$('#view');
   const {data:people}=await sb.from('profiles').select('*').order('created_at');
   v.innerHTML='';
-  v.appendChild(el(`<div><h1 class="page">직원관리</h1><div class="sub">계정 승인 · 권한 · 부서 관리</div></div>`));
+  v.appendChild(el(`<div><h1 class="page">직원관리</h1><div class="sub">계정 추가 · 승인 · 권한 · 부서 · 비밀번호 관리</div></div>`));
+  const bar=el(`<div class="toolbar"></div>`);
+  const addBtn=el(`<button class="btn">+ 직원 추가</button>`); addBtn.onclick=addEmpForm; bar.appendChild(addBtn);
+  v.appendChild(bar);
   const pend=(people||[]).filter(p=>p.status==='pending');
   if(pend.length){
     const pp=el(`<div class="panel"><h3>승인 대기 (${pend.length})</h3></div>`);
@@ -736,9 +739,12 @@ async function viewAdmin(){
   const t=el(`<table><thead><tr><th>이름</th><th>이메일</th><th>부서</th><th>권한</th><th>상태</th><th>연차</th><th></th></tr></thead><tbody></tbody></table>`);
   const tb=t.querySelector('tbody');
   (people||[]).forEach(p=>{
-    const tr=el(`<tr><td>${esc(p.full_name)}</td><td class="mut">${esc(p.email)}</td><td>${DEPT[p.department]||'-'}</td><td>${ROLE[p.role]}</td><td>${chip({active:'approved',pending:'pending',inactive:'rejected'},p.status==='active'?'approved':p.status==='pending'?'pending':'rejected')}</td><td>${(p.annual_leave_total-p.annual_leave_used).toFixed(1)}/${p.annual_leave_total}</td><td></td></tr>`);
+    const tr=el(`<tr><td>${esc(p.full_name)}</td><td class="mut">${esc(p.email)}</td><td>${DEPT[p.department]||'-'}</td><td>${ROLE[p.role]}</td><td>${chip({active:'approved',pending:'pending',inactive:'rejected'},p.status==='active'?'approved':p.status==='pending'?'pending':'rejected')}</td><td>${(p.annual_leave_total-p.annual_leave_used).toFixed(1)}/${p.annual_leave_total}</td><td class="row" style="flex-wrap:wrap;gap:5px"></td></tr>`);
     const b=el(`<button class="btn ghost sm">수정</button>`); b.onclick=()=>empForm(p.id,false);
-    tr.lastChild.appendChild(b); tb.appendChild(tr);
+    const pw=el(`<button class="btn ghost sm">비번</button>`); pw.onclick=()=>setPwForm(p.id,p.full_name);
+    tr.lastChild.appendChild(b); tr.lastChild.appendChild(pw);
+    if(p.id!==ME.id){ const d=el(`<button class="btn bad sm">삭제</button>`); d.onclick=()=>deleteEmp(p.id,p.full_name); tr.lastChild.appendChild(d); }
+    tb.appendChild(tr);
   });
   p.appendChild(t); v.appendChild(p);
 }
@@ -761,6 +767,48 @@ async function saveEmp(id){
     status:$('#es').value, annual_leave_total:Number($('#el').value)||0
   }).eq('id',id);
   if(error)return err(error); closeModal(); toast('저장 완료'); viewAdmin();
+}
+function addEmpForm(){
+  modal(`<button class="x" onclick="closeModal()">×</button><h3>직원 추가</h3>
+    <p class="mut" style="font-size:12px">이메일/비밀번호로 로그인하는 계정을 즉시 생성합니다.</p>
+    <label class="f">이름</label><input id="ne" placeholder="직원 이름">
+    <label class="f">이메일(아이디)</label><input id="nm" placeholder="name@회사도메인 또는 아이디">
+    <label class="f">초기 비밀번호 (6자 이상)</label><input id="np" placeholder="초기 비밀번호">
+    <label class="f">부서</label><select id="nd"><option value="">미지정</option>${Object.entries(DEPT).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
+    <label class="f">권한</label><select id="nr">${Object.entries(ROLE).map(([k,v])=>`<option value="${k}" ${k==='member'?'selected':''}>${v}</option>`).join('')}</select>
+    <div class="row" style="margin-top:18px;justify-content:flex-end">
+      <button class="btn ghost" onclick="closeModal()">취소</button>
+      <button class="btn" onclick="submitAddEmp()">추가</button>
+    </div>`);
+}
+async function submitAddEmp(){
+  const name=$('#ne').value.trim(); let email=$('#nm').value.trim(); const pw=$('#np').value;
+  if(!name||!email||!pw) return toast('이름·이메일·비밀번호 입력',true);
+  if(pw.length<6) return toast('비밀번호는 6자 이상',true);
+  if(!email.includes('@')) email=email+'@adage-erp.com';
+  const {error}=await sb.rpc('admin_create_user',{p_email:email,p_password:pw,p_full_name:name,p_department:$('#nd').value||null,p_role:$('#nr').value});
+  if(error)return err(error); closeModal(); toast('직원 추가 완료 ('+email+')'); viewAdmin();
+}
+function setPwForm(id,name){
+  modal(`<button class="x" onclick="closeModal()">×</button><h3>비밀번호 설정</h3>
+    <p class="mut">${esc(name)}</p>
+    <label class="f">새 비밀번호 (6자 이상)</label><input id="sp" type="text" placeholder="새 비밀번호">
+    <p class="mut" style="font-size:12px;margin-top:6px">설정 시 이메일/비번 로그인이 활성화됩니다.</p>
+    <div class="row" style="margin-top:18px;justify-content:flex-end">
+      <button class="btn ghost" onclick="closeModal()">취소</button>
+      <button class="btn" onclick="submitSetPw('${id}')">설정</button>
+    </div>`);
+}
+async function submitSetPw(id){
+  const pw=$('#sp').value;
+  if(!pw||pw.length<6) return toast('비밀번호는 6자 이상',true);
+  const {error}=await sb.rpc('admin_set_password',{p_uid:id,p_password:pw});
+  if(error)return err(error); closeModal(); toast('비밀번호 설정 완료');
+}
+async function deleteEmp(id,name){
+  if(!confirm(`'${name}' 직원을 삭제할까요?\n로그인 계정이 완전히 제거됩니다. (담당 프로젝트·결재는 관리자에게 이관)`)) return;
+  const {error}=await sb.rpc('admin_delete_user',{p_uid:id});
+  if(error)return err(error); toast('직원 삭제 완료'); viewAdmin();
 }
 
 // ===================== 내 정보 수정 =====================
