@@ -102,7 +102,9 @@
   .pending-box{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px}
   .att-big{display:flex;gap:14px;flex-wrap:wrap}
   .att-big .btn{flex:1;min-width:140px;padding:22px;font-size:16px}
+  .cg{display:grid;gap:16px;grid-template-columns:1fr 1fr;margin-top:16px}
   @media(max-width:820px){
+    .cg{grid-template-columns:1fr}
     #app{flex-direction:column}
     .side{width:100%;height:auto;position:relative;flex-direction:column}
     .nav{flex-direction:row;flex-wrap:wrap}
@@ -218,19 +220,23 @@ async function signInPw(){
 }
 async function signOut(){ await sb.auth.signOut(); location.reload(); }
 
+let _booting=false;
 async function boot(){
-  const {data:{session}} = await sb.auth.getSession();
-  if(!session){ show('login'); return; }
-  const {data:prof,error} = await sb.from('profiles').select('*').eq('id',session.user.id).single();
-  if(error){ err(error); show('login'); return; }
-  ME = prof;
-  if(ME.status!=='active'){
-    $('#pendingEmail').textContent = ME.email;
-    show('pending'); return;
-  }
-  renderShell();
-  show('app');
-  go(CURRENT);
+  if(_booting) return; _booting=true;
+  try{
+    const {data:{session}} = await sb.auth.getSession();
+    if(!session){ show('login'); return; }
+    const {data:prof,error} = await sb.from('profiles').select('*').eq('id',session.user.id).single();
+    if(error){ err(error); show('login'); return; }
+    ME = prof;
+    if(ME.status!=='active'){
+      $('#pendingEmail').textContent = ME.email;
+      show('pending'); return;
+    }
+    renderShell();
+    show('app');
+    go(CURRENT);
+  } finally { _booting=false; }
 }
 function show(which){
   for(const id of ['login','pending','app']) $('#'+id).classList.toggle('hide', id!==which);
@@ -328,7 +334,7 @@ async function viewDash(){
   v.appendChild(pipe);
 
   // ===== 차트 + 인력 투입 현황 =====
-  const charts=el(`<div class="grid" style="grid-template-columns:1fr 1fr;margin-top:16px"></div>`);
+  const charts=el(`<div class="cg"></div>`);
   // 프로젝트 상태 분포 (전원)
   const c1=el(`<div class="panel"><h3>프로젝트 상태 분포</h3><canvas id="chStatus" height="200"></canvas></div>`);
   charts.appendChild(c1);
