@@ -204,6 +204,15 @@ function modal(html){
   root.appendChild(m);
 }
 function closeModal(){$('#modalRoot').innerHTML='';}
+function downloadCSV(filename, rows){
+  if(!rows||!rows.length) return toast('내보낼 데이터가 없습니다',true);
+  const cols=Object.keys(rows[0]);
+  const q=v=>`"${String(v==null?'':v).replace(/"/g,'""')}"`;
+  const csv=[cols.join(',')].concat(rows.map(r=>cols.map(c=>q(r[c])).join(','))).join('\r\n');
+  const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+}
 
 // ===================== AUTH =====================
 async function signIn(){
@@ -247,6 +256,7 @@ sb.auth.onAuthStateChange((ev)=>{ if(ev==='SIGNED_IN') boot(); });
 function navItems(){
   const items=[
     ['dash','📊','대시보드'],
+    ['notice','📢','공지사항'],
     ['attend','🕒','근태'],
     ['leave','🌴','휴가'],
     ['project','📁','프로젝트'],
@@ -285,8 +295,58 @@ function go(k){
   CURRENT=k;
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.k===k));
   const v=$('#view'); v.innerHTML='<p class="mut">불러오는 중…</p>';
-  ({dash:viewDash,attend:viewAttend,leave:viewLeave,project:viewProject,approval:viewApproval,revenue:viewRevenue,admin:viewAdmin}[k])();
+  ({dash:viewDash,notice:viewNotice,attend:viewAttend,leave:viewLeave,project:viewProject,approval:viewApproval,revenue:viewRevenue,admin:viewAdmin}[k])();
   refreshBadges();
+}
+
+// ===================== NOTICE (공지사항) =====================
+async function viewNotice(){
+  const v=$('#view');
+  const {data:rows}=await sb.from('notices').select('*,profiles(full_name)').order('pinned',{ascending:false}).order('created_at',{ascending:false});
+  v.innerHTML='';
+  v.appendChild(el(`<div><h1 class="page">공지사항</h1><div class="sub">전사 공지 · 안내</div></div>`));
+  if(isMgr()){
+    const bar=el(`<div class="toolbar"></div>`);
+    const b=el(`<button class="btn">+ 공지 작성</button>`); b.onclick=()=>noticeForm(); bar.appendChild(b);
+    v.appendChild(bar);
+  }
+  if(!(rows||[]).length){ v.appendChild(el(`<div class="panel mut">등록된 공지가 없습니다.</div>`)); return; }
+  (rows||[]).forEach(n=>{
+    const card=el(`<div class="panel"></div>`);
+    card.appendChild(el(`<div class="spread"><h3 style="margin:0">${n.pinned?'📌 ':''}${esc(n.title)}</h3><span class="mut" style="font-size:12px">${esc(n.profiles?.full_name)||''} · ${(n.created_at||'').slice(0,10)}</span></div>`));
+    if(n.body) card.appendChild(el(`<p style="white-space:pre-wrap;margin:10px 0 0;font-size:14px">${esc(n.body)}</p>`));
+    if(isMgr()){
+      const act=el(`<div class="row" style="margin-top:12px"></div>`);
+      const e=el(`<button class="btn ghost sm">수정</button>`); e.onclick=()=>noticeForm(n);
+      const d=el(`<button class="btn bad sm">삭제</button>`); d.onclick=()=>deleteNotice(n.id);
+      act.appendChild(e); act.appendChild(d); card.appendChild(act);
+    }
+    v.appendChild(card);
+  });
+}
+function noticeForm(n){
+  n=n||{};
+  modal(`<button class="x" onclick="closeModal()">×</button><h3>${n.id?'공지 수정':'공지 작성'}</h3>
+    <label class="f">제목</label><input id="ntitle" value="${esc(n.title)||''}">
+    <label class="f">내용</label><textarea id="nbody" style="min-height:140px">${esc(n.body)||''}</textarea>
+    <label class="f" style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="npin" style="width:auto" ${n.pinned?'checked':''}> 상단 고정</label>
+    <div class="row" style="margin-top:18px;justify-content:flex-end">
+      <button class="btn ghost" onclick="closeModal()">취소</button>
+      <button class="btn" onclick="submitNotice('${n.id||''}')">저장</button>
+    </div>`);
+}
+async function submitNotice(id){
+  const title=$('#ntitle').value.trim(); if(!title)return toast('제목을 입력하세요',true);
+  const payload={title, body:$('#nbody').value, pinned:$('#npin').checked};
+  let res;
+  if(id) res=await sb.from('notices').update(payload).eq('id',id);
+  else res=await sb.from('notices').insert({...payload, author_id:ME.id});
+  if(res.error)return err(res.error); closeModal(); toast('저장 완료'); viewNotice();
+}
+async function deleteNotice(id){
+  if(!confirm('공지를 삭제할까요?')) return;
+  const {error}=await sb.from('notices').delete().eq('id',id);
+  if(error)return err(error); toast('삭제 완료'); viewNotice();
 }
 
 // ===================== DASHBOARD =====================
@@ -310,6 +370,14 @@ async function viewDash(){
 
   v.innerHTML='';
   v.appendChild(el(`<div><h1 class="page">대시보드</h1><div class="sub">${esc(ME.full_name||'')} 님, 환영합니다 · ${todayStr()}</div></div>`));
+
+  // 최신 공지 배너
+  const {data:notice}=await sb.from('notices').select('title,created_at').order('pinned',{ascending:false}).order('created_at',{ascending:false}).limit(1).maybeSingle();
+  if(notice){
+    const ban=el(`<div class="panel" style="border-color:var(--brand);cursor:pointer;display:flex;align-items:center;gap:10px"><span>📢</span><b>${esc(notice.title)}</b><span class="mut" style="margin-left:auto;font-size:12px">${(notice.created_at||'').slice(0,10)} · 공지 보기 →</span></div>`);
+    ban.onclick=()=>go('notice'); v.appendChild(ban);
+  }
+
   const cards=el(`<div class="cards"></div>`);
   const C=(k,val,sm)=>cards.appendChild(el(`<div class="card"><div class="k">${k}</div><div class="v ${sm?'sm':''}">${val}</div></div>`));
   C('진행중 프로젝트', active.length);
@@ -425,6 +493,17 @@ async function viewAttend(){
   box.appendChild(el(`<p class="mut" style="margin-top:14px">오늘 출근: <b style="color:var(--txt)">${rec?fmtTime(rec.check_in):'-'}</b> · 퇴근: <b style="color:var(--txt)">${rec?fmtTime(rec.check_out):'-'}</b>${rec?' · '+chip({normal:'정상',late:'지각',early_leave:'조퇴',absent:'결근',remote:'재택'},rec.status):''}</p>`));
   v.appendChild(box);
 
+  // 이번 달 통계
+  const ym=today.slice(0,7);
+  const {data:mon}=await sb.from('attendance').select('*').eq('user_id',ME.id).gte('work_date',ym+'-01').lte('work_date',ym+'-31');
+  let totH=0, late=0, days=(mon||[]).length;
+  (mon||[]).forEach(r=>{ if(r.check_in&&r.check_out) totH+=(new Date(r.check_out)-new Date(r.check_in))/3.6e6; if(r.status==='late')late++; });
+  const sc=el(`<div class="cards" style="margin-top:16px"></div>`);
+  sc.appendChild(el(`<div class="card"><div class="k">${ym} 출근일수</div><div class="v">${days}일</div></div>`));
+  sc.appendChild(el(`<div class="card"><div class="k">총 근무시간</div><div class="v sm">${totH.toFixed(1)}h</div></div>`));
+  sc.appendChild(el(`<div class="card"><div class="k">지각</div><div class="v">${late}회</div></div>`));
+  v.appendChild(sc);
+
   const h=el(`<div class="panel"><h3>최근 근태 (20건)</h3></div>`);
   const t=el(`<table><thead><tr><th>날짜</th><th>출근</th><th>퇴근</th><th>근무시간</th><th>상태</th></tr></thead><tbody></tbody></table>`);
   const tb=t.querySelector('tbody');
@@ -484,6 +563,15 @@ async function viewLeave(){
     });
     if(!(pend||[]).filter(r=>r.user_id!==ME.id).length) tbb.innerHTML=`<tr><td colspan="6" class="mut">대기중인 휴가 신청이 없습니다.</td></tr>`;
     m.appendChild(tt); v.appendChild(m);
+
+    // 전사 휴가 현황 (승인된 예정 휴가)
+    const {data:appr}=await sb.from('leaves').select('*,profiles!leaves_user_id_fkey(full_name,department)').eq('status','approved').gte('end_date',todayStr()).order('start_date');
+    const cm=el(`<div class="panel"><h3>전사 휴가 현황 (예정)</h3></div>`);
+    const ct=el(`<table><thead><tr><th>이름</th><th>부서</th><th>유형</th><th>기간</th><th>일수</th></tr></thead><tbody></tbody></table>`);
+    const ctb=ct.querySelector('tbody');
+    (appr||[]).forEach(r=>ctb.appendChild(el(`<tr><td>${esc(r.profiles?.full_name)}</td><td>${DEPT[r.profiles?.department]||'-'}</td><td>${LTYPE[r.type]}</td><td>${r.start_date}~${r.end_date}</td><td>${r.days}</td></tr>`)));
+    if(!(appr||[]).length) ctb.innerHTML=`<tr><td colspan="5" class="mut">예정된 휴가가 없습니다.</td></tr>`;
+    cm.appendChild(ct); v.appendChild(cm);
   }
 }
 function leaveForm(){
@@ -523,20 +611,30 @@ async function viewProject(){
   const {data:projects}=await sb.from('projects').select('*').order('created_at',{ascending:false});
   v.innerHTML='';
   v.appendChild(el(`<div><h1 class="page">프로젝트</h1><div class="sub">수주 · 진행 · 인력 투입 현황</div></div>`));
+  const all=projects||[];
   const bar=el(`<div class="toolbar"></div>`);
   if(isMgr()){ const b=el(`<button class="btn">+ 프로젝트 등록</button>`); b.onclick=projectForm; bar.appendChild(b); }
+  const search=el(`<input placeholder="🔍 고객사·프로젝트명 검색" style="max-width:240px">`);
+  const fil=el(`<select style="max-width:150px"><option value="">전체 상태</option>${Object.entries(PSTATUS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>`);
+  bar.appendChild(search); bar.appendChild(fil);
+  if(isAdmin()){ const ex=el(`<button class="btn ghost">CSV 내보내기</button>`); ex.onclick=()=>downloadCSV('projects.csv',all.map(p=>({고객사:p.client_name,프로젝트:p.name,유형:PTYPE[p.type],상태:PSTATUS[p.status],진행률:p.progress+'%',예상금액:p.expected_amount,계약금액:p.contract_amount,시작일:p.start_date||'',종료일:p.end_date||''}))); bar.appendChild(ex); }
   v.appendChild(bar);
 
   const p=el(`<div class="panel"><h3>프로젝트 목록</h3></div>`);
   const t=el(`<table><thead><tr><th>고객사</th><th>프로젝트</th><th>유형</th><th>상태</th><th>진행률</th>${isAdmin()?'<th>예상/계약</th>':''}<th></th></tr></thead><tbody></tbody></table>`);
   const tb=t.querySelector('tbody');
-  (projects||[]).forEach(pr=>{
-    const tr=el(`<tr><td>${esc(pr.client_name)}</td><td>${esc(pr.name)}</td><td>${PTYPE[pr.type]}</td><td>${chip(PSTATUS,pr.status)}</td><td>${pr.progress}%</td>${isAdmin()?`<td class="mut">${won_m(pr.expected_amount)} / ${won_m(pr.contract_amount)}</td>`:''}<td></td></tr>`);
-    const open=el(`<button class="btn ghost sm">상세</button>`); open.onclick=()=>projectDetail(pr.id);
-    tr.lastChild.appendChild(open);
-    tb.appendChild(tr);
-  });
-  if(!(projects||[]).length) tb.innerHTML=`<tr><td colspan="7" class="mut">프로젝트가 없습니다.</td></tr>`;
+  function render(){
+    const q=search.value.trim().toLowerCase(); const st=fil.value;
+    const list=all.filter(pr=>(!st||pr.status===st)&&(!q||(pr.client_name+' '+pr.name).toLowerCase().includes(q)));
+    tb.innerHTML='';
+    list.forEach(pr=>{
+      const tr=el(`<tr><td>${esc(pr.client_name)}</td><td>${esc(pr.name)}</td><td>${PTYPE[pr.type]}</td><td>${chip(PSTATUS,pr.status)}</td><td>${pr.progress}%</td>${isAdmin()?`<td class="mut">${won_m(pr.expected_amount)} / ${won_m(pr.contract_amount)}</td>`:''}<td></td></tr>`);
+      const open=el(`<button class="btn ghost sm">상세</button>`); open.onclick=()=>projectDetail(pr.id);
+      tr.lastChild.appendChild(open); tb.appendChild(tr);
+    });
+    if(!list.length) tb.innerHTML=`<tr><td colspan="7" class="mut">표시할 프로젝트가 없습니다.</td></tr>`;
+  }
+  search.oninput=render; fil.onchange=render; render();
   p.appendChild(t); v.appendChild(p);
 }
 function projectForm(){
@@ -711,6 +809,11 @@ async function viewRevenue(){
   cards.appendChild(el(`<div class="card"><div class="k">매출 건수</div><div class="v">${(rev||[]).length}</div></div>`));
   v.appendChild(cards);
 
+  const exbar=el(`<div class="toolbar" style="margin-top:14px"></div>`);
+  const ex=el(`<button class="btn ghost">CSV 내보내기</button>`);
+  ex.onclick=()=>downloadCSV('revenue.csv',(rev||[]).map(r=>({인식일:r.recognized_date,프로젝트:r.projects?.name||'',고객사:r.projects?.client_name||'',구분:({advance:'선계약금',balance:'잔금',etc:'조정'})[r.type],금액:r.amount})));
+  exbar.appendChild(ex); v.appendChild(exbar);
+
   const p=el(`<div class="panel"><h3>매출 상세</h3></div>`);
   const t=el(`<table><thead><tr><th>인식일</th><th>프로젝트</th><th>고객사</th><th>구분</th><th style="text-align:right">금액</th></tr></thead><tbody></tbody></table>`);
   const tb=t.querySelector('tbody');
@@ -828,10 +931,19 @@ function myProfileForm(){
       연차: <b style="color:var(--txt)">${(ME.annual_leave_total-ME.annual_leave_used).toFixed(1)}/${ME.annual_leave_total}일</b>
       <div style="margin-top:6px">※ 권한·상태·연차는 관리자만 변경할 수 있습니다.</div>
     </div>
-    <div class="row" style="margin-top:18px;justify-content:flex-end">
-      <button class="btn ghost" onclick="closeModal()">취소</button>
-      <button class="btn" onclick="saveMyProfile()">저장</button>
+    <h3 style="margin-top:20px;font-size:14px">비밀번호 변경</h3>
+    <label class="f">새 비밀번호 (6자 이상, 변경 시에만 입력)</label><input id="mpw" type="password" placeholder="새 비밀번호" autocomplete="new-password">
+    <div class="row" style="margin-top:8px;justify-content:flex-end"><button class="btn ghost sm" onclick="changeMyPassword()">비밀번호 변경</button></div>
+    <div class="row" style="margin-top:14px;justify-content:flex-end;border-top:1px solid var(--line);padding-top:14px">
+      <button class="btn ghost" onclick="closeModal()">닫기</button>
+      <button class="btn" onclick="saveMyProfile()">정보 저장</button>
     </div>`);
+}
+async function changeMyPassword(){
+  const pw=$('#mpw').value;
+  if(!pw||pw.length<6) return toast('비밀번호는 6자 이상',true);
+  const {error}=await sb.auth.updateUser({password:pw});
+  if(error)return err(error); $('#mpw').value=''; toast('비밀번호 변경 완료');
 }
 async function saveMyProfile(){
   const full_name=$('#mf').value.trim();
