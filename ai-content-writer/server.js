@@ -373,6 +373,22 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // data URL → 서버 파일 저장 후 공개 URL 반환
+  if (url.pathname === '/api/upload-dataurl' && req.method === 'POST') {
+    readBody(req, 20e6).then(async (d) => {
+      const dataUrl = String(d.dataUrl || '');
+      if (!dataUrl.startsWith('data:image/')) return sendJson(res, 400, { error: 'dataUrl(image) 필요' });
+      const m = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/s);
+      if (!m) return sendJson(res, 400, { error: 'dataUrl 형식 오류' });
+      const ext = m[1] === 'jpeg' ? 'jpg' : m[1];
+      const fname = `blog_${Date.now()}.${ext}`;
+      await fs.promises.writeFile(path.join(UPLOAD_DIR, fname), Buffer.from(m[2], 'base64'));
+      const base = PUBLIC_BASE || `http://${req.headers.host}`;
+      sendJson(res, 200, { ok: true, url: `${base}/uploads/${fname}` });
+    }).catch((e) => sendJson(res, 500, { error: String(e.message || e) }));
+    return;
+  }
+
   // 발행 프록시 — 워드프레스 REST / 티스토리 (사용자 저장 자격증명)
   if (url.pathname === '/api/publish' && req.method === 'POST') {
     readBody(req).then(async (d) => {

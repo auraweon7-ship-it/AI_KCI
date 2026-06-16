@@ -1714,7 +1714,22 @@ window.doPublish = async ()=>{
   if (!title) { msg.textContent='⚠️ 제목을 입력하세요.'; return; }
   const contentHtml = PUB_ISHTML ? PUB_MD : (window.marked ? marked.parse(PUB_MD) : PUB_MD);
   const status = $('#pub_status').value;
-  const imageUrl = ($('#pub_imageUrl').value||'').trim();
+  let imageUrl = ($('#pub_imageUrl').value||'').trim();
+  // data URL → 서버 업로드 후 공개 URL로 교체 (Blogger 등 외부 API는 base64 콘텐츠 거부)
+  if (imageUrl.startsWith('data:')) {
+    msg.textContent = '🖼️ 이미지 업로드 중...';
+    try {
+      const up = await fetch('/api/upload-dataurl',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataUrl:imageUrl})});
+      const uj = await up.json();
+      if (!up.ok) throw new Error(uj.error||'업로드 실패');
+      imageUrl = uj.url;
+    } catch(e) {
+      imageUrl = '';
+      msg.textContent = '⚠️ 이미지 업로드 실패 — 이미지 제외하고 발행합니다...';
+      await new Promise(r=>setTimeout(r,1500));
+    }
+    msg.textContent = '';
+  }
   const withImg = (html) => imageUrl
     ? `<div style="text-align:center;margin-bottom:28px"><img src="${imageUrl}" style="max-width:100%;border-radius:10px;display:block;margin:0 auto" /></div>\n` + html
     : html;
