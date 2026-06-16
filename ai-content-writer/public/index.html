@@ -9,6 +9,7 @@
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
   tailwind.config = {
     darkMode: 'class',
@@ -63,10 +64,15 @@
       <button id="recentBtn" class="px-3 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
         <i data-lucide="history" class="w-4 h-4"></i><span class="hidden sm:inline">최근</span>
       </button>
+      <button id="settingsBtn" onclick="openSettings()" class="hidden p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="설정">
+        <i data-lucide="settings" class="w-4 h-4"></i>
+      </button>
       <button id="darkBtn" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700">
         <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
         <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
       </button>
+      <!-- 로그인 영역 -->
+      <div id="authArea" class="flex items-center gap-2"></div>
     </div>
   </div>
 </header>
@@ -169,6 +175,53 @@
       <button data-close class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
     <div id="recentList" class="space-y-2"></div>
+  </div>
+</div>
+
+<!-- ===== 설정 모달 (로그인 후) ===== -->
+<div id="settingsModal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/50" data-sclose></div>
+  <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-lg max-h-[88vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-6">
+    <div class="flex items-center justify-between mb-1">
+      <h3 class="font-bold text-lg flex items-center gap-2"><i data-lucide="settings" class="w-5 h-5"></i> API · 계정 설정</h3>
+      <button data-sclose class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">이 브라우저에만 저장됩니다(localStorage). 공용 PC에서는 사용 후 로그아웃하세요.</p>
+
+    <div class="space-y-4">
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Anthropic API Key <span class="text-rose-500">*</span></label>
+        <input id="set_anthropic" type="password" placeholder="sk-ant-..." class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+        <p class="text-[11px] text-slate-400 mt-1">AI 실연동 생성에 사용. console.anthropic.com에서 발급</p>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Google OAuth Client ID</label>
+        <input id="set_gcid" placeholder="xxxxx.apps.googleusercontent.com" class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+        <p class="text-[11px] text-slate-400 mt-1">로그인 버튼에 사용. 변경 시 새로고침 후 재로그인</p>
+      </div>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">네이버 Client ID</label>
+          <input id="set_naverId" class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 mb-1">네이버 Client Secret</label>
+          <input id="set_naverSecret" type="password" class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">YouTube Data API Key</label>
+        <input id="set_youtube" type="password" class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between mt-6">
+      <button onclick="clearSettings()" class="text-xs text-rose-500 hover:underline">모두 삭제</button>
+      <div class="flex gap-2">
+        <button data-sclose class="px-4 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800">취소</button>
+        <button onclick="saveSettings()" class="px-4 py-2 rounded-lg text-sm bg-indigo-500 text-white font-semibold">저장</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -596,7 +649,7 @@ window.aiGenerateAll = async () => {
     try {
       const r = await fetch('/api/generate', {
         method: 'POST', headers: {'content-type':'application/json'},
-        body: JSON.stringify({ ...DATA, tab }),
+        body: JSON.stringify({ ...DATA, tab, apiKey: localKey() }),
       });
       const j = await r.json();
       if (r.ok) { aiCache[tab] = j.markdown; }
@@ -614,7 +667,7 @@ window.aiGenerate = async (tab) => {
   try {
     const r = await fetch('/api/generate', {
       method: 'POST', headers: {'content-type':'application/json'},
-      body: JSON.stringify({ ...DATA, tab }),
+      body: JSON.stringify({ ...DATA, tab, apiKey: localKey() }),
     });
     const j = await r.json();
     if (!r.ok) throw new Error(j.error || ('HTTP '+r.status));
@@ -649,14 +702,145 @@ window.toggleTmplView = (btn) => {
   btn.dataset.show = show ? '1' : '0';
   btn.textContent = show ? '템플릿 숨기기' : '템플릿 보기';
 };
+let serverHasKey = false;   // 서버 환경변수 키 보유 여부
 async function checkAiStatus() {
   try {
     const r = await fetch('/api/status');
-    if (!r.ok) return;
+    if (!r.ok) { recomputeAi(); return; }
     const j = await r.json();
-    AI.enabled = !!j.enabled; AI.model = j.model;
-    if (AI.enabled && GEN) renderTab(activeTab);
-  } catch (_) { /* 정적 호스팅 — 무시, 템플릿 모드 유지 */ }
+    serverHasKey = !!j.serverKey;
+    AI.model = j.model || (localKey() ? 'claude-opus-4-8' : null);
+    recomputeAi();
+  } catch (_) { recomputeAi(); /* 정적 호스팅 — 로컬 키만으로도 동작 */ }
+}
+// AI 모드 활성: 서버 키 또는 사용자가 설정에 저장한 본인 키
+function recomputeAi() {
+  AI.enabled = serverHasKey || !!localKey();
+  if (!AI.model && AI.enabled) AI.model = 'claude-opus-4-8';
+  if (GEN) renderTab(activeTab);
+}
+
+/* ============================================================
+   인증(구글 로그인) + 설정 저장
+   ============================================================ */
+const GCID_KEY = 'acw_gcid';
+const USER_KEY = 'acw_user';
+const setKey = (email)=> 'acw_set_' + (email || 'guest');
+let USER = null;
+
+const getGcid = ()=> localStorage.getItem(GCID_KEY) || '';
+function getSettings() {
+  try { return JSON.parse(localStorage.getItem(setKey(USER && USER.email)) || '{}'); }
+  catch (_) { return {}; }
+}
+const localKey = ()=> (getSettings().anthropic || '');
+
+function jwtDecode(token) {
+  try {
+    const p = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    return JSON.parse(decodeURIComponent(escape(atob(p))));
+  } catch (_) { return null; }
+}
+
+window.onGoogleCredential = (resp) => {
+  const info = jwtDecode(resp.credential);
+  if (!info) { toast('로그인 실패'); return; }
+  USER = { name: info.name, email: info.email, picture: info.picture };
+  localStorage.setItem(USER_KEY, JSON.stringify(USER));
+  renderAuth();
+  recomputeAi();
+  toast('👋 '+(USER.name||USER.email)+' 님 로그인');
+};
+
+function initGoogle() {
+  const gcid = getGcid();
+  if (!gcid || !window.google || !google.accounts) return false;
+  try {
+    google.accounts.id.initialize({ client_id: gcid, callback: onGoogleCredential });
+    return true;
+  } catch (_) { return false; }
+}
+
+function renderAuth() {
+  const el = $('#authArea'); if (!el) return;
+  $('#settingsBtn').classList.toggle('hidden', !USER);
+  if (USER) {
+    el.innerHTML = `
+      <div class="flex items-center gap-2">
+        ${USER.picture?`<img src="${USER.picture}" class="w-8 h-8 rounded-full" referrerpolicy="no-referrer" />`:''}
+        <span class="hidden md:inline text-sm font-medium max-w-[120px] truncate">${esc(USER.name||USER.email)}</span>
+        <button onclick="logout()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="로그아웃"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+      </div>`;
+    lucide.createIcons();
+    return;
+  }
+  if (!getGcid()) {
+    el.innerHTML = `<button onclick="setupGoogle()" class="px-3 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 flex items-center gap-1.5"><i data-lucide="log-in" class="w-4 h-4"></i>로그인 설정</button>`;
+    lucide.createIcons();
+    return;
+  }
+  // Client ID 있음 → 구글 버튼 렌더
+  el.innerHTML = `<div id="gbtn"></div>`;
+  if (initGoogle()) {
+    google.accounts.id.renderButton($('#gbtn'), { theme:'outline', size:'medium', shape:'pill', text:'signin' });
+  } else {
+    el.innerHTML = `<button onclick="renderAuth()" class="px-3 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800">로그인 재시도</button>`;
+  }
+}
+
+window.setupGoogle = () => {
+  const id = prompt('Google OAuth Client ID 를 입력하세요\n(Google Cloud Console → 사용자 인증 정보 → OAuth 클라이언트 ID, 웹 애플리케이션)\n승인된 JavaScript 원본에 현재 주소를 등록해야 합니다.', getGcid());
+  if (id == null) return;
+  const v = id.trim();
+  if (v) { localStorage.setItem(GCID_KEY, v); toast('Client ID 저장됨'); }
+  else localStorage.removeItem(GCID_KEY);
+  renderAuth();
+};
+
+window.logout = () => {
+  USER = null; localStorage.removeItem(USER_KEY);
+  if (window.google && google.accounts) try { google.accounts.id.disableAutoSelect(); } catch(_){}
+  renderAuth(); recomputeAi(); toast('로그아웃됨');
+};
+
+window.openSettings = () => {
+  const s = getSettings();
+  $('#set_anthropic').value = s.anthropic || '';
+  $('#set_gcid').value = getGcid();
+  $('#set_naverId').value = s.naverId || '';
+  $('#set_naverSecret').value = s.naverSecret || '';
+  $('#set_youtube').value = s.youtube || '';
+  $('#settingsModal').classList.remove('hidden');
+  lucide.createIcons();
+};
+window.saveSettings = () => {
+  const s = {
+    anthropic: $('#set_anthropic').value.trim(),
+    naverId: $('#set_naverId').value.trim(),
+    naverSecret: $('#set_naverSecret').value.trim(),
+    youtube: $('#set_youtube').value.trim(),
+  };
+  localStorage.setItem(setKey(USER && USER.email), JSON.stringify(s));
+  const gc = $('#set_gcid').value.trim();
+  if (gc) localStorage.setItem(GCID_KEY, gc); else localStorage.removeItem(GCID_KEY);
+  $('#settingsModal').classList.add('hidden');
+  recomputeAi();
+  toast('💾 설정 저장됨');
+};
+window.clearSettings = () => {
+  if (!confirm('저장된 API 키·ID를 모두 삭제할까요?')) return;
+  localStorage.removeItem(setKey(USER && USER.email));
+  $('#settingsModal').classList.add('hidden');
+  recomputeAi();
+  toast('설정 삭제됨');
+};
+
+function initAuth() {
+  try { USER = JSON.parse(localStorage.getItem(USER_KEY) || 'null'); } catch (_) { USER = null; }
+  renderAuth();
+  $$('#settingsModal [data-sclose]').forEach(b=> b.onclick=()=>$('#settingsModal').classList.add('hidden'));
+  // GIS 스크립트가 늦게 로드될 수 있어 한 번 재시도
+  if (getGcid() && !USER) setTimeout(renderAuth, 800);
 }
 
 /* ---------- 카드뉴스 카드 ---------- */
@@ -738,12 +922,20 @@ async function downloadCardsZip() {
 /* ---------- 썸네일 디자이너 ---------- */
 const RATIOS = {'16:9':[16,9],'1:1':[1,1],'4:5':[4,5],'9:16':[9,16]};
 const BG_STYLES = {
-  '파스텔':'linear-gradient(135deg,#fbc2eb,#a6c1ee)',
-  '미니멀':'#f1f5f9',
-  '그라데이션':'linear-gradient(135deg,#667eea,#764ba2)',
-  '강의자료형':'linear-gradient(135deg,#0f172a,#1e293b)',
-  '노션 카드형':'#ffffff',
-  '비즈니스형':'linear-gradient(135deg,#1e3a8a,#2563eb)',
+  '파스텔':     { bg:'linear-gradient(135deg,#fbc2eb,#a6c1ee)', dark:false },
+  '미니멀':     { bg:'#f1f5f9', dark:false },
+  '그라데이션': { bg:'linear-gradient(135deg,#667eea,#764ba2)', dark:true },
+  '강의자료형': { bg:'linear-gradient(135deg,#0f172a,#1e293b)', dark:true },
+  '노션 카드형':{ bg:'#ffffff', dark:false },
+  '비즈니스형': { bg:'linear-gradient(135deg,#1e3a8a,#2563eb)', dark:true },
+  '선셋':       { bg:'linear-gradient(135deg,#ff6a00,#ee0979)', dark:true },
+  '오션':       { bg:'linear-gradient(135deg,#2193b0,#6dd5ed)', dark:true },
+  '포레스트':   { bg:'linear-gradient(135deg,#11998e,#38ef7d)', dark:true },
+  '네온':       { bg:'linear-gradient(135deg,#0f0c29,#302b63,#24243e)', dark:true },
+  '코랄':       { bg:'linear-gradient(135deg,#ffecd2,#fcb69f)', dark:false },
+  '라벤더':     { bg:'linear-gradient(135deg,#e0c3fc,#8ec5fc)', dark:false },
+  '다크':       { bg:'#0b1220', dark:true },
+  '화이트':     { bg:'#ffffff', dark:false },
 };
 const ICONS = {'AI':'cpu','글쓰기':'pen-line','블로그':'rss','수익화':'dollar-sign','교육':'graduation-cap','데이터':'bar-chart-3','마케팅':'megaphone'};
 let thumbState = {ratio:'16:9', style:DATA?.imgStyle||'그라데이션', pos:'중앙', icon:'AI', text:''};
@@ -771,12 +963,13 @@ function thumbDesigner() {
 window.setThumb = (k,v)=>{ thumbState[k]=v; renderTab('thumbimg'); setTimeout(drawThumb,0); };
 function drawThumb() {
   const [w,h] = RATIOS[thumbState.ratio];
-  const dark = ['그라데이션','강의자료형','비즈니스형'].includes(thumbState.style);
+  const st = BG_STYLES[thumbState.style] || BG_STYLES['그라데이션'];
+  const dark = st.dark;
   const txtColor = dark ? '#fff' : '#0f172a';
   const align = thumbState.pos==='좌측 정렬'?'items-start text-left':'items-center text-center';
   const justify = thumbState.pos==='상단 제목형'?'justify-start':thumbState.pos==='하단 강조형'?'justify-end':'justify-center';
   const stage = $('#thumbStage'); if(!stage) return;
-  stage.innerHTML = `<div id="thumbTarget" style="aspect-ratio:${w}/${h};background:${BG_STYLES[thumbState.style]};color:${txtColor}" class="w-full rounded-xl overflow-hidden shadow-lg p-8 flex flex-col ${justify} ${align} gap-3">
+  stage.innerHTML = `<div id="thumbTarget" style="aspect-ratio:${w}/${h};background:${st.bg};color:${txtColor}" class="w-full rounded-xl overflow-hidden shadow-lg p-8 flex flex-col ${justify} ${align} gap-3">
     <div class="w-12 h-12 rounded-xl grid place-items-center" style="background:${dark?'rgba(255,255,255,.18)':'rgba(15,23,42,.08)'}"><i data-lucide="${ICONS[thumbState.icon]}" class="w-6 h-6"></i></div>
     <h2 class="text-3xl sm:text-4xl font-black leading-tight">${esc(thumbState.text)}</h2>
     <p class="text-sm opacity-70">${esc(DATA.topic)}</p>
@@ -898,6 +1091,7 @@ function init() {
   $$('#recentDrawer [data-close]').forEach(b=> b.onclick=()=>$('#recentDrawer').classList.add('hidden'));
   if (localStorage.getItem('acw_dark')==='true') document.documentElement.classList.add('dark');
 
+  initAuth();
   checkAiStatus();
   loadFromHash();   // 공유 링크로 진입 시 자동 복원·생성
   lucide.createIcons();

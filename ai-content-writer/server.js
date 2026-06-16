@@ -65,16 +65,18 @@ ${inst}`;
 }
 
 /* ---------- Claude 호출 ---------- */
-async function callClaude(d, tab) {
+// key: 사용자가 설정에 저장한 자기 키(BYO). 없으면 서버 환경변수 키 사용.
+async function callClaude(d, tab, key) {
+  const useKey = key || API_KEY;
   const res = await fetch(`${BASE_URL}/v1/messages`, {
     method: 'POST',
     headers: {
-      'x-api-key': API_KEY,
+      'x-api-key': useKey,
       'anthropic-version': '2023-06-01',
       'content-type': 'application/json',
     },
     body: JSON.stringify({
-      model: MODEL,
+      model: d.model || MODEL,
       max_tokens: 8000,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: buildUserPrompt(d, tab) }],
@@ -108,13 +110,13 @@ const server = http.createServer((req, res) => {
   }
 
   // 상태 확인 — 프론트가 AI 모드 노출 여부를 결정
+  // serverKey: 서버에 환경변수 키가 있으면 별도 입력 없이 AI 사용 가능
   if (url.pathname === '/api/status') {
-    return sendJson(res, 200, { enabled: !!API_KEY, model: API_KEY ? MODEL : null });
+    return sendJson(res, 200, { enabled: !!API_KEY, serverKey: !!API_KEY, model: API_KEY ? MODEL : null });
   }
 
   // 생성 프록시
   if (url.pathname === '/api/generate' && req.method === 'POST') {
-    if (!API_KEY) return sendJson(res, 503, { error: 'ANTHROPIC_API_KEY 미설정 — 템플릿 모드만 가능' });
     const chunks = [];
     let size = 0;
     req.on('data', (c) => {
@@ -125,8 +127,11 @@ const server = http.createServer((req, res) => {
       try {
         const raw = Buffer.concat(chunks).toString('utf8'); // 멀티바이트 청크 분할 대비
         const d = JSON.parse(raw || '{}');
+        // 사용자 BYO 키(설정에 저장한 본인 키) 또는 서버 환경변수 키
+        const userKey = typeof d.apiKey === 'string' && d.apiKey.startsWith('sk-ant-') ? d.apiKey : '';
+        if (!userKey && !API_KEY) return sendJson(res, 503, { error: 'API 키 없음 — 설정에서 Anthropic 키를 입력하거나 서버에 ANTHROPIC_API_KEY를 설정하세요' });
         if (!d.topic) return sendJson(res, 400, { error: '주제(topic) 필요' });
-        const out = await callClaude(d, d.tab || 'blog');
+        const out = await callClaude(d, d.tab || 'blog', userKey);
         sendJson(res, 200, out);
       } catch (e) {
         sendJson(res, 500, { error: String(e.message || e) });
