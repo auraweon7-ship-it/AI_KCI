@@ -1694,28 +1694,42 @@ let cardStyle = '그라데이션';
 let cardAiStyle = '3D 일러스트';
 const cardBg = {};   // idx → AI 배경 dataUrl
 
+// 헤드라인에서 키워드 1개를 강조색으로 (공익 카드뉴스 스타일)
+function hlHeadline(line, hl) {
+  const kws = kwArr().filter(Boolean).sort((a,b)=>b.length-a.length);
+  let out = esc(line);
+  for (const k of kws) {
+    if (k && line.includes(k)) { out = out.replace(esc(k), `<span style="color:${hl}">${esc(k)}</span>`); return out; }
+  }
+  // 키워드 없으면 마지막 어절을 강조
+  const parts = line.trim().split(/\s+/);
+  if (parts.length > 1) { const last = esc(parts.pop()); return esc(parts.join(' ')) + ' <span style="color:'+hl+'">'+last+'</span>'; }
+  return out;
+}
 function cardHtml(c, i) {
   const sf = CARD_STYLES[cardStyle] || CARD_STYLES['그라데이션'];
   const s = sf(i);
   const img = cardBg[c.idx];
   const wrap = img
-    ? `background:linear-gradient(rgba(0,0,0,.32),rgba(0,0,0,.5)), url(${img}) center/cover;color:#fff`
+    ? `background:linear-gradient(rgba(0,0,0,.30),rgba(0,0,0,.55)), url(${img}) center/cover;color:#fff`
     : s.wrap;
   const dark = img ? true : s.dark;
-  const badge = dark ? 'background:rgba(255,255,255,.2)' : 'background:rgba(15,23,42,.07)';
-  const sh = img ? 'text-shadow:0 2px 8px rgba(0,0,0,.55)' : '';
+  // 강조색: 어두운 배경=노랑/주황, 밝은 배경=빨강 (샘플 톤)
+  const hl = img ? '#fde047' : (dark ? '#fde047' : '#dc2626');
+  const kicker = img ? '#fde047' : s.accent;
+  const sh = img ? 'text-shadow:0 2px 10px rgba(0,0,0,.6)' : '';
   return `<div class="space-y-2">
-    <div class="card-target aspect-square rounded-xl2 overflow-hidden shadow-md p-6 flex flex-col justify-between" style="${wrap}" id="card-${c.idx}">
-      <div class="flex items-center justify-between">
-        <span class="text-[11px] font-semibold px-2 py-1 rounded-full" style="${badge}">${esc(c.type)}</span>
-        <span class="text-xs font-mono font-bold" style="color:${img?'#fde68a':s.accent}">${c.idx} / 8</span>
-      </div>
+    <div class="card-target aspect-square rounded-xl2 overflow-hidden shadow-md p-7 flex flex-col" style="${wrap}" id="card-${c.idx}">
       <div style="${sh}">
-        <h3 class="text-lg font-extrabold mb-2 opacity-90">${esc(c.title)}</h3>
-        <p class="text-2xl font-black leading-snug mb-2">${esc(c.line)}</p>
-        <p class="text-sm opacity-85">${esc(c.sub)}</p>
+        <div class="text-[11px] font-extrabold tracking-widest uppercase mb-2" style="color:${kicker}">${esc(c.type)}</div>
+        <h3 class="font-black leading-tight mb-3" style="font-size:1.6rem;line-height:1.25">${hlHeadline(c.line, hl)}</h3>
+        <p class="text-sm leading-relaxed opacity-90" style="max-width:90%">${esc(c.sub)}</p>
       </div>
-      <div class="text-[10px] opacity-70" style="${sh}">${esc(DATA.topic)}</div>
+      <div class="flex-1"></div>
+      <div class="flex items-end justify-between" style="${sh}">
+        <span class="text-[10px] font-semibold opacity-75">${esc(DATA.topic)}</span>
+        <span class="text-[10px] font-mono opacity-60">${c.idx} / 8</span>
+      </div>
     </div>
     <div class="flex items-center justify-between gap-2">
       <button onclick="aiCardBg(${c.idx})" class="text-[11px] text-indigo-500 hover:underline flex items-center gap-1"><i data-lucide="sparkles" class="w-3 h-3"></i>AI 배경</button>
