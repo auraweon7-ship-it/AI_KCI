@@ -115,13 +115,15 @@ const server = http.createServer((req, res) => {
   // 생성 프록시
   if (url.pathname === '/api/generate' && req.method === 'POST') {
     if (!API_KEY) return sendJson(res, 503, { error: 'ANTHROPIC_API_KEY 미설정 — 템플릿 모드만 가능' });
-    let raw = '';
+    const chunks = [];
+    let size = 0;
     req.on('data', (c) => {
-      raw += c;
-      if (raw.length > 1e6) req.destroy(); // 1MB 방어
+      chunks.push(c); size += c.length;
+      if (size > 1e6) req.destroy(); // 1MB 방어
     });
     req.on('end', async () => {
       try {
+        const raw = Buffer.concat(chunks).toString('utf8'); // 멀티바이트 청크 분할 대비
         const d = JSON.parse(raw || '{}');
         if (!d.topic) return sendJson(res, 400, { error: '주제(topic) 필요' });
         const out = await callClaude(d, d.tab || 'blog');
