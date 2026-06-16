@@ -8,6 +8,7 @@
 <script src="https://unpkg.com/lucide@latest"></script>
 <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script>
   tailwind.config = {
     darkMode: 'class',
@@ -30,6 +31,15 @@
   .tab-active { box-shadow: 0 1px 0 0 currentColor inset, 0 -2px 0 0 currentColor; }
   .card-pop { transition: transform .15s ease, box-shadow .15s ease; }
   .card-pop:hover { transform: translateY(-3px); box-shadow: 0 12px 30px -12px rgba(0,0,0,.25); }
+  .markdown-body h1 { font-size:1.25rem; font-weight:800; margin:.8em 0 .4em; }
+  .markdown-body h2 { font-size:1.1rem; font-weight:700; margin:.8em 0 .3em; }
+  .markdown-body h3 { font-size:1rem; font-weight:700; margin:.6em 0 .2em; }
+  .markdown-body p { margin:.4em 0; }
+  .markdown-body ul, .markdown-body ol { margin:.4em 0; padding-left:1.3em; list-style:revert; }
+  .markdown-body li { margin:.15em 0; }
+  .markdown-body strong { font-weight:700; }
+  .markdown-body hr { margin:.8em 0; border-color:#e2e8f0; }
+  .markdown-body code { background:rgba(99,102,241,.12); padding:.1em .3em; border-radius:4px; font-size:.85em; }
 </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen">
@@ -196,6 +206,8 @@ const PURPOSE_MAP = {
 let DATA = null;          // 마지막 입력값
 let GEN = null;           // 생성 결과
 let activeTab = 'blog';
+let AI = { enabled: false, model: null };   // 백엔드 AI 실연동 상태
+let aiCache = {};          // 탭별 AI 생성 결과(Markdown) 캐시
 
 /* ---------- 유틸 ---------- */
 const kwArr = () => (DATA.keywords || '').split(',').map(s=>s.trim()).filter(Boolean);
@@ -531,8 +543,72 @@ function renderTab(id) {
     <button onclick="downloadAll()" class="text-xs px-3 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 flex items-center gap-1"><i data-lucide="package" class="w-3.5 h-3.5"></i>전체 패키지 MD</button>
   </div>`;
 
+  if (AI.enabled && id !== 'thumbimg') html = aiBarHtml(id) + html;
+
   c.innerHTML = html;
+  if (AI.enabled && id !== 'thumbimg' && aiCache[id]) renderAiResult(id, aiCache[id]);
   lucide.createIcons();
+}
+
+/* ---------- AI 실연동 ---------- */
+function aiBarHtml(tab) {
+  return `<div class="mb-3">
+    <div class="flex items-center justify-between gap-2 p-3 rounded-xl bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-indigo-900/30 dark:to-violet-900/30 border border-indigo-200 dark:border-indigo-800">
+      <div class="flex items-center gap-2 text-sm">
+        <i data-lucide="sparkles" class="w-4 h-4 text-indigo-500"></i>
+        <span class="font-semibold text-indigo-700 dark:text-indigo-300">AI 실연동</span>
+        <span class="text-xs text-slate-500 dark:text-slate-400">${esc(AI.model||'')} 로 이 탭을 실제 생성</span>
+      </div>
+      <button onclick="aiGenerate('${tab}')" class="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-600 flex items-center gap-1">
+        <i data-lucide="wand-2" class="w-3.5 h-3.5"></i>AI로 생성
+      </button>
+    </div>
+    <div id="aiResult-${tab}"></div>
+  </div>`;
+}
+window.aiGenerate = async (tab) => {
+  if (!DATA) { toast('먼저 콘텐츠를 생성하세요'); return; }
+  const box = $('#aiResult-'+tab);
+  box.innerHTML = `<div class="mt-2 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm text-slate-500 flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Claude가 생성 중...</div>`;
+  lucide.createIcons();
+  try {
+    const r = await fetch('/api/generate', {
+      method: 'POST', headers: {'content-type':'application/json'},
+      body: JSON.stringify({ ...DATA, tab }),
+    });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || ('HTTP '+r.status));
+    aiCache[tab] = j.markdown;
+    renderAiResult(tab, j.markdown);
+    toast('✨ AI 생성 완료');
+  } catch (e) {
+    box.innerHTML = `<div class="mt-2 p-4 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-sm text-rose-600 dark:text-rose-300">⚠️ ${esc(String(e.message||e))}</div>`;
+  }
+};
+function renderAiResult(tab, md) {
+  const box = $('#aiResult-'+tab); if (!box) return;
+  const html = (window.marked ? marked.parse(md) : esc(md));
+  const id = 'ai'+tab;
+  box.innerHTML = `<div class="mt-2 rounded-xl bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-800 overflow-hidden">
+    <div class="flex items-center justify-between px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 border-b border-indigo-100 dark:border-indigo-800">
+      <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> AI 생성 결과</span>
+      <div class="flex gap-1.5">
+        <button onclick='copy(aiCache["${tab}"])' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">복사</button>
+        <button onclick='download(aiCache["${tab}"], "${slug(DATA.topic)}_${tab}_AI.md")' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">MD</button>
+      </div>
+    </div>
+    <div id="${id}" class="p-4 prose-sm max-w-none text-sm leading-relaxed text-slate-700 dark:text-slate-300 markdown-body">${html}</div>
+  </div>`;
+  lucide.createIcons();
+}
+async function checkAiStatus() {
+  try {
+    const r = await fetch('/api/status');
+    if (!r.ok) return;
+    const j = await r.json();
+    AI.enabled = !!j.enabled; AI.model = j.model;
+    if (AI.enabled && GEN) renderTab(activeTab);
+  } catch (_) { /* 정적 호스팅 — 무시, 템플릿 모드 유지 */ }
 }
 
 /* ---------- 카드뉴스 카드 ---------- */
@@ -724,6 +800,7 @@ function init() {
   $$('#recentDrawer [data-close]').forEach(b=> b.onclick=()=>$('#recentDrawer').classList.add('hidden'));
   if (localStorage.getItem('acw_dark')==='true') document.documentElement.classList.add('dark');
 
+  checkAiStatus();
   lucide.createIcons();
 }
 window.jumpTab = (id)=>{ if(!GEN){ toast('먼저 콘텐츠를 생성하세요'); return; } renderTab(id); window.scrollTo({top:0,behavior:'smooth'}); };
