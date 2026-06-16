@@ -17,6 +17,7 @@ const path = require('node:path');
 const PORT = process.env.PORT || 8787;
 const API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-opus-4-8';
+const BASE_URL = process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com';
 const HTML_FILE = path.join(__dirname, 'public', 'index.html');
 
 /* ---------- 탭별 생성 지시문 ---------- */
@@ -65,7 +66,7 @@ ${inst}`;
 
 /* ---------- Claude 호출 ---------- */
 async function callClaude(d, tab) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
+  const res = await fetch(`${BASE_URL}/v1/messages`, {
     method: 'POST',
     headers: {
       'x-api-key': API_KEY,
