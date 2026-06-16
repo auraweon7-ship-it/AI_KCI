@@ -185,6 +185,35 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // 네이버 데이터랩 검색어 트렌드 (상대 비율, 사용자 저장 키)
+  if (url.pathname === '/api/naver/datalab' && req.method === 'POST') {
+    readBody(req).then(async (d) => {
+      const { clientId, clientSecret } = d;
+      const kws = (Array.isArray(d.keywords) ? d.keywords : String(d.keywords || '').split(','))
+        .map((s) => String(s).trim()).filter(Boolean).slice(0, 5);
+      if (!clientId || !clientSecret) return sendJson(res, 400, { error: '네이버 Client ID/Secret 필요 — 설정에서 입력하세요' });
+      if (!kws.length) return sendJson(res, 400, { error: '키워드 필요' });
+      const end = new Date(); const start = new Date(); start.setFullYear(start.getFullYear() - 1);
+      const fmt = (dt) => dt.toISOString().slice(0, 10);
+      const r = await fetch('https://openapi.naver.com/v1/datalab/search', {
+        method: 'POST',
+        headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ startDate: fmt(start), endDate: fmt(end), timeUnit: 'month', keywordGroups: kws.map((k) => ({ groupName: k, keywords: [k] })) }),
+      });
+      const j = await r.json();
+      if (!r.ok) return sendJson(res, r.status, { error: j.errorMessage || `데이터랩 ${r.status}` });
+      const out = (j.results || []).map((g) => {
+        const ratios = (g.data || []).map((p) => p.ratio);
+        const last = ratios[ratios.length - 1] || 0;
+        const first = ratios[0] || 0;
+        const avg = ratios.length ? ratios.reduce((a, b) => a + b, 0) / ratios.length : 0;
+        return { keyword: g.title, last: Math.round(last), avg: Math.round(avg), trend: last > first ? '상승' : last < first ? '하락' : '유지', series: ratios.map((v) => Math.round(v)) };
+      });
+      sendJson(res, 200, { results: out });
+    }).catch((e) => sendJson(res, 500, { error: String(e.message || e) }));
+    return;
+  }
+
   // 유튜브 검색 프록시 (사용자 저장 Data API 키 사용)
   if (url.pathname === '/api/youtube/search' && req.method === 'POST') {
     readBody(req).then(async (d) => {
@@ -195,6 +224,76 @@ const server = http.createServer((req, res) => {
       const j = await r.json();
       if (!r.ok) return sendJson(res, r.status, { error: (j.error && j.error.message) || `YouTube API ${r.status}` });
       sendJson(res, 200, { items: (j.items || []).map((it) => ({ id: it.id.videoId, title: strip(it.snippet.title), channel: it.snippet.channelTitle, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails && it.snippet.thumbnails.medium ? it.snippet.thumbnails.medium.url : '' })) });
+    }).catch((e) => sendJson(res, 500, { error: String(e.message || e) }));
+    return;
+  }
+
+  // AI 이미지 생성 프록시 (OpenAI gpt-image-1, 사용자 저장 키)
+  if (url.pathname === '/api/image' && req.method === 'POST') {
+    readBody(req).then(async (d) => {
+      const key = typeof d.key === 'string' && d.key.startsWith('sk-') ? d.key : '';
+      if (!key) return sendJson(res, 400, { error: 'OpenAI API Key 필요 — 설정에서 입력하세요' });
+      if (!d.prompt) return sendJson(res, 400, { error: '프롬프트 필요' });
+      const size = ['1024x1024', '1536x1024', '1024x1536'].includes(d.size) ? d.size : '1024x1024';
+      const r = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ model: 'gpt-image-1', prompt: String(d.prompt).slice(0, 1000), size, n: 1 }),
+      });
+      const j = await r.json();
+      if (!r.ok) return sendJson(res, r.status, { error: (j.error && j.error.message) || `이미지 API ${r.status}` });
+      const b64 = j.data && j.data[0] && j.data[0].b64_json;
+      if (!b64) return sendJson(res, 502, { error: '이미지 응답 없음' });
+      sendJson(res, 200, { dataUrl: 'data:image/png;base64,' + b64 });
+    }).catch((e) => sendJson(res, 500, { error: String(e.message || e) }));
+    return;
+  }
+
+  // 생성 프록시 (스트리밍 SSE)
+  if (url.pathname === '/api/generate/stream' && req.method === 'POST') {
+    readBody(req).then(async (d) => {
+      const userKey = typeof d.apiKey === 'string' && d.apiKey.startsWith('sk-ant-') ? d.apiKey : '';
+      if (!userKey && !API_KEY) return sendJson(res, 503, { error: 'API 키 없음 — 설정에서 Anthropic 키를 입력하세요' });
+      if (!d.topic) return sendJson(res, 400, { error: '주제(topic) 필요' });
+      res.writeHead(200, { 'content-type': 'text/event-stream; charset=utf-8', 'cache-control': 'no-cache', connection: 'keep-alive' });
+      try {
+        const ar = await fetch(`${BASE_URL}/v1/messages`, {
+          method: 'POST',
+          headers: { 'x-api-key': userKey || API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+          body: JSON.stringify({ model: d.model || MODEL, max_tokens: 8000, stream: true, system: SYSTEM_PROMPT, messages: [{ role: 'user', content: buildUserPrompt(d, d.tab || 'blog') }] }),
+        });
+        if (!ar.ok || !ar.body) {
+          const t = ar.ok ? '' : await ar.text();
+          res.write(`event: error\ndata: ${JSON.stringify({ error: `Claude ${ar.status} ${t.slice(0, 200)}` })}\n\n`);
+          return res.end();
+        }
+        const reader = ar.body.getReader();
+        const dec = new TextDecoder();
+        let buf = '';
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          let i;
+          while ((i = buf.indexOf('\n')) >= 0) {
+            const line = buf.slice(0, i); buf = buf.slice(i + 1);
+            if (!line.startsWith('data:')) continue;
+            const data = line.slice(5).trim();
+            if (!data || data === '[DONE]') continue;
+            try {
+              const ev = JSON.parse(data);
+              if (ev.type === 'content_block_delta' && ev.delta && ev.delta.type === 'text_delta') {
+                res.write(`data: ${JSON.stringify({ t: ev.delta.text })}\n\n`);
+              }
+            } catch (_) { /* 부분 JSON 무시 */ }
+          }
+        }
+        res.write('event: done\ndata: {}\n\n');
+        res.end();
+      } catch (e) {
+        res.write(`event: error\ndata: ${JSON.stringify({ error: String(e.message || e) })}\n\n`);
+        res.end();
+      }
     }).catch((e) => sendJson(res, 500, { error: String(e.message || e) }));
     return;
   }

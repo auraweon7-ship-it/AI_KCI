@@ -61,6 +61,9 @@
       <button id="menuBtn" onclick="openMenu()" class="px-3 py-2 rounded-lg text-sm bg-indigo-500 text-white hover:bg-indigo-600 flex items-center gap-1.5 font-semibold">
         <i data-lucide="layout-grid" class="w-4 h-4"></i><span class="hidden sm:inline">메뉴판</span>
       </button>
+      <button id="libBtn" onclick="openLibrary()" class="px-3 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
+        <i data-lucide="bookmark" class="w-4 h-4"></i><span class="hidden sm:inline">보관함</span>
+      </button>
       <button id="shareBtn" onclick="shareLink()" class="px-3 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
         <i data-lucide="link" class="w-4 h-4"></i><span class="hidden sm:inline">공유</span>
       </button>
@@ -201,6 +204,24 @@
   <div id="menuBody" class="max-w-7xl mx-auto px-4 py-6"></div>
 </div>
 
+<!-- ===== 보관함 오버레이 ===== -->
+<div id="libOverlay" class="fixed inset-0 z-40 hidden bg-slate-50 dark:bg-slate-950 overflow-y-auto">
+  <div class="sticky top-0 z-10 backdrop-blur bg-white/85 dark:bg-slate-900/85 border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center gap-3">
+      <h2 class="font-bold text-lg flex items-center gap-2 shrink-0"><i data-lucide="bookmark" class="w-5 h-5 text-indigo-500"></i>보관함</h2>
+      <div class="flex-1 flex items-center gap-2 justify-end">
+        <input id="libSearch" oninput="renderLibrary()" placeholder="제목·내용 검색..." class="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none w-40 sm:w-64" />
+        <button onclick="exportLibrary()" class="px-3 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700">전체 내보내기</button>
+        <button onclick="closeLibrary()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+    </div>
+  </div>
+  <div class="max-w-5xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4">
+    <div id="libList" class="space-y-2"></div>
+    <div id="libView" class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 min-h-[200px]"><p class="text-sm text-slate-400">왼쪽에서 항목을 선택하세요.</p></div>
+  </div>
+</div>
+
 <!-- ===== 툴 실행 모달 ===== -->
 <div id="toolModal" class="fixed inset-0 z-50 hidden">
   <div class="absolute inset-0 bg-black/50" data-tclose></div>
@@ -281,6 +302,11 @@
       <div>
         <label class="block text-xs font-semibold text-slate-500 mb-1">YouTube Data API Key</label>
         <input id="set_youtube" type="password" class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">OpenAI API Key (AI 이미지 생성)</label>
+        <input id="set_openai" type="password" placeholder="sk-..." class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+        <p class="text-[11px] text-slate-400 mt-1">썸네일 AI 배경 생성에 사용(gpt-image-1)</p>
       </div>
     </div>
 
@@ -724,31 +750,61 @@ window.aiGenerateAll = async () => {
         body: JSON.stringify({ ...DATA, tab, apiKey: localKey() }),
       });
       const j = await r.json();
-      if (r.ok) { aiCache[tab] = j.markdown; }
+      if (r.ok) { aiCache[tab] = j.markdown; saveToLibrary({ kind:'탭 · '+((TABS.find(t=>t.id===tab)||{}).label||tab), title: DATA.topic+' — '+((TABS.find(t=>t.id===tab)||{}).label||tab), content: j.markdown }); }
     } catch (_) {}
     done++; toast('AI 생성 '+done+'/'+AI_BATCH_TABS.length);
   }));
   if (aiCache[activeTab]) renderAiResult(activeTab, aiCache[activeTab]);
   toast('✅ 전체 AI 생성 완료 — 각 탭에서 결과 확인');
 };
+// 스트리밍 생성: /api/generate/stream SSE 를 읽어 토큰 단위 콜백
+async function streamGenerate(body, onToken, onDone, onError) {
+  try {
+    const r = await fetch('/api/generate/stream', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+    if (!r.ok || !r.body) { let j={}; try{ j=await r.json(); }catch(_){} throw new Error(j.error || ('HTTP '+r.status)); }
+    const reader = r.body.getReader(); const dec = new TextDecoder();
+    let buf = '', acc = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream:true });
+      let i;
+      while ((i = buf.indexOf('\n\n')) >= 0) {
+        const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+        let ev = 'message', data = '';
+        for (const l of chunk.split('\n')) {
+          if (l.startsWith('event:')) ev = l.slice(6).trim();
+          else if (l.startsWith('data:')) data += l.slice(5).trim();
+        }
+        if (ev === 'error') throw new Error((JSON.parse(data||'{}').error) || '스트림 오류');
+        if (ev === 'done') { onDone(acc); return; }
+        if (data) { try { const o = JSON.parse(data); if (o.t) { acc += o.t; onToken(acc); } } catch(_){} }
+      }
+    }
+    onDone(acc);
+  } catch (e) { onError(e); }
+}
+
 window.aiGenerate = async (tab) => {
   if (!DATA) { toast('먼저 콘텐츠를 생성하세요'); return; }
   const box = $('#aiResult-'+tab);
-  box.innerHTML = `<div class="mt-2 p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm text-slate-500 flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Claude가 생성 중...</div>`;
+  box.innerHTML = `<div class="mt-2 rounded-xl bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-800 overflow-hidden">
+    <div class="px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 text-xs font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1"><i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> 생성 중...</div>
+    <pre id="aiLive-${tab}" class="p-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300 font-sans"></pre>
+  </div>`;
   lucide.createIcons();
-  try {
-    const r = await fetch('/api/generate', {
-      method: 'POST', headers: {'content-type':'application/json'},
-      body: JSON.stringify({ ...DATA, tab, apiKey: localKey() }),
-    });
-    const j = await r.json();
-    if (!r.ok) throw new Error(j.error || ('HTTP '+r.status));
-    aiCache[tab] = j.markdown;
-    renderAiResult(tab, j.markdown);
-    toast('✨ AI 생성 완료');
-  } catch (e) {
-    box.innerHTML = `<div class="mt-2 p-4 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-sm text-rose-600 dark:text-rose-300">⚠️ ${esc(String(e.message||e))}</div>`;
-  }
+  const live = $('#aiLive-'+tab);
+  await streamGenerate(
+    { ...DATA, tab, apiKey: localKey() },
+    (acc)=>{ if (live) { live.textContent = acc; live.scrollIntoView({block:'nearest'}); } },
+    (acc)=>{
+      aiCache[tab] = acc;
+      renderAiResult(tab, acc);
+      saveToLibrary({ kind:'탭 · '+((TABS.find(t=>t.id===tab)||{}).label||tab), title: DATA.topic+' — '+((TABS.find(t=>t.id===tab)||{}).label||tab), content: acc });
+      toast('✨ AI 생성 완료');
+    },
+    (e)=>{ box.innerHTML = `<div class="mt-2 p-4 rounded-xl bg-rose-50 dark:bg-rose-900/20 border border-rose-200 dark:border-rose-800 text-sm text-rose-600 dark:text-rose-300">⚠️ ${esc(String(e.message||e))}</div>`; }
+  );
 };
 function renderAiResult(tab, md) {
   const box = $('#aiResult-'+tab); if (!box) return;
@@ -882,6 +938,7 @@ window.openSettings = () => {
   $('#set_naverId').value = s.naverId || '';
   $('#set_naverSecret').value = s.naverSecret || '';
   $('#set_youtube').value = s.youtube || '';
+  $('#set_openai').value = s.openai || '';
   $('#settingsModal').classList.remove('hidden');
   lucide.createIcons();
 };
@@ -891,6 +948,7 @@ window.saveSettings = () => {
     naverId: $('#set_naverId').value.trim(),
     naverSecret: $('#set_naverSecret').value.trim(),
     youtube: $('#set_youtube').value.trim(),
+    openai: $('#set_openai').value.trim(),
   };
   localStorage.setItem(setKey(USER && USER.email), JSON.stringify(s));
   const gc = $('#set_gcid').value.trim();
@@ -938,6 +996,14 @@ function researchPanel() {
     </div>
     <div id="nvResults" class="text-sm text-slate-400">검색 버튼을 눌러 경쟁 콘텐츠를 확인하세요.</div>`);
 
+  const datalab = sec('네이버 데이터랩 검색 트렌드', 'bar-chart-3', 'emerald',
+    keyHint(hasNaver, '네이버 Client ID/Secret 필요') +
+    `<div class="flex flex-wrap gap-2 mb-3">
+      <input id="dlQ" value="${esc(kwArr().slice(0,5).join(', ')||q)}" class="flex-1 min-w-[160px] px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" placeholder="키워드 쉼표 구분 (최대 5)" />
+      <button onclick="naverDatalab()" class="px-3 py-2 rounded-lg bg-emerald-500 text-white text-sm font-semibold">분석</button>
+    </div>
+    <div id="dlResults" class="text-sm text-slate-400">최근 1년 상대 검색 트렌드(0~100). 키워드 간 인기 비교용.</div>`);
+
   const yt = sec('유튜브 영상 리서치', 'video', 'rose',
     keyHint(hasYt, 'YouTube Data API Key 필요') +
     `<div class="flex flex-wrap gap-2 mb-3">
@@ -959,8 +1025,30 @@ function researchPanel() {
     <button onclick="ytUploadStart()" class="w-full py-2.5 rounded-lg bg-indigo-500 text-white font-semibold flex items-center justify-center gap-1.5"><i data-lucide="upload-cloud" class="w-4 h-4"></i>유튜브에 업로드</button>
     <div id="ytUpStatus" class="text-xs text-slate-500 mt-2"></div>`);
 
-  return `<div class="grid grid-cols-1 lg:grid-cols-2 gap-4"><div>${naver}${yt}</div><div>${up}</div></div>`;
+  return `<div class="grid grid-cols-1 lg:grid-cols-2 gap-4"><div>${naver}${datalab}${yt}</div><div>${up}</div></div>`;
 }
+
+window.naverDatalab = async () => {
+  const s = getSettings();
+  const box = $('#dlResults');
+  box.innerHTML = '<span class="text-slate-400">분석 중...</span>';
+  try {
+    const r = await fetch('/api/naver/datalab', { method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ clientId:s.naverId, clientSecret:s.naverSecret, keywords:$('#dlQ').value }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error||('HTTP '+r.status));
+    if (!j.results.length) { box.innerHTML = '<span class="text-slate-400">데이터 없음</span>'; return; }
+    const max = Math.max(1, ...j.results.map(x=>x.last));
+    const tc = (t)=> t==='상승'?'text-emerald-600':t==='하락'?'text-rose-500':'text-slate-400';
+    box.innerHTML = j.results.map(x=>`<div class="py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
+      <div class="flex items-center justify-between text-sm mb-1">
+        <span class="font-semibold">${esc(x.keyword)}</span>
+        <span class="text-xs ${tc(x.trend)}">${x.trend} · 최근 ${x.last} / 평균 ${x.avg}</span>
+      </div>
+      <div class="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden"><div class="h-full bg-emerald-400" style="width:${Math.round(x.last/max*100)}%"></div></div>
+    </div>`).join('') + '<p class="text-[11px] text-slate-400 mt-2">※ 절대 검색량 아님 — 기간 내 상대 비율(최댓값 100 기준)</p>';
+  } catch (e) { box.innerHTML = `<span class="text-rose-500">⚠️ ${esc(String(e.message||e))}</span>`; }
+};
 
 window.naverSearch = async () => {
   const s = getSettings();
@@ -1140,26 +1228,31 @@ window.runTool = async ()=>{
   if (!AI.enabled) { $('#tm_result').innerHTML = '<p class="text-sm text-amber-600">⚠️ AI 키가 필요합니다. 헤더 ⚙️ 설정에서 Anthropic 키를 입력하거나 서버에 ANTHROPIC_API_KEY를 설정하세요.</p>'; return; }
   const topic = $('#tm_topic').value.trim();
   if (!topic) { $('#tm_topic').focus(); toast('주제를 입력하세요'); return; }
-  $('#tm_result').innerHTML = `<div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm text-slate-500 flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Claude가 생성 중...</div>`;
+  $('#tm_result').innerHTML = `<div class="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <div class="px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-500 flex items-center gap-1"><i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> 생성 중...</div>
+    <pre id="tm_live" class="p-4 whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300 font-sans"></pre>
+  </div>`;
   lucide.createIcons();
-  try {
-    const body = {
-      topic, keywords:$('#tm_keywords').value.trim(), audience:$('#tm_audience').value.trim(),
-      purpose:$('#tm_purpose').value, tone:$('#tm_tone').value, length:'mid', imgStyle:'그라데이션',
-      tab: CUR_TOOL.id, apiKey: localKey(),
-    };
-    if (CUR_TOOL.needsSource) body.sourceText = $('#tm_source').value;
-    const r = await fetch('/api/generate', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
-    const j = await r.json();
-    if (!r.ok) throw new Error(j.error || ('HTTP '+r.status));
-    TOOLCACHE[CUR_TOOL.id] = j.markdown;
-    renderToolResult(j.markdown);
-    pushRecent(CUR_TOOL.id);
-    $('#tm_regen').classList.remove('hidden');
-    toast('✨ 생성 완료');
-  } catch (e) {
-    $('#tm_result').innerHTML = `<p class="text-sm text-rose-500">⚠️ ${esc(String(e.message||e))}</p>`;
-  }
+  const body = {
+    topic, keywords:$('#tm_keywords').value.trim(), audience:$('#tm_audience').value.trim(),
+    purpose:$('#tm_purpose').value, tone:$('#tm_tone').value, length:'mid', imgStyle:'그라데이션',
+    tab: CUR_TOOL.id, apiKey: localKey(),
+  };
+  if (CUR_TOOL.needsSource) body.sourceText = $('#tm_source').value;
+  const toolId = CUR_TOOL.id, toolLabel = CUR_TOOL.label;
+  await streamGenerate(
+    body,
+    (acc)=>{ const l=$('#tm_live'); if(l) l.textContent = acc; },
+    (acc)=>{
+      TOOLCACHE[toolId] = acc;
+      renderToolResult(acc);
+      saveToLibrary({ kind:'도구 · '+toolLabel, title: topic+' — '+toolLabel, content: acc });
+      pushRecent(toolId);
+      $('#tm_regen').classList.remove('hidden');
+      toast('✨ 생성 완료');
+    },
+    (e)=>{ $('#tm_result').innerHTML = `<p class="text-sm text-rose-500">⚠️ ${esc(String(e.message||e))}</p>`; }
+  );
 };
 function renderToolResult(md){
   const html = window.marked ? marked.parse(md) : esc(md);
@@ -1189,6 +1282,58 @@ function initMenu(){
   $$('#toolModal [data-tclose]').forEach(b=> b.onclick=()=>$('#toolModal').classList.add('hidden'));
   loadTools();
 }
+
+/* ============================================================
+   결과 보관함 (생성 결과 저장·재열람)
+   ============================================================ */
+const LIB_KEY = 'acw_library';
+const getLib = ()=> { try { return JSON.parse(localStorage.getItem(LIB_KEY)||'[]'); } catch(_) { return []; } };
+function saveToLibrary(item){
+  const lib = getLib();
+  lib.unshift({ id: 'L'+lib.length+'_'+Math.random().toString(36).slice(2,7), ts: Date.now(), ...item });
+  localStorage.setItem(LIB_KEY, JSON.stringify(lib.slice(0,200)));
+}
+window.openLibrary = ()=>{ $('#libOverlay').classList.remove('hidden'); renderLibrary(); };
+window.closeLibrary = ()=> $('#libOverlay').classList.add('hidden');
+window.renderLibrary = ()=>{
+  const q = ($('#libSearch').value||'').trim().toLowerCase();
+  let lib = getLib();
+  if (q) lib = lib.filter(x=> (x.title||'').toLowerCase().includes(q) || (x.content||'').toLowerCase().includes(q));
+  const el = $('#libList');
+  if (!lib.length) { el.innerHTML = '<p class="text-sm text-slate-400 py-6 text-center">보관된 결과가 없습니다.<br>AI 생성 시 자동 저장됩니다.</p>'; return; }
+  el.innerHTML = lib.map(x=>`<div class="p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-indigo-300 cursor-pointer" onclick="viewLibrary('${x.id}')">
+    <div class="flex items-center justify-between gap-2">
+      <p class="font-semibold text-sm truncate">${esc(x.title||'(제목 없음)')}</p>
+      <button onclick="event.stopPropagation();delLibrary('${x.id}')" class="shrink-0 text-slate-300 hover:text-rose-500"><i data-lucide="trash-2" class="w-3.5 h-3.5"></i></button>
+    </div>
+    <p class="text-[11px] text-slate-400">${esc(x.kind||'')} · ${new Date(x.ts).toLocaleString('ko-KR')}</p>
+  </div>`).join('');
+  lucide.createIcons();
+};
+window.viewLibrary = (id)=>{
+  const x = getLib().find(i=>i.id===id); if(!x) return;
+  const html = window.marked ? marked.parse(x.content||'') : esc(x.content||'');
+  $('#libView').innerHTML = `<div class="flex items-center justify-between gap-2 mb-3">
+      <h3 class="font-bold">${esc(x.title||'')}</h3>
+      <div class="flex gap-1.5">
+        <button onclick='copy(${JSON.stringify(x.content||'')})' class="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800">복사</button>
+        <button onclick='download(${JSON.stringify(x.content||'')}, "${slug(x.title||'content')}.md")' class="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800">MD</button>
+      </div>
+    </div>
+    <div class="markdown-body text-sm leading-relaxed text-slate-700 dark:text-slate-300">${html}</div>`;
+  lucide.createIcons();
+};
+window.delLibrary = (id)=>{
+  localStorage.setItem(LIB_KEY, JSON.stringify(getLib().filter(i=>i.id!==id)));
+  renderLibrary();
+  $('#libView').innerHTML = '<p class="text-sm text-slate-400">삭제됨.</p>';
+};
+window.exportLibrary = ()=>{
+  const lib = getLib();
+  if (!lib.length) { toast('보관된 결과 없음'); return; }
+  const md = lib.map(x=>`# ${x.title}\n\n_${x.kind} · ${new Date(x.ts).toLocaleString('ko-KR')}_\n\n${x.content}`).join('\n\n---\n\n');
+  download(md, 'ai_보관함_전체.md');
+};
 
 /* ---------- 카드뉴스 카드 ---------- */
 /* ---------- 카드뉴스 디자인 테마 ---------- */
@@ -1302,8 +1447,13 @@ function thumbDesigner() {
       ${seg('배경 스타일','style',Object.keys(BG_STYLES))}
       ${seg('텍스트 위치','pos',['중앙','좌측 정렬','상단 제목형','하단 강조형'])}
       ${seg('아이콘','icon',Object.keys(ICONS))}
+      <div class="flex gap-1.5">
+        <button onclick="aiThumbBg()" class="flex-1 py-2.5 rounded-lg bg-indigo-500 text-white font-semibold flex items-center justify-center gap-1.5 text-sm"><i data-lucide="sparkles" class="w-4 h-4"></i>AI 배경</button>
+        ${thumbState.bgImage?`<button onclick="clearThumbBg()" class="px-3 py-2.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-sm">초기화</button>`:''}
+      </div>
       <button onclick="downloadThumb()" class="w-full py-2.5 rounded-lg bg-pink-500 text-white font-semibold flex items-center justify-center gap-1.5"><i data-lucide="download" class="w-4 h-4"></i>PNG 다운로드</button>
-      <p class="text-[11px] text-slate-400">추천 문구는 '썸네일 문구' 탭에서 복사해 붙여넣으세요.</p>
+      <div id="thumbAiStatus" class="text-[11px] text-slate-400"></div>
+      <p class="text-[11px] text-slate-400">AI 배경은 설정의 OpenAI 키 필요. 추천 문구는 '썸네일 문구' 탭 참고.</p>
     </div>
   </div>`;
 }
@@ -1311,18 +1461,41 @@ window.setThumb = (k,v)=>{ thumbState[k]=v; renderTab('thumbimg'); setTimeout(dr
 function drawThumb() {
   const [w,h] = RATIOS[thumbState.ratio];
   const st = BG_STYLES[thumbState.style] || BG_STYLES['그라데이션'];
-  const dark = st.dark;
+  // AI 배경 이미지가 있으면 이미지 + 가독성용 어두운 오버레이, 흰 글자
+  const useImg = !!thumbState.bgImage;
+  const dark = useImg ? true : st.dark;
   const txtColor = dark ? '#fff' : '#0f172a';
+  const bg = useImg
+    ? `linear-gradient(rgba(0,0,0,.35),rgba(0,0,0,.45)), url(${thumbState.bgImage}) center/cover`
+    : st.bg;
   const align = thumbState.pos==='좌측 정렬'?'items-start text-left':'items-center text-center';
   const justify = thumbState.pos==='상단 제목형'?'justify-start':thumbState.pos==='하단 강조형'?'justify-end':'justify-center';
   const stage = $('#thumbStage'); if(!stage) return;
-  stage.innerHTML = `<div id="thumbTarget" style="aspect-ratio:${w}/${h};background:${st.bg};color:${txtColor}" class="w-full rounded-xl overflow-hidden shadow-lg p-8 flex flex-col ${justify} ${align} gap-3">
+  stage.innerHTML = `<div id="thumbTarget" style="aspect-ratio:${w}/${h};background:${bg};color:${txtColor}" class="w-full rounded-xl overflow-hidden shadow-lg p-8 flex flex-col ${justify} ${align} gap-3">
     <div class="w-12 h-12 rounded-xl grid place-items-center" style="background:${dark?'rgba(255,255,255,.18)':'rgba(15,23,42,.08)'}"><i data-lucide="${ICONS[thumbState.icon]}" class="w-6 h-6"></i></div>
-    <h2 class="text-3xl sm:text-4xl font-black leading-tight">${esc(thumbState.text)}</h2>
+    <h2 class="text-3xl sm:text-4xl font-black leading-tight" style="text-shadow:${useImg?'0 2px 8px rgba(0,0,0,.5)':'none'}">${esc(thumbState.text)}</h2>
     <p class="text-sm opacity-70">${esc(DATA.topic)}</p>
   </div>`;
   lucide.createIcons();
 }
+window.clearThumbBg = ()=>{ thumbState.bgImage=null; renderTab('thumbimg'); setTimeout(drawThumb,0); };
+window.aiThumbBg = async ()=>{
+  const s = getSettings();
+  const st = $('#thumbAiStatus');
+  if (!s.openai) { st.textContent = '⚠️ 설정에서 OpenAI 키를 입력하세요.'; return; }
+  const sizeMap = { '16:9':'1536x1024', '9:16':'1024x1536', '4:5':'1024x1536', '1:1':'1024x1024' };
+  const prompt = `${DATA.topic} 주제의 썸네일 배경 이미지. 스타일: ${thumbState.style}. 텍스트 없는 배경, 고품질, ${thumbState.style.includes('파스텔')?'파스텔 톤':'선명한 색감'}, 미니멀, 가운데 여백.`;
+  st.textContent = '🎨 AI 배경 생성 중 (수십 초 소요)...';
+  try {
+    const r = await fetch('/api/image', { method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ key:s.openai, prompt, size: sizeMap[thumbState.ratio]||'1024x1024' }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error||('HTTP '+r.status));
+    thumbState.bgImage = j.dataUrl;
+    renderTab('thumbimg'); setTimeout(drawThumb,0);
+    toast('🎨 AI 배경 적용됨');
+  } catch (e) { st.textContent = '⚠️ '+String(e.message||e); }
+};
 async function downloadThumb() {
   const el = $('#thumbTarget'); if(!el) return;
   const canvas = await capture(el);
