@@ -1560,7 +1560,7 @@ function applyData(p) {
   if(p.tone) $('#tone').value=p.tone;
   $('#length').value=p.length||'mid';
   if(p.imgStyle) $('#imgStyle').value=p.imgStyle;
-  $$('#platforms button').forEach(b=> b.classList.toggle('!bg-indigo-500', (p.platforms||[]).includes(b.dataset.v)) );
+  $$('#platforms button').forEach(b=>{ const on=(p.platforms||[]).includes(b.dataset.v); b.classList.toggle('!bg-indigo-500', on); b.classList.toggle('!text-white', on); });
 }
 window.loadProject = (i)=>{
   const list = JSON.parse(localStorage.getItem(LS_KEY)||'[]');
@@ -1596,9 +1596,9 @@ function init() {
   fillSelect('imgStyle', IMG_STYLES);
   $('#sampleTopics').innerHTML = SAMPLES.map(s=>`<button class="text-[11px] px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-slate-600 dark:text-slate-300" onclick="$('#topic').value=this.textContent">${s}</button>`).join('');
   $('#platforms').innerHTML = PLATFORMS.map(p=>`<button data-v="${p}" class="platform-chip text-[11px] px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">${p}</button>`).join('');
-  $$('#platforms .platform-chip').forEach(b=> b.onclick=()=>b.classList.toggle('!bg-indigo-500'));
+  $$('#platforms .platform-chip').forEach(b=> b.onclick=()=>{ b.classList.toggle('!bg-indigo-500'); b.classList.toggle('!text-white'); });
   // 기본 몇 개 선택
-  $$('#platforms .platform-chip').slice(0,3).forEach(b=>b.classList.add('!bg-indigo-500'));
+  $$('#platforms .platform-chip').slice(0,3).forEach(b=>b.classList.add('!bg-indigo-500','!text-white'));
 
   // 유형 네비 + 루트 카드
   $('#typeNav').innerHTML = TABS.map(t=>`<button onclick="jumpTab('${t.id}')" class="text-left text-xs px-3 py-2 rounded-lg border ${COLOR[t.color]} flex items-center gap-2 card-pop"><i data-lucide="${t.icon}" class="w-4 h-4"></i>${t.label}</button>`).join('');
