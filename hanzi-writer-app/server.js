@@ -305,11 +305,12 @@ async function initDB() {
             name VARCHAR(255),
             email VARCHAR(255),
             photo_url TEXT,
-            approved BOOLEAN DEFAULT false,
+            approved BOOLEAN DEFAULT true,
             last_active TIMESTAMP DEFAULT NOW(),
             created_at TIMESTAMP DEFAULT NOW()
         );
-        ALTER TABLE users ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT false;
+        ALTER TABLE users ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT true;
+        UPDATE users SET approved = true WHERE approved = false;
         CREATE TABLE IF NOT EXISTS practices (
             id SERIAL PRIMARY KEY,
             user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,

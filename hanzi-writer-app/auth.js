@@ -683,6 +683,19 @@
     window.isUserLoggedIn = function() { return !!currentUser; };
     window.getCurrentUser = function() { return currentUser; };
     window.isUserApproved = function() { return !!(currentUser && currentUser.approved); };
+    window.recheckApproval = function(cb) {
+        if (!authToken || !currentUser) return cb(false);
+        fetch(API_BASE + '/auth/status', {
+            headers: { 'Authorization': 'Bearer ' + authToken }
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            currentUser.approved = !!data.approved;
+            localStorage.setItem('auth_user', JSON.stringify(currentUser));
+            cb(!!data.approved);
+        })
+        .catch(function() { cb(false); });
+    };
 
     // ===== INIT ON LOAD =====
     if (document.readyState === 'loading') {
