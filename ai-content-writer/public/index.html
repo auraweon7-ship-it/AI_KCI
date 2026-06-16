@@ -515,9 +515,15 @@ function renderTab(id) {
   }
 
   else if (id==='card') {
-    html += `<div class="flex items-center justify-between mb-3">
+    html += `<div class="flex flex-wrap items-center justify-between gap-2 mb-3">
       <p class="text-sm text-slate-500">카드 8장 · 1:1 · 클릭하면 개별 PNG</p>
-      <button onclick="downloadCardsZip()" class="text-xs px-3 py-1.5 rounded-lg bg-amber-500 text-white font-semibold flex items-center gap-1"><i data-lucide="folder-down" class="w-3.5 h-3.5"></i>전체 ZIP 다운로드</button>
+      <div class="flex items-center gap-2">
+        <label class="text-xs text-slate-500">디자인</label>
+        <select onchange="setCardStyle(this.value)" class="text-xs px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none">
+          ${Object.keys(CARD_STYLES).map(k=>`<option ${k===cardStyle?'selected':''}>${k}</option>`).join('')}
+        </select>
+        <button onclick="downloadCardsZip()" class="text-xs px-3 py-1.5 rounded-lg bg-amber-500 text-white font-semibold flex items-center gap-1"><i data-lucide="folder-down" class="w-3.5 h-3.5"></i>전체 ZIP</button>
+      </div>
     </div>`;
     html += `<div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="cardGrid">${g.cardNews.map(cardHtml).join('')}</div>`;
   }
@@ -654,14 +660,29 @@ async function checkAiStatus() {
 }
 
 /* ---------- 카드뉴스 카드 ---------- */
-const CARD_THEMES = ['from-indigo-500 to-violet-500','from-rose-400 to-pink-500','from-emerald-400 to-teal-500','from-amber-400 to-orange-500','from-sky-400 to-blue-500','from-fuchsia-400 to-purple-500','from-cyan-400 to-sky-500','from-slate-700 to-slate-900'];
+/* ---------- 카드뉴스 디자인 테마 ---------- */
+const _VIVID  = ['#6366f1,#8b5cf6','#fb7185,#ec4899','#34d399,#14b8a6','#fbbf24,#f97316','#38bdf8,#3b82f6','#e879f9,#a855f7','#22d3ee,#0ea5e9','#64748b,#0f172a'];
+const _PASTEL = ['#fbc2eb,#a6c1ee','#a1c4fd,#c2e9fb','#ffecd2,#fcb69f','#d4fc79,#96e6a1','#e0c3fc,#8ec5fc','#f6d365,#fda085','#84fab0,#8fd3f4','#fccb90,#d57eeb'];
+const _BARC    = ['#6366f1','#ec4899','#10b981','#f59e0b','#0ea5e9','#a855f7','#06b6d4','#475569'];
+const CARD_STYLES = {
+  '그라데이션':  (i)=>({ wrap:`background:linear-gradient(135deg,${_VIVID[i%8]});color:#fff`,                         dark:true,  accent:'#fde68a' }),
+  '파스텔':      (i)=>({ wrap:`background:linear-gradient(135deg,${_PASTEL[i%8]});color:#1e293b`,                     dark:false, accent:'#7c3aed' }),
+  '미니멀':      (i)=>({ wrap:`background:#ffffff;color:#0f172a;border:1px solid #e2e8f0`,                            dark:false, accent:'#6366f1' }),
+  '강의자료형':  (i)=>({ wrap:`background:#0f172a;color:#f8fafc`,                                                      dark:true,  accent:'#fbbf24' }),
+  '노션 카드형': (i)=>({ wrap:`background:#f7f6f3;color:#1f2937;border-left:6px solid ${_BARC[i%8]}`,                  dark:false, accent:_BARC[i%8] }),
+  '비즈니스형':  (i)=>({ wrap:`background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff`,                         dark:true,  accent:'#fcd34d' }),
+};
+let cardStyle = '그라데이션';
+
 function cardHtml(c, i) {
-  const theme = CARD_THEMES[i % CARD_THEMES.length];
+  const sf = CARD_STYLES[cardStyle] || CARD_STYLES['그라데이션'];
+  const s = sf(i);
+  const badge = s.dark ? 'background:rgba(255,255,255,.2)' : 'background:rgba(15,23,42,.07)';
   return `<div class="space-y-2">
-    <div class="card-target aspect-square rounded-xl2 overflow-hidden shadow-md bg-gradient-to-br ${theme} text-white p-6 flex flex-col justify-between" id="card-${c.idx}">
+    <div class="card-target aspect-square rounded-xl2 overflow-hidden shadow-md p-6 flex flex-col justify-between" style="${s.wrap}" id="card-${c.idx}">
       <div class="flex items-center justify-between">
-        <span class="text-[11px] font-semibold px-2 py-1 rounded-full bg-white/20">${esc(c.type)}</span>
-        <span class="text-xs font-mono opacity-80">${c.idx} / 8</span>
+        <span class="text-[11px] font-semibold px-2 py-1 rounded-full" style="${badge}">${esc(c.type)}</span>
+        <span class="text-xs font-mono font-bold" style="color:${s.accent}">${c.idx} / 8</span>
       </div>
       <div>
         <h3 class="text-lg font-extrabold mb-2 opacity-90">${esc(c.title)}</h3>
@@ -676,6 +697,11 @@ function cardHtml(c, i) {
     </div>
   </div>`;
 }
+window.setCardStyle = (v) => {
+  cardStyle = v;
+  const grid = $('#cardGrid');
+  if (grid) { grid.innerHTML = GEN.cardNews.map(cardHtml).join(''); lucide.createIcons(); }
+};
 
 // 웹폰트(Pretendard) 로드 완료 후 캡처 — 폰트 깨짐 방지
 async function capture(el) {
@@ -892,6 +918,7 @@ function runGenerate() {
     platforms: $$('#platforms .platform-chip').filter(b=>b.classList.contains('!bg-indigo-500')).map(b=>b.dataset.v),
   };
   thumbState = {ratio:'16:9', style:DATA.imgStyle, pos:'중앙', icon:'AI', text:''};
+  cardStyle = CARD_STYLES[DATA.imgStyle] ? DATA.imgStyle : '그라데이션';
   GEN = genAll();
   saveProject();
 
