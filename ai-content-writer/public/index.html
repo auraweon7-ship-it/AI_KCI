@@ -57,6 +57,9 @@
       </div>
     </div>
     <div class="flex items-center gap-2">
+      <button id="shareBtn" onclick="shareLink()" class="px-3 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
+        <i data-lucide="link" class="w-4 h-4"></i><span class="hidden sm:inline">공유</span>
+      </button>
       <button id="recentBtn" class="px-3 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
         <i data-lucide="history" class="w-4 h-4"></i><span class="hidden sm:inline">최근</span>
       </button>
@@ -543,11 +546,18 @@ function renderTab(id) {
     <button onclick="downloadAll()" class="text-xs px-3 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 flex items-center gap-1"><i data-lucide="package" class="w-3.5 h-3.5"></i>전체 패키지 MD</button>
   </div>`;
 
-  if (AI.enabled && id !== 'thumbimg') html = aiBarHtml(id) + html;
-
-  c.innerHTML = html;
-  if (AI.enabled && id !== 'thumbimg' && aiCache[id]) renderAiResult(id, aiCache[id]);
+  const useAi = AI.enabled && id !== 'thumbimg';
+  if (useAi) {
+    c.innerHTML = aiBarHtml(id) + `<div id="tmplWrap">${html}</div>`;
+    if (aiCache[id]) renderAiResult(id, aiCache[id]); // AI 결과 있으면 템플릿 숨기고 AI를 메인으로
+  } else {
+    c.innerHTML = html;
+  }
   lucide.createIcons();
+}
+function toggleTmpl(show) {
+  const w = $('#tmplWrap'); if (!w) return;
+  w.style.display = show ? '' : 'none';
 }
 
 /* ---------- AI 실연동 ---------- */
@@ -613,10 +623,12 @@ function renderAiResult(tab, md) {
   const box = $('#aiResult-'+tab); if (!box) return;
   const html = (window.marked ? marked.parse(md) : esc(md));
   const id = 'ai'+tab;
+  toggleTmpl(false); // AI 결과를 메인으로 — 템플릿 블록 숨김
   box.innerHTML = `<div class="mt-2 rounded-xl bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-800 overflow-hidden">
     <div class="flex items-center justify-between px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 border-b border-indigo-100 dark:border-indigo-800">
       <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> AI 생성 결과</span>
       <div class="flex gap-1.5">
+        <button onclick='toggleTmplView(this)' data-show="0" class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">템플릿 보기</button>
         <button onclick='copy(aiCache["${tab}"])' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">복사</button>
         <button onclick='download(aiCache["${tab}"], "${slug(DATA.topic)}_${tab}_AI.md")' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">MD</button>
       </div>
@@ -625,6 +637,12 @@ function renderAiResult(tab, md) {
   </div>`;
   lucide.createIcons();
 }
+window.toggleTmplView = (btn) => {
+  const show = btn.dataset.show === '0';
+  toggleTmpl(show);
+  btn.dataset.show = show ? '1' : '0';
+  btn.textContent = show ? '템플릿 숨기기' : '템플릿 보기';
+};
 async function checkAiStatus() {
   try {
     const r = await fetch('/api/status');
@@ -659,9 +677,17 @@ function cardHtml(c, i) {
   </div>`;
 }
 
+// 웹폰트(Pretendard) 로드 완료 후 캡처 — 폰트 깨짐 방지
+async function capture(el) {
+  if (document.fonts && document.fonts.ready) {
+    try { await document.fonts.ready; } catch (_) {}
+  }
+  return html2canvas(el, { scale: 2, backgroundColor: null, useCORS: true });
+}
+
 async function downloadCard(idx) {
   const el = $('#card-'+idx);
-  const canvas = await html2canvas(el, {scale:2, backgroundColor:null});
+  const canvas = await capture(el);
   const a = document.createElement('a');
   a.href = canvas.toDataURL('image/png');
   a.download = `cardnews_${idx}.png`; a.click();
@@ -672,7 +698,7 @@ async function downloadCardsZip() {
   const zip = new JSZip();
   for (const c of GEN.cardNews) {
     const el = $('#card-'+c.idx);
-    const canvas = await html2canvas(el, {scale:2, backgroundColor:null});
+    const canvas = await capture(el);
     const data = canvas.toDataURL('image/png').split(',')[1];
     zip.file(`cardnews_${c.idx}.png`, data, {base64:true});
   }
@@ -733,7 +759,7 @@ function drawThumb() {
 }
 async function downloadThumb() {
   const el = $('#thumbTarget'); if(!el) return;
-  const canvas = await html2canvas(el, {scale:2, backgroundColor:null});
+  const canvas = await capture(el);
   const a = document.createElement('a');
   a.href = canvas.toDataURL('image/png'); a.download = 'thumbnail_'+slug(DATA.topic)+'.png'; a.click();
   toast('🖼️ 썸네일 저장 완료');
@@ -789,15 +815,37 @@ function renderRecent() {
     <p class="text-[11px] text-slate-400">${p.purpose} · ${p.tone} · ${new Date(p.ts).toLocaleDateString('ko-KR')}</p>
   </div>`).join('');
 }
+function applyData(p) {
+  $('#topic').value=p.topic||''; $('#audience').value=p.audience||''; $('#keywords').value=p.keywords||'';
+  if(p.purpose) $('#purpose').value=p.purpose;
+  if(p.tone) $('#tone').value=p.tone;
+  $('#length').value=p.length||'mid';
+  if(p.imgStyle) $('#imgStyle').value=p.imgStyle;
+  $$('#platforms button').forEach(b=> b.classList.toggle('!bg-indigo-500', (p.platforms||[]).includes(b.dataset.v)) );
+}
 window.loadProject = (i)=>{
   const list = JSON.parse(localStorage.getItem(LS_KEY)||'[]');
   const p = list[i]; if(!p) return;
-  $('#topic').value=p.topic||''; $('#audience').value=p.audience||''; $('#keywords').value=p.keywords||'';
-  $('#purpose').value=p.purpose; $('#tone').value=p.tone; $('#length').value=p.length||'mid'; $('#imgStyle').value=p.imgStyle;
-  $$('#platforms button').forEach(b=> b.classList.toggle('!bg-indigo-500', (p.platforms||[]).includes(b.dataset.v)) );
+  applyData(p);
   $('#recentDrawer').classList.add('hidden');
   runGenerate();
 };
+
+/* ---------- URL 공유 ---------- */
+const encodeShare = (d)=> btoa(unescape(encodeURIComponent(JSON.stringify(d))));
+const decodeShare = (s)=> JSON.parse(decodeURIComponent(escape(atob(s))));
+window.shareLink = ()=>{
+  if(!DATA){ toast('먼저 콘텐츠를 생성하세요'); return; }
+  const payload = { topic:DATA.topic, audience:DATA.audience, keywords:DATA.keywords, purpose:DATA.purpose, tone:DATA.tone, length:DATA.length, imgStyle:DATA.imgStyle, platforms:DATA.platforms };
+  const u = location.origin + location.pathname + '#s=' + encodeShare(payload);
+  navigator.clipboard.writeText(u).then(()=>toast('🔗 공유 링크 복사됨')).catch(()=>{ history.replaceState(null,'','#s='+encodeShare(payload)); toast('🔗 링크 주소창에 반영됨'); });
+};
+function loadFromHash(){
+  const m = (location.hash||'').match(/^#s=(.+)$/);
+  if(!m) return false;
+  try { applyData(decodeShare(m[1])); runGenerate(); toast('🔗 공유 링크로 불러옴'); return true; }
+  catch(_) { return false; }
+}
 
 /* ============================================================
    초기화 + 이벤트
@@ -825,6 +873,7 @@ function init() {
   if (localStorage.getItem('acw_dark')==='true') document.documentElement.classList.add('dark');
 
   checkAiStatus();
+  loadFromHash();   // 공유 링크로 진입 시 자동 복원·생성
   lucide.createIcons();
 }
 window.jumpTab = (id)=>{ if(!GEN){ toast('먼저 콘텐츠를 생성하세요'); return; } renderTab(id); window.scrollTo({top:0,behavior:'smooth'}); };
