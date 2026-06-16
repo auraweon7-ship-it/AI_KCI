@@ -314,8 +314,10 @@
     </div>
     <label class="block text-[11px] font-semibold text-slate-500 mb-1">플랫폼</label>
     <select id="pub_provider" class="w-full px-2 py-2 mb-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none">
+      <option value="blogger">구글 블로그 (Blogger)</option>
       <option value="wordpress">워드프레스</option>
       <option value="tistory">티스토리</option>
+      <option value="naver">네이버 블로그 (수동 도우미)</option>
     </select>
     <label class="block text-[11px] font-semibold text-slate-500 mb-1">제목</label>
     <input id="pub_title" class="w-full px-3 py-2 mb-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
@@ -383,6 +385,10 @@
           <input id="set_tistoryBlog" placeholder="티스토리 blogName" class="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
         </div>
         <p class="text-[11px] text-slate-400 mt-1">워드프레스: 사용자→프로필→애플리케이션 비밀번호. 티스토리는 구 API(신규 앱 발급 중단 상태일 수 있음)</p>
+        <div class="grid grid-cols-2 gap-2 mt-2">
+          <input id="set_bloggerBlogId" placeholder="구글 블로그(Blogger) Blog ID" class="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+          <input id="set_naverBlogId" placeholder="네이버 블로그 ID(아이디)" class="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+        </div>
         <div class="grid grid-cols-2 gap-2 mt-2">
           <input id="set_igToken" type="password" placeholder="인스타 Access Token" class="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
           <input id="set_igUserId" placeholder="인스타 IG User ID" class="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
@@ -867,6 +873,7 @@ function renderHtmlResult(id, h){
     <div class="flex flex-wrap items-center justify-between gap-1.5 px-3 py-2 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-100 dark:border-amber-800">
       <span class="text-xs font-bold text-amber-700 dark:text-amber-300">🎨 가독성 HTML 미리보기</span>
       <div class="flex gap-1.5">
+        <button onclick='openPublish(HTMLCACHE["${id}"], DATA.topic, true)' class="text-xs px-2 py-1 rounded bg-indigo-500 text-white">발행</button>
         <button onclick='copy(HTMLCACHE["${id}"], "HTML 복사됨")' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">HTML 복사</button>
         <button onclick='dlBlogHtml("${id}")' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">.html 저장</button>
       </div>
@@ -1166,12 +1173,14 @@ window.openSettings = () => {
   $('#set_tistoryBlog').value = s.tistoryBlog || '';
   $('#set_igToken').value = s.igToken || '';
   $('#set_igUserId').value = s.igUserId || '';
+  $('#set_bloggerBlogId').value = s.bloggerBlogId || '';
+  $('#set_naverBlogId').value = s.naverBlogId || '';
   $('#settingsModal').classList.remove('hidden');
   refreshSettingBadges();
   $('#settingsModal').oninput = refreshSettingBadges;  // 입력 즉시 갱신
   lucide.createIcons();
 };
-const SETTING_FIELDS = ['set_anthropic','set_gcid','set_naverId','set_naverSecret','set_youtube','set_openai','set_wpUrl','set_wpUser','set_wpAppPass','set_tistoryToken','set_tistoryBlog','set_igToken','set_igUserId'];
+const SETTING_FIELDS = ['set_anthropic','set_gcid','set_naverId','set_naverSecret','set_youtube','set_openai','set_wpUrl','set_wpUser','set_wpAppPass','set_tistoryToken','set_tistoryBlog','set_igToken','set_igUserId','set_bloggerBlogId','set_naverBlogId'];
 function refreshSettingBadges(){
   SETTING_FIELDS.forEach(id=>{
     const inp = $('#'+id); if(!inp) return;
@@ -1198,6 +1207,8 @@ window.saveSettings = () => {
     tistoryBlog: $('#set_tistoryBlog').value.trim(),
     igToken: $('#set_igToken').value.trim(),
     igUserId: $('#set_igUserId').value.trim(),
+    bloggerBlogId: $('#set_bloggerBlogId').value.trim(),
+    naverBlogId: $('#set_naverBlogId').value.trim(),
   };
   localStorage.setItem(setKey(USER && USER.email), JSON.stringify(s));
   const gc = $('#set_gcid').value.trim();
@@ -1594,8 +1605,10 @@ window.exportLibrary = ()=>{
 
 /* ---------- 블로그 발행 ---------- */
 let PUB_MD = '';
-window.openPublish = (md, title)=>{
-  PUB_MD = md || '';
+let PUB_ISHTML = false;
+window.openPublish = (content, title, isHtml)=>{
+  PUB_MD = content || '';
+  PUB_ISHTML = !!isHtml;
   $('#pub_title').value = title || (DATA?DATA.topic:'') || '';
   $('#pub_status_msg').textContent = '';
   $('#pubModal').classList.remove('hidden');
@@ -1603,9 +1616,47 @@ window.openPublish = (md, title)=>{
 };
 window.doPublish = async ()=>{
   const s = getSettings(); const msg = $('#pub_status_msg'); const prov = $('#pub_provider').value;
-  if (!$('#pub_title').value.trim()) { msg.textContent='⚠️ 제목을 입력하세요.'; return; }
-  const contentHtml = window.marked ? marked.parse(PUB_MD) : PUB_MD;
-  const body = { provider:prov, title:$('#pub_title').value.trim(), contentHtml, status:$('#pub_status').value };
+  const title = $('#pub_title').value.trim();
+  if (!title) { msg.textContent='⚠️ 제목을 입력하세요.'; return; }
+  const contentHtml = PUB_ISHTML ? PUB_MD : (window.marked ? marked.parse(PUB_MD) : PUB_MD);
+  const status = $('#pub_status').value;
+
+  // 구글 블로그(Blogger) — 클라이언트 OAuth + Blogger API
+  if (prov==='blogger') {
+    if (!getGcid()) { msg.textContent='⚠️ Google 로그인/Client ID가 필요합니다.'; return; }
+    if (!s.bloggerBlogId) { msg.textContent='⚠️ 설정에서 Blogger Blog ID를 입력하세요.'; return; }
+    msg.textContent='권한 동의 창 확인...';
+    try {
+      const tc = google.accounts.oauth2.initTokenClient({ client_id:getGcid(), scope:'https://www.googleapis.com/auth/blogger',
+        callback: async (resp)=>{
+          if (resp.error) { msg.textContent='⚠️ 권한 거부: '+resp.error; return; }
+          msg.textContent='발행 중...';
+          try {
+            const r = await fetch(`https://www.googleapis.com/blogger/v3/blogs/${encodeURIComponent(s.bloggerBlogId)}/posts/${status==='publish'?'':'?isDraft=true'}`, {
+              method:'POST', headers:{ 'Authorization':'Bearer '+resp.access_token, 'Content-Type':'application/json' },
+              body: JSON.stringify({ title, content: contentHtml }) });
+            const j = await r.json();
+            if (!r.ok) throw new Error((j.error&&j.error.message)||('Blogger '+r.status));
+            msg.innerHTML = `✅ 구글 블로그 발행 완료 ${j.url?`— <a href="${j.url}" target="_blank" class="text-indigo-500 underline">글 보기</a>`:''}`;
+            toast('✅ 구글 블로그 발행');
+          } catch(e){ msg.textContent='⚠️ '+String(e.message||e); }
+        }});
+      tc.requestAccessToken();
+    } catch(e){ msg.textContent='⚠️ '+String(e.message||e); }
+    return;
+  }
+
+  // 네이버 블로그 — 공식 글쓰기 API 없음 → HTML 복사 + 에디터 열기(수동 도우미)
+  if (prov==='naver') {
+    try { await navigator.clipboard.writeText(contentHtml); } catch(_) {}
+    const u = s.naverBlogId ? `https://blog.naver.com/${encodeURIComponent(s.naverBlogId)}?Redirect=Write` : 'https://blog.naver.com/PostWriteForm.naver';
+    window.open(u, '_blank');
+    msg.innerHTML = '📋 네이버는 공식 발행 API가 없어 자동 발행 불가.<br>HTML이 복사됐고 글쓰기 창을 열었습니다 — 에디터의 <b>HTML 모드</b>에 붙여넣으세요.';
+    return;
+  }
+
+  // 워드프레스 / 티스토리 — 백엔드 프록시
+  const body = { provider:prov, title, contentHtml, status };
   if (prov==='wordpress') {
     if (!s.wpUrl||!s.wpUser||!s.wpAppPass) { msg.textContent='⚠️ 설정에서 워드프레스 정보를 입력하세요.'; return; }
     body.wpUrl=s.wpUrl; body.wpUser=s.wpUser; body.wpAppPassword=s.wpAppPass;

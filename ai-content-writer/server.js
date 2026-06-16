@@ -73,6 +73,7 @@ const TAB_PROMPTS = {
 - 📷 이미지 자리: 점선 박스 + '📷 이미지 추천: …'.
 
 [톤·색상] 친근한 후기·정보체, 존댓말, 이모지 적극 사용. 네이버 그린 계열(#03c75a 메인) + 따뜻한 보조색(연녹·연노랑·연분홍). 폰트 크기 대비 크게(소제목 vs 본문), 여백 넉넉히, 둥근 모서리·그림자.
+[분량·완결성] 내용을 빠짐없이 길고 풍부하게. 도입→여러 소제목(최소 5개)별 충분한 문단(각 3~6문장)→FAQ→마무리까지 본문 전체를 실제 내용으로 채워라. 요약/축약/생략/'...'/플레이스홀더 금지. 실제 블로그 글 한 편 분량(2000자 이상)으로 완성.
 [규칙] 모든 스타일 inline style만(class/외부CSS 금지). 본문 요소만(html/head/body 래퍼 금지). 출력은 HTML 코드만, 코드펜스(\`\`\`)·설명 금지.`,
   'googleblog-html': `구글 SEO 최적 + '세련되고 파격적인 매거진형 본문 HTML'을 생성하라. 정보 신뢰감과 시각적 임팩트를 동시에.
 
@@ -91,6 +92,7 @@ const TAB_PROMPTS = {
 - 📷 이미지 자리 점선 박스.
 
 [톤·색상] 전문·정보 중심, 첫 문단에 핵심 답. 비즈 블루 계열(#2563eb 메인) + 보조(연청·민트·연회색). 폰트 크기 대비 크게, 여백·둥근 모서리·그림자 적극.
+[분량·완결성] 내용을 빠짐없이 길고 깊이 있게. 도입→목차→소제목(최소 5개)별 충분한 문단(각 3~6문장)→비교 표→FAQ(5개)→결론까지 본문 전체를 실제 내용으로 채워라. 요약/축약/생략/플레이스홀더 금지. 검색 의도를 충족하는 완결된 장문(2000자 이상)으로.
 [규칙] 모든 스타일 inline style만(class/외부CSS 금지). 본문 요소만(래퍼 금지). 출력은 HTML 코드만, 코드펜스·설명 금지.`,
   seo: `검색 의도를 반영한 SEO 최적화 제목 10개를 번호 목록으로 작성하라. 클릭을 유도하되 과장하지 말 것.`,
   thread: `스레드(X)용 글타래를 작성하라: 강한 훅 첫 문장 → 5~7개 짧은 포스트 → 저장/공유 유도 마무리 → 해시태그 5개.`,
@@ -109,6 +111,8 @@ const SYSTEM_PROMPT = `너는 한국어 콘텐츠 마케팅 전문가다. 다음
 - 목적별(정보전달/상품홍보/강의홍보/수익형/교육/브랜딩)로 톤을 다르게 한다.
 출력은 깔끔한 Markdown만. 잡담·서론 없이 결과만.`;
 
+// 긴 출력이 필요한 탭(블로그 HTML 등)은 max_tokens 상향
+function maxTokensFor(tab) { return String(tab || '').endsWith('-html') ? 16000 : 8000; }
 function buildUserPrompt(d, tab) {
   // tab 이 툴 레지스트리 id 면 그 프롬프트, 아니면 기존 탭 프롬프트
   const tool = TOOL_MAP[tab];
@@ -141,7 +145,7 @@ async function callClaude(d, tab, key) {
     },
     body: JSON.stringify({
       model: d.model || MODEL,
-      max_tokens: 8000,
+      max_tokens: maxTokensFor(tab),
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: buildUserPrompt(d, tab) }],
     }),
@@ -415,7 +419,7 @@ const server = http.createServer((req, res) => {
         const ar = await fetch(`${BASE_URL}/v1/messages`, {
           method: 'POST',
           headers: { 'x-api-key': userKey || API_KEY, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-          body: JSON.stringify({ model: d.model || MODEL, max_tokens: 8000, stream: true, system: SYSTEM_PROMPT, messages: [{ role: 'user', content: buildUserPrompt(d, d.tab || 'blog') }] }),
+          body: JSON.stringify({ model: d.model || MODEL, max_tokens: maxTokensFor(d.tab || 'blog'), stream: true, system: SYSTEM_PROMPT, messages: [{ role: 'user', content: buildUserPrompt(d, d.tab || 'blog') }] }),
         });
         if (!ar.ok || !ar.body) {
           const t = ar.ok ? '' : await ar.text();
