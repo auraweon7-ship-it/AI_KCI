@@ -58,6 +58,9 @@
       </div>
     </div>
     <div class="flex items-center gap-2">
+      <button id="menuBtn" onclick="openMenu()" class="px-3 py-2 rounded-lg text-sm bg-indigo-500 text-white hover:bg-indigo-600 flex items-center gap-1.5 font-semibold">
+        <i data-lucide="layout-grid" class="w-4 h-4"></i><span class="hidden sm:inline">메뉴판</span>
+      </button>
       <button id="shareBtn" onclick="shareLink()" class="px-3 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
         <i data-lucide="link" class="w-4 h-4"></i><span class="hidden sm:inline">공유</span>
       </button>
@@ -175,6 +178,72 @@
       <button data-close class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
     </div>
     <div id="recentList" class="space-y-2"></div>
+  </div>
+</div>
+
+<!-- ===== 메뉴판 오버레이 ===== -->
+<div id="menuOverlay" class="fixed inset-0 z-40 hidden bg-slate-50 dark:bg-slate-950 overflow-y-auto">
+  <div class="sticky top-0 z-10 backdrop-blur bg-white/85 dark:bg-slate-900/85 border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex items-center gap-3">
+      <h2 class="font-bold text-lg flex items-center gap-2 shrink-0"><i data-lucide="layout-grid" class="w-5 h-5 text-indigo-500"></i>기능 메뉴판</h2>
+      <div class="flex-1 flex items-center gap-2 justify-end flex-wrap">
+        <input id="menuSearch" oninput="renderMenu()" placeholder="기능 검색..." class="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none w-40 sm:w-56" />
+        <select id="menuSort" onchange="renderMenu()" class="px-2 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none">
+          <option value="section">섹션순</option>
+          <option value="fav">즐겨찾기순</option>
+          <option value="recent">최근사용순</option>
+          <option value="name">이름순</option>
+        </select>
+        <button onclick="closeMenu()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+    </div>
+  </div>
+  <div id="menuBody" class="max-w-7xl mx-auto px-4 py-6"></div>
+</div>
+
+<!-- ===== 툴 실행 모달 ===== -->
+<div id="toolModal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/50" data-tclose></div>
+  <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[94%] max-w-3xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 rounded-2xl shadow-2xl">
+    <div class="sticky top-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-5 py-3 flex items-center justify-between">
+      <h3 id="toolTitle" class="font-bold flex items-center gap-2"><i data-lucide="wand-2" class="w-5 h-5 text-indigo-500"></i><span></span></h3>
+      <button data-tclose class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div class="p-5">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+        <div class="sm:col-span-2">
+          <label class="block text-[11px] font-semibold text-slate-500 mb-1">주제 *</label>
+          <input id="tm_topic" class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 mb-1">키워드</label>
+          <input id="tm_keywords" class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 mb-1">대상 독자</label>
+          <input id="tm_audience" class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 mb-1">글의 목적</label>
+          <select id="tm_purpose" class="w-full px-2 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none"></select>
+        </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-500 mb-1">문체</label>
+          <select id="tm_tone" class="w-full px-2 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none"></select>
+        </div>
+      </div>
+      <div id="tm_sourceWrap" class="hidden mb-3">
+        <label class="block text-[11px] font-semibold text-slate-500 mb-1">기존 글 붙여넣기 (리라이팅용)</label>
+        <textarea id="tm_source" rows="5" class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none resize-none"></textarea>
+      </div>
+      <div class="flex flex-wrap gap-2 mb-3">
+        <button onclick="runTool()" class="px-4 py-2 rounded-lg bg-indigo-500 text-white text-sm font-semibold flex items-center gap-1.5"><i data-lucide="wand-2" class="w-4 h-4"></i>생성</button>
+        <button onclick="runTool()" id="tm_regen" class="hidden px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-sm flex items-center gap-1.5"><i data-lucide="refresh-cw" class="w-4 h-4"></i>다시 생성</button>
+        <button onclick="toggleToolPrompt()" class="px-4 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 text-sm flex items-center gap-1.5"><i data-lucide="eye" class="w-4 h-4"></i>프롬프트 보기</button>
+      </div>
+      <div id="tm_promptView" class="hidden text-xs bg-slate-50 dark:bg-slate-800 rounded-lg p-3 mb-3 whitespace-pre-wrap text-slate-500"></div>
+      <div id="tm_result"></div>
+    </div>
   </div>
 </div>
 
@@ -975,6 +1044,152 @@ async function doYtUpload(token, file) {
   }
 }
 
+/* ============================================================
+   기능 메뉴판 + 툴 실행기
+   ============================================================ */
+let TOOLS_META = null;     // {sections, tools}
+let CUR_TOOL = null;
+const FAV_KEY = 'acw_favs', RECENT_KEY = 'acw_recent_tools', TOOLCACHE = {};
+const SEC_COLOR = {
+  blue:   'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800',
+  amber:  'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800',
+  emerald:'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800',
+  teal:   'bg-teal-50 dark:bg-teal-900/20 border-teal-200 dark:border-teal-800',
+  sky:    'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800',
+  violet: 'bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800',
+  rose:   'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800',
+  yellow: 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800',
+};
+const getFavs   = ()=> { try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY)||'[]')); } catch(_) { return new Set(); } };
+const getRecents= ()=> { try { return JSON.parse(localStorage.getItem(RECENT_KEY)||'[]'); } catch(_) { return []; } };
+window.toggleFav = (e, id)=>{ e.stopPropagation(); const f=getFavs(); f.has(id)?f.delete(id):f.add(id); localStorage.setItem(FAV_KEY, JSON.stringify([...f])); renderMenu(); };
+function pushRecent(id){ let r=getRecents().filter(x=>x!==id); r.unshift(id); localStorage.setItem(RECENT_KEY, JSON.stringify(r.slice(0,12))); }
+
+async function loadTools(){
+  if (TOOLS_META) return TOOLS_META;
+  try { const r=await fetch('/api/tools'); if(r.ok) TOOLS_META=await r.json(); } catch(_) {}
+  return TOOLS_META;
+}
+window.openMenu = async ()=>{
+  await loadTools();
+  if (!TOOLS_META) { toast('메뉴는 서버 실행(node server.js) 시 사용 가능'); return; }
+  $('#menuOverlay').classList.remove('hidden');
+  renderMenu();
+};
+window.closeMenu = ()=> $('#menuOverlay').classList.add('hidden');
+
+window.renderMenu = ()=>{
+  if (!TOOLS_META) return;
+  const q = ($('#menuSearch').value||'').trim().toLowerCase();
+  const sort = $('#menuSort').value;
+  const favs = getFavs(); const recents = getRecents();
+  let tools = TOOLS_META.tools.filter(t=> !q || t.label.toLowerCase().includes(q) || (t.desc||'').toLowerCase().includes(q));
+  const card = (t)=>{
+    const sec = TOOLS_META.sections[t.section] || {color:'slate'};
+    const fav = favs.has(t.id);
+    return `<button onclick="openTool('${t.id}')" class="text-left card-pop rounded-xl border ${SEC_COLOR[sec.color]||'border-slate-200'} p-3 relative">
+      <span onclick="toggleFav(event,'${t.id}')" class="absolute top-2 right-2 text-base ${fav?'opacity-100':'opacity-30'}" title="즐겨찾기">★</span>
+      <p class="font-bold text-sm pr-6">${esc(t.label)}</p>
+      <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">${esc(t.desc||'')}</p>
+    </button>`;
+  };
+  let html = '';
+  if (sort==='section') {
+    for (const [sid, sec] of Object.entries(TOOLS_META.sections)) {
+      const list = tools.filter(t=>t.section===sid);
+      if (!list.length) continue;
+      html += `<div class="mb-6"><h3 class="font-bold mb-2 flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-${sec.color}-400"></span>${esc(sec.title)}</h3>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">${list.map(card).join('')}</div></div>`;
+    }
+  } else {
+    if (sort==='fav') tools = [...tools].sort((a,b)=> (favs.has(b.id)-favs.has(a.id)));
+    else if (sort==='recent') tools = [...tools].sort((a,b)=> (recents.indexOf(a.id)+1||999) - (recents.indexOf(b.id)+1||999));
+    else if (sort==='name') tools = [...tools].sort((a,b)=> a.label.localeCompare(b.label,'ko'));
+    html = `<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">${tools.map(card).join('')}</div>`;
+  }
+  $('#menuBody').innerHTML = html || '<p class="text-slate-400 text-sm">검색 결과 없음</p>';
+  lucide.createIcons();
+};
+
+window.openTool = (id)=>{
+  const t = TOOLS_META.tools.find(x=>x.id===id); if(!t) return;
+  CUR_TOOL = t;
+  $('#toolTitle').querySelector('span').textContent = t.label;
+  // 입력값: 메인 폼 또는 마지막 DATA에서 prefill
+  $('#tm_topic').value = (DATA&&DATA.topic) || $('#topic').value || '';
+  $('#tm_keywords').value = (DATA&&DATA.keywords) || $('#keywords').value || '';
+  $('#tm_audience').value = (DATA&&DATA.audience) || $('#audience').value || '';
+  if (!$('#tm_purpose').options.length) { $('#tm_purpose').innerHTML = PURPOSES.map(o=>`<option>${o}</option>`).join(''); $('#tm_tone').innerHTML = TONES.map(o=>`<option>${o}</option>`).join(''); }
+  $('#tm_purpose').value = (DATA&&DATA.purpose) || PURPOSES[0];
+  $('#tm_tone').value = (DATA&&DATA.tone) || TONES[1];
+  $('#tm_sourceWrap').classList.toggle('hidden', !t.needsSource);
+  $('#tm_promptView').classList.add('hidden');
+  $('#tm_regen').classList.add('hidden');
+  $('#tm_result').innerHTML = TOOLCACHE[id] ? '' : '<p class="text-sm text-slate-400">입력을 확인하고 \'생성\'을 누르세요.</p>';
+  if (TOOLCACHE[id]) renderToolResult(TOOLCACHE[id]);
+  $('#toolModal').classList.remove('hidden');
+  lucide.createIcons();
+};
+window.toggleToolPrompt = ()=>{
+  const v = $('#tm_promptView');
+  v.textContent = `[${CUR_TOOL.label}] ${CUR_TOOL.desc}\n\n이 기능은 서버의 전용 프롬프트로 생성됩니다. 입력(주제·키워드·대상·목적·문체)이 프롬프트에 반영됩니다.`;
+  v.classList.toggle('hidden');
+};
+window.runTool = async ()=>{
+  if (!CUR_TOOL) return;
+  if (!AI.enabled) { $('#tm_result').innerHTML = '<p class="text-sm text-amber-600">⚠️ AI 키가 필요합니다. 헤더 ⚙️ 설정에서 Anthropic 키를 입력하거나 서버에 ANTHROPIC_API_KEY를 설정하세요.</p>'; return; }
+  const topic = $('#tm_topic').value.trim();
+  if (!topic) { $('#tm_topic').focus(); toast('주제를 입력하세요'); return; }
+  $('#tm_result').innerHTML = `<div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm text-slate-500 flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Claude가 생성 중...</div>`;
+  lucide.createIcons();
+  try {
+    const body = {
+      topic, keywords:$('#tm_keywords').value.trim(), audience:$('#tm_audience').value.trim(),
+      purpose:$('#tm_purpose').value, tone:$('#tm_tone').value, length:'mid', imgStyle:'그라데이션',
+      tab: CUR_TOOL.id, apiKey: localKey(),
+    };
+    if (CUR_TOOL.needsSource) body.sourceText = $('#tm_source').value;
+    const r = await fetch('/api/generate', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || ('HTTP '+r.status));
+    TOOLCACHE[CUR_TOOL.id] = j.markdown;
+    renderToolResult(j.markdown);
+    pushRecent(CUR_TOOL.id);
+    $('#tm_regen').classList.remove('hidden');
+    toast('✨ 생성 완료');
+  } catch (e) {
+    $('#tm_result').innerHTML = `<p class="text-sm text-rose-500">⚠️ ${esc(String(e.message||e))}</p>`;
+  }
+};
+function renderToolResult(md){
+  const html = window.marked ? marked.parse(md) : esc(md);
+  $('#tm_result').innerHTML = `<div class="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+    <div class="flex flex-wrap items-center justify-end gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+      <button onclick='copy(TOOLCACHE["${CUR_TOOL.id}"])' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">복사</button>
+      <button onclick="dlTool('md')" class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">MD</button>
+      <button onclick="dlTool('txt')" class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">TXT</button>
+      <button onclick="dlTool('html')" class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">HTML</button>
+    </div>
+    <div class="p-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300 markdown-body">${html}</div>
+  </div>`;
+  lucide.createIcons();
+}
+window.dlTool = (fmt)=>{
+  const md = TOOLCACHE[CUR_TOOL.id] || '';
+  const base = slug(($('#tm_topic').value||'content'))+'_'+CUR_TOOL.id;
+  if (fmt==='html') {
+    const body = window.marked ? marked.parse(md) : md;
+    const doc = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${esc($('#tm_topic').value)}</title></head><body style="max-width:760px;margin:40px auto;font-family:system-ui,sans-serif;line-height:1.7;padding:0 16px">${body}</body></html>`;
+    download(doc, base+'.html');
+  } else download(md, base+'.'+(fmt==='md'?'md':'txt'));
+  toast('💾 다운로드');
+};
+
+function initMenu(){
+  $$('#toolModal [data-tclose]').forEach(b=> b.onclick=()=>$('#toolModal').classList.add('hidden'));
+  loadTools();
+}
+
 /* ---------- 카드뉴스 카드 ---------- */
 /* ---------- 카드뉴스 디자인 테마 ---------- */
 const _VIVID  = ['#6366f1,#8b5cf6','#fb7185,#ec4899','#34d399,#14b8a6','#fbbf24,#f97316','#38bdf8,#3b82f6','#e879f9,#a855f7','#22d3ee,#0ea5e9','#64748b,#0f172a'];
@@ -1224,6 +1439,7 @@ function init() {
   if (localStorage.getItem('acw_dark')==='true') document.documentElement.classList.add('dark');
 
   initAuth();
+  initMenu();
   checkAiStatus();
   loadFromHash();   // 공유 링크로 진입 시 자동 복원·생성
   lucide.createIcons();

@@ -13,6 +13,8 @@
 const http = require('node:http');
 const fs = require('node:fs');
 const path = require('node:path');
+const { TOOLS, SECTIONS } = require('./tools');
+const TOOL_MAP = Object.fromEntries(TOOLS.map((t) => [t.id, t]));
 
 const PORT = process.env.PORT || 8787;
 const API_KEY = process.env.ANTHROPIC_API_KEY || '';
@@ -50,18 +52,22 @@ const SYSTEM_PROMPT = `너는 한국어 콘텐츠 마케팅 전문가다. 다음
 출력은 깔끔한 Markdown만. 잡담·서론 없이 결과만.`;
 
 function buildUserPrompt(d, tab) {
-  const inst = TAB_PROMPTS[tab] || TAB_PROMPTS.blog;
+  // tab 이 툴 레지스트리 id 면 그 프롬프트, 아니면 기존 탭 프롬프트
+  const tool = TOOL_MAP[tab];
+  const inst = tool ? tool.prompt : (TAB_PROMPTS[tab] || TAB_PROMPTS.blog);
+  const src = (tool && tool.needsSource && d.sourceText)
+    ? `\n\n# 원본 글\n${String(d.sourceText).slice(0, 8000)}` : '';
   return `# 입력
 - 주제: ${d.topic}
 - 대상 독자: ${d.audience || '일반'}
 - 키워드: ${d.keywords || d.topic}
-- 글의 목적: ${d.purpose}
-- 문체: ${d.tone}
-- 글자 수: ${d.length}
-- 이미지 스타일: ${d.imgStyle}
+- 글의 목적: ${d.purpose || '정보 전달'}
+- 문체: ${d.tone || '친근한'}
+- 글자 수: ${d.length || 'mid'}
+- 이미지 스타일: ${d.imgStyle || '그라데이션'}
 
 # 작업
-${inst}`;
+${inst}${src}`;
 }
 
 /* ---------- Claude 호출 ---------- */
@@ -121,6 +127,14 @@ const server = http.createServer((req, res) => {
   // 헬스체크 — Railway/Docker
   if (url.pathname === '/api/health') {
     return sendJson(res, 200, { ok: true });
+  }
+
+  // 툴 메뉴 메타(프롬프트 제외) — 클라이언트 메뉴판 렌더용
+  if (url.pathname === '/api/tools') {
+    return sendJson(res, 200, {
+      sections: SECTIONS,
+      tools: TOOLS.map((t) => ({ id: t.id, section: t.section, label: t.label, desc: t.desc, needsSource: !!t.needsSource })),
+    });
   }
 
   // 상태 확인 — 프론트가 AI 모드 노출 여부를 결정
