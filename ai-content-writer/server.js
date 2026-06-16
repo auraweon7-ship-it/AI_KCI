@@ -249,6 +249,41 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // 발행 프록시 — 워드프레스 REST / 티스토리 (사용자 저장 자격증명)
+  if (url.pathname === '/api/publish' && req.method === 'POST') {
+    readBody(req).then(async (d) => {
+      const title = String(d.title || '').slice(0, 300);
+      const contentHtml = String(d.contentHtml || '');
+      if (!title || !contentHtml) return sendJson(res, 400, { error: '제목·내용 필요' });
+      if (d.provider === 'wordpress') {
+        const { wpUrl, wpUser, wpAppPassword } = d;
+        if (!wpUrl || !wpUser || !wpAppPassword) return sendJson(res, 400, { error: '워드프레스 주소·사용자·앱 비밀번호 필요' });
+        const base = String(wpUrl).replace(/\/+$/, '');
+        const auth = Buffer.from(`${wpUser}:${wpAppPassword}`).toString('base64');
+        const r = await fetch(`${base}/wp-json/wp/v2/posts`, {
+          method: 'POST',
+          headers: { 'Authorization': 'Basic ' + auth, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, content: contentHtml, status: d.status === 'publish' ? 'publish' : 'draft' }),
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) return sendJson(res, r.status, { error: (j.message) || `워드프레스 ${r.status}` });
+        return sendJson(res, 200, { ok: true, url: j.link, id: j.id, status: j.status });
+      }
+      if (d.provider === 'tistory') {
+        const { token, blogName } = d;
+        if (!token || !blogName) return sendJson(res, 400, { error: '티스토리 access_token·blogName 필요' });
+        const vis = { private: '0', protected: '1', publish: '3' }[d.status] || '0';
+        const params = new URLSearchParams({ access_token: token, output: 'json', blogName, title, content: contentHtml, visibility: vis });
+        const r = await fetch('https://www.tistory.com/apis/post/write', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: params });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok || (j.tistory && j.tistory.status !== '200')) return sendJson(res, 400, { error: (j.tistory && j.tistory.error_message) || `티스토리 ${r.status} (구 API — 신규 앱 발급 중단 상태일 수 있음)` });
+        return sendJson(res, 200, { ok: true, url: j.tistory && j.tistory.url, id: j.tistory && j.tistory.postId });
+      }
+      sendJson(res, 400, { error: '지원하지 않는 provider' });
+    }).catch((e) => sendJson(res, 500, { error: String(e.message || e) }));
+    return;
+  }
+
   // 생성 프록시 (스트리밍 SSE)
   if (url.pathname === '/api/generate/stream' && req.method === 'POST') {
     readBody(req).then(async (d) => {
@@ -270,6 +305,7 @@ const server = http.createServer((req, res) => {
         const reader = ar.body.getReader();
         const dec = new TextDecoder();
         let buf = '';
+        let usage = { input_tokens: 0, output_tokens: 0 };
         for (;;) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -284,11 +320,15 @@ const server = http.createServer((req, res) => {
               const ev = JSON.parse(data);
               if (ev.type === 'content_block_delta' && ev.delta && ev.delta.type === 'text_delta') {
                 res.write(`data: ${JSON.stringify({ t: ev.delta.text })}\n\n`);
+              } else if (ev.type === 'message_start' && ev.message && ev.message.usage) {
+                usage.input_tokens = ev.message.usage.input_tokens || 0;
+              } else if (ev.type === 'message_delta' && ev.usage) {
+                usage.output_tokens = ev.usage.output_tokens || usage.output_tokens;
               }
             } catch (_) { /* 부분 JSON 무시 */ }
           }
         }
-        res.write('event: done\ndata: {}\n\n');
+        res.write(`event: done\ndata: ${JSON.stringify({ usage })}\n\n`);
         res.end();
       } catch (e) {
         res.write(`event: error\ndata: ${JSON.stringify({ error: String(e.message || e) })}\n\n`);

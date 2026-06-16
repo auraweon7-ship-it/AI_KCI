@@ -64,6 +64,10 @@
       <button id="libBtn" onclick="openLibrary()" class="px-3 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
         <i data-lucide="bookmark" class="w-4 h-4"></i><span class="hidden sm:inline">보관함</span>
       </button>
+      <button id="planBtn" onclick="openPlanner()" class="px-3 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
+        <i data-lucide="calendar-days" class="w-4 h-4"></i><span class="hidden sm:inline">플래너</span>
+      </button>
+      <span id="usageBadge" class="hidden px-2.5 py-1.5 rounded-lg text-[11px] font-mono bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 items-center gap-1 sm:flex" title="이번 세션 누적 토큰·예상 비용"></span>
       <button id="shareBtn" onclick="shareLink()" class="px-3 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
         <i data-lucide="link" class="w-4 h-4"></i><span class="hidden sm:inline">공유</span>
       </button>
@@ -204,6 +208,38 @@
   <div id="menuBody" class="max-w-7xl mx-auto px-4 py-6"></div>
 </div>
 
+<!-- ===== 콘텐츠 플래너(큐·캘린더) ===== -->
+<div id="planOverlay" class="fixed inset-0 z-40 hidden bg-slate-50 dark:bg-slate-950 overflow-y-auto">
+  <div class="sticky top-0 z-10 backdrop-blur bg-white/85 dark:bg-slate-900/85 border-b border-slate-200 dark:border-slate-800">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+      <h2 class="font-bold text-lg flex items-center gap-2"><i data-lucide="calendar-days" class="w-5 h-5 text-indigo-500"></i>콘텐츠 플래너</h2>
+      <button onclick="closePlanner()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+  </div>
+  <div class="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-4">
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+      <h3 class="font-bold text-sm mb-3 flex items-center gap-1.5"><i data-lucide="list" class="w-4 h-4 text-indigo-500"></i>주제 큐</h3>
+      <div class="flex gap-2 mb-3">
+        <input id="queueInput" placeholder="주제 추가" class="flex-1 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" onkeydown="if(event.key==='Enter')addQueue()" />
+        <button onclick="addQueue()" class="px-3 py-2 rounded-lg bg-indigo-500 text-white text-sm font-semibold">추가</button>
+      </div>
+      <div id="queueList" class="space-y-1.5"></div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
+      <div class="flex items-center justify-between mb-3">
+        <button onclick="planMonth(-1)" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+        <h3 id="planMonthLabel" class="font-bold text-sm"></h3>
+        <button onclick="planMonth(1)" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+      </div>
+      <div class="grid grid-cols-7 gap-1 text-center text-[11px] text-slate-400 mb-1">
+        <div>일</div><div>월</div><div>화</div><div>수</div><div>목</div><div>금</div><div>토</div>
+      </div>
+      <div id="planGrid" class="grid grid-cols-7 gap-1"></div>
+      <p class="text-[11px] text-slate-400 mt-2">날짜 클릭 → 큐의 주제를 배치(발행 계획). 셀의 주제 클릭 → 제거.</p>
+    </div>
+  </div>
+</div>
+
 <!-- ===== 보관함 오버레이 ===== -->
 <div id="libOverlay" class="fixed inset-0 z-40 hidden bg-slate-50 dark:bg-slate-950 overflow-y-auto">
   <div class="sticky top-0 z-10 backdrop-blur bg-white/85 dark:bg-slate-900/85 border-b border-slate-200 dark:border-slate-800">
@@ -268,6 +304,31 @@
   </div>
 </div>
 
+<!-- ===== 발행 모달 ===== -->
+<div id="pubModal" class="fixed inset-0 z-50 hidden">
+  <div class="absolute inset-0 bg-black/50" data-pclose></div>
+  <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[92%] max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl p-6">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-bold flex items-center gap-2"><i data-lucide="send" class="w-5 h-5 text-indigo-500"></i>블로그 발행</h3>
+      <button data-pclose class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <label class="block text-[11px] font-semibold text-slate-500 mb-1">플랫폼</label>
+    <select id="pub_provider" class="w-full px-2 py-2 mb-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none">
+      <option value="wordpress">워드프레스</option>
+      <option value="tistory">티스토리</option>
+    </select>
+    <label class="block text-[11px] font-semibold text-slate-500 mb-1">제목</label>
+    <input id="pub_title" class="w-full px-3 py-2 mb-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+    <label class="block text-[11px] font-semibold text-slate-500 mb-1">공개 상태</label>
+    <select id="pub_status" class="w-full px-2 py-2 mb-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none">
+      <option value="draft">비공개/초안</option>
+      <option value="publish">공개 발행</option>
+    </select>
+    <button onclick="doPublish()" class="w-full py-2.5 rounded-lg bg-indigo-500 text-white font-semibold flex items-center justify-center gap-1.5"><i data-lucide="send" class="w-4 h-4"></i>발행</button>
+    <div id="pub_status_msg" class="text-xs text-slate-500 mt-2"></div>
+  </div>
+</div>
+
 <!-- ===== 설정 모달 (로그인 후) ===== -->
 <div id="settingsModal" class="fixed inset-0 z-50 hidden">
   <div class="absolute inset-0 bg-black/50" data-sclose></div>
@@ -307,6 +368,21 @@
         <label class="block text-xs font-semibold text-slate-500 mb-1">OpenAI API Key (AI 이미지 생성)</label>
         <input id="set_openai" type="password" placeholder="sk-..." class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
         <p class="text-[11px] text-slate-400 mt-1">썸네일 AI 배경 생성에 사용(gpt-image-1)</p>
+      </div>
+
+      <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+        <p class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-2">📤 블로그 발행</p>
+        <label class="block text-[11px] font-semibold text-slate-500 mb-1">워드프레스 주소</label>
+        <input id="set_wpUrl" placeholder="https://example.com" class="w-full px-3 py-2 mb-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+        <div class="grid grid-cols-2 gap-2">
+          <input id="set_wpUser" placeholder="WP 사용자명" class="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+          <input id="set_wpAppPass" type="password" placeholder="WP 앱 비밀번호" class="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+        </div>
+        <div class="grid grid-cols-2 gap-2 mt-2">
+          <input id="set_tistoryToken" type="password" placeholder="티스토리 access_token" class="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+          <input id="set_tistoryBlog" placeholder="티스토리 blogName" class="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1">워드프레스: 사용자→프로필→애플리케이션 비밀번호. 티스토리는 구 API(신규 앱 발급 중단 상태일 수 있음)</p>
       </div>
     </div>
 
@@ -359,6 +435,13 @@ let GEN = null;           // 생성 결과
 let activeTab = 'blog';
 let AI = { enabled: false, model: null };   // 백엔드 AI 실연동 상태
 let aiCache = {};          // 탭별 AI 생성 결과(Markdown) 캐시
+const AI_USAGE = {}, TOOL_USAGE = {};       // 탭/툴별 토큰 사용량
+const PRICING = { 'claude-opus-4-8':{in:5,out:25}, 'claude-sonnet-4-6':{in:3,out:15}, 'claude-haiku-4-5':{in:1,out:5} };
+let sessionUsage = { in:0, out:0 };
+function costUsd(inT, outT){ const p = PRICING[AI.model] || PRICING['claude-opus-4-8']; return inT/1e6*p.in + outT/1e6*p.out; }
+function usageLabel(u){ if(!u) return ''; const i=u.input_tokens||0, o=u.output_tokens||0; return `🔢 ${i.toLocaleString()}+${o.toLocaleString()} 토큰 · ~$${costUsd(i,o).toFixed(4)}`; }
+function addUsage(u){ if(!u) return; sessionUsage.in+=u.input_tokens||0; sessionUsage.out+=u.output_tokens||0; renderUsageBadge(); }
+function renderUsageBadge(){ const el=$('#usageBadge'); if(!el) return; const tot=sessionUsage.in+sessionUsage.out; el.classList.toggle('hidden', tot===0); el.innerHTML = `<i data-lucide="coins" class="w-3.5 h-3.5"></i> ${tot.toLocaleString()} · ~$${costUsd(sessionUsage.in,sessionUsage.out).toFixed(3)}`; lucide.createIcons(); }
 
 /* ---------- 유틸 ---------- */
 const kwArr = () => (DATA.keywords || '').split(',').map(s=>s.trim()).filter(Boolean);
@@ -777,7 +860,7 @@ async function streamGenerate(body, onToken, onDone, onError) {
           else if (l.startsWith('data:')) data += l.slice(5).trim();
         }
         if (ev === 'error') throw new Error((JSON.parse(data||'{}').error) || '스트림 오류');
-        if (ev === 'done') { onDone(acc); return; }
+        if (ev === 'done') { let u=null; try{ u=JSON.parse(data||'{}').usage; }catch(_){} onDone(acc, u); return; }
         if (data) { try { const o = JSON.parse(data); if (o.t) { acc += o.t; onToken(acc); } } catch(_){} }
       }
     }
@@ -797,8 +880,8 @@ window.aiGenerate = async (tab) => {
   await streamGenerate(
     { ...DATA, tab, apiKey: localKey() },
     (acc)=>{ if (live) { live.textContent = acc; live.scrollIntoView({block:'nearest'}); } },
-    (acc)=>{
-      aiCache[tab] = acc;
+    (acc, u)=>{
+      aiCache[tab] = acc; AI_USAGE[tab] = u; addUsage(u);
       renderAiResult(tab, acc);
       saveToLibrary({ kind:'탭 · '+((TABS.find(t=>t.id===tab)||{}).label||tab), title: DATA.topic+' — '+((TABS.find(t=>t.id===tab)||{}).label||tab), content: acc });
       toast('✨ AI 생성 완료');
@@ -810,11 +893,14 @@ function renderAiResult(tab, md) {
   const box = $('#aiResult-'+tab); if (!box) return;
   const html = (window.marked ? marked.parse(md) : esc(md));
   const id = 'ai'+tab;
+  const ul = usageLabel(AI_USAGE[tab]);
   toggleTmpl(false); // AI 결과를 메인으로 — 템플릿 블록 숨김
   box.innerHTML = `<div class="mt-2 rounded-xl bg-white dark:bg-slate-900 border-2 border-indigo-200 dark:border-indigo-800 overflow-hidden">
-    <div class="flex items-center justify-between px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 border-b border-indigo-100 dark:border-indigo-800">
-      <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> AI 생성 결과</span>
+    <div class="flex flex-wrap items-center justify-between gap-1 px-4 py-2 bg-indigo-50 dark:bg-indigo-900/30 border-b border-indigo-100 dark:border-indigo-800">
+      <span class="text-xs font-bold text-indigo-700 dark:text-indigo-300 flex items-center gap-1"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i> AI 생성 결과 ${ul?`<span class="font-normal text-[10px] text-slate-400 ml-1">${ul}</span>`:''}</span>
       <div class="flex gap-1.5">
+        <button onclick='editInline("ai","${tab}")' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">편집</button>
+        <button onclick='openPublish(aiCache["${tab}"], DATA.topic)' class="text-xs px-2 py-1 rounded bg-indigo-500 text-white">발행</button>
         <button onclick='toggleTmplView(this)' data-show="0" class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">템플릿 보기</button>
         <button onclick='copy(aiCache["${tab}"])' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">복사</button>
         <button onclick='download(aiCache["${tab}"], "${slug(DATA.topic)}_${tab}_AI.md")' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">MD</button>
@@ -824,6 +910,24 @@ function renderAiResult(tab, md) {
   </div>`;
   lucide.createIcons();
 }
+// 인라인 편집: 결과를 textarea로 바꿔 수정 후 저장(캐시·보관함 갱신)
+window.editInline = (kind, key) => {
+  const cont = kind==='ai' ? $('#ai'+key) : $('#tm_render');
+  if (!cont) return;
+  const md = kind==='ai' ? (aiCache[key]||'') : (TOOLCACHE[key]||'');
+  cont.innerHTML = `<textarea id="edit_${kind}_${key}" class="w-full h-72 px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm font-mono outline-none resize-y">${esc(md)}</textarea>
+    <div class="flex gap-2 mt-2">
+      <button onclick='saveInline("${kind}","${key}")' class="text-xs px-3 py-1.5 rounded bg-indigo-500 text-white font-semibold">저장</button>
+      <button onclick='${kind==='ai'?`renderAiResult("${key}", aiCache["${key}"])`:`renderToolResult(TOOLCACHE["${key}"])`}' class="text-xs px-3 py-1.5 rounded bg-slate-100 dark:bg-slate-800">취소</button>
+    </div>`;
+};
+window.saveInline = (kind, key) => {
+  const v = $('#edit_'+kind+'_'+key).value;
+  if (kind==='ai') { aiCache[key]=v; renderAiResult(key, v); }
+  else { TOOLCACHE[key]=v; renderToolResult(v); }
+  saveToLibrary({ kind:'편집본', title:(DATA?DATA.topic:'편집')+' — 수정본', content:v });
+  toast('💾 수정 저장');
+};
 window.toggleTmplView = (btn) => {
   const show = btn.dataset.show === '0';
   toggleTmpl(show);
@@ -939,6 +1043,11 @@ window.openSettings = () => {
   $('#set_naverSecret').value = s.naverSecret || '';
   $('#set_youtube').value = s.youtube || '';
   $('#set_openai').value = s.openai || '';
+  $('#set_wpUrl').value = s.wpUrl || '';
+  $('#set_wpUser').value = s.wpUser || '';
+  $('#set_wpAppPass').value = s.wpAppPass || '';
+  $('#set_tistoryToken').value = s.tistoryToken || '';
+  $('#set_tistoryBlog').value = s.tistoryBlog || '';
   $('#settingsModal').classList.remove('hidden');
   lucide.createIcons();
 };
@@ -949,6 +1058,11 @@ window.saveSettings = () => {
     naverSecret: $('#set_naverSecret').value.trim(),
     youtube: $('#set_youtube').value.trim(),
     openai: $('#set_openai').value.trim(),
+    wpUrl: $('#set_wpUrl').value.trim(),
+    wpUser: $('#set_wpUser').value.trim(),
+    wpAppPass: $('#set_wpAppPass').value.trim(),
+    tistoryToken: $('#set_tistoryToken').value.trim(),
+    tistoryBlog: $('#set_tistoryBlog').value.trim(),
   };
   localStorage.setItem(setKey(USER && USER.email), JSON.stringify(s));
   const gc = $('#set_gcid').value.trim();
@@ -1243,8 +1357,8 @@ window.runTool = async ()=>{
   await streamGenerate(
     body,
     (acc)=>{ const l=$('#tm_live'); if(l) l.textContent = acc; },
-    (acc)=>{
-      TOOLCACHE[toolId] = acc;
+    (acc, u)=>{
+      TOOLCACHE[toolId] = acc; TOOL_USAGE[toolId] = u; addUsage(u);
       renderToolResult(acc);
       saveToLibrary({ kind:'도구 · '+toolLabel, title: topic+' — '+toolLabel, content: acc });
       pushRecent(toolId);
@@ -1256,14 +1370,20 @@ window.runTool = async ()=>{
 };
 function renderToolResult(md){
   const html = window.marked ? marked.parse(md) : esc(md);
+  const ul = usageLabel(TOOL_USAGE[CUR_TOOL.id]);
   $('#tm_result').innerHTML = `<div class="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-    <div class="flex flex-wrap items-center justify-end gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-      <button onclick='copy(TOOLCACHE["${CUR_TOOL.id}"])' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">복사</button>
-      <button onclick="dlTool('md')" class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">MD</button>
-      <button onclick="dlTool('txt')" class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">TXT</button>
-      <button onclick="dlTool('html')" class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">HTML</button>
+    <div class="flex flex-wrap items-center justify-between gap-1.5 px-3 py-2 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+      <span class="text-[10px] text-slate-400">${ul}</span>
+      <div class="flex gap-1.5">
+        <button onclick='editInline("tool","${CUR_TOOL.id}")' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">편집</button>
+        <button onclick='openPublish(TOOLCACHE["${CUR_TOOL.id}"], $("#tm_topic").value)' class="text-xs px-2 py-1 rounded bg-indigo-500 text-white">발행</button>
+        <button onclick='copy(TOOLCACHE["${CUR_TOOL.id}"])' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">복사</button>
+        <button onclick="dlTool('md')" class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">MD</button>
+        <button onclick="dlTool('txt')" class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">TXT</button>
+        <button onclick="dlTool('html')" class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">HTML</button>
+      </div>
     </div>
-    <div class="p-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300 markdown-body">${html}</div>
+    <div id="tm_render" class="p-4 text-sm leading-relaxed text-slate-700 dark:text-slate-300 markdown-body">${html}</div>
   </div>`;
   lucide.createIcons();
 }
@@ -1280,6 +1400,7 @@ window.dlTool = (fmt)=>{
 
 function initMenu(){
   $$('#toolModal [data-tclose]').forEach(b=> b.onclick=()=>$('#toolModal').classList.add('hidden'));
+  $$('#pubModal [data-pclose]').forEach(b=> b.onclick=()=>$('#pubModal').classList.add('hidden'));
   loadTools();
 }
 
@@ -1316,6 +1437,7 @@ window.viewLibrary = (id)=>{
   $('#libView').innerHTML = `<div class="flex items-center justify-between gap-2 mb-3">
       <h3 class="font-bold">${esc(x.title||'')}</h3>
       <div class="flex gap-1.5">
+        <button onclick='openPublish(${JSON.stringify(x.content||'')}, ${JSON.stringify(x.title||'')})' class="text-xs px-2 py-1 rounded bg-indigo-500 text-white">발행</button>
         <button onclick='copy(${JSON.stringify(x.content||'')})' class="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800">복사</button>
         <button onclick='download(${JSON.stringify(x.content||'')}, "${slug(x.title||'content')}.md")' class="text-xs px-2 py-1 rounded bg-slate-100 dark:bg-slate-800">MD</button>
       </div>
@@ -1333,6 +1455,110 @@ window.exportLibrary = ()=>{
   if (!lib.length) { toast('보관된 결과 없음'); return; }
   const md = lib.map(x=>`# ${x.title}\n\n_${x.kind} · ${new Date(x.ts).toLocaleString('ko-KR')}_\n\n${x.content}`).join('\n\n---\n\n');
   download(md, 'ai_보관함_전체.md');
+};
+
+/* ---------- 블로그 발행 ---------- */
+let PUB_MD = '';
+window.openPublish = (md, title)=>{
+  PUB_MD = md || '';
+  $('#pub_title').value = title || (DATA?DATA.topic:'') || '';
+  $('#pub_status_msg').textContent = '';
+  $('#pubModal').classList.remove('hidden');
+  lucide.createIcons();
+};
+window.doPublish = async ()=>{
+  const s = getSettings(); const msg = $('#pub_status_msg'); const prov = $('#pub_provider').value;
+  if (!$('#pub_title').value.trim()) { msg.textContent='⚠️ 제목을 입력하세요.'; return; }
+  const contentHtml = window.marked ? marked.parse(PUB_MD) : PUB_MD;
+  const body = { provider:prov, title:$('#pub_title').value.trim(), contentHtml, status:$('#pub_status').value };
+  if (prov==='wordpress') {
+    if (!s.wpUrl||!s.wpUser||!s.wpAppPass) { msg.textContent='⚠️ 설정에서 워드프레스 정보를 입력하세요.'; return; }
+    body.wpUrl=s.wpUrl; body.wpUser=s.wpUser; body.wpAppPassword=s.wpAppPass;
+  } else {
+    if (!s.tistoryToken||!s.tistoryBlog) { msg.textContent='⚠️ 설정에서 티스토리 정보를 입력하세요.'; return; }
+    body.token=s.tistoryToken; body.blogName=s.tistoryBlog;
+  }
+  msg.textContent = '발행 중...';
+  try {
+    const r = await fetch('/api/publish', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(body) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error||('HTTP '+r.status));
+    msg.innerHTML = `✅ 발행 완료 ${j.url?`— <a href="${j.url}" target="_blank" class="text-indigo-500 underline">글 보기</a>`:''} (${j.status||body.status})`;
+    toast('✅ 발행 완료');
+  } catch (e) { msg.textContent = '⚠️ '+String(e.message||e); }
+};
+
+/* ============================================================
+   콘텐츠 플래너 — 주제 큐 + 월 캘린더
+   ============================================================ */
+const QUEUE_KEY = 'acw_queue', PLAN_KEY = 'acw_plan';
+let planYM = null;  // {y, m}
+const getQueue = ()=> { try { return JSON.parse(localStorage.getItem(QUEUE_KEY)||'[]'); } catch(_) { return []; } };
+const setQueue = (q)=> localStorage.setItem(QUEUE_KEY, JSON.stringify(q));
+const getPlan = ()=> { try { return JSON.parse(localStorage.getItem(PLAN_KEY)||'{}'); } catch(_) { return {}; } };
+const setPlan = (p)=> localStorage.setItem(PLAN_KEY, JSON.stringify(p));
+
+window.openPlanner = ()=>{
+  const now = new Date();
+  if (!planYM) planYM = { y: now.getFullYear(), m: now.getMonth() };
+  $('#planOverlay').classList.remove('hidden');
+  renderQueue(); renderPlan();
+};
+window.closePlanner = ()=> $('#planOverlay').classList.add('hidden');
+window.addQueue = ()=>{
+  const v = $('#queueInput').value.trim(); if(!v) return;
+  const q = getQueue(); q.push(v); setQueue(q); $('#queueInput').value=''; renderQueue();
+};
+function renderQueue(){
+  const q = getQueue(); const el = $('#queueList');
+  if (!q.length) { el.innerHTML = '<p class="text-xs text-slate-400 py-4 text-center">큐가 비어 있습니다.</p>'; return; }
+  el.innerHTML = q.map((t,i)=>`<div class="flex items-center gap-1.5 p-2 rounded-lg bg-slate-50 dark:bg-slate-800 text-sm">
+    <span class="flex-1 truncate" title="${esc(t)}">${esc(t)}</span>
+    <button onclick="useQueue(${i})" class="shrink-0 text-[11px] px-2 py-0.5 rounded bg-indigo-500 text-white" title="이 주제로 생성">생성</button>
+    <button onclick="delQueue(${i})" class="shrink-0 text-slate-400 hover:text-rose-500"><i data-lucide="x" class="w-3.5 h-3.5"></i></button>
+  </div>`).join('');
+  lucide.createIcons();
+}
+window.delQueue = (i)=>{ const q=getQueue(); q.splice(i,1); setQueue(q); renderQueue(); };
+window.useQueue = (i)=>{
+  const q = getQueue(); const t = q[i]; if(!t) return;
+  $('#topic').value = t;
+  closePlanner();
+  runGenerate();
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+window.planMonth = (delta)=>{
+  let { y, m } = planYM; m += delta;
+  if (m<0){ m=11; y--; } if (m>11){ m=0; y++; }
+  planYM = { y, m }; renderPlan();
+};
+function renderPlan(){
+  const { y, m } = planYM;
+  $('#planMonthLabel').textContent = `${y}년 ${m+1}월`;
+  const first = new Date(y, m, 1).getDay();
+  const days = new Date(y, m+1, 0).getDate();
+  const plan = getPlan();
+  let cells = '';
+  for (let i=0;i<first;i++) cells += '<div></div>';
+  for (let d=1; d<=days; d++){
+    const key = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const items = plan[key]||[];
+    cells += `<div onclick="assignPlan('${key}')" class="min-h-[64px] p-1 rounded-lg border border-slate-100 dark:border-slate-800 hover:border-indigo-300 cursor-pointer text-left align-top">
+      <div class="text-[10px] text-slate-400">${d}</div>
+      ${items.map((t,ix)=>`<div onclick="event.stopPropagation();removePlan('${key}',${ix})" class="text-[10px] mt-0.5 px-1 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 truncate" title="${esc(t)} (클릭 제거)">${esc(t)}</div>`).join('')}
+    </div>`;
+  }
+  $('#planGrid').innerHTML = cells;
+}
+window.assignPlan = (key)=>{
+  const q = getQueue();
+  const choice = prompt('이 날짜에 배치할 주제를 입력하세요'+(q.length?`\n(큐: ${q.join(' / ')})`:''), q[0]||'');
+  if (choice==null) return;
+  const t = choice.trim(); if(!t) return;
+  const plan = getPlan(); (plan[key]=plan[key]||[]).push(t); setPlan(plan); renderPlan();
+};
+window.removePlan = (key, ix)=>{
+  const plan = getPlan(); if(!plan[key]) return; plan[key].splice(ix,1); if(!plan[key].length) delete plan[key]; setPlan(plan); renderPlan();
 };
 
 /* ---------- 카드뉴스 카드 ---------- */
