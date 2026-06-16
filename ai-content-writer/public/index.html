@@ -74,7 +74,7 @@
       <button id="recentBtn" class="px-3 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
         <i data-lucide="history" class="w-4 h-4"></i><span class="hidden sm:inline">최근</span>
       </button>
-      <button id="settingsBtn" onclick="openSettings()" class="hidden p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="설정">
+      <button id="settingsBtn" onclick="openSettings()" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700" title="API 키·설정">
         <i data-lucide="settings" class="w-4 h-4"></i>
       </button>
       <button id="darkBtn" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700">
@@ -432,7 +432,7 @@ const PURPOSE_MAP = {
 /* ---------- 상태 ---------- */
 let DATA = null;          // 마지막 입력값
 let GEN = null;           // 생성 결과
-let activeTab = 'blog';
+let activeTab = 'naverblog';
 let AI = { enabled: false, model: null };   // 백엔드 AI 실연동 상태
 let aiCache = {};          // 탭별 AI 생성 결과(Markdown) 캐시
 const AI_USAGE = {}, TOOL_USAGE = {};       // 탭/툴별 토큰 사용량
@@ -658,7 +658,8 @@ ${purp.cta}`;
    탭 정의 + 렌더
    ============================================================ */
 const TABS = [
-  { id:'blog',     label:'블로그 글',       icon:'file-text',     color:'emerald' },
+  { id:'naverblog',label:'네이버 블로그',    icon:'file-text',     color:'emerald' },
+  { id:'googleblog',label:'구글 SEO 블로그', icon:'globe',         color:'blue' },
   { id:'seo',      label:'SEO 제목',        icon:'search',        color:'blue' },
   { id:'thread',   label:'스레드',          icon:'message-circle',color:'sky' },
   { id:'thumbtxt', label:'썸네일 문구',     icon:'type',          color:'violet' },
@@ -704,16 +705,22 @@ function renderTab(id) {
 
   if (id==='research') { c.innerHTML = researchPanel(); lucide.createIcons(); return; }
 
-  if (id==='blog') {
-    html += block('도입문', `<p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300">${esc(g.intro)}</p>`, g.intro);
-    html += block('본문 목차', listHtml(g.outline), g.outline.join('\n'));
-    html += block('본문 초안', `<pre class="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300 font-sans">${esc(g.body)}</pre>`, g.body);
+  if (id==='naverblog') {
+    html += `<div class="mb-3 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg px-3 py-2">📗 네이버 스타일 — 친근한 후기·경험담체, 체류시간 중심</div>`;
+    html += block('첫 문단 후킹 / 도입부', `<p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300">${esc(g.intro)}</p>`, g.intro);
+    html += block('소제목 구성', listHtml(g.outline), g.outline.join('\n'));
+    html += block('본문 초안 (후기·경험담체)', `<pre class="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300 font-sans">${esc(g.body)}</pre>`, g.body);
     html += block('소제목별 핵심 문장', `<ul class="space-y-1 text-sm text-slate-700 dark:text-slate-300">${g.keySentences.map(s=>`<li>• ${esc(s)}</li>`).join('')}</ul>`, g.keySentences.join('\n'));
+    html += block('마무리 + 댓글·공감 유도', `<p class="text-sm text-slate-700 dark:text-slate-300">${esc(g.naverClosing)}</p>`, g.naverClosing);
+    html += block('해시태그 20개', `<p class="text-sm text-indigo-600 dark:text-indigo-300">${esc(g.hashtags)}</p>`, g.hashtags);
+  }
+
+  else if (id==='googleblog') {
+    html += `<div class="mb-3 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-3 py-2">🌐 구글 스타일 — H1/H2/H3 구조, 검색 의도·정보 중심</div>`;
+    html += block('SEO 제목 10개', `<ol class="list-decimal ml-5 space-y-1 text-sm text-slate-700 dark:text-slate-300">${g.seoTitles.map(t=>`<li>${esc(t)}</li>`).join('')}</ol>`, g.seoTitles.join('\n'));
+    html += block('구조화 글 (H1/H2/H3)', `<pre class="whitespace-pre-wrap text-xs leading-relaxed text-slate-700 dark:text-slate-300 font-mono">${esc(g.googleStructured)}</pre>`, g.googleStructured);
     html += block('FAQ 5개', g.faq.map(([q,a])=>`<div class="mb-2"><p class="text-sm font-semibold">Q. ${esc(q)}</p><p class="text-sm text-slate-600 dark:text-slate-400">A. ${esc(a)}</p></div>`).join(''), g.faq.map(([q,a])=>`Q. ${q}\nA. ${a}`).join('\n\n'));
     html += block('메타디스크립션', `<p class="text-sm text-slate-700 dark:text-slate-300">${esc(g.meta)}</p>`, g.meta);
-    html += block('해시태그 20개', `<p class="text-sm text-indigo-600 dark:text-indigo-300">${esc(g.hashtags)}</p>`, g.hashtags);
-    html += block('네이버 블로그 마무리', `<p class="text-sm text-slate-700 dark:text-slate-300">${esc(g.naverClosing)}</p>`, g.naverClosing);
-    html += block('구글 SEO 구조화 글', `<pre class="whitespace-pre-wrap text-xs leading-relaxed text-slate-700 dark:text-slate-300 font-mono">${esc(g.googleStructured)}</pre>`, g.googleStructured);
   }
 
   else if (id==='seo') {
@@ -826,7 +833,7 @@ function aiBarHtml(tab) {
     <div id="aiResult-${tab}"></div>
   </div>`;
 }
-const AI_BATCH_TABS = ['blog','seo','thread','thumbtxt','card','community','youtube','prompt'];
+const AI_BATCH_TABS = ['naverblog','googleblog','seo','thread','thumbtxt','card','community','youtube','prompt'];
 window.aiGenerateAll = async () => {
   if (!DATA) { toast('먼저 콘텐츠를 생성하세요'); return; }
   let done = 0;
@@ -998,9 +1005,10 @@ function initGoogle() {
   } catch (_) { return false; }
 }
 
+// 구글 로고 SVG
+const GOOGLE_SVG = `<svg class="w-4 h-4" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.3 6.1 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.3 6.1 29.4 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.3 0 10.1-2 13.7-5.3l-6.3-5.3c-2 1.5-4.6 2.5-7.4 2.5-5.2 0-9.6-3.3-11.2-8l-6.5 5C9.6 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4 5.4l6.3 5.3C41.4 35.6 44 30.3 44 24c0-1.3-.1-2.3-.4-3.5z"/></svg>`;
 function renderAuth() {
   const el = $('#authArea'); if (!el) return;
-  $('#settingsBtn').classList.toggle('hidden', !USER);
   if (USER) {
     el.innerHTML = `
       <div class="flex items-center gap-2">
@@ -1012,26 +1020,26 @@ function renderAuth() {
     return;
   }
   if (!getGcid()) {
-    el.innerHTML = `<button onclick="setupGoogle()" class="px-3 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 flex items-center gap-1.5"><i data-lucide="log-in" class="w-4 h-4"></i>로그인 설정</button>`;
+    // Client ID 미설정: 구글 로그인 버튼 → 설정에서 Client ID 입력 안내
+    el.innerHTML = `<button onclick="googleLogin()" class="px-3 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 font-medium">${GOOGLE_SVG}<span>구글 로그인</span></button>`;
     lucide.createIcons();
     return;
   }
-  // Client ID 있음 → 구글 버튼 렌더
-  el.innerHTML = `<div id="gbtn"></div>`;
+  // Client ID 있음 → 공식 GIS 버튼 렌더(+ 폴백 커스텀 버튼)
+  el.innerHTML = `<div id="gbtn"></div><button id="gbtnFallback" onclick="googleLogin()" class="px-3 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 font-medium">${GOOGLE_SVG}<span>구글 로그인</span></button>`;
   if (initGoogle()) {
-    google.accounts.id.renderButton($('#gbtn'), { theme:'outline', size:'medium', shape:'pill', text:'signin' });
-  } else {
-    el.innerHTML = `<button onclick="renderAuth()" class="px-3 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800">로그인 재시도</button>`;
+    try {
+      google.accounts.id.renderButton($('#gbtn'), { theme:'outline', size:'medium', shape:'pill', text:'signin_with', locale:'ko' });
+      $('#gbtnFallback').classList.add('hidden');
+    } catch(_) {}
   }
+  lucide.createIcons();
 }
-
-window.setupGoogle = () => {
-  const id = prompt('Google OAuth Client ID 를 입력하세요\n(Google Cloud Console → 사용자 인증 정보 → OAuth 클라이언트 ID, 웹 애플리케이션)\n승인된 JavaScript 원본에 현재 주소를 등록해야 합니다.', getGcid());
-  if (id == null) return;
-  const v = id.trim();
-  if (v) { localStorage.setItem(GCID_KEY, v); toast('Client ID 저장됨'); }
-  else localStorage.removeItem(GCID_KEY);
-  renderAuth();
+// 구글 로그인 트리거: Client ID 있으면 GIS 프롬프트, 없으면 설정 열어 안내
+window.googleLogin = () => {
+  if (!getGcid()) { openSettings(); setTimeout(()=>{ $('#set_gcid').focus(); toast('Google Client ID를 입력 후 저장하세요'); }, 100); return; }
+  if (initGoogle()) { try { google.accounts.id.prompt(); } catch(_) { toast('구글 로그인 창을 열 수 없습니다 — Client ID/원본 확인'); } }
+  else toast('구글 라이브러리 로드 실패 — 새로고침');
 };
 
 window.logout = () => {
@@ -1808,7 +1816,8 @@ function tabRawText(id) {
   const g = GEN;
   const J = (a)=>a.join('\n');
   switch(id){
-    case 'blog': return `# 블로그 글\n\n## 도입문\n${g.intro}\n\n## 목차\n${J(g.outline)}\n\n## 본문\n${g.body}\n\n## 핵심문장\n${J(g.keySentences)}\n\n## FAQ\n${g.faq.map(([q,a])=>`Q.${q}\nA.${a}`).join('\n\n')}\n\n## 메타\n${g.meta}\n\n## 해시태그\n${g.hashtags}\n\n## 마무리\n${g.naverClosing}\n\n## 구글 SEO\n${g.googleStructured}`;
+    case 'naverblog': return `# 네이버 블로그 (친근·후기체)\n\n## 도입부\n${g.intro}\n\n## 소제목\n${J(g.outline)}\n\n## 본문\n${g.body}\n\n## 핵심문장\n${J(g.keySentences)}\n\n## 마무리\n${g.naverClosing}\n\n## 해시태그\n${g.hashtags}`;
+    case 'googleblog': return `# 구글 SEO 블로그 (구조·정보 중심)\n\n## SEO 제목\n${J(g.seoTitles)}\n\n## 구조화 글\n${g.googleStructured}\n\n## FAQ\n${g.faq.map(([q,a])=>`Q.${q}\nA.${a}`).join('\n\n')}\n\n## 메타\n${g.meta}`;
     case 'seo': return '# SEO 제목 10개\n\n'+g.seoTitles.map((t,i)=>`${i+1}. ${t}`).join('\n');
     case 'thread': return `# 스레드\n\n[훅] ${g.threadHook}\n\n${J(g.threadPosts)}\n\n[마무리] ${g.threadEnd}\n\n${g.threadTags}`;
     case 'thumbtxt': return '# 썸네일 문구\n\n'+Object.entries(g.thumbs).map(([c,a])=>`## ${c}\n`+a.map(o=>`- [15] ${o.s15} / [25] ${o.s25}`).join('\n')).join('\n\n');
@@ -1937,7 +1946,7 @@ function runGenerate() {
   $('#emptyState').classList.add('hidden');
   $('#results').classList.remove('hidden');
   $('#tabBar').innerHTML = TABS.map(t=>`<button data-tab="${t.id}" onclick="renderTab('${t.id}')" class="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap border ${COLOR[t.color]} flex items-center gap-1.5"><i data-lucide="${t.icon}" class="w-3.5 h-3.5"></i>${t.label}</button>`).join('');
-  renderTab('blog');
+  renderTab('naverblog');
   if (activeTab==='thumbimg') setTimeout(drawThumb,0);
   toast('✨ 콘텐츠 패키지 생성 완료');
 }
