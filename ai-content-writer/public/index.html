@@ -968,11 +968,13 @@ function recomputeAi() {
    인증(구글 로그인) + 설정 저장
    ============================================================ */
 const GCID_KEY = 'acw_gcid';
+// 기본 Google OAuth Client ID (공개값 — 시크릿 아님). 사용자가 직접 설정하면 그 값 우선.
+const DEFAULT_GCID = '519372494204-03b71o4gigvrrcquiquin5tbkc115rf9.apps.googleusercontent.com';
 const USER_KEY = 'acw_user';
 const setKey = (email)=> 'acw_set_' + (email || 'guest');
 let USER = null;
 
-const getGcid = ()=> localStorage.getItem(GCID_KEY) || '';
+const getGcid = ()=> localStorage.getItem(GCID_KEY) || DEFAULT_GCID;
 function getSettings() {
   try { return JSON.parse(localStorage.getItem(setKey(USER && USER.email)) || '{}'); }
   catch (_) { return {}; }
