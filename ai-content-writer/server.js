@@ -5,8 +5,8 @@
 // 탭별로 진짜 Claude 생성 결과(Markdown)를 받아 렌더링한다.
 //
 // 실행:
-//   PowerShell:  $env:ANTHROPIC_API_KEY="sk-ant-..."; node ai-content-writer-server.js
-//   bash:        ANTHROPIC_API_KEY=sk-ant-... node ai-content-writer-server.js
+//   PowerShell:  $env:ANTHROPIC_API_KEY="sk-ant-..."; node server.js
+//   bash:        ANTHROPIC_API_KEY=sk-ant-... node server.js
 //
 // 키가 없어도 서버는 뜨고, 프론트는 템플릿 생성 모드로 정상 동작한다.
 
@@ -17,7 +17,7 @@ const path = require('node:path');
 const PORT = process.env.PORT || 8787;
 const API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-opus-4-8';
-const HTML_FILE = path.join(__dirname, 'ai-content-writer.html');
+const HTML_FILE = path.join(__dirname, 'public', 'index.html');
 
 /* ---------- 탭별 생성 지시문 ---------- */
 const TAB_PROMPTS = {
@@ -100,6 +100,11 @@ function sendJson(res, code, obj) {
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
+
+  // 헬스체크 — Railway/Docker
+  if (url.pathname === '/api/health') {
+    return sendJson(res, 200, { ok: true });
+  }
 
   // 상태 확인 — 프론트가 AI 모드 노출 여부를 결정
   if (url.pathname === '/api/status') {

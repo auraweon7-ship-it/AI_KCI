@@ -1,0 +1,12 @@
+{
+  "name": "ai-content-writer",
+  "version": "1.0.0",
+  "description": "AI 콘텐츠 글쓰기 비서 — 주제 하나로 블로그·스레드·썸네일·카드뉴스·홍보글 동시 생성",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

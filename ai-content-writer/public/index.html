@@ -559,13 +559,37 @@ function aiBarHtml(tab) {
         <span class="font-semibold text-indigo-700 dark:text-indigo-300">AI 실연동</span>
         <span class="text-xs text-slate-500 dark:text-slate-400">${esc(AI.model||'')} 로 이 탭을 실제 생성</span>
       </div>
-      <button onclick="aiGenerate('${tab}')" class="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-600 flex items-center gap-1">
-        <i data-lucide="wand-2" class="w-3.5 h-3.5"></i>AI로 생성
-      </button>
+      <div class="flex gap-1.5 shrink-0">
+        <button onclick="aiGenerateAll()" class="text-xs px-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-indigo-300 dark:border-indigo-700 text-indigo-600 dark:text-indigo-300 font-semibold hover:bg-indigo-100 flex items-center gap-1">
+          <i data-lucide="layers" class="w-3.5 h-3.5"></i>모든 탭 일괄
+        </button>
+        <button onclick="aiGenerate('${tab}')" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-500 text-white font-semibold hover:bg-indigo-600 flex items-center gap-1">
+          <i data-lucide="wand-2" class="w-3.5 h-3.5"></i>AI로 생성
+        </button>
+      </div>
     </div>
     <div id="aiResult-${tab}"></div>
   </div>`;
 }
+const AI_BATCH_TABS = ['blog','seo','thread','thumbtxt','card','community','youtube','prompt'];
+window.aiGenerateAll = async () => {
+  if (!DATA) { toast('먼저 콘텐츠를 생성하세요'); return; }
+  let done = 0;
+  toast('✨ 전체 AI 생성 시작 ('+AI_BATCH_TABS.length+'탭)');
+  await Promise.all(AI_BATCH_TABS.map(async (tab) => {
+    try {
+      const r = await fetch('/api/generate', {
+        method: 'POST', headers: {'content-type':'application/json'},
+        body: JSON.stringify({ ...DATA, tab }),
+      });
+      const j = await r.json();
+      if (r.ok) { aiCache[tab] = j.markdown; }
+    } catch (_) {}
+    done++; toast('AI 생성 '+done+'/'+AI_BATCH_TABS.length);
+  }));
+  if (aiCache[activeTab]) renderAiResult(activeTab, aiCache[activeTab]);
+  toast('✅ 전체 AI 생성 완료 — 각 탭에서 결과 확인');
+};
 window.aiGenerate = async (tab) => {
   if (!DATA) { toast('먼저 콘텐츠를 생성하세요'); return; }
   const box = $('#aiResult-'+tab);
