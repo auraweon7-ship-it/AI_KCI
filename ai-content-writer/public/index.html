@@ -835,14 +835,28 @@ function renderTab(id) {
 }
 /* ---------- 가독성 시각화 HTML 생성 ---------- */
 const HTMLCACHE = {};
+const BLOG_IMG_URL = {};
 function blogHtmlPanel(id) {
   const label = id==='naverblog' ? '네이버' : '구글';
+  const imgSection = id==='googleblog' ? `
+    <div class="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1"><i data-lucide="image" class="w-3.5 h-3.5"></i>대표 이미지</span>
+        <select id="blogImgStyle-${id}" class="text-xs px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none">
+          ${Object.keys(IMG_AI_STYLES).map(k=>`<option>${k}</option>`).join('')}
+        </select>
+        <button onclick="genBlogImg('${id}')" class="text-xs px-3 py-1.5 rounded-lg bg-pink-500 text-white font-semibold flex items-center gap-1"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i>AI 이미지 생성</button>
+        <span id="blogImgStatus-${id}" class="text-xs text-slate-500"></span>
+      </div>
+      <div id="blogImgPreview-${id}" class="mt-1"></div>
+    </div>` : '';
   return `<div class="mb-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
     <div class="flex items-center justify-between gap-2">
       <span class="text-sm font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1.5"><i data-lucide="layout-template" class="w-4 h-4"></i>${label} 블로그 가독성 HTML (박스·체크리스트·표·형광펜)</span>
       <button onclick="genBlogHtml('${id}')" class="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-amber-500 text-white font-semibold flex items-center gap-1"><i data-lucide="wand-2" class="w-3.5 h-3.5"></i>HTML 생성</button>
     </div>
     <div id="htmlResult-${id}"></div>
+    ${imgSection}
   </div>`;
 }
 function stripFences(s){ return String(s||'').replace(/^```(?:html)?\s*/i,'').replace(/```\s*$/,'').trim(); }
@@ -868,6 +882,27 @@ window.genBlogHtml = async (id)=>{
     (e)=>{ box.innerHTML = `<p class="mt-2 text-sm text-rose-500">⚠️ ${esc(String(e.message||e))}</p>`; }
   );
 };
+window.genBlogImg = async (id)=>{
+  const s = getSettings();
+  const st = $('#blogImgStatus-'+id);
+  const prev = $('#blogImgPreview-'+id);
+  if (!s.openai) { if(st) st.textContent='⚠️ 설정에서 OpenAI 키를 입력하세요.'; return; }
+  if (!DATA) { toast('먼저 콘텐츠를 생성하세요'); return; }
+  const styleEl = $('#blogImgStyle-'+id);
+  const styleDesc = IMG_AI_STYLES[styleEl ? styleEl.value : '3D 일러스트'] || IMG_AI_STYLES['3D 일러스트'];
+  const prompt = `Professional blog featured header image for the topic "${DATA.topic}". ${styleDesc}. Wide horizontal composition, clean and modern. Do NOT include any letters, numbers, or text.`;
+  if(st) st.textContent='🎨 생성 중 (수십 초 소요)...';
+  try {
+    const r = await fetch('/api/image', { method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ key:s.openai, prompt, size:'1536x1024' }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error||('HTTP '+r.status));
+    BLOG_IMG_URL[id] = j.dataUrl;
+    if(st) st.textContent='✅ 완료 — 발행 시 자동 포함';
+    if(prev) prev.innerHTML = `<img src="${j.dataUrl}" class="w-full rounded-lg object-cover" style="max-height:160px" />`;
+    toast('🖼️ 대표 이미지 생성 완료');
+  } catch(e) { if(st) st.textContent='⚠️ '+String(e.message||e); }
+};
 function renderHtmlResult(id, h){
   const box = $('#htmlResult-'+id); if(!box) return;
   const srcdoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Pretendard,system-ui,sans-serif;line-height:1.7;padding:16px;margin:0;color:#1f2937}</style></head><body>${h}</body></html>`;
@@ -875,7 +910,7 @@ function renderHtmlResult(id, h){
     <div class="flex flex-wrap items-center justify-between gap-1.5 px-3 py-2 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-100 dark:border-amber-800">
       <span class="text-xs font-bold text-amber-700 dark:text-amber-300">🎨 가독성 HTML 미리보기</span>
       <div class="flex gap-1.5">
-        <button onclick='openPublish(HTMLCACHE["${id}"], DATA.topic, true)' class="text-xs px-2 py-1 rounded bg-indigo-500 text-white">발행</button>
+        <button onclick='openPublish(HTMLCACHE["${id}"], DATA.topic, true, BLOG_IMG_URL["${id}"]||"")' class="text-xs px-2 py-1 rounded bg-indigo-500 text-white">발행</button>
         <button onclick='copy(HTMLCACHE["${id}"], "HTML 복사됨")' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">HTML 복사</button>
         <button onclick='dlBlogHtml("${id}")' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">.html 저장</button>
       </div>
@@ -1608,11 +1643,12 @@ window.exportLibrary = ()=>{
 /* ---------- 블로그 발행 ---------- */
 let PUB_MD = '';
 let PUB_ISHTML = false;
-window.openPublish = (content, title, isHtml)=>{
+window.openPublish = (content, title, isHtml, imgUrl='')=>{
   PUB_MD = content || '';
   PUB_ISHTML = !!isHtml;
   $('#pub_title').value = title || (DATA?DATA.topic:'') || '';
   $('#pub_status_msg').textContent = '';
+  $('#pub_imageUrl').value = imgUrl || '';
   $('#pubModal').classList.remove('hidden');
   lucide.createIcons();
 };
