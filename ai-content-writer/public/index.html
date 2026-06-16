@@ -1090,8 +1090,23 @@ window.openSettings = () => {
   $('#set_tistoryToken').value = s.tistoryToken || '';
   $('#set_tistoryBlog').value = s.tistoryBlog || '';
   $('#settingsModal').classList.remove('hidden');
+  refreshSettingBadges();
+  $('#settingsModal').oninput = refreshSettingBadges;  // 입력 즉시 갱신
   lucide.createIcons();
 };
+const SETTING_FIELDS = ['set_anthropic','set_gcid','set_naverId','set_naverSecret','set_youtube','set_openai','set_wpUrl','set_wpUser','set_wpAppPass','set_tistoryToken','set_tistoryBlog'];
+function refreshSettingBadges(){
+  SETTING_FIELDS.forEach(id=>{
+    const inp = $('#'+id); if(!inp) return;
+    let b = inp.nextElementSibling;
+    if (!(b && b.classList && b.classList.contains('set-badge'))) {
+      b = document.createElement('span'); b.className = 'set-badge';
+      inp.insertAdjacentElement('afterend', b);
+    }
+    if (inp.value.trim()) { b.textContent = '✓ 입력됨'; b.className = 'set-badge inline-block mt-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400'; }
+    else { b.textContent = ''; b.className = 'set-badge'; }
+  });
+}
 window.saveSettings = () => {
   const s = {
     anthropic: $('#set_anthropic').value.trim(),
