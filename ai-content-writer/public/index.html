@@ -886,17 +886,19 @@ window.genBlogImg = async (id)=>{
   const prev = $('#blogImgPreview-'+id);
   if (!s.openai) { if(st) st.textContent='⚠️ 설정에서 OpenAI 키를 입력하세요.'; return; }
   if (!DATA) { toast('먼저 콘텐츠를 생성하세요'); return; }
-  if(st) st.textContent='🎨 AI 배경 생성 중 (수십 초)...';
+  if(st) st.textContent='🎨 AI 아트 이미지 생성 중 (수십 초)...';
   try {
-    const bgPrompt = buildBlogBgPrompt(DATA.topic);
+    // 아이템 먼저 추출 → 프롬프트에 활용
+    const src = String(DATA.googleStructured||DATA.body||'');
+    const h2s = [...src.matchAll(/^##\s+(.+)$/gm)].map(m=>m[1].replace(/\*+/g,'').trim());
+    const items = (h2s.length>=3 ? h2s : (Array.isArray(DATA.outline)?DATA.outline:[])).slice(0,10);
+    const subtitle = items.slice(0,5).map(s=>s.replace(/^\d+[\.\)]\s*/,'').replace(/\*+/g,'').trim().slice(0,6)).join(' · ');
+    const bgPrompt = buildBlogBgPrompt(DATA.topic, subtitle);
     const r = await fetch('/api/image',{method:'POST',headers:{'content-type':'application/json'},
       body:JSON.stringify({key:s.openai,prompt:bgPrompt,size:'1536x1024'})});
     const j = await r.json();
     if(!r.ok) throw new Error(j.error||('HTTP '+r.status));
     if(st) st.textContent='🎨 인포그래픽 합성 중...';
-    const src = String(DATA.googleStructured||DATA.body||'');
-    const h2s = [...src.matchAll(/^##\s+(.+)$/gm)].map(m=>m[1].replace(/\*+/g,'').trim());
-    const items = (h2s.length>=3 ? h2s : (Array.isArray(DATA.outline)?DATA.outline:[])).slice(0,10);
     const wrap = document.createElement('div');
     wrap.style.cssText='position:fixed;left:-9999px;top:0;width:1200px;height:630px;overflow:hidden;z-index:-999';
     wrap.innerHTML = buildBlogInfographic(DATA.topic, items, j.dataUrl);
@@ -912,12 +914,23 @@ window.genBlogImg = async (id)=>{
     toast('🖼️ AI 인포그래픽 완료');
   } catch(e){ if(st) st.textContent='⚠️ '+String(e.message||e); }
 };
-function buildBlogBgPrompt(topic){
+function buildBlogBgPrompt(topic, subtitle){
+  const sub = subtitle || '핵심 전략 · 실전 가이드';
+  const base = (person) => `Professional Korean editorial infographic image, 3:2 landscape.
+Layout: RIGHT 42% — ${person}. LEFT 58% — artistic typography overlay on soft light-blue-white gradient background.
+Korean text to render clearly on the left side:
+  • Top line (small italic, dark blue #1d4ed8): "지금 준비하는 사람이, 여유 있는 미래를 만듭니다 ☆"
+  • Main headline (very large bold, dark navy #1e3a70, 2-3 lines): "${topic}"
+  • Subtitle badge (white rounded pill, dark gray text): "${sub}!"
+Bottom 38% of image: very clean flat light-blue (#dbeafe) horizontal band — leave empty for content grid overlay.
+Bottom strip (last 10%): solid dark navy #1e3a70 horizontal bar.
+Style: modern Korean magazine infographic, high contrast, legible Korean typography, editorial quality. Photorealistic background scene.`;
+
   if(/노년|노후|실버|은퇴|중년|정년/.test(topic))
-    return `Happy Korean senior couple in their 60s, smiling warmly, standing outdoors in a bright green park with natural sunlight and blue sky. Couple positioned on the RIGHT side of a wide landscape image. LEFT 55% of image is a very soft light-blue to white gradient sky — clean and open. Photorealistic professional lifestyle photography, warm optimistic mood. No text, no letters.`;
+    return base('happy Korean senior couple in their 60s, smiling warmly, standing in a bright green park with natural sunlight and blue sky, photorealistic lifestyle photography');
   if(/주식|재산|투자|재테크|금융/.test(topic))
-    return `Confident Korean professional in their 40s, smiling, in a bright modern financial office. Positioned on RIGHT side of wide landscape image. LEFT 55% soft light-blue gradient. Photorealistic. No text.`;
-  return `Bright optimistic Korean lifestyle scene related to "${topic}". A person or couple on the RIGHT side of wide landscape image, soft blue-white gradient on LEFT 55%. Photorealistic professional photography. No text.`;
+    return base('confident Korean professional in their 40s, smiling, bright modern financial office, photorealistic');
+  return base(`optimistic Korean lifestyle person or couple related to the topic "${topic}", bright natural setting, photorealistic`);
 }
 function buildBlogInfographic(topic, items, bgDataUrl){
   const EMOJIS=['❤️','💰','🏠','👨‍👩‍👧‍👦','🤝','🧠','📚','📋','⏰','💛'];
@@ -925,25 +938,19 @@ function buildBlogInfographic(topic, items, bgDataUrl){
   const cells = items.map((item,i)=>{
     const clean = item.replace(/^\d+[\.\)]\s*/,'').replace(/\*+/g,'').trim();
     const label = clean.length>9 ? clean.slice(0,9) : clean;
-    return `<div style="background:white;border-radius:12px;padding:10px 6px 9px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.13);display:flex;flex-direction:column;align-items:center;gap:4px">
+    return `<div style="background:white;border-radius:12px;padding:10px 6px 9px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.15);display:flex;flex-direction:column;align-items:center;gap:4px">
       <div style="width:24px;height:24px;background:#1e3a70;border-radius:50%;color:white;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
       <div style="font-size:26px;line-height:1.1">${EMOJIS[i]||'⭐'}</div>
       <div style="font-size:12px;font-weight:700;color:#1e3a70;line-height:1.3;word-break:keep-all">${esc(label)}</div>
     </div>`;
   }).join('');
-  const subtitle = items.slice(0,5).map(s=>s.replace(/^\d+[\.\)]\s*/,'').replace(/\*+/g,'').trim().slice(0,5)).join(' · ');
-  const bgEl = bgDataUrl ? `<img src="${bgDataUrl}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:right center"/>` : '';
+  const bgEl = bgDataUrl ? `<img src="${bgDataUrl}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top"/>` : `<div style="position:absolute;inset:0;background:linear-gradient(150deg,#dbeafe,#f0f9ff,#dcfce7)"></div>`;
   return `<div style="position:relative;width:1200px;height:630px;background:#dbeafe;overflow:hidden;font-family:system-ui,-apple-system,'Malgun Gothic',sans-serif">
     ${bgEl}
-    <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(219,234,254,0.97) 0%,rgba(219,234,254,0.93) 48%,rgba(219,234,254,0.45) 68%,rgba(219,234,254,0) 100%)"></div>
-    <div style="position:absolute;bottom:0;left:0;right:0;height:62%;background:linear-gradient(0deg,rgba(219,234,254,0.97) 0%,rgba(219,234,254,0.85) 42%,transparent 100%)"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:48%;background:linear-gradient(0deg,rgba(219,234,254,1) 0%,rgba(219,234,254,0.97) 55%,rgba(219,234,254,0.0) 100%)"></div>
     <div style="position:relative;z-index:2;width:100%;height:100%;display:flex;flex-direction:column;box-sizing:border-box">
-      <div style="flex:1;padding:24px 36px 0;max-width:660px">
-        <div style="font-size:14px;color:#1d4ed8;font-weight:600;margin-bottom:4px;font-style:italic">지금 준비하는 사람이, 여유 있는 미래를 만듭니다 ☆</div>
-        <div style="font-size:46px;font-weight:900;color:#1e3a70;line-height:1.1;margin-bottom:10px;word-break:keep-all">${esc(topic)}</div>
-        ${subtitle?`<div style="font-size:13px;color:#374151;background:rgba(255,255,255,0.88);padding:5px 16px;border-radius:20px;display:inline-block">${esc(subtitle)}!</div>`:''}
-      </div>
-      <div style="padding:0 28px 10px;display:grid;grid-template-columns:repeat(${cols},1fr);gap:9px">
+      <div style="flex:1"></div>
+      <div style="padding:0 24px 10px;display:grid;grid-template-columns:repeat(${cols},1fr);gap:9px">
         ${cells}
       </div>
       <div style="background:#1e3a70;color:white;text-align:center;padding:13px 36px;font-size:15px;font-weight:700;flex-shrink:0">
