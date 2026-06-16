@@ -841,11 +841,9 @@ function blogHtmlPanel(id) {
   const imgSection = id==='googleblog' ? `
     <div class="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800">
       <div class="flex flex-wrap items-center gap-2">
-        <span class="text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1"><i data-lucide="image" class="w-3.5 h-3.5"></i>대표 이미지</span>
-        <select id="blogImgStyle-${id}" class="text-xs px-2 py-1 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none">
-          ${Object.keys(IMG_AI_STYLES).map(k=>`<option>${k}</option>`).join('')}
-        </select>
-        <button onclick="genBlogImg('${id}')" class="text-xs px-3 py-1.5 rounded-lg bg-pink-500 text-white font-semibold flex items-center gap-1"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i>AI 이미지 생성</button>
+        <span class="text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1"><i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>대표 인포그래픽</span>
+        <button onclick="genBlogImg('${id}')" class="text-xs px-3 py-1.5 rounded-lg bg-blue-500 text-white font-semibold flex items-center gap-1"><i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>인포그래픽 생성</button>
+        <span class="text-xs text-slate-400">블로그 핵심 내용 자동 요약 · OpenAI 불필요</span>
         <span id="blogImgStatus-${id}" class="text-xs text-slate-500"></span>
       </div>
       <div id="blogImgPreview-${id}" class="mt-1"></div>
@@ -883,26 +881,56 @@ window.genBlogHtml = async (id)=>{
   );
 };
 window.genBlogImg = async (id)=>{
-  const s = getSettings();
+  if (!DATA) { toast('먼저 콘텐츠를 생성하세요'); return; }
   const st = $('#blogImgStatus-'+id);
   const prev = $('#blogImgPreview-'+id);
-  if (!s.openai) { if(st) st.textContent='⚠️ 설정에서 OpenAI 키를 입력하세요.'; return; }
-  if (!DATA) { toast('먼저 콘텐츠를 생성하세요'); return; }
-  const styleEl = $('#blogImgStyle-'+id);
-  const styleDesc = IMG_AI_STYLES[styleEl ? styleEl.value : '3D 일러스트'] || IMG_AI_STYLES['3D 일러스트'];
-  const prompt = `Professional blog featured header image for the topic "${DATA.topic}". ${styleDesc}. Wide horizontal composition, clean and modern. Do NOT include any letters, numbers, or text.`;
-  if(st) st.textContent='🎨 생성 중 (수십 초 소요)...';
+  if(st) st.textContent='🎨 인포그래픽 생성 중...';
   try {
-    const r = await fetch('/api/image', { method:'POST', headers:{'content-type':'application/json'},
-      body: JSON.stringify({ key:s.openai, prompt, size:'1536x1024' }) });
-    const j = await r.json();
-    if (!r.ok) throw new Error(j.error||('HTTP '+r.status));
-    BLOG_IMG_URL[id] = j.dataUrl;
+    // H2 헤딩 추출 (googleStructured 우선 → outline 폴백)
+    const src = String(DATA.googleStructured||DATA.body||'');
+    const h2s = [...src.matchAll(/^##\s+(.+)$/gm)].map(m=>m[1].replace(/\*+/g,'').trim());
+    const items = (h2s.length>=3 ? h2s : (Array.isArray(DATA.outline)?DATA.outline:[])).slice(0,10);
+    // 오프스크린 렌더링
+    const wrap = document.createElement('div');
+    wrap.style.cssText='position:fixed;left:-9999px;top:0;width:1200px;height:630px;overflow:hidden;z-index:-999';
+    wrap.innerHTML = buildBlogInfographic(DATA.topic, items);
+    document.body.appendChild(wrap);
+    await new Promise(r=>setTimeout(r,120));
+    const canvas = await html2canvas(wrap,{scale:1.5,useCORS:true,width:1200,height:630,logging:false});
+    document.body.removeChild(wrap);
+    const dataUrl = canvas.toDataURL('image/png');
+    BLOG_IMG_URL[id] = dataUrl;
     if(st) st.textContent='✅ 완료 — 발행 시 자동 포함';
-    if(prev) prev.innerHTML = `<img src="${j.dataUrl}" class="w-full rounded-lg object-cover" style="max-height:160px" />`;
-    toast('🖼️ 대표 이미지 생성 완료');
-  } catch(e) { if(st) st.textContent='⚠️ '+String(e.message||e); }
+    if(prev) prev.innerHTML=`<img src="${dataUrl}" class="w-full rounded-lg" style="max-height:180px;object-fit:cover"/>
+      <a href="${dataUrl}" download="blog-infographic.png" class="mt-1 text-xs text-indigo-500 underline block text-right">PNG 저장</a>`;
+    toast('🖼️ 인포그래픽 완료');
+  } catch(e){ if(st) st.textContent='⚠️ '+String(e.message||e); }
 };
+function buildBlogInfographic(topic, items){
+  const EMOJIS=['❤️','💰','🏠','👨‍👩‍👧‍👦','🤝','🧠','📚','📋','⏰','💛'];
+  const cols = items.length<=5 ? Math.max(items.length,3) : 5;
+  const cells = items.map((item,i)=>{
+    const clean = item.replace(/^\d+[\.\)]\s*/,'').replace(/\*+/g,'').trim();
+    const label = clean.length>13 ? clean.slice(0,13)+'…' : clean;
+    return `<div style="background:white;border-radius:14px;padding:14px 8px 12px;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,0.09);display:flex;flex-direction:column;align-items:center;gap:5px">
+      <div style="width:26px;height:26px;background:#1e3a70;border-radius:50%;color:white;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center">${i+1}</div>
+      <div style="font-size:28px;line-height:1.1">${EMOJIS[i]||'⭐'}</div>
+      <div style="font-size:12px;font-weight:700;color:#1e3a70;line-height:1.35;word-break:keep-all">${esc(label)}</div>
+    </div>`;
+  }).join('');
+  const subtitle = items.length>0 ? items.map(s=>s.replace(/^\d+[\.\)]\s*/,'').replace(/\*+/g,'').trim().slice(0,6)).slice(0,5).join(' · ') : '';
+  return `<div style="width:1200px;height:630px;background:linear-gradient(150deg,#dbeafe 0%,#f0f9ff 45%,#dcfce7 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 48px;box-sizing:border-box;font-family:system-ui,-apple-system,'Malgun Gothic',sans-serif">
+    <div style="font-size:16px;color:#2563eb;font-weight:600;margin-bottom:6px;letter-spacing:0.3px">지금 준비하는 사람이, 여유 있는 미래를 만듭니다 ☆</div>
+    <div style="font-size:52px;font-weight:900;color:#1e3a70;text-align:center;line-height:1.1;margin-bottom:8px;word-break:keep-all">${esc(topic)}</div>
+    ${subtitle?`<div style="font-size:14px;color:#374151;background:rgba(255,255,255,0.7);padding:6px 20px;border-radius:20px;margin-bottom:18px">${esc(subtitle)}!</div>`:'<div style="margin-bottom:18px"></div>'}
+    <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:12px;width:100%;max-width:1100px">
+      ${cells}
+    </div>
+    <div style="margin-top:18px;background:#1e3a70;color:white;padding:11px 36px;border-radius:40px;font-size:15px;font-weight:700;letter-spacing:0.5px">
+      ✅ ${esc(topic.slice(0,25))} 완벽 가이드
+    </div>
+  </div>`;
+}
 function renderHtmlResult(id, h){
   const box = $('#htmlResult-'+id); if(!box) return;
   const srcdoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Pretendard,system-ui,sans-serif;line-height:1.7;padding:16px;margin:0;color:#1f2937}</style></head><body>${h}</body></html>`;
