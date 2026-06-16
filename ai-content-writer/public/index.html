@@ -326,6 +326,8 @@
       <option value="draft">비공개/초안</option>
       <option value="publish">공개 발행</option>
     </select>
+    <label class="block text-[11px] font-semibold text-slate-500 mb-1">대표 이미지 URL <span class="text-slate-400 font-normal">(선택 — 글 상단에 삽입)</span></label>
+    <input id="pub_imageUrl" placeholder="https://example.com/image.jpg" class="w-full px-3 py-2 mb-3 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
     <button onclick="doPublish()" class="w-full py-2.5 rounded-lg bg-indigo-500 text-white font-semibold flex items-center justify-center gap-1.5"><i data-lucide="send" class="w-4 h-4"></i>발행</button>
     <div id="pub_status_msg" class="text-xs text-slate-500 mt-2"></div>
   </div>
@@ -1620,6 +1622,10 @@ window.doPublish = async ()=>{
   if (!title) { msg.textContent='⚠️ 제목을 입력하세요.'; return; }
   const contentHtml = PUB_ISHTML ? PUB_MD : (window.marked ? marked.parse(PUB_MD) : PUB_MD);
   const status = $('#pub_status').value;
+  const imageUrl = ($('#pub_imageUrl').value||'').trim();
+  const withImg = (html) => imageUrl
+    ? `<div style="text-align:center;margin-bottom:28px"><img src="${imageUrl}" style="max-width:100%;border-radius:10px;display:block;margin:0 auto" /></div>\n` + html
+    : html;
 
   // 구글 블로그(Blogger) — 클라이언트 OAuth + Blogger API
   if (prov==='blogger') {
@@ -1634,7 +1640,7 @@ window.doPublish = async ()=>{
           try {
             const r = await fetch(`https://www.googleapis.com/blogger/v3/blogs/${encodeURIComponent(s.bloggerBlogId)}/posts/${status==='publish'?'':'?isDraft=true'}`, {
               method:'POST', headers:{ 'Authorization':'Bearer '+resp.access_token, 'Content-Type':'application/json' },
-              body: JSON.stringify({ title, content: contentHtml }) });
+              body: JSON.stringify({ title, content: withImg(contentHtml) }) });
             const j = await r.json();
             if (!r.ok) throw new Error((j.error&&j.error.message)||('Blogger '+r.status));
             msg.innerHTML = `✅ 구글 블로그 발행 완료 ${j.url?`— <a href="${j.url}" target="_blank" class="text-indigo-500 underline">글 보기</a>`:''}`;
@@ -1656,7 +1662,7 @@ window.doPublish = async ()=>{
   }
 
   // 워드프레스 / 티스토리 — 백엔드 프록시
-  const body = { provider:prov, title, contentHtml, status };
+  const body = { provider:prov, title, contentHtml: withImg(contentHtml), status };
   if (prov==='wordpress') {
     if (!s.wpUrl||!s.wpUser||!s.wpAppPass) { msg.textContent='⚠️ 설정에서 워드프레스 정보를 입력하세요.'; return; }
     body.wpUrl=s.wpUrl; body.wpUser=s.wpUser; body.wpAppPassword=s.wpAppPass;
