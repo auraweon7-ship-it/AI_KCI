@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI 콘텐츠 글쓰기 비서</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+  tailwind.config = {
+    darkMode: 'class',
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Pretendard', 'system-ui', 'sans-serif'] },
+        borderRadius: { xl2: '1.25rem' }
+      }
+    }
+  };
+</script>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+  body { font-family: 'Pretendard', system-ui, sans-serif; }
+  .fade-in { animation: fadeIn .35s ease; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:none; } }
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+  .dark ::-webkit-scrollbar-thumb { background: #475569; }
+  .tab-active { box-shadow: 0 1px 0 0 currentColor inset, 0 -2px 0 0 currentColor; }
+  .card-pop { transition: transform .15s ease, box-shadow .15s ease; }
+  .card-pop:hover { transform: translateY(-3px); box-shadow: 0 12px 30px -12px rgba(0,0,0,.25); }
+</style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen">
+
+<!-- ===== HEADER ===== -->
+<header class="sticky top-0 z-30 backdrop-blur bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 grid place-items-center text-white shadow-lg">
+        <i data-lucide="sparkles" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <h1 class="text-lg font-bold leading-tight">AI 콘텐츠 글쓰기 비서</h1>
+        <p class="text-xs text-slate-500 dark:text-slate-400">주제 하나로 블로그·스레드·썸네일·카드뉴스·홍보글 한 번에</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="recentBtn" class="px-3 py-2 rounded-lg text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1.5">
+        <i data-lucide="history" class="w-4 h-4"></i><span class="hidden sm:inline">최근</span>
+      </button>
+      <button id="darkBtn" class="p-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700">
+        <i data-lucide="moon" class="w-4 h-4 dark:hidden"></i>
+        <i data-lucide="sun" class="w-4 h-4 hidden dark:block"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-6">
+
+  <!-- ===== LEFT: INPUT FORM ===== -->
+  <aside class="lg:sticky lg:top-20 lg:self-start space-y-4">
+    <div class="bg-white dark:bg-slate-900 rounded-xl2 border border-slate-200 dark:border-slate-800 p-5 shadow-sm">
+      <div class="flex items-center gap-2 mb-4">
+        <span class="w-6 h-6 rounded-md bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 grid place-items-center text-xs font-bold">1</span>
+        <h2 class="font-bold">주제 입력</h2>
+      </div>
+
+      <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">콘텐츠 주제 *</label>
+      <textarea id="topic" rows="2" placeholder="예: AI 중국어 교육 웹앱 개발" class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm resize-none focus:ring-2 focus:ring-indigo-400 outline-none"></textarea>
+
+      <div class="flex flex-wrap gap-1.5 mt-2" id="sampleTopics"></div>
+
+      <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mt-4 mb-1">대상 독자</label>
+      <input id="audience" placeholder="예: 중국어 강사, 블로그 운영자" class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+
+      <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mt-4 mb-1">키워드 (쉼표 구분)</label>
+      <input id="keywords" placeholder="예: AI 교육, 중국어 학습, 웹앱" class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:ring-2 focus:ring-indigo-400 outline-none" />
+
+      <div class="grid grid-cols-2 gap-3 mt-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">글의 목적</label>
+          <select id="purpose" class="w-full px-2 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">문체</label>
+          <select id="tone" class="w-full px-2 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none"></select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">글자 수</label>
+          <select id="length" class="w-full px-2 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none">
+            <option value="short">짧게 (~800자)</option>
+            <option value="mid" selected>보통 (~1500자)</option>
+            <option value="long">길게 (~2500자)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1">이미지 스타일</label>
+          <select id="imgStyle" class="w-full px-2 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none"></select>
+        </div>
+      </div>
+
+      <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mt-4 mb-1">플랫폼 (복수 선택)</label>
+      <div id="platforms" class="flex flex-wrap gap-1.5"></div>
+
+      <button id="generateBtn" class="w-full mt-5 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-bold flex items-center justify-center gap-2 shadow-lg hover:shadow-indigo-500/40 transition active:scale-[.98]">
+        <i data-lucide="wand-2" class="w-5 h-5"></i> 콘텐츠 패키지 생성
+      </button>
+      <p class="text-[11px] text-center text-slate-400 mt-2">전체 결과가 한 번에 생성됩니다</p>
+    </div>
+
+    <!-- Content type quick nav -->
+    <div class="bg-white dark:bg-slate-900 rounded-xl2 border border-slate-200 dark:border-slate-800 p-4 shadow-sm">
+      <div class="flex items-center gap-2 mb-3">
+        <span class="w-6 h-6 rounded-md bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-300 grid place-items-center text-xs font-bold">2</span>
+        <h2 class="font-bold text-sm">콘텐츠 유형</h2>
+      </div>
+      <div id="typeNav" class="grid grid-cols-1 gap-1.5"></div>
+    </div>
+  </aside>
+
+  <!-- ===== RIGHT: RESULTS ===== -->
+  <section>
+    <!-- Empty state -->
+    <div id="emptyState" class="bg-white dark:bg-slate-900 rounded-xl2 border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
+      <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-indigo-100 to-violet-100 dark:from-indigo-900/40 dark:to-violet-900/40 grid place-items-center mb-4">
+        <i data-lucide="layout-template" class="w-8 h-8 text-indigo-500"></i>
+      </div>
+      <h3 class="font-bold text-lg mb-1">주제를 입력하고 생성하세요</h3>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mb-5">9개 탭으로 콘텐츠가 한 번에 만들어집니다</p>
+      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-w-2xl mx-auto" id="routeCards"></div>
+    </div>
+
+    <!-- Results -->
+    <div id="results" class="hidden">
+      <!-- Tabs -->
+      <div class="sticky top-[68px] z-20 bg-slate-50/95 dark:bg-slate-950/95 backdrop-blur py-2 -mx-1 px-1 mb-4">
+        <div id="tabBar" class="flex gap-1 overflow-x-auto pb-1"></div>
+      </div>
+      <div id="tabContent" class="fade-in"></div>
+    </div>
+  </section>
+</main>
+
+<!-- ===== TOAST ===== -->
+<div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-sm font-medium shadow-xl opacity-0 pointer-events-none transition-all"></div>
+
+<!-- ===== RECENT DRAWER ===== -->
+<div id="recentDrawer" class="fixed inset-0 z-40 hidden">
+  <div class="absolute inset-0 bg-black/40" data-close></div>
+  <div class="absolute right-0 top-0 h-full w-full max-w-sm bg-white dark:bg-slate-900 shadow-2xl p-5 overflow-y-auto">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-bold flex items-center gap-2"><i data-lucide="history" class="w-5 h-5"></i> 최근 프로젝트</h3>
+      <button data-close class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div id="recentList" class="space-y-2"></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   AI 콘텐츠 글쓰기 비서 — 클라이언트 사이드 생성 엔진
+   ============================================================ */
+
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+
+/* ---------- 옵션 데이터 ---------- */
+const PURPOSES = ['정보 전달','상품 홍보','강의 홍보','수익형 블로그','교육 콘텐츠','브랜딩'];
+const TONES = ['전문적','친근한','설득형','감성형','뉴스형','후기형'];
+const IMG_STYLES = ['파스텔','미니멀','그라데이션','강의자료형','노션 카드형','비즈니스형'];
+const PLATFORMS = ['네이버 블로그','구글 SEO 블로그','스레드','인스타그램','카드뉴스','유튜브 쇼츠','커뮤니티 홍보글','백링크용 요약문'];
+const SAMPLES = ['AI 중국어 교육 웹앱 개발','블로그 수익화 시작하기','초보 강사 온라인 강의 만들기','퍼스널 브랜딩 전략','노션으로 업무 자동화','AI 글쓰기 도구 활용법'];
+
+/* ---------- 문체 / 목적 변주 맵 ---------- */
+const TONE_MAP = {
+  '전문적':   { open: '결론부터 말하면', adj: '핵심을 짚어', end: '실무에 바로 적용해 보세요.', emoji:'📊' },
+  '친근한':   { open: '오늘은 쉽게 풀어볼게요', adj: '편하게', end: '같이 해봐요!', emoji:'😊' },
+  '설득형':   { open: '지금이 바로 그 타이밍입니다', adj: '확실하게', end: '망설일 이유가 없습니다.', emoji:'🔥' },
+  '감성형':   { open: '문득 이런 생각이 들었어요', adj: '천천히', end: '당신의 하루에 작은 변화가 되길.', emoji:'🌿' },
+  '뉴스형':   { open: '최근 주목받는 흐름이다', adj: '객관적으로', end: '변화는 이미 시작됐다.', emoji:'📰' },
+  '후기형':   { open: '직접 써보고 솔직하게 정리합니다', adj: '경험을 바탕으로', end: '제 경험이 도움이 되길 바라요.', emoji:'✍️' },
+};
+const PURPOSE_MAP = {
+  '정보 전달':   { cta: '핵심만 정리했으니 필요할 때 다시 찾아보세요.', angle:'정확한 정보' },
+  '상품 홍보':   { cta: '지금 확인하고 합리적으로 선택하세요.', angle:'실사용 가치' },
+  '강의 홍보':   { cta: '강의 신청은 본문 링크에서 가능합니다.', angle:'배움의 효과' },
+  '수익형 블로그':{ cta: '도움이 됐다면 공감과 이웃추가 부탁드려요.', angle:'수익화 전략' },
+  '교육 콘텐츠': { cta: '학습 자료로 자유롭게 활용해 주세요.', angle:'쉬운 이해' },
+  '브랜딩':      { cta: '우리가 가진 관점을 꾸준히 전합니다.', angle:'고유한 관점' },
+};
+
+/* ---------- 상태 ---------- */
+let DATA = null;          // 마지막 입력값
+let GEN = null;           // 생성 결과
+let activeTab = 'blog';
+
+/* ---------- 유틸 ---------- */
+const kwArr = () => (DATA.keywords || '').split(',').map(s=>s.trim()).filter(Boolean);
+const firstKw = () => kwArr()[0] || DATA.topic;
+const toast = (msg) => {
+  const t = $('#toast'); t.textContent = msg;
+  t.style.opacity = '1'; t.style.transform = 'transl(-50%,0)';
+  clearTimeout(t._t); t._t = setTimeout(()=>{ t.style.opacity='0'; }, 1800);
+};
+const copy = (text, label='복사 완료') => {
+  navigator.clipboard.writeText(text).then(()=>toast('📋 '+label)).catch(()=>toast('복사 실패'));
+};
+const download = (text, filename) => {
+  const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+  URL.revokeObjectURL(a.href);
+};
+const esc = (s) => String(s).replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+/* ============================================================
+   생성기들
+   ============================================================ */
+function genAll() {
+  const t = DATA.topic;
+  const tone = TONE_MAP[DATA.tone];
+  const purp = PURPOSE_MAP[DATA.purpose];
+  const kws = kwArr().length ? kwArr() : [t];
+  const k0 = kws[0];
+
+  /* --- B. SEO 제목 10개 --- */
+  const seoTitles = [
+    `${t}, 이것만 알면 끝납니다`,
+    `${k0} 완벽 가이드 (${new Date().getFullYear()} 최신판)`,
+    `${t} 시작 전 꼭 봐야 할 7가지`,
+    `초보자도 바로 따라하는 ${k0}`,
+    `${t}, 왜 지금 주목받을까?`,
+    `${k0} 제대로 하는 법 총정리`,
+    `실패 없는 ${t} 체크리스트`,
+    `${t} 핵심 정리: ${purp.angle} 중심으로`,
+    `${k0}, 현실적으로 가능한가? 직접 정리했습니다`,
+    `${t} 한 번에 이해하기 (${DATA.audience||'입문자'} 맞춤)`,
+  ];
+
+  /* --- 도입문 --- */
+  const intro = `${tone.open}, ${t}는 생각보다 어렵지 않습니다. ${DATA.audience? DATA.audience+'라면 ':''}이 글 하나로 ${k0}의 핵심을 ${tone.adj} 정리할 수 있어요. 끝까지 읽으면 바로 적용할 수 있는 실전 포인트까지 챙겨 갑니다.`;
+
+  /* --- 목차 --- */
+  const outline = [
+    `${t}란 무엇인가`,
+    `왜 ${k0}가 중요한가`,
+    `${t} 핵심 단계 3가지`,
+    `자주 하는 실수와 해결법`,
+    `실전 적용 사례`,
+    `자주 묻는 질문(FAQ)`,
+  ];
+
+  /* --- 본문 --- */
+  const lenMul = DATA.length==='long'?3:DATA.length==='short'?1:2;
+  const para = (h, body) => `## ${h}\n\n${body}\n`;
+  const repeat = (s) => Array(lenMul).fill(s).join(' ');
+  const body = [
+    para(outline[0], `${t}는 ${purp.angle}을(를) 중심으로 ${DATA.audience||'사용자'}에게 도움을 주는 주제입니다. ${repeat(`특히 ${k0}는 최근 검색량이 꾸준히 늘고 있어 지금 알아두면 분명한 이점이 있습니다.`)}`),
+    para(outline[1], repeat(`${kws.join(', ')} 같은 키워드는 실제 수요가 명확합니다. 핵심은 정보의 양이 아니라 ${tone.adj} 정리된 흐름입니다.`)),
+    para(outline[2], `1) 목표를 먼저 정한다\n2) ${k0}의 기준을 잡는다\n3) 작게 시작해 빠르게 검증한다\n\n${repeat('각 단계는 30분이면 충분히 시작할 수 있습니다.')}`),
+    para(outline[3], repeat(`가장 흔한 실수는 처음부터 완벽을 노리는 것입니다. ${k0}는 반복하며 다듬는 영역이라, 일단 공개하고 피드백을 받는 편이 빠릅니다.`)),
+    para(outline[4], repeat(`예를 들어 ${DATA.audience||'한 사용자'}가 ${t}를 적용했을 때, 2주 만에 눈에 띄는 변화를 경험했습니다.`)),
+  ].join('\n');
+
+  /* --- 소제목별 핵심 문장 --- */
+  const keySentences = outline.slice(0,5).map((h,i)=>`【${h}】 ${[
+    `${k0}의 본질을 한 줄로 이해하는 게 먼저입니다.`,
+    `수요가 있는 곳에 콘텐츠가 쌓여야 합니다.`,
+    `완벽한 계획보다 빠른 실행이 이깁니다.`,
+    `실수는 비용이 아니라 데이터입니다.`,
+    `사례 하나가 백 마디 설명을 이깁니다.`,
+  ][i]}`);
+
+  /* --- FAQ 5개 --- */
+  const faq = [
+    [`${t}, 초보자도 할 수 있나요?`, `네. 작은 단위로 시작하면 ${DATA.audience||'누구나'} 따라 할 수 있습니다.`],
+    [`${k0}에 비용이 많이 드나요?`, `핵심 도구는 무료로도 충분히 시작 가능합니다.`],
+    [`효과는 언제부터 보이나요?`, `보통 2~4주 꾸준히 하면 변화가 나타납니다.`],
+    [`${t}에서 가장 중요한 건 무엇인가요?`, `${purp.angle}을(를) 일관되게 유지하는 것입니다.`],
+    [`어디서부터 시작해야 하나요?`, `이 글의 '핵심 단계 3가지'부터 그대로 따라 해 보세요.`],
+  ];
+
+  /* --- 메타디스크립션 --- */
+  const meta = `${t} 핵심을 ${DATA.audience||'입문자'} 눈높이에 맞춰 정리했습니다. ${kws.slice(0,3).join(', ')}까지 한 번에 확인하세요. (약 155자 이내 최적화)`.slice(0,155);
+
+  /* --- 해시태그 20개 --- */
+  const baseTags = [t, ...kws, DATA.purpose, '콘텐츠마케팅','블로그','SEO','글쓰기','상위노출','정보','꿀팁','가이드','입문','노하우','후기','추천','정리','트렌드','마케팅','브랜딩'];
+  const hashtags = [...new Set(baseTags)].slice(0,20).map(s=>'#'+s.replace(/\s+/g,'')).join(' ');
+
+  /* --- 네이버 마무리 멘트 --- */
+  const naverClosing = `여기까지 ${t}에 대해 정리해봤어요. ${tone.end} ${purp.cta} 궁금한 점은 댓글로 남겨주시면 답변드릴게요. ${tone.emoji}`;
+
+  /* --- 구글 SEO 구조화 글 --- */
+  const googleStructured =
+`# H1: ${seoTitles[1]}
+
+## H2: Overview
+${intro}
+
+## H2: Why ${k0} Matters
+${kws.join(' / ')} are search-intent driven topics. This section answers the user's primary intent directly in the first 100 words.
+
+### H3: Key Benefit 1 — ${purp.angle}
+간결한 정보 중심 설명.
+
+### H3: Key Benefit 2 — Practical Steps
+1. Define the goal
+2. Set the ${k0} baseline
+3. Ship small, iterate fast
+
+## H2: Common Questions
+${faq.slice(0,3).map(([q,a])=>`- **${q}** ${a}`).join('\n')}
+
+## H2: Conclusion
+${purp.cta}`;
+
+  /* --- C. 스레드 --- */
+  const threadHook = `${k0}, 이거 모르면 진짜 손해예요. ${tone.emoji}`;
+  const threadPosts = [
+    `1/ ${t}, 어렵게 느껴지죠? 사실 핵심은 딱 3가지예요.`,
+    `2/ 첫째, 목표를 먼저 정하세요. ${purp.angle} 없이 시작하면 산으로 갑니다.`,
+    `3/ 둘째, ${k0}의 기준을 잡으세요. 비교 대상이 있어야 성장합니다.`,
+    `4/ 셋째, 작게 시작하고 빠르게 고치세요. 완벽주의가 가장 큰 적이에요.`,
+    `5/ 흔한 실수? 처음부터 100점을 노리는 것. 60점으로 공개하고 다듬으세요.`,
+    `6/ 실제로 ${DATA.audience||'한 분'}은 2주 만에 변화를 봤습니다.`,
+    `7/ 정리하면: 목표 → 기준 → 실행. 이 순서만 지켜도 절반은 성공이에요.`,
+  ];
+  const threadEnd = `도움이 됐다면 ♥ 저장하고 친구에게 공유해 주세요. 더 많은 ${k0} 팁은 프로필에서!`;
+  const threadTags = ['#'+t.replace(/\s+/g,''), '#'+k0.replace(/\s+/g,''), '#스레드', '#꿀팁', '#'+(DATA.purpose||'정보').replace(/\s+/g,'')].join(' ');
+
+  /* --- D. 썸네일 문구 (각 카테고리 10개, 15자/25자) --- */
+  const tShort = (s)=> s.length>15 ? s.slice(0,15) : s;
+  const tLong  = (s)=> s.length>25 ? s.slice(0,25) : s;
+  const mkThumb = (arr)=> arr.map(s=>({s15:tShort(s), s25:tLong(s.length>15?s:s+' 완벽정리')}));
+  const thumbs = {
+    '강한 제목형': mkThumb([
+      `${k0} 완벽정복`, `${t} 핵심정리`, `${k0} 이렇게 하세요`, `지금 시작하는 ${k0}`, `${t} 한 장 요약`,
+      `${k0}의 모든 것`, `${t} 끝장정리`, `${k0} 실전가이드`, `초보 탈출 ${k0}`, `${t} 핵심만`,
+    ]),
+    '궁금증 유발형': mkThumb([
+      `${k0}, 왜 안될까?`, `이거 모르면 손해`, `${t} 진실은?`, `90%가 놓치는 것`, `${k0}의 비밀`,
+      `왜 나만 안되지?`, `${t} 함정 주의`, `이걸 몰랐다니`, `${k0} 진짜 후기`, `결국 답은 하나`,
+    ]),
+    '수익형 블로그용': mkThumb([
+      `${k0}로 수익화`, `블로그 첫 수익`, `${t}로 돈 벌기`, `수익 자동화 시작`, `0원으로 시작`,
+      `${k0} 수익공식`, `부업으로 ${k0}`, `월 100 만들기`, `${t} 돈되는 법`, `수익화 로드맵`,
+    ]),
+    '교육 콘텐츠용': mkThumb([
+      `쉽게 배우는 ${k0}`, `${t} 기초강의`, `${k0} 입문수업`, `5분 ${k0} 정리`, `왕초보 ${k0}`,
+      `${t} 따라하기`, `${k0} 한눈에`, `기초부터 ${k0}`, `${t} 핵심강의`, `${k0} 완전정복`,
+    ]),
+    '카드뉴스 표지용': mkThumb([
+      `${t}, 이렇게 바뀐다`, `한 장으로 보는 ${k0}`, `${k0} 핵심 8가지`, `알고 보면 쉬운 ${k0}`, `${t} 요점정리`,
+      `${k0} 카드 한 장`, `오늘의 ${k0}`, `${t} 핵심노트`, `${k0} 미리보기`, `${t} 슬라이드`,
+    ]),
+  };
+
+  /* --- F. 카드뉴스 8장 --- */
+  const cardNews = [
+    { type:'표지',      title:`${t}`,                  line:`${k0}, 핵심만 모았습니다`,           sub:'스와이프 하세요 →' },
+    { type:'문제 제기', title:'이런 고민 있으신가요?',   line:`${k0}, 어디서부터 시작할지 막막하죠`, sub:'많은 분들이 같은 고민을 합니다' },
+    { type:'핵심정보 1',title:'핵심 ①',                line:'목표를 먼저 정하세요',                sub:`${purp.angle} 없이는 방향을 잃습니다` },
+    { type:'핵심정보 2',title:'핵심 ②',                line:`${k0}의 기준을 잡으세요`,             sub:'비교 대상이 있어야 성장합니다' },
+    { type:'핵심정보 3',title:'핵심 ③',                line:'작게 시작, 빠르게 개선',             sub:'완벽주의는 가장 큰 적입니다' },
+    { type:'사례',      title:'실제 사례',              line:'2주 만에 달라진 결과',               sub:`${DATA.audience||'한 사용자'}의 변화` },
+    { type:'요약',      title:'오늘의 요약',            line:'목표 → 기준 → 실행',                 sub:'이 순서만 지켜도 절반은 성공' },
+    { type:'행동 유도', title:'지금 시작하세요',        line:purp.cta,                            sub:'저장하고 하나씩 따라해 보세요' },
+  ].map((c,i)=>({...c, idx:i+1, prompt:`${DATA.imgStyle} 스타일, ${c.type} 카드, "${c.line}" 텍스트 강조, ${DATA.imgStyle.includes('파스텔')?'파스텔 톤':'깔끔한 톤'}, 1:1 비율, 미니멀 일러스트`, design:DATA.imgStyle}));
+
+  /* --- G. 커뮤니티/백링크 --- */
+  const community = [
+    ['네이버 카페용 홍보글', `안녕하세요 :) ${t} 관련해서 정리한 내용 공유드려요. ${k0} 시작하시는 분들께 도움이 될 것 같아 올립니다. 핵심은 목표 → 기준 → 실행 순서예요. 자세한 내용은 댓글/링크 참고해주세요!`],
+    ['지식인 답변형', `${t}에 대해 궁금하셨군요. 핵심만 말씀드리면, ${k0}는 작게 시작하는 게 중요합니다. ① 목표 설정 ② 기준 잡기 ③ 빠른 실행 순으로 진행하시면 됩니다. 더 구체적인 자료는 관련 글에 정리해두었어요.`],
+    ['커뮤니티 게시글', `[정보] ${t} 정리해봤습니다. ${k0} 입문하시는 분들 많은 것 같아서요. 제가 직접 해보니 ${PURPOSE_MAP[DATA.purpose].angle}이(가) 제일 중요하더라고요. 도움 되시길!`],
+    ['백링크용 요약문', `${t}는 ${kws.slice(0,3).join(', ')}을(를) 중심으로 한 주제로, ${DATA.audience||'입문자'}가 쉽게 시작할 수 있도록 핵심 단계를 정리한 콘텐츠입니다. 자세한 가이드는 원문에서 확인하세요.`],
+    ['댓글 유도 문장', `여러분은 ${k0} 어떻게 시작하셨나요? 경험 댓글로 나눠주시면 함께 보고 싶어요!`],
+    ['카드뉴스 공유 문구', `${t} 핵심을 카드 8장으로 정리했어요. 저장해두고 필요할 때 꺼내 보세요 📌`],
+    ['SNS 짧은 소개글', `${k0}, 어렵지 않아요. 핵심 3단계로 정리한 글 올렸습니다. 프로필 링크 확인! ${tone.emoji}`],
+  ];
+
+  /* --- H. 유튜브/쇼츠 --- */
+  const ytTitles = seoTitles.slice(0,10).map((s,i)=> i%2? `[${k0}] ${s}` : `${s} | ${k0}`);
+  const shortsTitles = thumbs['궁금증 유발형'].map(o=>o.s25).slice(0,10);
+  const shorts30 = `(0~3초 훅) "${threadHook}"\n(4~15초) ${t}의 핵심은 딱 3가지! 첫째 목표, 둘째 기준, 셋째 실행.\n(16~27초) 완벽주의 버리고 작게 시작하세요.\n(28~30초) 저장 필수! 더 많은 팁은 채널 구독 👆`;
+  const shorts60 = `(0~5초 훅) ${k0} 모르면 손해 보는 이유\n(6~20초) ${t}란 ${purp.angle}을 중심으로...\n(21~40초) 핵심 3단계: 목표 → 기준 → 실행. 각 단계 상세 설명.\n(41~55초) 실제 사례: ${DATA.audience||'한 분'}이 2주 만에 변화.\n(56~60초) 구독+알림 설정하고 다음 영상도 챙겨보세요!`;
+  const ytDesc = `${t}에 대한 핵심 정리 영상입니다.\n\n📌 다루는 내용\n- ${k0}의 기본 개념\n- 실전 3단계\n- 자주 하는 실수\n\n${hashtags}`;
+  const ytPinned = `💬 고정 댓글: ${k0} 시작하시는 분들, 어디서 막히셨나요? 댓글로 남겨주시면 다음 영상에서 다뤄볼게요!`;
+
+  /* --- I. AI 프롬프트 --- */
+  const prompts = [
+    ['블로그 글쓰기', `당신은 전문 블로그 작가입니다. "${t}" 주제로 ${DATA.audience||'일반 독자'}를 대상으로 ${DATA.tone} 문체의 네이버 블로그 글을 작성하세요. 키워드(${kws.join(', ')})를 자연스럽게 포함하고, 도입-본문(소제목 5개)-마무리 구조로 약 1500자 작성. 목적: ${DATA.purpose}.`],
+    ['상위노출 글쓰기', `SEO 전문가로서 "${t}" 키워드의 검색 의도를 분석하고, 구글 상위노출을 위한 H1/H2/H3 구조의 글을 작성하세요. 핵심 키워드: ${kws.join(', ')}. 첫 100자 안에 검색 의도를 충족시키고, FAQ 섹션과 메타디스크립션(155자)을 포함하세요.`],
+    ['썸네일 생성', `"${t}" 주제의 ${DATA.imgStyle} 스타일 썸네일을 디자인하세요. 강한 제목 문구(15자 이내)와 보조 문구를 제안하고, 색상 팔레트와 레이아웃(텍스트 위치, 아이콘)을 구체적으로 설명하세요. 비율: 16:9.`],
+    ['카드뉴스 생성', `"${t}" 주제로 8장짜리 카드뉴스를 기획하세요. 표지-문제제기-핵심3장-사례-요약-행동유도 구조. 각 카드는 제목, 핵심 문장(20자 이내), 보조 설명, 이미지 프롬프트를 포함. 스타일: ${DATA.imgStyle}, 1:1 비율.`],
+    ['스레드 글쓰기', `"${t}"를 주제로 스레드(X)용 글타래를 작성하세요. 강한 훅 문장으로 시작, 5~7개의 짧은 포스트로 핵심 전달, 마지막은 저장/공유 유도. 해시태그 5개 포함. 문체: ${DATA.tone}.`],
+    ['키워드 분석', `"${t}" 관련 SEO 키워드를 분석하세요. 메인 키워드(${k0}) 기준으로 연관 키워드 20개, 롱테일 키워드 10개를 검색 의도별(정보형/구매형/탐색형)로 분류하고, 각 키워드의 활용 위치를 제안하세요.`],
+    ['요약봇', `다음 블로그 글을 ① 한 줄 요약 ② 3줄 요약 ③ 백링크용 요약문(2문장)으로 정리하세요. 주제: "${t}", 키워드: ${kws.join(', ')}. 과한 광고 느낌 없이 자연스럽게 작성.`],
+    ['홍보글 작성', `"${t}"를 홍보하는 글을 플랫폼별로 작성하세요: ① 네이버 카페 ② 커뮤니티 ③ SNS. 각 채널 톤에 맞게, 광고 티 안 나게 자연스럽게. 목적: ${DATA.purpose}, 대상: ${DATA.audience||'일반'}.`],
+  ];
+
+  return {
+    seoTitles, intro, outline, body, keySentences, faq, meta, hashtags, naverClosing, googleStructured,
+    threadHook, threadPosts, threadEnd, threadTags,
+    thumbs, cardNews, community, ytTitles, shortsTitles, shorts30, shorts60, ytDesc, ytPinned, prompts,
+  };
+}
+
+/* ============================================================
+   탭 정의 + 렌더
+   ============================================================ */
+const TABS = [
+  { id:'blog',     label:'블로그 글',       icon:'file-text',     color:'emerald' },
+  { id:'seo',      label:'SEO 제목',        icon:'search',        color:'blue' },
+  { id:'thread',   label:'스레드',          icon:'message-circle',color:'sky' },
+  { id:'thumbtxt', label:'썸네일 문구',     icon:'type',          color:'violet' },
+  { id:'thumbimg', label:'썸네일 이미지',   icon:'image',         color:'pink' },
+  { id:'card',     label:'카드뉴스',        icon:'layout-grid',   color:'amber' },
+  { id:'community',label:'백링크/커뮤니티', icon:'share-2',       color:'cyan' },
+  { id:'youtube',  label:'유튜브/쇼츠',     icon:'play-circle',   color:'rose' },
+  { id:'prompt',   label:'AI 프롬프트',     icon:'terminal',      color:'indigo' },
+];
+
+const COLOR = {
+  emerald:'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300',
+  blue:   'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300',
+  sky:    'bg-sky-50 dark:bg-sky-900/20 border-sky-200 dark:border-sky-800 text-sky-700 dark:text-sky-300',
+  violet: 'bg-violet-50 dark:bg-violet-900/20 border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300',
+  pink:   'bg-pink-50 dark:bg-pink-900/20 border-pink-200 dark:border-pink-800 text-pink-700 dark:text-pink-300',
+  amber:  'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300',
+  cyan:   'bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800 text-cyan-700 dark:text-cyan-300',
+  rose:   'bg-rose-50 dark:bg-rose-900/20 border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300',
+  indigo: 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300',
+};
+
+/* 작은 헬퍼 UI 빌더 */
+function block(title, bodyHtml, copyText) {
+  const id = 'b'+Math.random().toString(36).slice(2,8);
+  return `<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 mb-3">
+    <div class="flex items-center justify-between mb-2">
+      <h4 class="font-bold text-sm flex items-center gap-1.5"><span class="w-1.5 h-4 rounded bg-indigo-400"></span>${esc(title)}</h4>
+      ${copyText!=null?`<button onclick='copyById("${id}")' class="text-xs px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1"><i data-lucide="copy" class="w-3 h-3"></i>복사</button>`:''}
+    </div>
+    <div id="${id}" data-raw="${copyText!=null?esc(copyText):''}">${bodyHtml}</div>
+  </div>`;
+}
+window.copyById = (id)=> copy($('#'+id).dataset.raw, '복사 완료');
+const listHtml = (arr)=> `<ol class="list-decimal ml-5 space-y-1 text-sm text-slate-700 dark:text-slate-300">${arr.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`;
+
+function renderTab(id) {
+  activeTab = id;
+  $$('#tabBar [data-tab]').forEach(b=> b.classList.toggle('tab-active', b.dataset.tab===id));
+  const g = GEN; const c = $('#tabContent');
+  let html = '';
+
+  if (id==='blog') {
+    html += block('도입문', `<p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300">${esc(g.intro)}</p>`, g.intro);
+    html += block('본문 목차', listHtml(g.outline), g.outline.join('\n'));
+    html += block('본문 초안', `<pre class="whitespace-pre-wrap text-sm leading-relaxed text-slate-700 dark:text-slate-300 font-sans">${esc(g.body)}</pre>`, g.body);
+    html += block('소제목별 핵심 문장', `<ul class="space-y-1 text-sm text-slate-700 dark:text-slate-300">${g.keySentences.map(s=>`<li>• ${esc(s)}</li>`).join('')}</ul>`, g.keySentences.join('\n'));
+    html += block('FAQ 5개', g.faq.map(([q,a])=>`<div class="mb-2"><p class="text-sm font-semibold">Q. ${esc(q)}</p><p class="text-sm text-slate-600 dark:text-slate-400">A. ${esc(a)}</p></div>`).join(''), g.faq.map(([q,a])=>`Q. ${q}\nA. ${a}`).join('\n\n'));
+    html += block('메타디스크립션', `<p class="text-sm text-slate-700 dark:text-slate-300">${esc(g.meta)}</p>`, g.meta);
+    html += block('해시태그 20개', `<p class="text-sm text-indigo-600 dark:text-indigo-300">${esc(g.hashtags)}</p>`, g.hashtags);
+    html += block('네이버 블로그 마무리', `<p class="text-sm text-slate-700 dark:text-slate-300">${esc(g.naverClosing)}</p>`, g.naverClosing);
+    html += block('구글 SEO 구조화 글', `<pre class="whitespace-pre-wrap text-xs leading-relaxed text-slate-700 dark:text-slate-300 font-mono">${esc(g.googleStructured)}</pre>`, g.googleStructured);
+  }
+
+  else if (id==='seo') {
+    html += block('SEO 최적화 제목 10개', `<ol class="list-decimal ml-5 space-y-2 text-sm">${g.seoTitles.map(t=>`<li class="flex items-start justify-between gap-2"><span class="text-slate-700 dark:text-slate-300">${esc(t)}</span><button onclick='copy(${JSON.stringify(t)})' class="shrink-0 text-xs text-indigo-500 hover:underline">복사</button></li>`).join('')}</ol>`, g.seoTitles.join('\n'));
+  }
+
+  else if (id==='thread') {
+    html += block('훅 (첫 문장)', `<p class="text-base font-bold text-slate-800 dark:text-slate-100">${esc(g.threadHook)}</p>`, g.threadHook);
+    html += block('스레드 본문', `<div class="space-y-2">${g.threadPosts.map(p=>`<div class="text-sm p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300">${esc(p)}</div>`).join('')}</div>`, g.threadPosts.join('\n\n'));
+    html += block('마무리 (공유 유도)', `<p class="text-sm text-slate-700 dark:text-slate-300">${esc(g.threadEnd)}</p>`, g.threadEnd);
+    html += block('해시태그 5개', `<p class="text-sm text-sky-600 dark:text-sky-300">${esc(g.threadTags)}</p>`, g.threadTags);
+    html += block('전체 복사', `<p class="text-xs text-slate-500">훅 + 본문 + 마무리 + 태그를 한 번에 복사합니다</p>`, [g.threadHook,'',...g.threadPosts,'',g.threadEnd,'',g.threadTags].join('\n'));
+  }
+
+  else if (id==='thumbtxt') {
+    for (const [cat, arr] of Object.entries(g.thumbs)) {
+      const rows = arr.map(o=>`<div class="flex items-center justify-between gap-2 py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
+        <div class="flex items-center gap-2 text-sm">
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-violet-100 dark:bg-violet-900/40 text-violet-600 dark:text-violet-300 font-mono">15</span>
+          <span class="font-semibold text-slate-800 dark:text-slate-100">${esc(o.s15)}</span>
+          <span class="text-slate-300 dark:text-slate-600">·</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 font-mono">25</span>
+          <span class="text-slate-600 dark:text-slate-400">${esc(o.s25)}</span>
+        </div>
+        <button onclick='copy(${JSON.stringify(o.s15)})' class="shrink-0 text-xs text-indigo-500 hover:underline">복사</button>
+      </div>`).join('');
+      html += block(cat+' 10개', rows, arr.map(o=>`[15자] ${o.s15}  /  [25자] ${o.s25}`).join('\n'));
+    }
+  }
+
+  else if (id==='thumbimg') {
+    html += thumbDesigner();
+  }
+
+  else if (id==='card') {
+    html += `<div class="flex items-center justify-between mb-3">
+      <p class="text-sm text-slate-500">카드 8장 · 1:1 · 클릭하면 개별 PNG</p>
+      <button onclick="downloadCardsZip()" class="text-xs px-3 py-1.5 rounded-lg bg-amber-500 text-white font-semibold flex items-center gap-1"><i data-lucide="folder-down" class="w-3.5 h-3.5"></i>전체 ZIP 다운로드</button>
+    </div>`;
+    html += `<div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="cardGrid">${g.cardNews.map(cardHtml).join('')}</div>`;
+  }
+
+  else if (id==='community') {
+    g.community.forEach(([t,txt])=> html += block(t, `<p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300">${esc(txt)}</p>`, txt));
+  }
+
+  else if (id==='youtube') {
+    html += block('유튜브 제목 10개', listHtml(g.ytTitles), g.ytTitles.join('\n'));
+    html += block('쇼츠 제목 10개', listHtml(g.shortsTitles), g.shortsTitles.join('\n'));
+    html += block('30초 쇼츠 대본', `<pre class="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300 font-sans">${esc(g.shorts30)}</pre>`, g.shorts30);
+    html += block('1분 쇼츠 대본', `<pre class="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300 font-sans">${esc(g.shorts60)}</pre>`, g.shorts60);
+    html += block('영상 설명문', `<pre class="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300 font-sans">${esc(g.ytDesc)}</pre>`, g.ytDesc);
+    html += block('고정 댓글', `<p class="text-sm text-slate-700 dark:text-slate-300">${esc(g.ytPinned)}</p>`, g.ytPinned);
+  }
+
+  else if (id==='prompt') {
+    g.prompts.forEach(([t,p])=> html += block(t+' 프롬프트', `<pre class="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300 font-sans">${esc(p)}</pre>`, p));
+  }
+
+  // 공통 다운로드 바
+  html += `<div class="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+    <button onclick="downloadTab('txt')" class="text-xs px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1"><i data-lucide="download" class="w-3.5 h-3.5"></i>이 탭 TXT</button>
+    <button onclick="downloadTab('md')" class="text-xs px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center gap-1"><i data-lucide="download" class="w-3.5 h-3.5"></i>이 탭 Markdown</button>
+    <button onclick="downloadAll()" class="text-xs px-3 py-2 rounded-lg bg-indigo-500 text-white hover:bg-indigo-600 flex items-center gap-1"><i data-lucide="package" class="w-3.5 h-3.5"></i>전체 패키지 MD</button>
+  </div>`;
+
+  c.innerHTML = html;
+  lucide.createIcons();
+}
+
+/* ---------- 카드뉴스 카드 ---------- */
+const CARD_THEMES = ['from-indigo-500 to-violet-500','from-rose-400 to-pink-500','from-emerald-400 to-teal-500','from-amber-400 to-orange-500','from-sky-400 to-blue-500','from-fuchsia-400 to-purple-500','from-cyan-400 to-sky-500','from-slate-700 to-slate-900'];
+function cardHtml(c, i) {
+  const theme = CARD_THEMES[i % CARD_THEMES.length];
+  return `<div class="space-y-2">
+    <div class="card-target aspect-square rounded-xl2 overflow-hidden shadow-md bg-gradient-to-br ${theme} text-white p-6 flex flex-col justify-between" id="card-${c.idx}">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-semibold px-2 py-1 rounded-full bg-white/20">${esc(c.type)}</span>
+        <span class="text-xs font-mono opacity-80">${c.idx} / 8</span>
+      </div>
+      <div>
+        <h3 class="text-lg font-extrabold mb-2 opacity-90">${esc(c.title)}</h3>
+        <p class="text-2xl font-black leading-snug mb-2">${esc(c.line)}</p>
+        <p class="text-sm opacity-85">${esc(c.sub)}</p>
+      </div>
+      <div class="text-[10px] opacity-70">${esc(DATA.topic)}</div>
+    </div>
+    <div class="flex items-center justify-between gap-2">
+      <p class="text-[11px] text-slate-400 truncate" title="${esc(c.prompt)}">🖼️ ${esc(c.prompt)}</p>
+      <button onclick="downloadCard(${c.idx})" class="shrink-0 text-xs text-amber-600 hover:underline flex items-center gap-1"><i data-lucide="download" class="w-3 h-3"></i>PNG</button>
+    </div>
+  </div>`;
+}
+
+async function downloadCard(idx) {
+  const el = $('#card-'+idx);
+  const canvas = await html2canvas(el, {scale:2, backgroundColor:null});
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png');
+  a.download = `cardnews_${idx}.png`; a.click();
+  toast('🖼️ 카드 '+idx+' 저장');
+}
+async function downloadCardsZip() {
+  toast('⏳ ZIP 생성 중...');
+  const zip = new JSZip();
+  for (const c of GEN.cardNews) {
+    const el = $('#card-'+c.idx);
+    const canvas = await html2canvas(el, {scale:2, backgroundColor:null});
+    const data = canvas.toDataURL('image/png').split(',')[1];
+    zip.file(`cardnews_${c.idx}.png`, data, {base64:true});
+  }
+  const blob = await zip.generateAsync({type:'blob'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'cardnews_'+slug(DATA.topic)+'.zip'; a.click();
+  URL.revokeObjectURL(a.href);
+  toast('📦 카드뉴스 ZIP 저장 완료');
+}
+
+/* ---------- 썸네일 디자이너 ---------- */
+const RATIOS = {'16:9':[16,9],'1:1':[1,1],'4:5':[4,5],'9:16':[9,16]};
+const BG_STYLES = {
+  '파스텔':'linear-gradient(135deg,#fbc2eb,#a6c1ee)',
+  '미니멀':'#f1f5f9',
+  '그라데이션':'linear-gradient(135deg,#667eea,#764ba2)',
+  '강의자료형':'linear-gradient(135deg,#0f172a,#1e293b)',
+  '노션 카드형':'#ffffff',
+  '비즈니스형':'linear-gradient(135deg,#1e3a8a,#2563eb)',
+};
+const ICONS = {'AI':'cpu','글쓰기':'pen-line','블로그':'rss','수익화':'dollar-sign','교육':'graduation-cap','데이터':'bar-chart-3','마케팅':'megaphone'};
+let thumbState = {ratio:'16:9', style:DATA?.imgStyle||'그라데이션', pos:'중앙', icon:'AI', text:''};
+
+function thumbDesigner() {
+  thumbState.text = thumbState.text || (GEN?.thumbs['강한 제목형'][0].s15 || DATA.topic);
+  if (!BG_STYLES[thumbState.style]) thumbState.style = '그라데이션';
+  const seg = (label, key, opts)=> `<div><label class="block text-[11px] font-semibold text-slate-500 mb-1">${label}</label><div class="flex flex-wrap gap-1">${opts.map(o=>`<button onclick="setThumb('${key}','${o}')" class="px-2 py-1 rounded-md text-xs border ${thumbState[key]===o?'bg-indigo-500 text-white border-indigo-500':'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}">${o}</button>`).join('')}</div></div>`;
+  return `<div class="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-4">
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 grid place-items-center">
+      <div id="thumbStage" class="w-full max-w-xl"></div>
+    </div>
+    <div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 space-y-3">
+      <div><label class="block text-[11px] font-semibold text-slate-500 mb-1">문구</label>
+        <input id="thumbText" value="${esc(thumbState.text)}" oninput="thumbState.text=this.value;drawThumb()" class="w-full px-2 py-1.5 rounded-md bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" /></div>
+      ${seg('비율','ratio',Object.keys(RATIOS))}
+      ${seg('배경 스타일','style',Object.keys(BG_STYLES))}
+      ${seg('텍스트 위치','pos',['중앙','좌측 정렬','상단 제목형','하단 강조형'])}
+      ${seg('아이콘','icon',Object.keys(ICONS))}
+      <button onclick="downloadThumb()" class="w-full py-2.5 rounded-lg bg-pink-500 text-white font-semibold flex items-center justify-center gap-1.5"><i data-lucide="download" class="w-4 h-4"></i>PNG 다운로드</button>
+      <p class="text-[11px] text-slate-400">추천 문구는 '썸네일 문구' 탭에서 복사해 붙여넣으세요.</p>
+    </div>
+  </div>`;
+}
+window.setThumb = (k,v)=>{ thumbState[k]=v; renderTab('thumbimg'); setTimeout(drawThumb,0); };
+function drawThumb() {
+  const [w,h] = RATIOS[thumbState.ratio];
+  const dark = ['그라데이션','강의자료형','비즈니스형'].includes(thumbState.style);
+  const txtColor = dark ? '#fff' : '#0f172a';
+  const align = thumbState.pos==='좌측 정렬'?'items-start text-left':'items-center text-center';
+  const justify = thumbState.pos==='상단 제목형'?'justify-start':thumbState.pos==='하단 강조형'?'justify-end':'justify-center';
+  const stage = $('#thumbStage'); if(!stage) return;
+  stage.innerHTML = `<div id="thumbTarget" style="aspect-ratio:${w}/${h};background:${BG_STYLES[thumbState.style]};color:${txtColor}" class="w-full rounded-xl overflow-hidden shadow-lg p-8 flex flex-col ${justify} ${align} gap-3">
+    <div class="w-12 h-12 rounded-xl grid place-items-center" style="background:${dark?'rgba(255,255,255,.18)':'rgba(15,23,42,.08)'}"><i data-lucide="${ICONS[thumbState.icon]}" class="w-6 h-6"></i></div>
+    <h2 class="text-3xl sm:text-4xl font-black leading-tight">${esc(thumbState.text)}</h2>
+    <p class="text-sm opacity-70">${esc(DATA.topic)}</p>
+  </div>`;
+  lucide.createIcons();
+}
+async function downloadThumb() {
+  const el = $('#thumbTarget'); if(!el) return;
+  const canvas = await html2canvas(el, {scale:2, backgroundColor:null});
+  const a = document.createElement('a');
+  a.href = canvas.toDataURL('image/png'); a.download = 'thumbnail_'+slug(DATA.topic)+'.png'; a.click();
+  toast('🖼️ 썸네일 저장 완료');
+}
+
+/* ============================================================
+   다운로드 (탭별 / 전체)
+   ============================================================ */
+const slug = (s)=> (s||'content').replace(/[^\w가-힣]+/g,'_').slice(0,30);
+function tabRawText(id) {
+  const g = GEN;
+  const J = (a)=>a.join('\n');
+  switch(id){
+    case 'blog': return `# 블로그 글\n\n## 도입문\n${g.intro}\n\n## 목차\n${J(g.outline)}\n\n## 본문\n${g.body}\n\n## 핵심문장\n${J(g.keySentences)}\n\n## FAQ\n${g.faq.map(([q,a])=>`Q.${q}\nA.${a}`).join('\n\n')}\n\n## 메타\n${g.meta}\n\n## 해시태그\n${g.hashtags}\n\n## 마무리\n${g.naverClosing}\n\n## 구글 SEO\n${g.googleStructured}`;
+    case 'seo': return '# SEO 제목 10개\n\n'+g.seoTitles.map((t,i)=>`${i+1}. ${t}`).join('\n');
+    case 'thread': return `# 스레드\n\n[훅] ${g.threadHook}\n\n${J(g.threadPosts)}\n\n[마무리] ${g.threadEnd}\n\n${g.threadTags}`;
+    case 'thumbtxt': return '# 썸네일 문구\n\n'+Object.entries(g.thumbs).map(([c,a])=>`## ${c}\n`+a.map(o=>`- [15] ${o.s15} / [25] ${o.s25}`).join('\n')).join('\n\n');
+    case 'thumbimg': return '# 썸네일 이미지\n현재 설정: '+JSON.stringify(thumbState);
+    case 'card': return '# 카드뉴스\n\n'+g.cardNews.map(c=>`## ${c.idx}. ${c.type}\n제목: ${c.title}\n핵심: ${c.line}\n보조: ${c.sub}\n이미지: ${c.prompt}`).join('\n\n');
+    case 'community': return '# 백링크/커뮤니티\n\n'+g.community.map(([t,x])=>`## ${t}\n${x}`).join('\n\n');
+    case 'youtube': return `# 유튜브/쇼츠\n\n## 유튜브 제목\n${J(g.ytTitles)}\n\n## 쇼츠 제목\n${J(g.shortsTitles)}\n\n## 30초 대본\n${g.shorts30}\n\n## 1분 대본\n${g.shorts60}\n\n## 설명문\n${g.ytDesc}\n\n## 고정댓글\n${g.ytPinned}`;
+    case 'prompt': return '# AI 프롬프트\n\n'+g.prompts.map(([t,p])=>`## ${t}\n${p}`).join('\n\n');
+  }
+  return '';
+}
+window.downloadTab = (fmt)=>{
+  const txt = tabRawText(activeTab);
+  download(txt, `${slug(DATA.topic)}_${activeTab}.${fmt==='md'?'md':'txt'}`);
+  toast('💾 다운로드 완료');
+};
+window.downloadAll = ()=>{
+  const all = `# AI 콘텐츠 패키지 — ${DATA.topic}\n\n- 대상: ${DATA.audience||'-'}\n- 목적: ${DATA.purpose} / 문체: ${DATA.tone}\n- 키워드: ${DATA.keywords||'-'}\n- 생성일: ${new Date().toLocaleString('ko-KR')}\n\n---\n\n`
+    + TABS.filter(t=>t.id!=='thumbimg').map(t=>tabRawText(t.id)).join('\n\n---\n\n');
+  download(all, `${slug(DATA.topic)}_전체패키지.md`);
+  toast('📦 전체 패키지 저장 완료');
+};
+
+/* ============================================================
+   최근 프로젝트 (localStorage)
+   ============================================================ */
+const LS_KEY = 'acw_projects';
+function saveProject() {
+  const list = JSON.parse(localStorage.getItem(LS_KEY)||'[]');
+  list.unshift({ ...DATA, ts: Date.now() });
+  localStorage.setItem(LS_KEY, JSON.stringify(list.slice(0,20)));
+}
+function renderRecent() {
+  const list = JSON.parse(localStorage.getItem(LS_KEY)||'[]');
+  const el = $('#recentList');
+  if (!list.length) { el.innerHTML = '<p class="text-sm text-slate-400 text-center py-8">저장된 프로젝트가 없습니다</p>'; return; }
+  el.innerHTML = list.map((p,i)=>`<div class="p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-indigo-300 cursor-pointer" onclick="loadProject(${i})">
+    <p class="font-semibold text-sm truncate">${esc(p.topic)}</p>
+    <p class="text-[11px] text-slate-400">${p.purpose} · ${p.tone} · ${new Date(p.ts).toLocaleDateString('ko-KR')}</p>
+  </div>`).join('');
+}
+window.loadProject = (i)=>{
+  const list = JSON.parse(localStorage.getItem(LS_KEY)||'[]');
+  const p = list[i]; if(!p) return;
+  $('#topic').value=p.topic||''; $('#audience').value=p.audience||''; $('#keywords').value=p.keywords||'';
+  $('#purpose').value=p.purpose; $('#tone').value=p.tone; $('#length').value=p.length||'mid'; $('#imgStyle').value=p.imgStyle;
+  $$('#platforms button').forEach(b=> b.classList.toggle('!bg-indigo-500', (p.platforms||[]).includes(b.dataset.v)) );
+  $('#recentDrawer').classList.add('hidden');
+  runGenerate();
+};
+
+/* ============================================================
+   초기화 + 이벤트
+   ============================================================ */
+function fillSelect(id, arr){ $('#'+id).innerHTML = arr.map(o=>`<option>${o}</option>`).join(''); }
+function init() {
+  fillSelect('purpose', PURPOSES);
+  fillSelect('tone', TONES);
+  fillSelect('imgStyle', IMG_STYLES);
+  $('#sampleTopics').innerHTML = SAMPLES.map(s=>`<button class="text-[11px] px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 text-slate-600 dark:text-slate-300" onclick="$('#topic').value=this.textContent">${s}</button>`).join('');
+  $('#platforms').innerHTML = PLATFORMS.map(p=>`<button data-v="${p}" class="platform-chip text-[11px] px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300">${p}</button>`).join('');
+  $$('#platforms .platform-chip').forEach(b=> b.onclick=()=>b.classList.toggle('!bg-indigo-500'));
+  // 기본 몇 개 선택
+  $$('#platforms .platform-chip').slice(0,3).forEach(b=>b.classList.add('!bg-indigo-500'));
+
+  // 유형 네비 + 루트 카드
+  $('#typeNav').innerHTML = TABS.map(t=>`<button onclick="jumpTab('${t.id}')" class="text-left text-xs px-3 py-2 rounded-lg border ${COLOR[t.color]} flex items-center gap-2 card-pop"><i data-lucide="${t.icon}" class="w-4 h-4"></i>${t.label}</button>`).join('');
+  $('#routeCards').innerHTML = TABS.slice(0,6).map(t=>`<div class="p-3 rounded-xl border ${COLOR[t.color]} text-left"><i data-lucide="${t.icon}" class="w-5 h-5 mb-1"></i><p class="text-xs font-semibold">${t.label}</p></div>`).join('');
+
+  // 이벤트
+  $('#generateBtn').onclick = runGenerate;
+  $('#darkBtn').onclick = ()=>{ document.documentElement.classList.toggle('dark'); localStorage.setItem('acw_dark', document.documentElement.classList.contains('dark')); };
+  $('#recentBtn').onclick = ()=>{ renderRecent(); $('#recentDrawer').classList.remove('hidden'); lucide.createIcons(); };
+  $$('#recentDrawer [data-close]').forEach(b=> b.onclick=()=>$('#recentDrawer').classList.add('hidden'));
+  if (localStorage.getItem('acw_dark')==='true') document.documentElement.classList.add('dark');
+
+  lucide.createIcons();
+}
+window.jumpTab = (id)=>{ if(!GEN){ toast('먼저 콘텐츠를 생성하세요'); return; } renderTab(id); window.scrollTo({top:0,behavior:'smooth'}); };
+
+function runGenerate() {
+  const topic = $('#topic').value.trim();
+  if (!topic) { toast('⚠️ 콘텐츠 주제를 입력하세요'); $('#topic').focus(); return; }
+  DATA = {
+    topic,
+    audience: $('#audience').value.trim(),
+    keywords: $('#keywords').value.trim(),
+    purpose: $('#purpose').value,
+    tone: $('#tone').value,
+    length: $('#length').value,
+    imgStyle: $('#imgStyle').value,
+    platforms: $$('#platforms .platform-chip').filter(b=>b.classList.contains('!bg-indigo-500')).map(b=>b.dataset.v),
+  };
+  thumbState = {ratio:'16:9', style:DATA.imgStyle, pos:'중앙', icon:'AI', text:''};
+  GEN = genAll();
+  saveProject();
+
+  $('#emptyState').classList.add('hidden');
+  $('#results').classList.remove('hidden');
+  $('#tabBar').innerHTML = TABS.map(t=>`<button data-tab="${t.id}" onclick="renderTab('${t.id}')" class="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap border ${COLOR[t.color]} flex items-center gap-1.5"><i data-lucide="${t.icon}" class="w-3.5 h-3.5"></i>${t.label}</button>`).join('');
+  renderTab('blog');
+  if (activeTab==='thumbimg') setTimeout(drawThumb,0);
+  toast('✨ 콘텐츠 패키지 생성 완료');
+}
+
+// 썸네일 탭 진입 시 자동 draw
+const _renderTab = renderTab;
+renderTab = function(id){ _renderTab(id); if(id==='thumbimg') setTimeout(drawThumb,0); };
+
+init();
+</script>
+</body>
+</html>
