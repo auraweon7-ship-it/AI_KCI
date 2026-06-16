@@ -1028,8 +1028,8 @@ function renderAuth() {
     lucide.createIcons();
     return;
   }
-  // Client ID 있음 → 공식 GIS 버튼 렌더(+ 폴백 커스텀 버튼)
-  el.innerHTML = `<div id="gbtn"></div><button id="gbtnFallback" onclick="googleLogin()" class="px-3 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 font-medium">${GOOGLE_SVG}<span>구글 로그인</span></button>`;
+  // Client ID 있음 → 공식 GIS 버튼 렌더(+ 폴백 커스텀 버튼 + ID 재설정)
+  el.innerHTML = `<div id="gbtn"></div><button id="gbtnFallback" onclick="googleLogin()" class="px-3 py-2 rounded-lg text-sm bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center gap-2 font-medium">${GOOGLE_SVG}<span>구글 로그인</span></button><button onclick="resetGcid()" class="text-[11px] text-slate-400 hover:text-rose-500 underline ml-1" title="Client ID 다시 입력">ID 재설정</button>`;
   if (initGoogle()) {
     try {
       google.accounts.id.renderButton($('#gbtn'), { theme:'outline', size:'medium', shape:'pill', text:'signin_with', locale:'ko' });
@@ -1041,15 +1041,32 @@ function renderAuth() {
 // 구글 로그인 트리거: Client ID 없으면 입력받고(로그인 전이라 설정 게이트 회피), 있으면 GIS 로그인
 window.googleLogin = () => {
   if (!getGcid()) {
-    const id = prompt('구글 로그인에 필요한 Google OAuth Client ID를 입력하세요.\n(Google Cloud Console → 사용자 인증 정보 → OAuth 클라이언트 ID, 웹)\n승인된 JavaScript 원본에 현재 주소 등록 필요.\n\n※ 나머지 API 키는 로그인 후 ⚙️ 설정에서 입력합니다.');
+    const id = prompt(
+      'Google OAuth Client ID를 입력하세요.\n\n'+
+      '⚠️ Google Cloud Console → 사용자 인증 정보 → 해당 OAuth 클라이언트 ID →\n'+
+      '"승인된 JavaScript 원본"에 아래 주소를 정확히 추가해야 로그인됩니다(끝 슬래시 없이):\n\n'+
+      location.origin + '\n\n'+
+      '※ 나머지 API 키는 로그인 후 ⚙️ 설정에서 입력합니다.', getGcid());
     if (id == null) return;
     const v = id.trim(); if (!v) return;
     localStorage.setItem(GCID_KEY, v); renderAuth();
     setTimeout(googleLogin, 200); return;
   }
-  if (initGoogle()) { try { google.accounts.id.prompt(); } catch(_) { toast('구글 로그인 창을 열 수 없습니다 — Client ID/원본 확인'); } }
+  if (initGoogle()) {
+    try {
+      google.accounts.id.prompt((n)=>{
+        // 원본 미등록/잘못된 Client ID 등으로 표시 안 될 때 안내
+        if (n && (n.isNotDisplayed && n.isNotDisplayed())) {
+          toast('로그인 창을 열 수 없습니다 — Client ID 또는 승인된 원본 확인');
+          alert('구글 로그인 실패.\n\nGoogle Cloud Console에서 이 OAuth 클라이언트의\n"승인된 JavaScript 원본"에 아래 주소를 추가했는지 확인하세요(정확히 일치, 끝 슬래시 없이):\n\n'+location.origin+'\n\n변경 후 몇 분 뒤 다시 시도. 그래도 안 되면 로그아웃 후 Client ID를 다시 입력하세요.');
+        }
+      });
+    } catch(_) { toast('구글 로그인 창을 열 수 없습니다 — Client ID/원본 확인'); }
+  }
   else toast('구글 라이브러리 로드 실패 — 새로고침');
 };
+// 잘못된 Client ID 재입력용 (로그인 영역에서 호출)
+window.resetGcid = ()=>{ localStorage.removeItem(GCID_KEY); renderAuth(); toast('Client ID 초기화 — 다시 로그인하세요'); };
 
 window.logout = () => {
   USER = null; localStorage.removeItem(USER_KEY);
