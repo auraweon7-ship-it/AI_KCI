@@ -800,13 +800,72 @@ function renderTab(id) {
 
   const useAi = AI.enabled && id !== 'thumbimg';
   if (useAi) {
-    c.innerHTML = aiBarHtml(id) + `<div id="tmplWrap">${html}</div>`;
+    const extra = (id==='naverblog'||id==='googleblog') ? blogHtmlPanel(id) : '';
+    c.innerHTML = aiBarHtml(id) + extra + `<div id="tmplWrap">${html}</div>`;
     if (aiCache[id]) renderAiResult(id, aiCache[id]); // AI 결과 있으면 템플릿 숨기고 AI를 메인으로
+    if (HTMLCACHE[id]) renderHtmlResult(id, HTMLCACHE[id]);
   } else {
     c.innerHTML = html;
   }
   lucide.createIcons();
 }
+/* ---------- 가독성 시각화 HTML 생성 ---------- */
+const HTMLCACHE = {};
+function blogHtmlPanel(id) {
+  const label = id==='naverblog' ? '네이버' : '구글';
+  return `<div class="mb-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+    <div class="flex items-center justify-between gap-2">
+      <span class="text-sm font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1.5"><i data-lucide="layout-template" class="w-4 h-4"></i>${label} 블로그 가독성 HTML (박스·체크리스트·표·형광펜)</span>
+      <button onclick="genBlogHtml('${id}')" class="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-amber-500 text-white font-semibold flex items-center gap-1"><i data-lucide="wand-2" class="w-3.5 h-3.5"></i>HTML 생성</button>
+    </div>
+    <div id="htmlResult-${id}"></div>
+  </div>`;
+}
+function stripFences(s){ return String(s||'').replace(/^```(?:html)?\s*/i,'').replace(/```\s*$/,'').trim(); }
+window.genBlogHtml = async (id)=>{
+  if (!AI.enabled) { toast('AI 키가 필요합니다(⚙️ 설정)'); return; }
+  if (!DATA) { toast('먼저 콘텐츠를 생성하세요'); return; }
+  const box = $('#htmlResult-'+id);
+  box.innerHTML = `<div class="mt-2 rounded-lg bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 overflow-hidden">
+    <div class="px-3 py-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 flex items-center gap-1"><i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> HTML 생성 중...</div>
+    <pre id="htmlLive-${id}" class="p-3 whitespace-pre-wrap text-[11px] leading-relaxed text-slate-500 font-mono max-h-40 overflow-auto"></pre>
+  </div>`;
+  lucide.createIcons();
+  await streamGenerate(
+    { ...DATA, tab: id+'-html', apiKey: localKey() },
+    (acc)=>{ const l=$('#htmlLive-'+id); if(l) l.textContent = acc.slice(-1200); },
+    (acc, u)=>{
+      const h = stripFences(acc);
+      HTMLCACHE[id] = h; addUsage(u);
+      renderHtmlResult(id, h);
+      saveToLibrary({ kind:'HTML · '+(id==='naverblog'?'네이버':'구글')+' 블로그', title: DATA.topic+' — '+(id==='naverblog'?'네이버':'구글')+' HTML', content: h });
+      toast('🎨 HTML 생성 완료');
+    },
+    (e)=>{ box.innerHTML = `<p class="mt-2 text-sm text-rose-500">⚠️ ${esc(String(e.message||e))}</p>`; }
+  );
+};
+function renderHtmlResult(id, h){
+  const box = $('#htmlResult-'+id); if(!box) return;
+  const srcdoc = `<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{font-family:Pretendard,system-ui,sans-serif;line-height:1.7;padding:16px;margin:0;color:#1f2937}</style></head><body>${h}</body></html>`;
+  box.innerHTML = `<div class="mt-2 rounded-lg bg-white dark:bg-slate-900 border-2 border-amber-200 dark:border-amber-800 overflow-hidden">
+    <div class="flex flex-wrap items-center justify-between gap-1.5 px-3 py-2 bg-amber-50 dark:bg-amber-900/30 border-b border-amber-100 dark:border-amber-800">
+      <span class="text-xs font-bold text-amber-700 dark:text-amber-300">🎨 가독성 HTML 미리보기</span>
+      <div class="flex gap-1.5">
+        <button onclick='copy(HTMLCACHE["${id}"], "HTML 복사됨")' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">HTML 복사</button>
+        <button onclick='dlBlogHtml("${id}")' class="text-xs px-2 py-1 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">.html 저장</button>
+      </div>
+    </div>
+    <iframe id="htmlFrame-${id}" sandbox="allow-same-origin" style="width:100%;height:480px;border:0;background:#fff"></iframe>
+  </div>`;
+  const fr = $('#htmlFrame-'+id); if (fr) fr.srcdoc = srcdoc;
+  lucide.createIcons();
+}
+window.dlBlogHtml = (id)=>{
+  const h = HTMLCACHE[id]||'';
+  const doc = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(DATA.topic)}</title></head><body style="max-width:760px;margin:24px auto;font-family:system-ui,sans-serif;line-height:1.7;padding:0 16px">${h}</body></html>`;
+  download(doc, slug(DATA.topic)+'_'+id+'.html');
+  toast('💾 HTML 다운로드');
+};
 function toggleTmpl(show) {
   const w = $('#tmplWrap'); if (!w) return;
   w.style.display = show ? '' : 'none';
