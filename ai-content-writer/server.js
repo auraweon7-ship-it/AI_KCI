@@ -21,6 +21,11 @@ const API_KEY = process.env.ANTHROPIC_API_KEY || '';
 const MODEL = process.env.ANTHROPIC_MODEL || 'claude-opus-4-8';
 const BASE_URL = process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com';
 const HTML_FILE = path.join(__dirname, 'public', 'index.html');
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
+// 인스타 발행용 공개 베이스 URL(배포 도메인). 미설정 시 요청 host 사용(로컬은 외부 접근 불가).
+const PUBLIC_BASE = process.env.PUBLIC_BASE_URL || '';
+const IG_VER = 'v21.0';
+try { fs.mkdirSync(UPLOAD_DIR, { recursive: true }); } catch (_) {}
 
 /* ---------- 탭별 생성 지시문 ---------- */
 const TAB_PROMPTS = {
@@ -159,10 +164,11 @@ function sendJson(res, code, obj) {
   res.writeHead(code, { 'content-type': 'application/json; charset=utf-8' });
   res.end(body);
 }
-function readBody(req) {
+function readBody(req, maxBytes) {
+  const limit = maxBytes || 1e6;
   return new Promise((resolve, reject) => {
     const chunks = []; let size = 0;
-    req.on('data', (c) => { chunks.push(c); size += c.length; if (size > 1e6) req.destroy(); });
+    req.on('data', (c) => { chunks.push(c); size += c.length; if (size > limit) req.destroy(new Error('본문 크기 초과')); });
     req.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}')); } catch (e) { reject(e); } });
     req.on('error', reject);
   });
@@ -298,6 +304,67 @@ const server = http.createServer((req, res) => {
       const b64 = j.data && j.data[0] && j.data[0].b64_json;
       if (!b64) return sendJson(res, 502, { error: '이미지 응답 없음' });
       sendJson(res, 200, { dataUrl: 'data:image/png;base64,' + b64 });
+    }).catch((e) => sendJson(res, 500, { error: String(e.message || e) }));
+    return;
+  }
+
+  // 정적: 업로드된 카드 이미지 공개 서빙 (인스타가 가져갈 공개 URL)
+  if (url.pathname.startsWith('/uploads/')) {
+    const name = path.basename(url.pathname); // 경로 traversal 방지
+    const fp = path.join(UPLOAD_DIR, name);
+    return fs.readFile(fp, (err, data) => {
+      if (err) { res.writeHead(404); return res.end('not found'); }
+      res.writeHead(200, { 'content-type': 'image/png', 'cache-control': 'public, max-age=86400' });
+      res.end(data);
+    });
+  }
+
+  // 카드 이미지 업로드 → 공개 URL 반환 (인스타 발행용)
+  if (url.pathname === '/api/upload' && req.method === 'POST') {
+    readBody(req, 40e6).then((d) => {  // 카드 이미지 다수 → 40MB 허용
+      const imgs = Array.isArray(d.images) ? d.images : [];
+      if (!imgs.length) return sendJson(res, 400, { error: '이미지 없음' });
+      const base = (PUBLIC_BASE || `http://${req.headers.host}`).replace(/\/+$/, '');
+      const stamp = Date.now();
+      const urls = [];
+      imgs.forEach((dataUrl, i) => {
+        const m = /^data:image\/png;base64,(.+)$/.exec(String(dataUrl));
+        if (!m) return;
+        const name = `card_${stamp}_${i}.png`;
+        fs.writeFileSync(path.join(UPLOAD_DIR, name), Buffer.from(m[1], 'base64'));
+        urls.push(`${base}/uploads/${name}`);
+      });
+      sendJson(res, 200, { urls, publicBaseUsed: base, note: base.includes('localhost') ? '로컬 주소 — 인스타가 접근 불가. 배포(PUBLIC_BASE_URL) 필요' : '' });
+    }).catch((e) => sendJson(res, 500, { error: String(e.message || e) }));
+    return;
+  }
+
+  // 인스타그램 캐러셀 자동 발행 (Graph API)
+  if (url.pathname === '/api/instagram/publish' && req.method === 'POST') {
+    readBody(req).then(async (d) => {
+      const { token, igUserId, caption } = d;
+      const imageUrls = Array.isArray(d.imageUrls) ? d.imageUrls.slice(0, 10) : [];
+      if (!token || !igUserId) return sendJson(res, 400, { error: '인스타 access token·IG User ID 필요(설정)' });
+      if (imageUrls.length < 2) return sendJson(res, 400, { error: '캐러셀은 이미지 2장 이상 필요' });
+      const g = (p, params) => fetch(`https://graph.facebook.com/${IG_VER}/${p}?${new URLSearchParams({ ...params, access_token: token })}`, { method: 'POST' }).then((r) => r.json());
+      try {
+        // 1) 자식 컨테이너
+        const children = [];
+        for (const u of imageUrls) {
+          const c = await g(`${igUserId}/media`, { image_url: u, is_carousel_item: 'true' });
+          if (c.error) throw new Error(c.error.message);
+          children.push(c.id);
+        }
+        // 2) 캐러셀 컨테이너
+        const carousel = await g(`${igUserId}/media`, { media_type: 'CAROUSEL', children: children.join(','), caption: caption || '' });
+        if (carousel.error) throw new Error(carousel.error.message);
+        // 3) 발행
+        const pub = await g(`${igUserId}/media_publish`, { creation_id: carousel.id });
+        if (pub.error) throw new Error(pub.error.message);
+        sendJson(res, 200, { ok: true, id: pub.id });
+      } catch (e) {
+        sendJson(res, 400, { error: String(e.message || e) });
+      }
     }).catch((e) => sendJson(res, 500, { error: String(e.message || e) }));
     return;
   }

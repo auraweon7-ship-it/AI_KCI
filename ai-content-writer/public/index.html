@@ -383,6 +383,11 @@
           <input id="set_tistoryBlog" placeholder="티스토리 blogName" class="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
         </div>
         <p class="text-[11px] text-slate-400 mt-1">워드프레스: 사용자→프로필→애플리케이션 비밀번호. 티스토리는 구 API(신규 앱 발급 중단 상태일 수 있음)</p>
+        <div class="grid grid-cols-2 gap-2 mt-2">
+          <input id="set_igToken" type="password" placeholder="인스타 Access Token" class="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+          <input id="set_igUserId" placeholder="인스타 IG User ID" class="px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1">인스타: 비즈니스 계정+페이스북 앱(instagram_content_publish). 자동 배포는 배포 서버(공개 HTTPS) 필요.</p>
       </div>
     </div>
 
@@ -604,8 +609,8 @@ ${purp.cta}`;
     ]),
   };
 
-  /* --- F. 카드뉴스 8장 --- */
-  const cardNews = [
+  /* --- F. 카드뉴스 (장수 선택: 5/7/8/10) --- */
+  const cardPool = [
     { type:'표지',      title:`${t}`,                  line:`${k0}, 핵심만 모았습니다`,           sub:'스와이프 하세요 →' },
     { type:'문제 제기', title:'이런 고민 있으신가요?',   line:`${k0}, 어디서부터 시작할지 막막하죠`, sub:'많은 분들이 같은 고민을 합니다' },
     { type:'핵심정보 1',title:'핵심 ①',                line:'목표를 먼저 정하세요',                sub:`${purp.angle} 없이는 방향을 잃습니다` },
@@ -614,7 +619,10 @@ ${purp.cta}`;
     { type:'사례',      title:'실제 사례',              line:'2주 만에 달라진 결과',               sub:`${DATA.audience||'한 사용자'}의 변화` },
     { type:'요약',      title:'오늘의 요약',            line:'목표 → 기준 → 실행',                 sub:'이 순서만 지켜도 절반은 성공' },
     { type:'행동 유도', title:'지금 시작하세요',        line:purp.cta,                            sub:'저장하고 하나씩 따라해 보세요' },
-  ].map((c,i)=>({...c, idx:i+1, prompt:`${DATA.imgStyle} 스타일, ${c.type} 카드, "${c.line}" 텍스트 강조, ${DATA.imgStyle.includes('파스텔')?'파스텔 톤':'깔끔한 톤'}, 1:1 비율, 미니멀 일러스트`, design:DATA.imgStyle}));
+    { type:'추가 팁',   title:'보너스 팁',              line:`${k0} 더 잘하는 법`,                sub:'작은 차이가 큰 결과로 이어집니다' },
+    { type:'자주 묻는 질문', title:'Q&A',              line:'가장 많이 묻는 질문',                sub:`${k0}, 이것만 기억하세요` },
+  ].map((c)=>({...c, prompt:`${DATA.imgStyle} 스타일, ${c.type} 카드, "${c.line}" 텍스트 강조, ${DATA.imgStyle.includes('파스텔')?'파스텔 톤':'깔끔한 톤'}, 1:1 비율, 미니멀 일러스트`, design:DATA.imgStyle}));
+  const cardNews = selectCards(cardPool, cardCount);
 
   /* --- G. 커뮤니티/백링크 --- */
   const community = [
@@ -650,7 +658,7 @@ ${purp.cta}`;
   return {
     seoTitles, intro, outline, body, keySentences, faq, meta, hashtags, naverClosing, googleStructured,
     threadHook, threadPosts, threadEnd, threadTags,
-    thumbs, cardNews, community, ytTitles, shortsTitles, shorts30, shorts60, ytDesc, ytPinned, prompts,
+    thumbs, cardNews, cardPool, community, ytTitles, shortsTitles, shorts30, shorts60, ytDesc, ytPinned, prompts,
   };
 }
 
@@ -757,8 +765,14 @@ function renderTab(id) {
 
   else if (id==='card') {
     html += `<div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-      <p class="text-sm text-slate-500">카드 8장 · 1:1 · 클릭하면 개별 PNG</p>
+      <p class="text-sm text-slate-500">카드 ${cardCount}장 · 1:1 · 클릭하면 개별 PNG</p>
       <div class="flex flex-wrap items-center gap-2">
+        <select onchange="setCardCount(this.value)" class="text-xs px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none" title="카드 장수">
+          <option value="5" ${cardCount===5?'selected':''}>5장 (인스타)</option>
+          <option value="7" ${cardCount===7?'selected':''}>7장</option>
+          <option value="8" ${cardCount===8?'selected':''}>8장</option>
+          <option value="10" ${cardCount===10?'selected':''}>10장</option>
+        </select>
         <label class="text-xs text-slate-500">디자인</label>
         <select onchange="setCardStyle(this.value)" class="text-xs px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none">
           ${Object.keys(CARD_STYLES).map(k=>`<option ${k===cardStyle?'selected':''}>${k}</option>`).join('')}
@@ -766,9 +780,10 @@ function renderTab(id) {
         <select id="cardAiStyle" class="text-xs px-2 py-1.5 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 outline-none" title="AI 배경 스타일">
           ${Object.keys(IMG_AI_STYLES).map(k=>`<option ${k===cardAiStyle?'selected':''}>${k}</option>`).join('')}
         </select>
-        <button onclick="aiCardBgAll()" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-500 text-white font-semibold flex items-center gap-1"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i>AI 배경 8장</button>
+        <button onclick="aiCardBgAll()" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-500 text-white font-semibold flex items-center gap-1"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i>AI 배경 ${cardCount}장</button>
         <button onclick="downloadCardsZip()" class="text-xs px-3 py-1.5 rounded-lg bg-amber-500 text-white font-semibold flex items-center gap-1"><i data-lucide="folder-down" class="w-3.5 h-3.5"></i>8장 ZIP</button>
-        <button onclick="downloadAllCardsPng()" class="text-xs px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-1"><i data-lucide="images" class="w-3.5 h-3.5"></i>8장 PNG</button>
+        <button onclick="downloadAllCardsPng()" class="text-xs px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300 font-semibold flex items-center gap-1"><i data-lucide="images" class="w-3.5 h-3.5"></i>${cardCount}장 PNG</button>
+        <button onclick="igPublish()" class="text-xs px-3 py-1.5 rounded-lg bg-pink-500 text-white font-semibold flex items-center gap-1"><i data-lucide="instagram" class="w-3.5 h-3.5"></i>인스타 배포</button>
       </div>
     </div>
     <div id="cardAiStatus" class="text-[11px] text-slate-400 mb-2"></div>`;
@@ -1149,12 +1164,14 @@ window.openSettings = () => {
   $('#set_wpAppPass').value = s.wpAppPass || '';
   $('#set_tistoryToken').value = s.tistoryToken || '';
   $('#set_tistoryBlog').value = s.tistoryBlog || '';
+  $('#set_igToken').value = s.igToken || '';
+  $('#set_igUserId').value = s.igUserId || '';
   $('#settingsModal').classList.remove('hidden');
   refreshSettingBadges();
   $('#settingsModal').oninput = refreshSettingBadges;  // 입력 즉시 갱신
   lucide.createIcons();
 };
-const SETTING_FIELDS = ['set_anthropic','set_gcid','set_naverId','set_naverSecret','set_youtube','set_openai','set_wpUrl','set_wpUser','set_wpAppPass','set_tistoryToken','set_tistoryBlog'];
+const SETTING_FIELDS = ['set_anthropic','set_gcid','set_naverId','set_naverSecret','set_youtube','set_openai','set_wpUrl','set_wpUser','set_wpAppPass','set_tistoryToken','set_tistoryBlog','set_igToken','set_igUserId'];
 function refreshSettingBadges(){
   SETTING_FIELDS.forEach(id=>{
     const inp = $('#'+id); if(!inp) return;
@@ -1179,6 +1196,8 @@ window.saveSettings = () => {
     wpAppPass: $('#set_wpAppPass').value.trim(),
     tistoryToken: $('#set_tistoryToken').value.trim(),
     tistoryBlog: $('#set_tistoryBlog').value.trim(),
+    igToken: $('#set_igToken').value.trim(),
+    igUserId: $('#set_igUserId').value.trim(),
   };
   localStorage.setItem(setKey(USER && USER.email), JSON.stringify(s));
   const gc = $('#set_gcid').value.trim();
@@ -1692,7 +1711,19 @@ const CARD_STYLES = {
 };
 let cardStyle = '그라데이션';
 let cardAiStyle = '3D 일러스트';
+let cardCount = 8;   // 카드 장수 (5=인스타/7/8/10)
 const cardBg = {};   // idx → AI 배경 dataUrl
+// 장수별 카드 구성(풀 인덱스). 5장=인스타: 표지·핵심3·행동유도
+const CARD_SET = { 5:[0,2,3,4,7], 7:[0,1,2,3,4,5,7], 8:[0,1,2,3,4,5,6,7], 10:[0,1,2,3,4,5,6,7,8,9] };
+function selectCards(pool, n){
+  const idxs = CARD_SET[n] || CARD_SET[8];
+  return idxs.map((pi, i)=>({ ...pool[pi], idx: i+1, total: idxs.length }));
+}
+window.setCardCount = (n)=>{
+  cardCount = +n;
+  Object.keys(cardBg).forEach(k=>delete cardBg[k]);
+  if (GEN && GEN.cardPool) { GEN.cardNews = selectCards(GEN.cardPool, cardCount); renderTab('card'); }
+};
 
 const CARD_EMOJI = { '표지':'📌','문제 제기':'❓','핵심정보 1':'💡','핵심정보 2':'✨','핵심정보 3':'🎯','사례':'📎','요약':'📝','행동 유도':'🚀' };
 // 헤드라인에서 키워드 1개를 형광펜 배경 칩으로 (공익 카드뉴스 스타일)
@@ -1730,7 +1761,7 @@ function cardHtml(c, i) {
       <div class="flex-1"></div>
       <div class="flex items-end justify-between" style="${sh}">
         <span class="font-bold" style="font-size:11px;opacity:.8">📍 ${esc(DATA.topic)}</span>
-        <span class="font-mono" style="font-size:11px;opacity:.6">${c.idx} / 8</span>
+        <span class="font-mono" style="font-size:11px;opacity:.6">${c.idx} / ${c.total||cardCount}</span>
       </div>
     </div>
     <div class="flex items-center justify-between gap-2">
@@ -1823,9 +1854,34 @@ async function downloadAllCardsPng() {
     a.click();
     await new Promise(r=>setTimeout(r, 350)); // 브라우저 다중 다운로드 간격
   }
-  if (st) st.textContent = '✅ 8장 PNG 저장 완료';
-  toast('🖼️ 카드뉴스 8장 PNG 저장 완료');
+  if (st) st.textContent = `✅ ${GEN.cardNews.length}장 PNG 저장 완료`;
+  toast('🖼️ 카드뉴스 PNG 저장 완료');
 }
+// 인스타그램 캐러셀 자동 배포: 카드 캡처 → 업로드(공개 URL) → Graph API 발행
+window.igPublish = async ()=>{
+  const s = getSettings();
+  const st = $('#cardAiStatus');
+  if (!s.igToken || !s.igUserId) { if(st) st.textContent='⚠️ 설정에서 인스타 Access Token·IG User ID를 입력하세요.'; toast('인스타 설정 필요'); return; }
+  if (!confirm(`인스타그램에 카드 ${GEN.cardNews.length}장을 캐러셀로 자동 발행할까요?\n(공개 서버 배포 필요 — 로컬에서는 인스타가 이미지에 접근 불가)`)) return;
+  try {
+    if(st) st.textContent = '🖼️ 카드 캡처 중...';
+    const images = [];
+    for (const c of GEN.cardNews) { const el = $('#card-'+c.idx); const canvas = await capture(el); images.push(canvas.toDataURL('image/png')); }
+    if(st) st.textContent = '⬆️ 이미지 업로드 중...';
+    const up = await fetch('/api/upload', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ images }) });
+    const uj = await up.json();
+    if (!up.ok) throw new Error(uj.error||('업로드 '+up.status));
+    if (uj.note) { if(st) st.textContent = '⚠️ '+uj.note; toast('로컬은 인스타 발행 불가 — 배포 필요'); return; }
+    if(st) st.textContent = '📤 인스타 발행 중...';
+    const caption = `${DATA.topic}\n\n${(GEN.community.find(x=>x[0]==='SNS 짧은 소개글')||[])[1]||''}\n\n${GEN.hashtags}`;
+    const r = await fetch('/api/instagram/publish', { method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ token:s.igToken, igUserId:s.igUserId, imageUrls: uj.urls, caption }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error||('발행 '+r.status));
+    if(st) st.innerHTML = `✅ 인스타 발행 완료 (id: ${j.id})`;
+    toast('✅ 인스타그램 발행 완료');
+  } catch (e) { if(st) st.textContent = '⚠️ '+String(e.message||e); }
+};
 
 /* ---------- 썸네일 디자이너 ---------- */
 const RATIOS = {'16:9':[16,9],'1:1':[1,1],'4:5':[4,5],'9:16':[9,16]};
