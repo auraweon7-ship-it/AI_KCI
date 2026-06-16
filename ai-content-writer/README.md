@@ -48,6 +48,14 @@ ANTHROPIC_API_KEY=sk-ant-... node server.js
 > ⚠️ 입력값은 **이 브라우저 localStorage에만** 저장된다. 공용 PC에서는 사용 후 로그아웃/삭제할 것.
 > 서버 환경변수 `ANTHROPIC_API_KEY`가 있으면 입력 없이도 동작한다(서버 키 우선 아님 — 사용자 키가 있으면 사용자 키 우선).
 
+### 네이버·유튜브 연동 (리서치·업로드 탭)
+
+저장한 키로 실제 검색·업로드.
+
+- **네이버 검색** — 블로그/뉴스/웹/카페 검색(키워드·경쟁 콘텐츠 리서치). 백엔드 프록시(`/api/naver/search`)로 CORS 회피. 설정에 네이버 Client ID/Secret 필요(developers.naver.com 검색 API).
+- **유튜브 검색** — 관련 영상·제목 트렌드(`/api/youtube/search`). 설정에 YouTube Data API Key 필요.
+- **유튜브 업로드** — 영상 파일 선택 → 생성된 제목/설명/태그 자동 입력 → 업로드. 구글 로그인 + Client ID 필요, `youtube.upload` 권한 동의(OAuth2 토큰 + resumable 업로드). OAuth 동의화면에 본인 계정을 테스트 사용자로 등록해야 함.
+
 ## 환경변수
 
 | 변수 | 필수 | 기본값 | 설명 |

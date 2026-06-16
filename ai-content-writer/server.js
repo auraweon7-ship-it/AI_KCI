@@ -100,6 +100,20 @@ function sendJson(res, code, obj) {
   res.writeHead(code, { 'content-type': 'application/json; charset=utf-8' });
   res.end(body);
 }
+function readBody(req) {
+  return new Promise((resolve, reject) => {
+    const chunks = []; let size = 0;
+    req.on('data', (c) => { chunks.push(c); size += c.length; if (size > 1e6) req.destroy(); });
+    req.on('end', () => { try { resolve(JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}')); } catch (e) { reject(e); } });
+    req.on('error', reject);
+  });
+}
+// 네이버 검색 결과의 <b> 태그·HTML 엔티티 제거
+function strip(s) {
+  return String(s || '').replace(/<[^>]+>/g, '')
+    .replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ');
+}
 
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, `http://${req.headers.host}`);
@@ -137,6 +151,37 @@ const server = http.createServer((req, res) => {
         sendJson(res, 500, { error: String(e.message || e) });
       }
     });
+    return;
+  }
+
+  // 네이버 검색 프록시 (브라우저 CORS 회피, 사용자 저장 키 사용)
+  if (url.pathname === '/api/naver/search' && req.method === 'POST') {
+    readBody(req).then(async (d) => {
+      const { clientId, clientSecret, query } = d;
+      const type = ['blog', 'news', 'webkr', 'cafearticle'].includes(d.type) ? d.type : 'blog';
+      if (!clientId || !clientSecret) return sendJson(res, 400, { error: '네이버 Client ID/Secret 필요 — 설정에서 입력하세요' });
+      if (!query) return sendJson(res, 400, { error: '검색어 필요' });
+      const r = await fetch(`https://openapi.naver.com/v1/search/${type}.json?query=${encodeURIComponent(query)}&display=10&sort=sim`, {
+        headers: { 'X-Naver-Client-Id': clientId, 'X-Naver-Client-Secret': clientSecret },
+      });
+      const j = await r.json();
+      if (!r.ok) return sendJson(res, r.status, { error: j.errorMessage || `네이버 API ${r.status}` });
+      sendJson(res, 200, { items: (j.items || []).map((it) => ({ title: strip(it.title), desc: strip(it.description), link: it.link, date: it.postdate || it.pubDate || '' })) });
+    }).catch((e) => sendJson(res, 500, { error: String(e.message || e) }));
+    return;
+  }
+
+  // 유튜브 검색 프록시 (사용자 저장 Data API 키 사용)
+  if (url.pathname === '/api/youtube/search' && req.method === 'POST') {
+    readBody(req).then(async (d) => {
+      const { key, query } = d;
+      if (!key) return sendJson(res, 400, { error: 'YouTube API Key 필요 — 설정에서 입력하세요' });
+      if (!query) return sendJson(res, 400, { error: '검색어 필요' });
+      const r = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=10&q=${encodeURIComponent(query)}&key=${encodeURIComponent(key)}`);
+      const j = await r.json();
+      if (!r.ok) return sendJson(res, r.status, { error: (j.error && j.error.message) || `YouTube API ${r.status}` });
+      sendJson(res, 200, { items: (j.items || []).map((it) => ({ id: it.id.videoId, title: strip(it.snippet.title), channel: it.snippet.channelTitle, date: it.snippet.publishedAt, thumb: it.snippet.thumbnails && it.snippet.thumbnails.medium ? it.snippet.thumbnails.medium.url : '' })) });
+    }).catch((e) => sendJson(res, 500, { error: String(e.message || e) }));
     return;
   }
 

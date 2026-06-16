@@ -489,6 +489,7 @@ const TABS = [
   { id:'community',label:'백링크/커뮤니티', icon:'share-2',       color:'cyan' },
   { id:'youtube',  label:'유튜브/쇼츠',     icon:'play-circle',   color:'rose' },
   { id:'prompt',   label:'AI 프롬프트',     icon:'terminal',      color:'indigo' },
+  { id:'research', label:'리서치·업로드',   icon:'trending-up',   color:'emerald' },
 ];
 
 const COLOR = {
@@ -522,6 +523,8 @@ function renderTab(id) {
   $$('#tabBar [data-tab]').forEach(b=> b.classList.toggle('tab-active', b.dataset.tab===id));
   const g = GEN; const c = $('#tabContent');
   let html = '';
+
+  if (id==='research') { c.innerHTML = researchPanel(); lucide.createIcons(); return; }
 
   if (id==='blog') {
     html += block('도입문', `<p class="text-sm leading-relaxed text-slate-700 dark:text-slate-300">${esc(g.intro)}</p>`, g.intro);
@@ -841,6 +844,135 @@ function initAuth() {
   $$('#settingsModal [data-sclose]').forEach(b=> b.onclick=()=>$('#settingsModal').classList.add('hidden'));
   // GIS 스크립트가 늦게 로드될 수 있어 한 번 재시도
   if (getGcid() && !USER) setTimeout(renderAuth, 800);
+}
+
+/* ============================================================
+   리서치(네이버·유튜브 검색) + 유튜브 업로드
+   ============================================================ */
+function researchPanel() {
+  const s = getSettings();
+  const q = esc(firstKw());
+  const hasNaver = !!(s.naverId && s.naverSecret);
+  const hasYt = !!s.youtube;
+  const sec = (title, icon, color, body)=>`<div class="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4 mb-4">
+    <h4 class="font-bold text-sm flex items-center gap-1.5 mb-3"><i data-lucide="${icon}" class="w-4 h-4 text-${color}-500"></i>${title}</h4>${body}</div>`;
+  const keyHint = (ok, what)=> ok ? '' : `<p class="text-[11px] text-amber-600 mb-2">⚠️ ${what} — 헤더 ⚙️ 설정에서 입력하세요${USER?'':' (로그인 필요)'}</p>`;
+
+  const naver = sec('네이버 검색 리서치', 'search', 'emerald',
+    keyHint(hasNaver, '네이버 Client ID/Secret 필요') +
+    `<div class="flex flex-wrap gap-2 mb-3">
+      <input id="nvQ" value="${q}" class="flex-1 min-w-[160px] px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" placeholder="검색어" />
+      <select id="nvType" class="px-2 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none">
+        <option value="blog">블로그</option><option value="news">뉴스</option><option value="webkr">웹문서</option><option value="cafearticle">카페</option>
+      </select>
+      <button onclick="naverSearch()" class="px-3 py-2 rounded-lg bg-emerald-500 text-white text-sm font-semibold">검색</button>
+    </div>
+    <div id="nvResults" class="text-sm text-slate-400">검색 버튼을 눌러 경쟁 콘텐츠를 확인하세요.</div>`);
+
+  const yt = sec('유튜브 영상 리서치', 'video', 'rose',
+    keyHint(hasYt, 'YouTube Data API Key 필요') +
+    `<div class="flex flex-wrap gap-2 mb-3">
+      <input id="ytQ" value="${q}" class="flex-1 min-w-[160px] px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" placeholder="검색어" />
+      <button onclick="youtubeSearch()" class="px-3 py-2 rounded-lg bg-rose-500 text-white text-sm font-semibold">검색</button>
+    </div>
+    <div id="ytResults" class="text-sm text-slate-400">관련 영상·제목 트렌드를 확인하세요.</div>`);
+
+  const up = sec('유튜브 업로드', 'upload', 'indigo',
+    `<p class="text-[11px] text-slate-500 mb-2">영상 파일을 선택하면 생성된 제목·설명·태그가 자동 입력됩니다. 구글 로그인 + Client ID 필요(youtube.upload 권한 동의).</p>
+    ${USER?'':'<p class="text-[11px] text-amber-600 mb-2">⚠️ 먼저 구글 로그인하세요.</p>'}
+    <input id="ytFile" type="file" accept="video/*" class="block w-full text-xs mb-2" />
+    <input id="ytUpTitle" value="${esc((GEN&&GEN.ytTitles&&GEN.ytTitles[0])||DATA.topic)}" class="w-full px-3 py-2 mb-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" placeholder="제목" />
+    <textarea id="ytUpDesc" rows="3" class="w-full px-3 py-2 mb-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none resize-none" placeholder="설명">${esc((GEN&&GEN.ytDesc)||'')}</textarea>
+    <input id="ytUpTags" value="${esc((GEN&&GEN.hashtags?GEN.hashtags.replace(/#/g,''):''))}" class="w-full px-3 py-2 mb-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" placeholder="태그 (쉼표 구분)" />
+    <select id="ytPrivacy" class="px-2 py-2 mb-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none">
+      <option value="private">비공개</option><option value="unlisted">미등록</option><option value="public">공개</option>
+    </select>
+    <button onclick="ytUploadStart()" class="w-full py-2.5 rounded-lg bg-indigo-500 text-white font-semibold flex items-center justify-center gap-1.5"><i data-lucide="upload-cloud" class="w-4 h-4"></i>유튜브에 업로드</button>
+    <div id="ytUpStatus" class="text-xs text-slate-500 mt-2"></div>`);
+
+  return `<div class="grid grid-cols-1 lg:grid-cols-2 gap-4"><div>${naver}${yt}</div><div>${up}</div></div>`;
+}
+
+window.naverSearch = async () => {
+  const s = getSettings();
+  const box = $('#nvResults');
+  box.innerHTML = '<span class="text-slate-400">검색 중...</span>';
+  try {
+    const r = await fetch('/api/naver/search', { method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ clientId:s.naverId, clientSecret:s.naverSecret, query:$('#nvQ').value, type:$('#nvType').value }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error||('HTTP '+r.status));
+    if (!j.items.length) { box.innerHTML = '<span class="text-slate-400">결과 없음</span>'; return; }
+    box.innerHTML = j.items.map(it=>`<div class="py-2 border-b border-slate-100 dark:border-slate-800 last:border-0">
+      <a href="${it.link}" target="_blank" rel="noopener" class="text-sm font-semibold text-emerald-700 dark:text-emerald-300 hover:underline">${esc(it.title)}</a>
+      <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">${esc(it.desc)}</p>
+    </div>`).join('');
+  } catch (e) { box.innerHTML = `<span class="text-rose-500">⚠️ ${esc(String(e.message||e))}</span>`; }
+};
+
+window.youtubeSearch = async () => {
+  const s = getSettings();
+  const box = $('#ytResults');
+  box.innerHTML = '<span class="text-slate-400">검색 중...</span>';
+  try {
+    const r = await fetch('/api/youtube/search', { method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({ key:s.youtube, query:$('#ytQ').value }) });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error||('HTTP '+r.status));
+    if (!j.items.length) { box.innerHTML = '<span class="text-slate-400">결과 없음</span>'; return; }
+    box.innerHTML = j.items.map(it=>`<a href="https://youtu.be/${it.id}" target="_blank" rel="noopener" class="flex gap-2 py-2 border-b border-slate-100 dark:border-slate-800 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800 rounded">
+      <img src="${it.thumb}" class="w-20 h-12 object-cover rounded" referrerpolicy="no-referrer" />
+      <div class="min-w-0"><p class="text-sm font-semibold truncate">${esc(it.title)}</p><p class="text-xs text-slate-500">${esc(it.channel)}</p></div>
+    </a>`).join('');
+  } catch (e) { box.innerHTML = `<span class="text-rose-500">⚠️ ${esc(String(e.message||e))}</span>`; }
+};
+
+window.ytUploadStart = () => {
+  const st = $('#ytUpStatus');
+  if (!USER) { st.textContent = '⚠️ 구글 로그인이 필요합니다.'; return; }
+  if (!getGcid()) { st.textContent = '⚠️ Google Client ID가 필요합니다(로그인 설정).'; return; }
+  const file = $('#ytFile').files[0];
+  if (!file) { st.textContent = '⚠️ 영상 파일을 선택하세요.'; return; }
+  if (!window.google || !google.accounts || !google.accounts.oauth2) { st.textContent = '⚠️ 구글 라이브러리 로드 실패 — 새로고침'; return; }
+  st.textContent = '권한 동의 창을 확인하세요...';
+  const tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: getGcid(),
+    scope: 'https://www.googleapis.com/auth/youtube.upload',
+    callback: (resp) => {
+      if (resp.error) { st.textContent = '⚠️ 권한 거부됨: '+resp.error; return; }
+      doYtUpload(resp.access_token, file);
+    },
+  });
+  tokenClient.requestAccessToken();
+};
+
+async function doYtUpload(token, file) {
+  const st = $('#ytUpStatus');
+  const tags = $('#ytUpTags').value.split(',').map(t=>t.trim()).filter(Boolean).slice(0,15);
+  const meta = {
+    snippet: { title: $('#ytUpTitle').value.slice(0,100), description: $('#ytUpDesc').value, tags },
+    status: { privacyStatus: $('#ytPrivacy').value },
+  };
+  try {
+    st.textContent = '업로드 세션 생성 중...';
+    const init = await fetch('https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status', {
+      method:'POST',
+      headers:{ 'Authorization':'Bearer '+token, 'Content-Type':'application/json; charset=UTF-8', 'X-Upload-Content-Type': file.type||'video/*' },
+      body: JSON.stringify(meta),
+    });
+    if (!init.ok) { const t=await init.text(); throw new Error('세션 생성 실패 '+init.status+' '+t.slice(0,200)); }
+    const uploadUrl = init.headers.get('location');
+    if (!uploadUrl) throw new Error('업로드 URL 없음');
+    st.textContent = '영상 전송 중 (0%)...';
+    // 단순 PUT 전송(브라우저가 진행률 미제공 → fetch). 대용량은 시간이 걸릴 수 있음.
+    const put = await fetch(uploadUrl, { method:'PUT', headers:{ 'Content-Type': file.type||'video/*' }, body: file });
+    const j = await put.json();
+    if (!put.ok) throw new Error('업로드 실패 '+put.status+' '+(j.error&&j.error.message||''));
+    st.innerHTML = `✅ 업로드 완료 — <a href="https://youtu.be/${j.id}" target="_blank" class="text-indigo-500 underline">youtu.be/${j.id}</a> (${meta.status.privacyStatus})`;
+    toast('✅ 유튜브 업로드 완료');
+  } catch (e) {
+    st.textContent = '⚠️ '+String(e.message||e);
+  }
 }
 
 /* ---------- 카드뉴스 카드 ---------- */
