@@ -841,9 +841,9 @@ function blogHtmlPanel(id) {
   const imgSection = id==='googleblog' ? `
     <div class="mt-2 pt-2 border-t border-amber-200 dark:border-amber-800">
       <div class="flex flex-wrap items-center gap-2">
-        <span class="text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1"><i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>대표 인포그래픽</span>
-        <button onclick="genBlogImg('${id}')" class="text-xs px-3 py-1.5 rounded-lg bg-blue-500 text-white font-semibold flex items-center gap-1"><i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>인포그래픽 생성</button>
-        <span class="text-xs text-slate-400">블로그 핵심 내용 자동 요약 · OpenAI 불필요</span>
+        <span class="text-xs font-semibold text-amber-700 dark:text-amber-300 flex items-center gap-1"><i data-lucide="image" class="w-3.5 h-3.5"></i>대표 인포그래픽</span>
+        <button onclick="genBlogImg('${id}')" class="text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white font-semibold flex items-center gap-1"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i>AI 인포그래픽 생성</button>
+        <span class="text-xs text-slate-400">ChatGPT 배경 + 핵심내용 합성 · OpenAI 키 필요</span>
         <span id="blogImgStatus-${id}" class="text-xs text-slate-500"></span>
       </div>
       <div id="blogImgPreview-${id}" class="mt-1"></div>
@@ -881,53 +881,74 @@ window.genBlogHtml = async (id)=>{
   );
 };
 window.genBlogImg = async (id)=>{
-  if (!DATA) { toast('먼저 콘텐츠를 생성하세요'); return; }
+  const s = getSettings();
   const st = $('#blogImgStatus-'+id);
   const prev = $('#blogImgPreview-'+id);
-  if(st) st.textContent='🎨 인포그래픽 생성 중...';
+  if (!s.openai) { if(st) st.textContent='⚠️ 설정에서 OpenAI 키를 입력하세요.'; return; }
+  if (!DATA) { toast('먼저 콘텐츠를 생성하세요'); return; }
+  if(st) st.textContent='🎨 AI 배경 생성 중 (수십 초)...';
   try {
-    // H2 헤딩 추출 (googleStructured 우선 → outline 폴백)
+    const bgPrompt = buildBlogBgPrompt(DATA.topic);
+    const r = await fetch('/api/image',{method:'POST',headers:{'content-type':'application/json'},
+      body:JSON.stringify({key:s.openai,prompt:bgPrompt,size:'1536x1024'})});
+    const j = await r.json();
+    if(!r.ok) throw new Error(j.error||('HTTP '+r.status));
+    if(st) st.textContent='🎨 인포그래픽 합성 중...';
     const src = String(DATA.googleStructured||DATA.body||'');
     const h2s = [...src.matchAll(/^##\s+(.+)$/gm)].map(m=>m[1].replace(/\*+/g,'').trim());
     const items = (h2s.length>=3 ? h2s : (Array.isArray(DATA.outline)?DATA.outline:[])).slice(0,10);
-    // 오프스크린 렌더링
     const wrap = document.createElement('div');
     wrap.style.cssText='position:fixed;left:-9999px;top:0;width:1200px;height:630px;overflow:hidden;z-index:-999';
-    wrap.innerHTML = buildBlogInfographic(DATA.topic, items);
+    wrap.innerHTML = buildBlogInfographic(DATA.topic, items, j.dataUrl);
     document.body.appendChild(wrap);
-    await new Promise(r=>setTimeout(r,120));
-    const canvas = await html2canvas(wrap,{scale:1.5,useCORS:true,width:1200,height:630,logging:false});
+    await new Promise(r=>setTimeout(r,200));
+    const canvas = await html2canvas(wrap,{scale:1.5,useCORS:true,allowTaint:true,width:1200,height:630,logging:false});
     document.body.removeChild(wrap);
     const dataUrl = canvas.toDataURL('image/png');
     BLOG_IMG_URL[id] = dataUrl;
     if(st) st.textContent='✅ 완료 — 발행 시 자동 포함';
     if(prev) prev.innerHTML=`<img src="${dataUrl}" class="w-full rounded-lg" style="max-height:180px;object-fit:cover"/>
       <a href="${dataUrl}" download="blog-infographic.png" class="mt-1 text-xs text-indigo-500 underline block text-right">PNG 저장</a>`;
-    toast('🖼️ 인포그래픽 완료');
+    toast('🖼️ AI 인포그래픽 완료');
   } catch(e){ if(st) st.textContent='⚠️ '+String(e.message||e); }
 };
-function buildBlogInfographic(topic, items){
+function buildBlogBgPrompt(topic){
+  if(/노년|노후|실버|은퇴|중년|정년/.test(topic))
+    return `Happy Korean senior couple in their 60s, smiling warmly, standing outdoors in a bright green park with natural sunlight and blue sky. Couple positioned on the RIGHT side of a wide landscape image. LEFT 55% of image is a very soft light-blue to white gradient sky — clean and open. Photorealistic professional lifestyle photography, warm optimistic mood. No text, no letters.`;
+  if(/주식|재산|투자|재테크|금융/.test(topic))
+    return `Confident Korean professional in their 40s, smiling, in a bright modern financial office. Positioned on RIGHT side of wide landscape image. LEFT 55% soft light-blue gradient. Photorealistic. No text.`;
+  return `Bright optimistic Korean lifestyle scene related to "${topic}". A person or couple on the RIGHT side of wide landscape image, soft blue-white gradient on LEFT 55%. Photorealistic professional photography. No text.`;
+}
+function buildBlogInfographic(topic, items, bgDataUrl){
   const EMOJIS=['❤️','💰','🏠','👨‍👩‍👧‍👦','🤝','🧠','📚','📋','⏰','💛'];
   const cols = items.length<=5 ? Math.max(items.length,3) : 5;
   const cells = items.map((item,i)=>{
     const clean = item.replace(/^\d+[\.\)]\s*/,'').replace(/\*+/g,'').trim();
-    const label = clean.length>13 ? clean.slice(0,13)+'…' : clean;
-    return `<div style="background:white;border-radius:14px;padding:14px 8px 12px;text-align:center;box-shadow:0 3px 12px rgba(0,0,0,0.09);display:flex;flex-direction:column;align-items:center;gap:5px">
-      <div style="width:26px;height:26px;background:#1e3a70;border-radius:50%;color:white;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center">${i+1}</div>
-      <div style="font-size:28px;line-height:1.1">${EMOJIS[i]||'⭐'}</div>
-      <div style="font-size:12px;font-weight:700;color:#1e3a70;line-height:1.35;word-break:keep-all">${esc(label)}</div>
+    const label = clean.length>9 ? clean.slice(0,9) : clean;
+    return `<div style="background:white;border-radius:12px;padding:10px 6px 9px;text-align:center;box-shadow:0 2px 10px rgba(0,0,0,0.13);display:flex;flex-direction:column;align-items:center;gap:4px">
+      <div style="width:24px;height:24px;background:#1e3a70;border-radius:50%;color:white;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">${i+1}</div>
+      <div style="font-size:26px;line-height:1.1">${EMOJIS[i]||'⭐'}</div>
+      <div style="font-size:12px;font-weight:700;color:#1e3a70;line-height:1.3;word-break:keep-all">${esc(label)}</div>
     </div>`;
   }).join('');
-  const subtitle = items.length>0 ? items.map(s=>s.replace(/^\d+[\.\)]\s*/,'').replace(/\*+/g,'').trim().slice(0,6)).slice(0,5).join(' · ') : '';
-  return `<div style="width:1200px;height:630px;background:linear-gradient(150deg,#dbeafe 0%,#f0f9ff 45%,#dcfce7 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:30px 48px;box-sizing:border-box;font-family:system-ui,-apple-system,'Malgun Gothic',sans-serif">
-    <div style="font-size:16px;color:#2563eb;font-weight:600;margin-bottom:6px;letter-spacing:0.3px">지금 준비하는 사람이, 여유 있는 미래를 만듭니다 ☆</div>
-    <div style="font-size:52px;font-weight:900;color:#1e3a70;text-align:center;line-height:1.1;margin-bottom:8px;word-break:keep-all">${esc(topic)}</div>
-    ${subtitle?`<div style="font-size:14px;color:#374151;background:rgba(255,255,255,0.7);padding:6px 20px;border-radius:20px;margin-bottom:18px">${esc(subtitle)}!</div>`:'<div style="margin-bottom:18px"></div>'}
-    <div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:12px;width:100%;max-width:1100px">
-      ${cells}
-    </div>
-    <div style="margin-top:18px;background:#1e3a70;color:white;padding:11px 36px;border-radius:40px;font-size:15px;font-weight:700;letter-spacing:0.5px">
-      ✅ ${esc(topic.slice(0,25))} 완벽 가이드
+  const subtitle = items.slice(0,5).map(s=>s.replace(/^\d+[\.\)]\s*/,'').replace(/\*+/g,'').trim().slice(0,5)).join(' · ');
+  const bgEl = bgDataUrl ? `<img src="${bgDataUrl}" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:right center"/>` : '';
+  return `<div style="position:relative;width:1200px;height:630px;background:#dbeafe;overflow:hidden;font-family:system-ui,-apple-system,'Malgun Gothic',sans-serif">
+    ${bgEl}
+    <div style="position:absolute;inset:0;background:linear-gradient(90deg,rgba(219,234,254,0.97) 0%,rgba(219,234,254,0.93) 48%,rgba(219,234,254,0.45) 68%,rgba(219,234,254,0) 100%)"></div>
+    <div style="position:absolute;bottom:0;left:0;right:0;height:62%;background:linear-gradient(0deg,rgba(219,234,254,0.97) 0%,rgba(219,234,254,0.85) 42%,transparent 100%)"></div>
+    <div style="position:relative;z-index:2;width:100%;height:100%;display:flex;flex-direction:column;box-sizing:border-box">
+      <div style="flex:1;padding:24px 36px 0;max-width:660px">
+        <div style="font-size:14px;color:#1d4ed8;font-weight:600;margin-bottom:4px;font-style:italic">지금 준비하는 사람이, 여유 있는 미래를 만듭니다 ☆</div>
+        <div style="font-size:46px;font-weight:900;color:#1e3a70;line-height:1.1;margin-bottom:10px;word-break:keep-all">${esc(topic)}</div>
+        ${subtitle?`<div style="font-size:13px;color:#374151;background:rgba(255,255,255,0.88);padding:5px 16px;border-radius:20px;display:inline-block">${esc(subtitle)}!</div>`:''}
+      </div>
+      <div style="padding:0 28px 10px;display:grid;grid-template-columns:repeat(${cols},1fr);gap:9px">
+        ${cells}
+      </div>
+      <div style="background:#1e3a70;color:white;text-align:center;padding:13px 36px;font-size:15px;font-weight:700;flex-shrink:0">
+        ✅ 준비된 ${esc(topic.slice(0,8))}이 <span style="color:#fbbf24">행복한 미래</span>를 만듭니다!
+      </div>
     </div>
   </div>`;
 }
