@@ -373,6 +373,11 @@
         <input id="set_openai" type="password" placeholder="sk-..." class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
         <p class="text-[11px] text-slate-400 mt-1">썸네일 AI 배경 생성에 사용(gpt-image-1)</p>
       </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">ImgBB API Key (블로그 이미지 영구 호스팅)</label>
+        <input id="set_imgbb" type="password" placeholder="imgbb.com → API 키 발급" class="w-full px-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm outline-none" />
+        <p class="text-[11px] text-slate-400 mt-1">입력 시 인포그래픽을 ImgBB에 업로드 → 영구 URL로 Blogger 발행 (Railway 재배포 후에도 유지)</p>
+      </div>
 
       <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
         <p class="text-xs font-bold text-slate-600 dark:text-slate-300 mb-2">📤 블로그 발행</p>
@@ -1259,6 +1264,7 @@ window.openSettings = () => {
   $('#set_naverSecret').value = s.naverSecret || '';
   $('#set_youtube').value = s.youtube || '';
   $('#set_openai').value = s.openai || '';
+  $('#set_imgbb').value = s.imgbb || '';
   $('#set_wpUrl').value = s.wpUrl || '';
   $('#set_wpUser').value = s.wpUser || '';
   $('#set_wpAppPass').value = s.wpAppPass || '';
@@ -1273,7 +1279,7 @@ window.openSettings = () => {
   $('#settingsModal').oninput = refreshSettingBadges;  // 입력 즉시 갱신
   lucide.createIcons();
 };
-const SETTING_FIELDS = ['set_anthropic','set_gcid','set_naverId','set_naverSecret','set_youtube','set_openai','set_wpUrl','set_wpUser','set_wpAppPass','set_tistoryToken','set_tistoryBlog','set_igToken','set_igUserId','set_bloggerBlogId','set_naverBlogId'];
+const SETTING_FIELDS = ['set_anthropic','set_gcid','set_naverId','set_naverSecret','set_youtube','set_openai','set_imgbb','set_wpUrl','set_wpUser','set_wpAppPass','set_tistoryToken','set_tistoryBlog','set_igToken','set_igUserId','set_bloggerBlogId','set_naverBlogId'];
 function refreshSettingBadges(){
   SETTING_FIELDS.forEach(id=>{
     const inp = $('#'+id); if(!inp) return;
@@ -1293,6 +1299,7 @@ window.saveSettings = () => {
     naverSecret: $('#set_naverSecret').value.trim(),
     youtube: $('#set_youtube').value.trim(),
     openai: $('#set_openai').value.trim(),
+    imgbb: $('#set_imgbb').value.trim(),
     wpUrl: $('#set_wpUrl').value.trim(),
     wpUser: $('#set_wpUser').value.trim(),
     wpAppPass: $('#set_wpAppPass').value.trim(),
@@ -1719,7 +1726,7 @@ window.doPublish = async ()=>{
   if (imageUrl.startsWith('data:')) {
     msg.textContent = '🖼️ 이미지 업로드 중...';
     try {
-      const up = await fetch('/api/upload-dataurl',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataUrl:imageUrl})});
+      const up = await fetch('/api/upload-dataurl',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({dataUrl:imageUrl,imgbbKey:s.imgbb||''})});
       const uj = await up.json();
       if (!up.ok) throw new Error(uj.error||'업로드 실패');
       imageUrl = uj.url;

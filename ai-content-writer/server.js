@@ -373,16 +373,33 @@ const server = http.createServer((req, res) => {
     return;
   }
 
-  // data URL → 서버 파일 저장 후 공개 URL 반환
+  // data URL → ImgBB(영구) 또는 로컬 파일 저장 후 공개 URL 반환
   if (url.pathname === '/api/upload-dataurl' && req.method === 'POST') {
     readBody(req, 20e6).then(async (d) => {
       const dataUrl = String(d.dataUrl || '');
       if (!dataUrl.startsWith('data:image/')) return sendJson(res, 400, { error: 'dataUrl(image) 필요' });
       const m = dataUrl.match(/^data:image\/(\w+);base64,(.+)$/s);
       if (!m) return sendJson(res, 400, { error: 'dataUrl 형식 오류' });
+      const b64 = m[2];
+      const imgbbKey = String(d.imgbbKey || process.env.IMGBB_KEY || '');
+
+      // ImgBB 업로드 — 키 있으면 영구 공개 URL
+      if (imgbbKey) {
+        const form = `key=${encodeURIComponent(imgbbKey)}&image=${encodeURIComponent(b64)}`;
+        const ir = await fetch('https://api.imgbb.com/1/upload', {
+          method: 'POST',
+          headers: { 'content-type': 'application/x-www-form-urlencoded' },
+          body: form,
+        });
+        const ij = await ir.json();
+        if (!ir.ok || !ij.success) throw new Error((ij.error && ij.error.message) || 'ImgBB 업로드 실패');
+        return sendJson(res, 200, { ok: true, url: ij.data.url });
+      }
+
+      // 폴백: 로컬 파일 저장 (Railway 재배포 시 소실 주의)
       const ext = m[1] === 'jpeg' ? 'jpg' : m[1];
       const fname = `blog_${Date.now()}.${ext}`;
-      await fs.promises.writeFile(path.join(UPLOAD_DIR, fname), Buffer.from(m[2], 'base64'));
+      await fs.promises.writeFile(path.join(UPLOAD_DIR, fname), Buffer.from(b64, 'base64'));
       const base = PUBLIC_BASE || `http://${req.headers.host}`;
       sendJson(res, 200, { ok: true, url: `${base}/uploads/${fname}` });
     }).catch((e) => sendJson(res, 500, { error: String(e.message || e) }));
