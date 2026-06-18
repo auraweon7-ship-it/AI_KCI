@@ -1862,6 +1862,7 @@ function exportAll(){
 const AUTO_STEPS = ['plan','script','image','tts','meta','thumb','srt','render','upload','shorts','save'];
 const AUTO_LABELS = {plan:'대본 기획',script:'대본 작성',image:'이미지 생성',tts:'TTS 음성',render:'영상 합성',meta:'메타데이터',thumb:'썸네일',srt:'SRT 자막',save:'프로젝트 저장'};
 let autoRunning = false;
+let batchMode = false;
 
 // ===== 파이프라인 진행 저장/재개 (B: 중단 후 마지막 단계부터 재개) =====
 const PIPE_KEY='yt_pipe_run';
@@ -2296,13 +2297,14 @@ function stopAutoPipeline(){
   toast('⏹️ 제작 중지됨');
 }
 async function startAutoPipeline(isResume){
+  try{
   // 체크된 배치 주제가 있으면 연속 제작으로 전환
   const batchChecks=document.querySelectorAll('.batch-topic-chk:checked');
   if(batchChecks.length>0&&!isResume){
     await startBatchPipeline();
     return;
   }
-  let topic=document.getElementById('autoTopic').value.trim();
+  let topic=document.getElementById('autoTopic')?.value.trim()||'';
   const kw=document.getElementById('autoTopicKw')?.value.trim()||'';
   // 주제 없으면 키워드로 AI 자동 생성
   if(!topic&&kw){
@@ -2814,6 +2816,13 @@ async function startAutoPipeline(isResume){
   document.getElementById('autoBtn').disabled=false;
   document.getElementById('autoBtn').innerHTML='🎬 영상 제작 시작';
   document.getElementById('autoStopBtn').style.display='none';
+  }catch(outerErr){
+    autoRunning=false;
+    releaseWakeLock();
+    try{document.getElementById('autoBtn').disabled=false;document.getElementById('autoBtn').innerHTML='🎬 영상 제작 시작';}catch(e){}
+    toast('제작 시작 오류: '+outerErr.message,'err');
+    console.error('[startAutoPipeline] 초기화 오류:', outerErr);
+  }
 }
 
 function applyAutoMeta(){
