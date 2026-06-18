@@ -1,0 +1,8 @@
+node_modules
+output
+.env
+.youtube-tokens.json
+.user-settings.json
+.schedules.json
+*.log
+.git
