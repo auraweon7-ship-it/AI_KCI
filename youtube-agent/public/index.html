@@ -3407,7 +3407,7 @@ async function openSettings(){
     // 마스킹된 키 표시 + 입력됨 배지
     const fieldMap={
       anthropic:'setAnthropicKey', openai:'setOpenaiKey',
-      elevenlabs:'setElevenlabsKey', pexels:'setPexelsKey'
+      elevenlabs:'setElevenlabsKey', pexels:'setPexelsKey', runway:'setRunwayKey'
     };
     Object.entries(fieldMap).forEach(([k,id])=>{
       const el=document.getElementById(id);

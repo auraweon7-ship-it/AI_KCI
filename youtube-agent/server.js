@@ -2677,6 +2677,7 @@ app.get('/api/settings/status', (req, res) => {
       openai: !!OPENAI_KEY,
       elevenlabs: !!ELEVENLABS_KEY,
       pexels: !!PEXELS_KEY,
+      runway: !!process.env.RUNWAYML_API_KEY,
       youtube: !!process.env.YOUTUBE_CLIENT_ID
     },
     masked: {
@@ -2684,6 +2685,7 @@ app.get('/api/settings/status', (req, res) => {
       openai: OPENAI_KEY ? maskKey(OPENAI_KEY) : '',
       elevenlabs: ELEVENLABS_KEY ? maskKey(ELEVENLABS_KEY) : '',
       pexels: PEXELS_KEY ? maskKey(PEXELS_KEY) : '',
+      runway: process.env.RUNWAYML_API_KEY ? maskKey(process.env.RUNWAYML_API_KEY) : '',
       ytClientId: process.env.YOUTUBE_CLIENT_ID ? maskKey(process.env.YOUTUBE_CLIENT_ID) : ''
     }
   });
