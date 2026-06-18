@@ -1124,7 +1124,7 @@ function go(id) {
   checkPrereqs(id);
   if(id==='plan') { document.getElementById('planTopic').value=S.topic; const tv=document.getElementById('topTar').value; if(tv) document.getElementById('planTarget').value=tv; }
   if(id==='auto') {
-    loadAutoBgmList(); updateSourceModeHint(); loadSchedules();
+    loadAutoBgmList(); updateSourceModeHint(); updateAutoVoiceOptions(); loadSchedules();
     const dtEl=document.getElementById('schDatetime');
     if(dtEl&&!dtEl.value){const d=new Date();d.setDate(d.getDate()+1);d.setHours(9,0,0,0);dtEl.value=d.toISOString().slice(0,16)}
   }
