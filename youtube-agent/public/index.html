@@ -2489,7 +2489,7 @@ async function startAutoPipeline(isResume){
               await new Promise(r=>setTimeout(r,5000));
               const st=await fetch('/api/runway/status/'+task.taskId).then(r=>r.json());
               if(st.status==='SUCCEEDED'){
-                await api('/api/runway/download',{videoUrl:st.output?.[0],index:i+1});
+                await api('/api/runway/download',{videoUrl:st.videoUrl,index:i+1});
                 rwOk++;done=true;
               } else if(st.status==='FAILED'){rwFail++;done=true;}
             }
