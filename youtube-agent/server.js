@@ -3139,8 +3139,9 @@ app.get('/api/project/:id', (req, res) => {
 
 app.get('/api/files/list', (req, res) => {
   const result = {};
-  ['images', 'audio', 'video', 'thumbnails', 'bgm', 'srt'].forEach(dir => {
+  ['images', 'audio', 'video', 'thumbnails', 'bgm', 'srt', 'clips'].forEach(dir => {
     const dirPath = path.join(OUTPUT_DIR, dir);
+    if (!fs.existsSync(dirPath)) { result[dir] = []; return; }
     result[dir] = fs.readdirSync(dirPath).filter(f => !f.endsWith('.txt')).map(f => ({
       name: f,
       url: `/output/${dir}/${f}`,
