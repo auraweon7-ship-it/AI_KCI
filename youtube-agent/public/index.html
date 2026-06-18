@@ -2485,7 +2485,7 @@ async function startAutoPipeline(isResume){
       for(let i=0;i<S.imgPrompts.length;i++){
         autoStatus('image','running',`${i+1}/${totalScenes} 이미지 생성 중...`);
         try{
-          const d=await api('/api/images/generate',{prompt:S.imgPrompts[i].prompt,style,ratio,index:i+1});
+          const d=await api('/api/images/generate',{prompt:S.imgPrompts[i].prompt,style,ratio,index:i+1,fastMode:true});
           S.imgPrompts[i].imageUrl=d.imageUrl; // 상대 경로: /output/images/scene_N.png
         }catch(e){S.imgPrompts[i].imageUrl=null;}
         if(i<S.imgPrompts.length-1)await new Promise(r=>setTimeout(r,1000));

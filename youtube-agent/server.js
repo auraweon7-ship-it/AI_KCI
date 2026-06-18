@@ -655,19 +655,26 @@ app.post('/api/images/generate', async (req, res) => {
 
     const fullPrompt = `${stylePrefix[style] || ''} ${prompt}. High quality, detailed, professional.`;
 
-    const image = await openai.images.generate({
-      model: 'gpt-image-1',
-      prompt: fullPrompt,
-      size: sizeMap[ratio] || '1536x1024',
-      quality: 'high',
-      n: 1
-    });
+    // dall-e-3: 빠름(10-15초), gpt-image-1: 느림(1-3분) — Runway 모드에서 속도 중요
+    const useModel = req.body.fastMode ? 'dall-e-3' : 'gpt-image-1';
+    const dalleSize = useModel === 'dall-e-3'
+      ? (ratio === '9:16' ? '1024x1792' : ratio === '1:1' ? '1024x1024' : '1792x1024')
+      : (sizeMap[ratio] || '1536x1024');
+    const imageReqOpts = useModel === 'dall-e-3'
+      ? { model: 'dall-e-3', prompt: fullPrompt, size: dalleSize, quality: 'standard', n: 1 }
+      : { model: 'gpt-image-1', prompt: fullPrompt, size: sizeMap[ratio] || '1536x1024', quality: 'high', n: 1 };
+    const image = await openai.images.generate(imageReqOpts);
 
-    const b64 = image.data[0].b64_json;
-    const buffer = Buffer.from(b64, 'base64');
     const filename = `scene_${index || Date.now()}.png`;
     const filepath = path.join(OUTPUT_DIR, 'images', filename);
-    fs.writeFileSync(filepath, buffer);
+    if (image.data[0].b64_json) {
+      fs.writeFileSync(filepath, Buffer.from(image.data[0].b64_json, 'base64'));
+    } else if (image.data[0].url) {
+      const imgBuf = Buffer.from(await fetch(image.data[0].url).then(r=>r.arrayBuffer()));
+      fs.writeFileSync(filepath, imgBuf);
+    } else {
+      throw new Error('이미지 데이터 없음 (b64_json/url 모두 없음)');
+    }
 
     const project = getProject(projectId);
     project.imageFiles.push({ index, filename, filepath, prompt: fullPrompt });
