@@ -2034,14 +2034,16 @@ function updateAutoVoiceOptions(){
   const hint=document.getElementById('autoVoiceHint');
   if(!sel)return;
   const prev=sel.value;
-  sel.innerHTML=voices.map(v=>{
-    const star=v.recommended?'⭐ ':'';
-    return `<option value="${v.id}">${star}${v.flag} ${v.name} (${v.country} · ${v.tone})</option>`;
-  }).join('');
-  // 이전 선택값 유지 시도, 없으면 첫 번째(추천)
-  const keep=voices.find(v=>v.id===prev);
-  sel.value=keep?prev:voices[0].id;
-  if(hint)hint.textContent=LANG_HINTS[lang]||'';
+  const makeOpts=arr=>arr.map(v=>`<option value="${v.id}">${v.recommended?'⭐ ':''}${v.flag} ${v.name} (${v.country} · ${v.tone})</option>`).join('');
+  let html=`<optgroup label="🌐 ${lang==='ko'?'한국어':'선택 언어'} 추천">${makeOpts(voices)}</optgroup>`;
+  if(lang!=='ko'){
+    html+=`<optgroup label="🇰🇷 한국어 음성 (한국어 TTS)">${makeOpts(VOICE_BY_LANG.ko.slice(0,3))}</optgroup>`;
+  }
+  sel.innerHTML=html;
+  // 이전 선택값 유지
+  const allVoices=[...voices,...(lang!=='ko'?VOICE_BY_LANG.ko.slice(0,3):[])];
+  sel.value=allVoices.find(v=>v.id===prev)?prev:voices[0].id;
+  if(hint)hint.textContent=(lang!=='ko'?'한국어 음성으로 한국어 TTS 사용 가능 · ':'')+( LANG_HINTS[lang]||'');
 }
 
 // API 영문 카테고리 → 한글 select 옵션 매핑
@@ -2401,7 +2403,11 @@ async function startAutoPipeline(isResume){
       pipeMark('script',{script:S.script});
       autoTime('script',Math.round((Date.now()-t1)/1000));
       autoStatus('script','done',`대본 완료 (${S.script.length}자)`);
-      setPreview('script','<div class="sp-txt">'+esc(S.script.substring(0,1500))+(S.script.length>1500?'\n... (전체 '+S.script.length+'자, '+(scriptData.sceneCount||'?')+'장면)':'')+'</div>');
+      setPreview('script','<div class="sp-txt" id="scriptPreviewTxt">'+esc(S.script.substring(0,1500))+(S.script.length>1500?'\n... (전체 '+S.script.length+'자, '+(scriptData.sceneCount||'?')+'장면)':'')+'</div>'
+        +'<div style="display:flex;gap:6px;margin-top:8px"><button class="b bs" style="font-size:11px" onclick="openScriptEditor()">✏️ 대본 수정</button>'
+        +'<button class="b bp" style="font-size:11px" id="scriptContinueBtn" onclick="if(window._scriptEditorResolve){window._scriptEditorResolve();window._scriptEditorResolve=null;}">▶ 이대로 계속</button></div>');
+      // 수정 대기 (사용자가 버튼 클릭 시 해제)
+      await new Promise(r=>{ window._scriptEditorResolve=r; });
     }
 
     checkStop();
@@ -2452,7 +2458,7 @@ async function startAutoPipeline(isResume){
               await new Promise(r=>setTimeout(r,5000));
               const st=await fetch('/api/runway/status/'+task.taskId).then(r=>r.json());
               if(st.status==='SUCCEEDED'){
-                await api('/api/runway/download',{taskId:task.taskId,outputUrl:st.output?.[0],index:i+1});
+                await api('/api/runway/download',{videoUrl:st.output?.[0],index:i+1});
                 rwOk++;done=true;
               } else if(st.status==='FAILED'){rwFail++;done=true;}
             }
@@ -3275,6 +3281,37 @@ async function deleteSchedule(id){
 }
 
 
+// === 대본 수정 ===
+function openScriptEditor(){
+  const m=document.getElementById('scriptEditModal');
+  const ta=document.getElementById('scriptEditArea');
+  const lenEl=document.getElementById('scriptEditLen');
+  if(!m||!ta)return;
+  ta.value=S.script||'';
+  if(lenEl)lenEl.textContent=(S.script||'').length+'자';
+  m.style.display='flex';
+  ta.focus();
+}
+function closeScriptEditor(doSave){
+  const m=document.getElementById('scriptEditModal');
+  if(!m)return;
+  if(doSave){
+    const val=document.getElementById('scriptEditArea').value.trim();
+    if(val){
+      S.script=val;
+      pipeMark('script',{script:S.script});
+      save();
+      // 프리뷰 갱신
+      const pv=document.getElementById('scriptPreviewTxt');
+      if(pv)pv.textContent=S.script.substring(0,1500)+(S.script.length>1500?'\n... (전체 '+S.script.length+'자)':'');
+      toast('대본이 수정되었습니다','ok');
+    }
+  }
+  m.style.display='none';
+  // 파이프라인 재개
+  if(window._scriptEditorResolve){window._scriptEditorResolve();window._scriptEditorResolve=null;}
+}
+
 // === Settings ===
 async function openSettings(){
   document.getElementById('settingsModal').style.display='flex';
@@ -3517,6 +3554,21 @@ async function adminDeleteUser(email){
   toast('회원 삭제 완료');
 }
 </script>
+<!-- ===== 대본 수정 모달 ===== -->
+<div id="scriptEditModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;align-items:center;justify-content:center">
+  <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:24px;width:94%;max-width:800px;max-height:90vh;display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:15px;font-weight:700">✏️ 대본 수정</div>
+      <div style="font-size:10px;color:var(--t3)" id="scriptEditLen"></div>
+    </div>
+    <textarea id="scriptEditArea" style="flex:1;min-height:460px;background:var(--bg3);border:1px solid var(--bd);border-radius:var(--rs);color:var(--t1);font-size:12px;line-height:1.7;padding:14px;resize:vertical;font-family:'Noto Sans KR',sans-serif" oninput="document.getElementById('scriptEditLen').textContent=this.value.length+'자'"></textarea>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="b bs" style="font-size:12px" onclick="closeScriptEditor(false)">취소</button>
+      <button class="b bp" style="font-size:12px" onclick="closeScriptEditor(true)">💾 저장 후 계속</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== 설정 모달 ===== -->
 <div id="settingsModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;display:none;align-items:center;justify-content:center" onclick="if(event.target===this)closeSettings()">
   <div style="background:var(--bg2);border:1px solid var(--bd);border-radius:var(--r);padding:24px;width:90%;max-width:550px;max-height:85vh;overflow-y:auto">

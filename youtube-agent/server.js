@@ -1,4 +1,4 @@
-import dotenv from 'dotenv';
+﻿import dotenv from 'dotenv';
 import express from 'express';
 import fs from 'fs';
 import path from 'path';
@@ -192,17 +192,51 @@ const oauth2Client = new google.auth.OAuth2(
 console.log('[OAuth] Client ID:', process.env.YOUTUBE_CLIENT_ID ? `set (${cleanKey(process.env.YOUTUBE_CLIENT_ID).substring(0,10)}...)` : '❌');
 console.log('[OAuth] Redirect URI:', cleanKey(process.env.YOUTUBE_REDIRECT_URI) || `http://localhost:${PORT}/api/google/callback`);
 
+// 토큰 갱신 시 새 토큰 자동 저장 (Google token rotation 대응)
+oauth2Client.on('tokens', async (tokens) => {
+  console.log('[OAuth] 토큰 갱신 이벤트:', { hasAccess: !!tokens.access_token, hasRefresh: !!tokens.refresh_token });
+  if (tokens.refresh_token) {
+    youtubeTokens = { ...youtubeTokens, ...tokens };
+    oauth2Client.setCredentials(youtubeTokens);
+    // DB 저장
+    if (db) {
+      try {
+        await db.query(`INSERT INTO oauth_tokens (id, tokens, updated_at) VALUES ('youtube', $1, NOW()) ON CONFLICT (id) DO UPDATE SET tokens = $1, updated_at = NOW()`, [JSON.stringify(youtubeTokens)]);
+        console.log('[OAuth] 갱신된 refresh_token DB 저장 ✅');
+      } catch(e) {}
+    }
+    // 파일 저장
+    try { fs.writeFileSync(TOKEN_PATH, JSON.stringify(youtubeTokens, null, 2)); } catch(e) {}
+  } else if (tokens.access_token) {
+    youtubeTokens = { ...youtubeTokens, ...tokens };
+    oauth2Client.setCredentials(youtubeTokens);
+  }
+});
+
 let youtubeTokens = null;
 const TOKEN_PATH = path.join(__dirname, '.youtube-tokens.json');
 
 if (process.env.YOUTUBE_REFRESH_TOKEN) {
   youtubeTokens = { refresh_token: process.env.YOUTUBE_REFRESH_TOKEN };
   oauth2Client.setCredentials(youtubeTokens);
+  console.log('[OAuth] 토큰 로드: 환경변수');
 } else if (fs.existsSync(TOKEN_PATH)) {
   try {
     youtubeTokens = JSON.parse(fs.readFileSync(TOKEN_PATH, 'utf-8'));
     oauth2Client.setCredentials(youtubeTokens);
+    console.log('[OAuth] 토큰 로드: 파일');
   } catch(e) {}
+}
+// Railway 재배포 대비: DB에서 토큰 복원
+if (!youtubeTokens && db) {
+  try {
+    const r = await db.query(`SELECT tokens FROM oauth_tokens WHERE id = 'youtube'`);
+    if (r.rows.length && r.rows[0].tokens) {
+      youtubeTokens = typeof r.rows[0].tokens === 'string' ? JSON.parse(r.rows[0].tokens) : r.rows[0].tokens;
+      oauth2Client.setCredentials(youtubeTokens);
+      console.log('[OAuth] 토큰 로드: DB 복원 ✅');
+    }
+  } catch(e) { console.warn('[OAuth] DB 토큰 복원 실패:', e.message); }
 }
 
 // ========================
@@ -242,6 +276,8 @@ app.get('/api/health', async (req, res) => {
       pexels: !!PEXELS_KEY,
       youtube: !!process.env.YOUTUBE_CLIENT_ID
     },
+    ytClientPrefix: process.env.YOUTUBE_CLIENT_ID?.substring(0, 15) || 'NOT_SET',
+    ytRedirectUri: process.env.YOUTUBE_REDIRECT_URI || 'NOT_SET',
     keyLengths: {
       anthropic: ANTHROPIC_KEY?.length || 0,
       openai: OPENAI_KEY?.length || 0,
@@ -287,19 +323,87 @@ app.get('/api/youtube/trending', async (req, res) => {
 });
 
 // ========================
+// 영상 유형별 프롬프트 가이드
+// ========================
+const VIDEO_TYPE_GUIDE = {
+  'history-documentary': {
+    label: '역사물',
+    topicHint: '역사적 사건·왕조·전쟁·인물·문명을 중심으로, 사료 기반의 신뢰성 있는 주제',
+    planHint: '연대기적 서술 구조. 1차 사료(실록, 문헌) 인용 강조. Fact-Check 체크리스트 상세히 작성. 역사적 맥락과 현대적 의미 연결.',
+    scriptHint: '권위 있는 역사 다큐멘터리 어조. 연도·지명·인명 정확히 표기. 역사적 팩트와 해석을 구분. 감정적 몰입보다 사실 전달 우선.',
+    imageHint: 'Historical accuracy essential. Period-accurate costumes, architecture, artifacts. Aged parchment texture, sepia tones acceptable. Maps and timelines as visual aids.',
+  },
+  'mini-documentary': {
+    label: '미니 다큐',
+    topicHint: '현실 세계의 흥미로운 현상·사건·장소·사람을 탐구하는 주제. 5~10분 내에 완결되는 단편 다큐 스타일',
+    planHint: '탐사 보도 스타일. 오프닝 훅 → 현장 소개 → 핵심 발견 → 전문가 의견 → 결론 구조. 인터뷰·현장감 강조.',
+    scriptHint: '현장감 있는 1인칭 탐사 어조. "지금 이 순간", "직접 가보니" 등 현재형 서술. 시청자를 현장에 데려가는 느낌.',
+    imageHint: 'Documentary photography style. Candid shots, real locations, journalistic framing. Natural lighting, handheld camera feel.',
+  },
+  'reenactment': {
+    label: '재현물',
+    topicHint: '역사적 사건이나 실화를 드라마틱하게 재현하는 주제. 인물의 내면과 극적 순간 중심',
+    planHint: '드라마 구조 적용. 주인공 설정 → 갈등 고조 → 클라이맥스 재현 → 역사적 평가. 각 장면의 감정선과 연출 포인트 구체적으로.',
+    scriptHint: '영화적 서술. 현재형·과거형 혼용으로 긴장감 조성. 인물의 심리 묘사. "그 순간", "그는 결심했다" 등 드라마틱 표현 활용.',
+    imageHint: 'Cinematic reenactment style. Dramatic lighting, period costumes on actors, intense close-ups, epic wide shots. Film grain texture, high contrast.',
+  },
+  'science-education': {
+    label: '과학/교육',
+    topicHint: '과학 원리·자연 현상·기술 혁신·의학·우주 등 지식 전달 중심 주제. 호기심 자극형',
+    planHint: '개념 → 원리 설명 → 시각화 → 응용 사례 → 미래 전망 구조. 어려운 개념을 쉽게 설명하는 비유와 시각화 계획 포함.',
+    scriptHint: '명확하고 친근한 설명 어조. 복잡한 개념은 일상 비유로 설명. "쉽게 말하면", "예를 들어" 전환구 활용. 정확한 수치와 출처 인용.',
+    imageHint: 'Scientific visualization style. Diagrams, infographics, microscope views, space imagery, laboratory settings. Clean and educational aesthetic.',
+  },
+  'biography': {
+    label: '인물전기',
+    topicHint: '역사적 위인, 현대 인물, 독특한 삶을 산 사람의 생애와 업적 중심 주제',
+    planHint: '생애 타임라인 구조. 탄생 배경 → 성장 → 도전과 실패 → 성취 → 유산. 인물의 내면 심리와 시대적 맥락 병행 서술.',
+    scriptHint: '인물 중심 서술. 3인칭 시점. 인물의 명언·일화 적극 인용. 시대적 배경과 인물의 선택이 어떻게 연결되는지 강조.',
+    imageHint: 'Portrait-focused composition. Authentic historical photos mixed with illustrated scenes. Character-driven framing, expressive faces, symbolic props.',
+  },
+  'mystery': {
+    label: '미스터리/음모론',
+    topicHint: '미해결 사건, 역사적 의문점, 음모론, 초자연 현상, 반전이 있는 실화 주제',
+    planHint: '미스터리 구조. 의문 제기 → 기존 설명의 허점 → 새로운 단서 → 여러 가설 검토 → 충격적 결론(또는 미해결 처리). 서스펜스 유지.',
+    scriptHint: '서스펜스 어조. 의문문으로 시청자 참여 유도. "그런데 이상한 점이 있습니다", "아무도 몰랐던 사실" 등 훅 표현 적극 활용. 반전 직전 빌드업.',
+    imageHint: 'Dark atmospheric style. Shadows, fog, mysterious symbols, dark color palette. Noir lighting, redacted documents aesthetic, ominous ambiance.',
+  },
+  'social-phenomena': {
+    label: '사회현상',
+    topicHint: '현대 사회 트렌드, 문화 현상, 경제·정치 이슈, 세대 갈등 등 현재 진행형 주제',
+    planHint: '사회 분석 구조. 현상 소개 → 통계/데이터 → 원인 분석 → 사례 인터뷰 → 전문가 의견 → 전망. 균형 잡힌 시각 유지.',
+    scriptHint: '저널리즘 어조. 구체적 수치와 사례 활용. 다양한 시각 제시. 감정적 판단보다 사실 기반 분석. 시청자가 스스로 판단하도록 열린 결말.',
+    imageHint: 'Modern journalistic style. Urban environments, diverse people, data visualizations, news headlines, social media screenshots aesthetic.',
+  },
+  'nature': {
+    label: '자연/환경',
+    topicHint: '자연 현상, 생태계, 동식물, 지구 변화, 환경 문제, 탐험 주제',
+    planHint: '자연 다큐 구조. 경이로운 오프닝 → 생태 메커니즘 설명 → 위협/도전 → 보존 노력 → 희망 메시지. 감동적 서사.',
+    scriptHint: 'David Attenborough 스타일. 경이로움과 경외감 전달. 생생한 묘사로 시청자가 현장에 있는 느낌. 생태적 정확성 유지.',
+    imageHint: 'Nature photography style. Golden hour lighting, macro shots, aerial views, wildlife close-ups. Vivid colors, epic landscapes, BBC nature documentary aesthetic.',
+  },
+};
+
+function getVideoTypeContext(videoType) {
+  return VIDEO_TYPE_GUIDE[videoType] || VIDEO_TYPE_GUIDE['history-documentary'];
+}
+
+// ========================
 // 1. 주제 추천 (Claude)
 // ========================
 app.post('/api/topics/suggest', async (req, res) => {
   try {
     checkAnthropic();
-    const { category, target, keyword, categories, language, count } = req.body;
+    const { category, target, keyword, categories, language, count, videoType } = req.body;
     const topicCount = Math.min(Math.max(parseInt(count) || 10, 1), 30);
     const catList = categories || 'history,science,ai,mystery,economy,psychology,nature,crime,culture,philosophy,health';
     const topicLang = language || '한국어';
+    const vtCtx = getVideoTypeContext(videoType);
 
     const prompt = `당신은 100만 구독자를 보유한 전문 유튜브 채널 기획자입니다.
 
 다음 조건에 맞는 유튜브 롱폼 영상 주제 ${topicCount}개를 추천해주세요:
+- 영상 유형: ${vtCtx.label} — ${vtCtx.topicHint}
 - 카테고리: ${category || '자유 (다양한 카테고리에서 골고루)'}
 - 타겟 시청자: ${target || '전 연령'}
 - 출력 언어: ${topicLang} (모든 title과 description을 반드시 ${topicLang}로 작성하세요)
@@ -324,7 +428,7 @@ category 필드는 반드시 다음 중 하나를 사용하세요: ${catList}
 JSON 배열만 반환하세요. 다른 텍스트 없이.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: Math.max(4000, topicCount * 400),
       messages: [{ role: 'user', content: prompt }]
     });
@@ -340,7 +444,7 @@ JSON 배열만 반환하세요. 다른 텍스트 없이.`;
       console.log(`[Topics] ${need}개 추가 생성 중...`);
       try {
         const msg2 = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 3000,
           messages: [{ role: 'user', content: `이전에 ${topics.length}개 주제를 생성했습니다. 추가로 ${need}개를 더 생성하세요.
 기존 주제: ${topics.map(t=>t.title).join(', ')}
@@ -368,15 +472,18 @@ JSON 배열만 반환:` }]
 // ========================
 app.post('/api/plan/generate', async (req, res) => {
   try {
-    const { projectId, topic, target, length, tone, style, notes, refText } = req.body;
+    const { projectId, topic, target, length, tone, style, notes, refText, videoType } = req.body;
     const project = getProject(projectId);
     project.topic = topic;
     project.target = target;
+    const vtCtx = getVideoTypeContext(videoType);
 
     const prompt = `당신은 100만 구독자를 보유한 전문 유튜브 영상 기획자입니다.
 
 다음 주제로 유튜브 롱폼 영상 기획안을 작성해주세요:
 
+[영상 유형]: ${vtCtx.label}
+[유형별 기획 지침]: ${vtCtx.planHint}
 [주제]: ${topic}
 [타겟 시청자]: ${target || '전 연령'}
 [영상 길이]: 약 ${length || 15}분
@@ -396,7 +503,7 @@ ${refText ? `\n[참고 대본 텍스트]:\n아래 텍스트를 핵심 자료로 
 전문적이고 상세한 기획안을 작성해주세요.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 4000,
       messages: [{ role: 'user', content: prompt }]
     });
@@ -415,13 +522,16 @@ ${refText ? `\n[참고 대본 텍스트]:\n아래 텍스트를 핵심 자료로 
 // ========================
 app.post('/api/script/generate', async (req, res) => {
   try {
-    const { projectId, topic, target, wordCount, narration, plan, tone, language, refText, targetMinutes } = req.body;
+    const { projectId, topic, target, wordCount, narration, plan, tone, language, refText, targetMinutes, videoType } = req.body;
     const project = getProject(projectId);
+    const vtCtx = getVideoTypeContext(videoType);
 
     const prompt = `당신은 100만 구독자를 보유한 전문 유튜브 대본 작가입니다.
 
 다음 정보를 바탕으로 유튜브 롱폼 영상 대본을 작성해주세요:
 
+[영상 유형]: ${vtCtx.label}
+[대본 작성 지침]: ${vtCtx.scriptHint}
 [주제]: ${topic || project.topic}
 [타겟 시청자]: ${target || project.target || '전 연령'}
 [대본 분량]: 약 ${wordCount || 3000}자
@@ -466,7 +576,7 @@ ${refText ? `\n[참고 대본 텍스트]:\n아래 텍스트를 핵심 자료로 
     // 스트리밍으로 긴 대본 수신 (타임아웃 방지)
     let script = '';
     const stream = anthropic.messages.stream({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 32000,
       messages: [{ role: 'user', content: prompt }]
     });
@@ -574,13 +684,17 @@ app.post('/api/images/generate', async (req, res) => {
 
 app.post('/api/images/generate-prompts', async (req, res) => {
   try {
-    const { projectId, script, style, count } = req.body;
+    const { projectId, script, style, count, videoType } = req.body;
     const project = getProject(projectId);
+    const vtCtx = getVideoTypeContext(videoType);
 
     const fullScript = script || project.script || '';
     const sceneCount = parseInt(count) || 8;
 
     const prompt = `다음 유튜브 영상 대본을 꼼꼼히 읽고, 대본 내용에 정확히 맞는 ${sceneCount}개 장면의 이미지 생성 프롬프트를 영어로 작성하세요.
+
+[영상 유형]: ${vtCtx.label}
+[이미지 스타일 지침]: ${vtCtx.imageHint}
 
 대본:
 ${fullScript.substring(0, 8000)}
@@ -608,7 +722,7 @@ JSON 배열 형식으로만 반환:
 [{"scene":1,"name":"장면 이름 (한국어)","prompt":"영어 이미지 프롬프트","search_keywords":"english search terms"}]`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 6000,
       messages: [{ role: 'user', content: prompt }]
     });
@@ -1045,7 +1159,7 @@ app.post('/api/shorts/summarize', async (req, res) => {
     const langName = { ko: '한국어', en: '영어', zh: '중국어', ja: '일본어', es: '스페인어' }[language] || '한국어';
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       messages: [{ role: 'user', content: `다음 롱폼 대본에서 가장 흥미롭고 충격적인 내용을 2분 분량(~500자)으로 요약하세요.
 
@@ -1114,7 +1228,7 @@ app.post('/api/srt/generate', async (req, res) => {
 
       try {
         const transMsg = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 8000,
           messages: [{ role: 'user', content: `다음 ${langName} 자막을 한국어로 번역하세요.
 각 줄의 [번호]를 유지하고, 번역만 작성하세요. 자연스러운 한국어로 번역하세요.
@@ -1525,10 +1639,10 @@ app.post('/api/render/video', async (req, res) => {
     const outH = isVertical ? 1920 : 1080;
     const project = getProject(projectId);
 
-    // 소스 모드: 'image' (기본) / 'video' (Pexels 스톡 영상)
-    const useVideo = sourceMode === 'video';
+    // 소스 모드: 'image' (기본) / 'video' (Pexels) / 'runway' (Runway AI 영상)
+    const useVideo = sourceMode === 'video' || sourceMode === 'runway';
     const sourceDir = useVideo ? 'clips' : 'images';
-    const sourcePrefix = useVideo ? 'clip_' : 'scene_';
+    const sourcePrefix = sourceMode === 'runway' ? 'runway_' : (useVideo ? 'clip_' : 'scene_');
     const sourceExt = useVideo ? '.mp4' : '.png';
 
     // 이미지/영상 클립: 파일명 순서대로
@@ -1836,7 +1950,7 @@ app.post('/api/render/video', async (req, res) => {
               const textsToTranslate = origLines.map((l, i) => `[${i}] ${l.text}`).join('\n');
               const langNameMap = { en: '영어', zh: '중국어', ja: '일본어', es: '스페인어' };
               const transMsg = await anthropic.messages.create({
-                model: 'claude-sonnet-4-20250514',
+                model: 'claude-sonnet-4-6',
                 max_tokens: 8000,
                 messages: [{ role: 'user', content: `다음 ${langNameMap[lang]||lang} 자막을 한국어로 번역하세요.\n각 줄의 [번호]를 유지하고, 번역만 작성하세요.\n\n${textsToTranslate}` }]
               });
@@ -2032,7 +2146,7 @@ ${(script || project.script) ? `대본 요약:\n${(script || project.script).sub
 JSON만 반환하세요.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 3000,
       messages: [{ role: 'user', content: prompt }]
     });
@@ -2100,7 +2214,7 @@ ko는 한국어 번역입니다.
 JSON만 출력: {"highlight":"...","sub":"...","ko":"..."}`;
 
         const hookMsg = await anthropic.messages.create({
-          model: 'claude-sonnet-4-20250514',
+          model: 'claude-sonnet-4-6',
           max_tokens: 250,
           messages: [{ role: 'user', content: promptContent }]
         });
@@ -2136,7 +2250,7 @@ JSON만 출력: {"highlight":"...","sub":"...","ko":"..."}`;
     let safeVisual = '';
     try {
       const visMsg = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
+        model: 'claude-sonnet-4-6',
         max_tokens: 200,
         messages: [{ role: 'user', content: `다음 한국어 주제를 OpenAI 이미지 생성 API에 안전한 영문 비주얼 묘사로 변환하세요.
 주제: "${topic}"
@@ -2418,7 +2532,7 @@ JSON 배열 형식:
 JSON만 반환하세요.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 4000,
       messages: [{ role: 'user', content: prompt }]
     });
@@ -2458,7 +2572,7 @@ ${(script || project.script) ? `대본 참고:\n${(script || project.script).sub
 전문적이고 몰입감 있는 인트로를 작성해주세요.`;
 
     const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-6',
       max_tokens: 2000,
       messages: [{ role: 'user', content: prompt }]
     });
@@ -2579,6 +2693,7 @@ app.post('/api/settings/save', async (req, res) => {
   try {
     const updates = req.body || {};
     const envKeys = ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'ELEVENLABS_API_KEY', 'PEXELS_API_KEY',
+                     'RUNWAYML_API_KEY',
                      'YOUTUBE_CLIENT_ID', 'YOUTUBE_CLIENT_SECRET', 'YOUTUBE_REDIRECT_URI', 'YOUTUBE_REFRESH_TOKEN', 'PORT'];
 
     // 1. 메모리에 즉시 반영 (가장 중요)
@@ -2673,6 +2788,8 @@ app.get('/api/google/callback', async (req, res) => {
     const dynamicRedirect = cleanKey(process.env.YOUTUBE_REDIRECT_URI) || `${protocol}://${host}/api/google/callback`;
     console.log(`[OAuth callback] redirect_uri: ${dynamicRedirect}`);
     const { tokens } = await oauth2Client.getToken({ code, redirect_uri: dynamicRedirect });
+    console.log('[OAuth callback] 토큰 수신:', { hasAccess: !!tokens.access_token, hasRefresh: !!tokens.refresh_token, expiry: tokens.expiry_date });
+    tokens._source = 'oauth_callback';
     oauth2Client.setCredentials(tokens);
     youtubeTokens = tokens;
     try { fs.writeFileSync(TOKEN_PATH, JSON.stringify(tokens, null, 2)); } catch(e) {}
@@ -2769,16 +2886,74 @@ app.get('/api/youtube/callback', async (req, res) => {
   }
 });
 
-app.get('/api/youtube/status', (req, res) => {
+app.get('/api/youtube/status', async (req, res) => {
+  // 항상 DB에서 최신 토큰 복원
+  if (db) {
+    try {
+      const r = await db.query(`SELECT tokens, updated_at FROM oauth_tokens WHERE id = 'youtube'`);
+      if (r.rows.length && r.rows[0].tokens) {
+        const dbTokens = typeof r.rows[0].tokens === 'string' ? JSON.parse(r.rows[0].tokens) : r.rows[0].tokens;
+        youtubeTokens = dbTokens;
+        oauth2Client.setCredentials(dbTokens);
+      }
+    } catch(e) {}
+  }
+
+  // access_token 없거나 만료됐으면 refresh 시도
+  let refreshResult = null;
+  const c = oauth2Client.credentials || {};
+  const needRefresh = !c.access_token || !c.expiry_date || Date.now() >= c.expiry_date - 60000;
+  if (youtubeTokens?.refresh_token && needRefresh) {
+    try {
+      const tokenRes = await oauth2Client.getAccessToken();
+      refreshResult = tokenRes.token ? 'success' : 'no_token';
+      // 갱신 성공 → DB에 최신 토큰 저장
+      if (tokenRes.token && db) {
+        try {
+          const merged = { ...youtubeTokens, ...oauth2Client.credentials };
+          youtubeTokens = merged;
+          await db.query(`INSERT INTO oauth_tokens (id, tokens, updated_at) VALUES ('youtube', $1, NOW()) ON CONFLICT (id) DO UPDATE SET tokens = $1, updated_at = NOW()`, [JSON.stringify(merged)]);
+        } catch(e) {}
+      }
+    } catch(e) {
+      refreshResult = e.message;
+      // invalid_grant = refresh_token 무효 (재로그인 필요)
+      if (e.message?.includes('invalid_grant')) {
+        refreshResult = 'invalid_grant: 재로그인 필요';
+      }
+    }
+  }
+
+  const creds = oauth2Client.credentials || {};
+  const expiryDate = creds.expiry_date ? new Date(creds.expiry_date).toISOString() : null;
+  const isExpired = creds.expiry_date ? Date.now() >= creds.expiry_date : true;
   res.json({
     authenticated: !!youtubeTokens,
-    hasClientId: !!process.env.YOUTUBE_CLIENT_ID
+    hasRefreshToken: !!youtubeTokens?.refresh_token,
+    hasAccessToken: !!creds.access_token,
+    accessTokenExpiry: expiryDate,
+    accessTokenExpired: isExpired,
+    hasClientId: !!process.env.YOUTUBE_CLIENT_ID,
+    tokenSource: youtubeTokens?._source || 'unknown',
+    refreshResult
   });
 });
 
 app.post('/api/youtube/upload', async (req, res) => {
   try {
+    // DB에서 토큰 복원 시도 (Railway 재배포 대비)
+    if (!youtubeTokens && db) {
+      try {
+        const r = await db.query(`SELECT tokens FROM oauth_tokens WHERE id = 'youtube'`);
+        if (r.rows.length && r.rows[0].tokens) {
+          youtubeTokens = typeof r.rows[0].tokens === 'string' ? JSON.parse(r.rows[0].tokens) : r.rows[0].tokens;
+          oauth2Client.setCredentials(youtubeTokens);
+          console.log('[YouTube Upload] DB에서 토큰 복원 ✅');
+        }
+      } catch(e) { console.warn('[YouTube Upload] DB 토큰 복원 실패:', e.message); }
+    }
     if (!youtubeTokens) throw new Error('YouTube 인증이 필요합니다. 먼저 OAuth 인증을 완료하세요.');
+    console.log('[YouTube Upload] 토큰 상태:', { hasRefresh: !!youtubeTokens.refresh_token, hasAccess: !!youtubeTokens.access_token });
 
     const { projectId, title, description, tags, categoryId, privacyStatus, thumbnailFile } = req.body;
     const project = getProject(projectId);
@@ -2801,19 +2976,54 @@ app.post('/api/youtube/upload', async (req, res) => {
 
     // Resumable Upload (googleapis 2MB 제한 우회)
     let accessToken;
-    try {
-      accessToken = (await oauth2Client.getAccessToken()).token;
-    } catch (tokenErr) {
-      console.error('[YouTube] 토큰 갱신 실패:', tokenErr.message);
-      if (tokenErr.message?.includes('invalid_grant')) {
-        youtubeTokens = null;
-        try { fs.unlinkSync(TOKEN_PATH); } catch(e) {}
-        throw new Error('YouTube 인증이 만료되었습니다. 좌측 메뉴에서 Google 로그인을 다시 해주세요.');
+
+    // 1) 현재 access_token이 유효하면 그대로 사용
+    const creds = oauth2Client.credentials;
+    if (creds?.access_token && creds?.expiry_date && Date.now() < creds.expiry_date - 60000) {
+      accessToken = creds.access_token;
+      console.log('[YouTube] 기존 access_token 사용 (만료까지', Math.round((creds.expiry_date - Date.now())/60000), '분)');
+    }
+
+    // 2) 만료됐으면 refresh 시도
+    if (!accessToken) {
+      try {
+        const tokenRes = await oauth2Client.getAccessToken();
+        accessToken = tokenRes.token;
+        console.log('[YouTube] access_token 갱신 성공');
+      } catch (tokenErr) {
+        console.error('[YouTube] 토큰 갱신 실패:', tokenErr.message);
+
+        // 3) DB에서 최신 토큰 복원 후 재시도
+        if (db && tokenErr.message?.includes('invalid_grant')) {
+          console.log('[YouTube] DB에서 최신 토큰 복원 시도...');
+          try {
+            const r = await db.query(`SELECT tokens FROM oauth_tokens WHERE id = 'youtube'`);
+            if (r.rows.length && r.rows[0].tokens) {
+              const dbTokens = typeof r.rows[0].tokens === 'string' ? JSON.parse(r.rows[0].tokens) : r.rows[0].tokens;
+              // DB 토큰이 현재와 다르면 재시도
+              if (dbTokens.refresh_token && dbTokens.refresh_token !== youtubeTokens?.refresh_token) {
+                youtubeTokens = dbTokens;
+                oauth2Client.setCredentials(dbTokens);
+                console.log('[YouTube] DB 토큰으로 교체, 재시도...');
+                const retryRes = await oauth2Client.getAccessToken();
+                accessToken = retryRes.token;
+              }
+            }
+          } catch(e2) {
+            console.error('[YouTube] DB 복원 재시도 실패:', e2.message);
+          }
+        }
+
+        if (!accessToken) {
+          youtubeTokens = null;
+          try { fs.unlinkSync(TOKEN_PATH); } catch(e) {}
+          // DB 토큰도 삭제 (무효화된 토큰 순환 방지)
+          if (db) { try { await db.query(`DELETE FROM oauth_tokens WHERE id = 'youtube'`); } catch(e) {} }
+          throw new Error('YouTube 인증이 만료되었습니다. 좌측 메뉴에서 Google 로그인을 다시 해주세요.');
+        }
       }
-      throw tokenErr;
     }
     if (!accessToken) {
-      youtubeTokens = null;
       throw new Error('YouTube Access Token을 가져올 수 없습니다. Google 로그인을 다시 해주세요.');
     }
     const videoTitle = title || project.meta?.titles?.[0]?.options?.[0] || project.topic || 'Untitled';
@@ -3429,6 +3639,85 @@ app.post('/api/admin/user/update', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// ========================
+// Runway API
+// ========================
+const RUNWAY_API_BASE = 'https://api.dev.runwayml.com/v1';
+
+async function runwayFetch(path, method='GET', body=null, apiKey=null) {
+  const key = apiKey || process.env.RUNWAYML_API_KEY;
+  if (!key) throw new Error('RUNWAYML_API_KEY 미설정. 설정에서 API 키를 입력하세요.');
+  const opts = {
+    method,
+    headers: {
+      'Authorization': `Bearer ${key}`,
+      'X-Runway-Version': '2024-11-06',
+      'Content-Type': 'application/json'
+    }
+  };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(`${RUNWAY_API_BASE}${path}`, opts);
+  const data = await r.json();
+  if (!r.ok) throw new Error(data.error || data.message || `Runway API 오류 ${r.status}`);
+  return data;
+}
+
+// 이미지 → 영상
+app.post('/api/runway/image-to-video', async (req, res) => {
+  try {
+    const { imageUrl, prompt, duration=5, ratio='1280:768', apiKey } = req.body;
+    const body = { model: 'gen3a_turbo', duration, ratio };
+    if (imageUrl) body.promptImage = imageUrl;
+    if (prompt) body.promptText = prompt;
+    if (!body.promptImage && !body.promptText) return res.status(400).json({ success: false, error: '이미지 URL 또는 프롬프트 필요' });
+    const data = await runwayFetch('/image_to_video', 'POST', body, apiKey);
+    res.json({ success: true, taskId: data.id, status: data.status });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// 텍스트 → 영상
+app.post('/api/runway/text-to-video', async (req, res) => {
+  try {
+    const { prompt, duration=5, ratio='1280:768', apiKey } = req.body;
+    if (!prompt) return res.status(400).json({ success: false, error: '프롬프트 필요' });
+    const data = await runwayFetch('/text_to_video', 'POST', {
+      model: 'gen4_turbo', promptText: prompt, duration, ratio
+    }, apiKey);
+    res.json({ success: true, taskId: data.id, status: data.status });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// 작업 상태 폴링
+app.get('/api/runway/status/:taskId', async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const apiKey = req.query.apiKey || process.env.RUNWAYML_API_KEY;
+    const data = await runwayFetch(`/tasks/${taskId}`, 'GET', null, apiKey);
+    res.json({
+      success: true, taskId: data.id,
+      status: data.status, // PENDING|RUNNING|SUCCEEDED|FAILED|THROTTLED
+      videoUrl: data.output?.[0] || null,
+      progress: data.progress || 0
+    });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// Runway 영상 로컬 다운로드
+app.post('/api/runway/download', async (req, res) => {
+  try {
+    const { videoUrl, index=0 } = req.body;
+    if (!videoUrl) return res.status(400).json({ success: false, error: 'videoUrl 필요' });
+    const r = await fetch(videoUrl);
+    if (!r.ok) throw new Error(`다운로드 실패: ${r.status}`);
+    const filename = `runway_${String(index).padStart(3,'0')}.mp4`;
+    const clipsDir = path.join(OUTPUT_DIR, 'clips');
+    fs.mkdirSync(clipsDir, { recursive: true });
+    const filepath = path.join(clipsDir, filename);
+    fs.writeFileSync(filepath, Buffer.from(await r.arrayBuffer()));
+    res.json({ success: true, filename, url: `/output/clips/${filename}` });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 // Start
 // ========================
 app.listen(PORT, () => {
@@ -3440,6 +3729,7 @@ app.listen(PORT, () => {
   console.log(`  - Claude API: ${process.env.ANTHROPIC_API_KEY ? '✅' : '❌'}`);
   console.log(`  - GPT Image:  ${process.env.OPENAI_API_KEY ? '✅' : '❌'}`);
   console.log(`  - ElevenLabs: ${process.env.ELEVENLABS_API_KEY ? '✅' : '❌'}`);
+  console.log(`  - Runway:     ${process.env.RUNWAYML_API_KEY ? '✅' : '❌'}`);
   console.log(`  - YouTube:    ${process.env.YOUTUBE_CLIENT_ID ? '✅' : '❌'}`);
   console.log(`\n  출력 폴더: ${OUTPUT_DIR}\n`);
 });
