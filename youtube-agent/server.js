@@ -3664,17 +3664,42 @@ async function runwayFetch(path, method='GET', body=null, apiKey=null) {
   return data;
 }
 
+// localhost URL → base64 data URI 변환 (Runway는 공개 URL만 허용)
+async function toPublicImageUri(imageUrl) {
+  if (!imageUrl) return null;
+  // localhost 또는 127.0.0.1인 경우 파일에서 직접 읽어 base64 변환
+  if (/localhost|127\.0\.0\.1/.test(imageUrl)) {
+    try {
+      // URL에서 파일 경로 추출: /output/images/scene_001.png → OUTPUT_DIR/images/scene_001.png
+      const urlPath = new URL(imageUrl).pathname;
+      const relPath = urlPath.replace(/^\/output\//, '');
+      const filePath = path.join(OUTPUT_DIR, relPath);
+      const buf = fs.readFileSync(filePath);
+      const ext = path.extname(filePath).slice(1).toLowerCase() || 'png';
+      const mime = ext === 'jpg' ? 'image/jpeg' : `image/${ext}`;
+      return `data:${mime};base64,${buf.toString('base64')}`;
+    } catch(e) {
+      console.error('[Runway] base64 변환 실패:', e.message);
+      return null;
+    }
+  }
+  return imageUrl;
+}
+
 // 이미지 → 영상
 app.post('/api/runway/image-to-video', async (req, res) => {
   try {
-    const { imageUrl, prompt, duration=5, ratio='1280:768', apiKey } = req.body;
+    const { imageUrl, promptText, prompt, duration=5, ratio='1280:768', apiKey } = req.body;
+    const resolvedPrompt = promptText || prompt || '';
+    const resolvedImage = await toPublicImageUri(imageUrl);
     const body = { model: 'gen3a_turbo', duration, ratio };
-    if (imageUrl) body.promptImage = imageUrl;
-    if (prompt) body.promptText = prompt;
+    if (resolvedImage) body.promptImage = resolvedImage;
+    if (resolvedPrompt) body.promptText = resolvedPrompt;
     if (!body.promptImage && !body.promptText) return res.status(400).json({ success: false, error: '이미지 URL 또는 프롬프트 필요' });
+    console.log(`[Runway] image-to-video 요청 (이미지: ${resolvedImage ? (resolvedImage.startsWith('data:') ? 'base64' : resolvedImage) : '없음'})`);
     const data = await runwayFetch('/image_to_video', 'POST', body, apiKey);
     res.json({ success: true, taskId: data.id, status: data.status });
-  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+  } catch(e) { console.error('[Runway] image-to-video 오류:', e.message); res.status(500).json({ success: false, error: e.message }); }
 });
 
 // 텍스트 → 영상
