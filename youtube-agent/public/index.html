@@ -2325,6 +2325,7 @@ async function startAutoPipeline(isResume){
   const len=document.getElementById('autoLen').value;
   const lang=document.getElementById('autoLang').value;
   const style=document.getElementById('autoStyle').value;
+  const sourceMode=document.getElementById('autoSourceMode')?.value||'image';
   // 영상 길이에 따라 이미지/클립 수 자동 계산 (10초당 1개, 최소 5, 최대 50)
   const manualImgCnt=parseInt(document.getElementById('autoImgCnt2').value)||8;
   const autoImgCntByLen={1:5,3:10,4:12,5:15,10:30,15:40,20:50,30:50,40:50,50:50,60:50};
@@ -2345,7 +2346,6 @@ async function startAutoPipeline(isResume){
   const privacy=document.getElementById('autoPrivacy')?.value||'private';
   const ttsSt=parseFloat(document.getElementById('autoTtsSt')?.value||0.5);
   const ttsSim=parseFloat(document.getElementById('autoTtsSim')?.value||0.75);
-  const sourceMode=document.getElementById('autoSourceMode')?.value||'image';
   const toneSettings=[...document.querySelectorAll('.auto-tone-chk:checked')].map(c=>c.value);
   const toneStr=toneSettings.length?toneSettings.join(', '):'균형 잡힌 톤';
   const ratio=document.getElementById('autoRatio')?.value||'16:9';
