@@ -2475,22 +2475,39 @@ async function startAutoPipeline(isResume){
         setPreview('image',`<div>🎬 ${ok}개 클립</div><div class="sp-grid">${clipsHtml}</div>`);
       }catch(e){autoStatus('image','fail',e.message);throw e}
     } else if(sourceMode==='runway'){
-      // Runway 모드: DALL-E로 이미지 생성 → Runway image-to-video (promptImage 필수)
+      // Runway 모드: ①Runway 프롬프트 생성 → ②DALL-E 이미지 생성 → ③Runway image-to-video
       const totalScenes=S.imgPrompts.length;
       const origin=window.location.origin;
-      // Runway API ratio 변환 ('16:9'→'1280:768', '9:16'→'768:1280')
       const rwRatio=ratio==='9:16'?'768:1280':ratio==='1:1'?'960:960':'1280:768';
-      // 1단계: 이미지 생성
+
+      // 1단계: Runway 전용 motion prompt 생성 (Claude Haiku)
+      autoStatus('image','running',`🎬 Runway 영상 프롬프트 생성 중... (${totalScenes}개 장면)`);
+      try{
+        const rpRes=await api('/api/runway/generate-prompts',{script:S.script,scenes:S.imgPrompts});
+        if(rpRes.prompts){
+          rpRes.prompts.forEach(p=>{
+            const idx=(p.scene||1)-1;
+            if(S.imgPrompts[idx]) S.imgPrompts[idx].runwayPrompt=p.runwayPrompt||null;
+          });
+        }
+        autoStatus('image','running',`✅ Runway 프롬프트 생성 완료 → 이미지 생성 시작...`);
+      }catch(e){
+        autoStatus('image','running',`⚠️ Runway 프롬프트 생성 실패 (기본 프롬프트 사용): ${e.message}`);
+      }
+      await new Promise(r=>setTimeout(r,500));
+
+      // 2단계: DALL-E 이미지 생성
       autoStatus('image','running',`0/${totalScenes} 기준 이미지 생성 중 (DALL-E)...`);
       for(let i=0;i<S.imgPrompts.length;i++){
         autoStatus('image','running',`${i+1}/${totalScenes} 이미지 생성 중...`);
         try{
           const d=await api('/api/images/generate',{prompt:S.imgPrompts[i].prompt,style,ratio,index:i+1,fastMode:true});
-          S.imgPrompts[i].imageUrl=d.imageUrl; // 상대 경로: /output/images/scene_N.png
+          S.imgPrompts[i].imageUrl=d.imageUrl;
         }catch(e){S.imgPrompts[i].imageUrl=null;}
         if(i<S.imgPrompts.length-1)await new Promise(r=>setTimeout(r,1000));
       }
-      // 2단계: Runway 영상 생성
+
+      // 3단계: Runway 영상 생성
       autoStatus('image','running',`0/${totalScenes} Runway Gen-3 영상 생성 중... (ratio: ${rwRatio})`);
       let rwOk=0,rwFail=0;
       const rwErrors=[];
@@ -2501,9 +2518,11 @@ async function startAutoPipeline(isResume){
           const idx=batch+bi;
           const promptImage=scene.imageUrl ? (origin+scene.imageUrl) : null;
           if(!promptImage){rwErrors.push(`장면${idx+1}: 이미지 생성 실패`);return {taskId:null,idx,err:'이미지 생성 실패'};}
+          // Runway 전용 프롬프트 우선 사용, 없으면 이미지 프롬프트 fallback
+          const rwPrompt=scene.runwayPrompt||scene.prompt||scene.description||`cinematic scene ${idx+1}`;
           try{
             const t=await api('/api/runway/text-to-video',{
-              prompt: scene.prompt||scene.description||`cinematic scene ${idx+1}`,
+              prompt: rwPrompt,
               promptImage, duration:5, ratio:rwRatio
             });
             return {taskId:t.taskId,idx};

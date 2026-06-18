@@ -3720,6 +3720,47 @@ app.post('/api/runway/image-to-video', async (req, res) => {
   } catch(e) { console.error('[Runway] image-to-video 오류:', e.message); res.status(500).json({ success: false, error: e.message }); }
 });
 
+// 장면별 Runway 전용 motion prompt 생성 (Claude)
+app.post('/api/runway/generate-prompts', async (req, res) => {
+  try {
+    const { script, scenes } = req.body;
+    if (!scenes || !scenes.length) return res.status(400).json({ success: false, error: 'scenes 필요' });
+    const apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) return res.status(400).json({ success: false, error: 'ANTHROPIC_API_KEY 미설정' });
+
+    const sceneList = scenes.map((s, i) => `장면 ${i+1}: ${s.name||''}\n이미지 프롬프트: ${s.prompt||s.description||''}`).join('\n\n');
+    const systemPrompt = `당신은 Runway Gen-3 AI 영상 생성 전문가입니다. 각 장면에 대해 Runway image-to-video에 최적화된 영상 모션 프롬프트를 작성하세요.
+
+Runway 프롬프트 규칙:
+- 카메라 움직임 명시 (slow pan, zoom in, drone shot, tracking shot 등)
+- 구체적인 동작과 분위기 묘사
+- 영어로 작성, 40~80단어
+- 시네마틱하고 역동적으로`;
+
+    const userMsg = `대본 요약:\n${(script||'').slice(0,500)}\n\n장면 목록:\n${sceneList}\n\n각 장면에 대해 JSON 배열로 Runway 프롬프트를 반환하세요:\n[{"scene":1,"runwayPrompt":"..."},...]`;
+
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2000,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userMsg }]
+      })
+    });
+    const data = await resp.json();
+    const text = data.content?.[0]?.text || '';
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) throw new Error('JSON 파싱 실패: ' + text.slice(0, 200));
+    const prompts = JSON.parse(jsonMatch[0]);
+    res.json({ success: true, prompts });
+  } catch(e) {
+    console.error('[Runway] generate-prompts 오류:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
+});
+
 // 텍스트+이미지 → 영상 (gen3a_turbo, promptImage 필수)
 app.post('/api/runway/text-to-video', async (req, res) => {
   try {
