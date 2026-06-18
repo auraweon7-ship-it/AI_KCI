@@ -2433,11 +2433,11 @@ async function startAutoPipeline(isResume){
       pipeMark('script',{script:S.script});
       autoTime('script',Math.round((Date.now()-t1)/1000));
       autoStatus('script','done',`대본 완료 (${S.script.length}자)`);
-      setPreview('script','<div class="sp-txt" id="scriptPreviewTxt">'+esc(S.script.substring(0,1500))+(S.script.length>1500?'\n... (전체 '+S.script.length+'자, '+(scriptData.sceneCount||'?')+'장면)':'')+'</div>'
-        +'<div style="display:flex;gap:6px;margin-top:8px"><button class="b bs" style="font-size:11px" onclick="openScriptEditor()">✏️ 대본 수정</button>'
-        +'<button class="b bp" style="font-size:11px" id="scriptContinueBtn" onclick="if(window._scriptEditorResolve){window._scriptEditorResolve();window._scriptEditorResolve=null;}">▶ 이대로 계속</button></div>');
-      // 수정 대기 (사용자가 버튼 클릭 시 해제)
-      await new Promise(r=>{ window._scriptEditorResolve=r; });
+      const scriptBtns=STEP_MODE?('<div style="display:flex;gap:6px;margin-top:8px"><button class="b bs" style="font-size:11px" onclick="openScriptEditor()">✏️ 대본 수정</button>'
+        +'<button class="b bp" style="font-size:11px" id="scriptContinueBtn" onclick="if(window._scriptEditorResolve){window._scriptEditorResolve();window._scriptEditorResolve=null;}">▶ 이대로 계속</button></div>'):'';
+      setPreview('script','<div class="sp-txt" id="scriptPreviewTxt">'+esc(S.script.substring(0,1500))+(S.script.length>1500?'\n... (전체 '+S.script.length+'자, '+(scriptData.sceneCount||'?')+'장면)':'')+'</div>'+scriptBtns);
+      // 수동 모드에서만 수정 대기
+      if(STEP_MODE){ await new Promise(r=>{ window._scriptEditorResolve=r; }); }
     }
 
     checkStop();
