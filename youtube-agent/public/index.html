@@ -2105,7 +2105,7 @@ async function doAutoTopicAi(){
   const orig=btn.innerHTML;
   btn.disabled=true;btn.innerHTML='<span class="sp"></span> 생성중...';
   try{
-    const cat=document.getElementById('autoTopicCat').value;
+    const cat=document.getElementById('autoTopicCat')?.value||'';
     const aud=document.getElementById('autoTopicAud').value;
     const kw=document.getElementById('autoTopicKw').value;
     const lang=document.getElementById('autoLang').value;
