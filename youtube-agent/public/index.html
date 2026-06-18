@@ -2316,7 +2316,18 @@ async function startAutoPipeline(isResume){
       }
     }catch(e){}
   }
-  if(!topic){toast('주제 또는 키워드를 입력하세요','err');return}
+  if(!topic){
+    toast('주제 또는 키워드를 입력하세요','err');
+    const topicEl=document.getElementById('autoTopic');
+    if(topicEl){
+      topicEl.scrollIntoView({behavior:'smooth',block:'center'});
+      topicEl.focus();
+      topicEl.style.outline='3px solid #ff3b3b';
+      topicEl.style.boxShadow='0 0 12px rgba(255,59,59,0.6)';
+      setTimeout(()=>{topicEl.style.outline='';topicEl.style.boxShadow='';},3000);
+    }
+    return;
+  }
   if(autoRunning&&!batchMode){toast('이미 실행 중','err');return}
   autoRunning=true;
   autoStopped=false;
