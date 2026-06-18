@@ -3443,6 +3443,28 @@ async function openSettings(){
       b.textContent='✅ 입력됨';
       ycs.parentElement.appendChild(b);
     }
+    // localStorage에 저장된 키 → 서버에 없으면 배지 표시
+    const saved=JSON.parse(localStorage.getItem('yt_mix_keys')||'{}');
+    const localMap={
+      ANTHROPIC_API_KEY:'setAnthropicKey', OPENAI_API_KEY:'setOpenaiKey',
+      ELEVENLABS_API_KEY:'setElevenlabsKey', PEXELS_API_KEY:'setPexelsKey',
+      RUNWAYML_API_KEY:'setRunwayKey', YOUTUBE_CLIENT_ID:'setYtClientId',
+      YOUTUBE_CLIENT_SECRET:'setYtClientSecret'
+    };
+    Object.entries(localMap).forEach(([k,id])=>{
+      if(!saved[k]) return;
+      const el=document.getElementById(id);
+      if(!el) return;
+      const alreadyBadge=el.parentElement.querySelector('.key-status-badge');
+      if(!alreadyBadge){
+        el.placeholder='💾 로컬 저장됨 (서버 재시작 시 자동 복원)';
+        const b=document.createElement('div');
+        b.className='key-status-badge';
+        b.style.cssText='font-size:10px;color:#f59e0b;margin-top:2px;font-weight:600';
+        b.textContent='💾 로컬 캐시';
+        el.parentElement.appendChild(b);
+      }
+    });
   }catch(e){}
 }
 function closeSettings(){
@@ -3469,11 +3491,35 @@ async function saveSettings(){
   if(!Object.keys(body).length){toast('변경할 키를 입력하세요','err');return}
   try{
     const d=await api('/api/settings/save',body);
+    // localStorage에도 저장 (서버 재시작/재배포 후 복원용)
+    const saved=JSON.parse(localStorage.getItem('yt_mix_keys')||'{}');
+    Object.assign(saved,body);
+    localStorage.setItem('yt_mix_keys',JSON.stringify(saved));
     toast('API 키 저장 완료! 즉시 반영됨.');
     closeSettings();
-    // 상태 배지 갱신
     checkGoogleLogin();
   }catch(e){toast(e.message,'err')}
+}
+// 페이지 로드 시 localStorage 키 서버에 복원
+async function restoreKeysFromLocal(){
+  try{
+    const saved=JSON.parse(localStorage.getItem('yt_mix_keys')||'{}');
+    if(!Object.keys(saved).length) return;
+    const status=await fetch('/api/settings/status').then(r=>r.json());
+    // 서버에 없는 키만 복원
+    const missing=Object.entries(saved).filter(([k,v])=>{
+      if(k==='ANTHROPIC_API_KEY') return !status.keys?.anthropic;
+      if(k==='OPENAI_API_KEY') return !status.keys?.openai;
+      if(k==='ELEVENLABS_API_KEY') return !status.keys?.elevenlabs;
+      if(k==='PEXELS_API_KEY') return !status.keys?.pexels;
+      if(k==='RUNWAYML_API_KEY') return !status.keys?.runway;
+      return !!v;
+    });
+    if(!missing.length) return;
+    const body=Object.fromEntries(missing);
+    await api('/api/settings/save',body);
+    console.log('[Settings] localStorage → 서버 복원:', Object.keys(body).join(', '));
+  }catch(e){}
 }
 
 // === Google Login ===
@@ -3536,6 +3582,7 @@ async function checkGoogleLogin(){
   }catch(e){}
 }
 checkGoogleLogin();
+restoreKeysFromLocal();
 // Google OAuth 콜백 후 부모 창 갱신
 window.addEventListener('message',e=>{
   if(e.data==='google-login-success') checkGoogleLogin();
