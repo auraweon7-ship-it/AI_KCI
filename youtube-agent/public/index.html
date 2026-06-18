@@ -2343,7 +2343,7 @@ async function startAutoPipeline(isResume){
   const autoImgCntByLen={1:5,3:10,4:12,5:15,10:30,15:40,20:50,30:50,40:50,50:50,60:50};
   // Runway 모드: 씬 수는 generate-prompts가 결정, imgCnt는 프롬프트 생성 후 갱신
   const imgCnt=sourceMode==='runway'
-    ? (autoImgCntByLen[len]||Math.min(50,Math.round(len*60/10)))
+    ? Math.min(50,Math.ceil(parseInt(len)*60/8))
     : Math.max(manualImgCnt, autoImgCntByLen[len]||Math.min(50,Math.round(len*60/10)));
   console.log(`[Auto] 영상 ${len}분 → 이미지/클립 ${imgCnt}개 (모드: ${sourceMode})`);
   const voiceId=document.getElementById('autoVoice').value;
@@ -2523,7 +2523,7 @@ async function startAutoPipeline(isResume){
           try{
             const t=await api('/api/runway/text-to-video',{
               prompt: rwPrompt,
-              promptImage, duration:5, ratio:rwRatio
+              promptImage, duration:8, ratio:rwRatio
             });
             return {taskId:t.taskId,idx};
           }catch(e){rwErrors.push(`장면${idx+1}: ${e.message}`);return {taskId:null,idx,err:e.message};}
