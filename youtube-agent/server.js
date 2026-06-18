@@ -3665,9 +3665,8 @@ async function runwayFetch(path, method='GET', body=null, apiKey=null) {
   const r = await fetch(`${RUNWAY_API_BASE}${path}`, opts);
   const data = await r.json();
   if (!r.ok) {
-    const detail = data.errors ? JSON.stringify(data.errors) : (data.error || data.message || '');
     console.error('[Runway] API 오류', r.status, JSON.stringify(data));
-    throw new Error(`Runway API ${r.status}: ${detail || JSON.stringify(data)}`);
+    throw new Error(`Runway API ${r.status}: ${JSON.stringify(data)}`);
   }
   return data;
 }
