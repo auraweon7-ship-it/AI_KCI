@@ -2746,6 +2746,9 @@ let googleUser = null;
 
 app.get('/api/google/auth', (req, res) => {
   if (!process.env.YOUTUBE_CLIENT_ID) {
+    if (req.query.json === '1') {
+      return res.json({ success: false, error: 'YOUTUBE_CLIENT_ID 미설정. API 설정에서 YouTube OAuth Client ID를 입력하세요.' });
+    }
     return res.send(`<html><head><meta charset="UTF-8"></head>
     <body style="background:#0f0f13;color:#fff;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0">
       <div style="text-align:center;max-width:380px;padding:20px">
