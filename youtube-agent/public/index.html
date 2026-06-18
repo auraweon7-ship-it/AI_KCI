@@ -554,8 +554,8 @@ input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper{color:var(--t
     <div class="sec" id="sec-auto">
       <div class="auto-wrap">
         <div class="auto-hero">
-          <h3>🤖 원클릭 자동 제작</h3>
-          <p>주제·시간·언어만 선택하면 대본→이미지→음성→영상→메타데이터→썸네일까지 자동 완료</p>
+          <h3>🎬 영상 제작</h3>
+          <p>주제·시간·언어만 선택하면 대본→이미지→음성→영상→메타데이터→썸네일까지 완료</p>
         </div>
         <div id="resumeBanner" style="display:none;margin-bottom:12px"></div>
         <div class="cd">
@@ -884,9 +884,13 @@ input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper{color:var(--t
               <div style="font-size:9px;color:var(--t3);margin-top:2px">Pexels 세로 영상 10개 · 9:16 · 대본 핵심 요약 · 동일 제목</div>
             </div>
           </label>
-          <div style="display:flex;gap:8px;margin-top:6px;align-items:stretch">
-            <button class="b bp blg" id="autoBtn" onclick="startAutoPipeline()" style="flex:1;justify-content:center;font-size:14px;padding:12px 0;border-radius:10px">🚀 자동 제작 시작</button>
-            <button class="b bs" id="stepModeBtn" onclick="toggleStepMode(this)" style="padding:0 14px;border-radius:10px;font-size:11px;white-space:nowrap" title="단계별 수동 실행 모드">⚡ 단계별</button>
+          <div style="display:flex;gap:6px;margin-bottom:8px;background:var(--bg3);border:1px solid var(--bd);border-radius:10px;padding:4px">
+            <button id="modeAutoBtn" onclick="setProdMode('auto')" style="flex:1;padding:8px 0;border-radius:7px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:var(--grad);color:#fff;transition:all .2s">🚀 자동 제작</button>
+            <button id="modeManualBtn" onclick="setProdMode('manual')" style="flex:1;padding:8px 0;border-radius:7px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:transparent;color:var(--t2);transition:all .2s">🎛️ 수동 제작</button>
+          </div>
+          <div id="prodModeHint" style="font-size:10px;color:var(--t3);margin-bottom:6px;text-align:center">전 단계 자동 실행</div>
+          <div style="display:flex;gap:8px;margin-top:2px;align-items:stretch">
+            <button class="b bp blg" id="autoBtn" onclick="startAutoPipeline()" style="flex:1;justify-content:center;font-size:14px;padding:12px 0;border-radius:10px">🚀 제작 시작</button>
             <button class="b bs blg" id="autoStopBtn" onclick="stopAutoPipeline()" style="display:none;width:140px;justify-content:center;font-size:13px;padding:12px 0;border-radius:10px;color:var(--acc);border-color:var(--acc)">⏹️ 제작 중지</button>
           </div>
           <div class="divider"></div>
@@ -3309,12 +3313,27 @@ async function deleteSchedule(id){
 let STEP_MODE=false;
 let _stepGateResolve=null;
 
-function toggleStepMode(el){
-  STEP_MODE=!STEP_MODE;
-  el.classList.toggle('act',STEP_MODE);
-  el.textContent=STEP_MODE?'⚡ 단계별 ON':'⚡ 단계별';
-  toast(STEP_MODE?'단계별 실행 모드 ON — 각 단계마다 ▶ 클릭 필요':'전체 자동 모드');
+function setProdMode(mode){
+  STEP_MODE = mode === 'manual';
+  const aBtn = document.getElementById('modeAutoBtn');
+  const mBtn = document.getElementById('modeManualBtn');
+  const hint = document.getElementById('prodModeHint');
+  const startBtn = document.getElementById('autoBtn');
+  if(aBtn && mBtn){
+    if(mode === 'auto'){
+      aBtn.style.background = 'var(--grad)'; aBtn.style.color = '#fff';
+      mBtn.style.background = 'transparent'; mBtn.style.color = 'var(--t2)';
+      if(hint) hint.textContent = '전 단계 자동 실행';
+      if(startBtn) startBtn.innerHTML = '🚀 자동 제작 시작';
+    } else {
+      mBtn.style.background = 'linear-gradient(135deg,#a855f7,#6366f1)'; mBtn.style.color = '#fff';
+      aBtn.style.background = 'transparent'; aBtn.style.color = 'var(--t2)';
+      if(hint) hint.textContent = '각 단계마다 ▶ 실행 버튼을 클릭해 수동으로 진행';
+      if(startBtn) startBtn.innerHTML = '🎛️ 수동 제작 시작';
+    }
+  }
 }
+function toggleStepMode(el){ setProdMode(STEP_MODE?'auto':'manual'); }
 
 async function prePause(step){
   if(!STEP_MODE)return;
