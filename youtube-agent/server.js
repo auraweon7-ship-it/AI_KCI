@@ -3710,16 +3710,19 @@ app.post('/api/runway/image-to-video', async (req, res) => {
   } catch(e) { console.error('[Runway] image-to-video 오류:', e.message); res.status(500).json({ success: false, error: e.message }); }
 });
 
-// 텍스트 → 영상
+// 텍스트 → 영상 (gen3a_turbo, image_to_video endpoint, text-only)
 app.post('/api/runway/text-to-video', async (req, res) => {
   try {
     const { prompt, duration=5, ratio='1280:768', apiKey } = req.body;
     if (!prompt) return res.status(400).json({ success: false, error: '프롬프트 필요' });
-    const data = await runwayFetch('/text_to_video', 'POST', {
-      model: 'gen4_turbo', promptText: prompt, duration, ratio
-    }, apiKey);
+    const body = { model: 'gen3a_turbo', promptText: prompt, duration, ratio };
+    console.log('[Runway] text-to-video 요청:', JSON.stringify(body));
+    const data = await runwayFetch('/image_to_video', 'POST', body, apiKey);
     res.json({ success: true, taskId: data.id, status: data.status });
-  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+  } catch(e) {
+    console.error('[Runway] text-to-video 오류:', e.message);
+    res.status(500).json({ success: false, error: e.message });
+  }
 });
 
 // 작업 상태 폴링
