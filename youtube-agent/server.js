@@ -855,10 +855,14 @@ app.post('/api/tts/full-script', async (req, res) => {
 
     const CHUNK_LIMIT = 4900;
 
+    function sanitizeTTSText(t) {
+      return (t||'').replace(/[\uD800-\uDFFF]/g, () => '').replace(/�/g,'');
+    }
+
     async function generateTTSChunk(text, prevText, nextText) {
-      const payload = { text, model_id: 'eleven_multilingual_v2', voice_settings: voiceSettings };
-      if (prevText) payload.previous_text = prevText.slice(-1000);
-      if (nextText) payload.next_text = nextText.slice(0, 1000);
+      const payload = { text: sanitizeTTSText(text), model_id: 'eleven_multilingual_v2', voice_settings: voiceSettings };
+      if (prevText) payload.previous_text = sanitizeTTSText(prevText).slice(-1000);
+      if (nextText) payload.next_text = sanitizeTTSText(nextText).slice(0, 1000);
       const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}`, {
         method: 'POST',
         headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
@@ -892,9 +896,9 @@ app.post('/api/tts/full-script', async (req, res) => {
 
     // with-timestamps: 각 글자별 실제 시작/끝 시각 받아 SRT 정확도 향상
     async function generateTTSChunkWithTimestamps(text, prevText, nextText) {
-      const payload = { text, model_id: 'eleven_multilingual_v2', voice_settings: voiceSettings };
-      if (prevText) payload.previous_text = prevText.slice(-1000);
-      if (nextText) payload.next_text = nextText.slice(0, 1000);
+      const payload = { text: sanitizeTTSText(text), model_id: 'eleven_multilingual_v2', voice_settings: voiceSettings };
+      if (prevText) payload.previous_text = sanitizeTTSText(prevText).slice(-1000);
+      if (nextText) payload.next_text = sanitizeTTSText(nextText).slice(0, 1000);
       const response = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${vid}/with-timestamps`, {
         method: 'POST',
         headers: { 'xi-api-key': apiKey, 'Content-Type': 'application/json' },
