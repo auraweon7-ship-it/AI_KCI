@@ -2632,7 +2632,7 @@ function saveUserSettingsJSON(data) {
 }
 function applyUserKeys(keys) {
   if (!keys) return;
-  const envKeys = ['ANTHROPIC_API_KEY','OPENAI_API_KEY','ELEVENLABS_API_KEY','PEXELS_API_KEY','YOUTUBE_CLIENT_ID','YOUTUBE_CLIENT_SECRET','YOUTUBE_REFRESH_TOKEN'];
+  const envKeys = ['ANTHROPIC_API_KEY','OPENAI_API_KEY','ELEVENLABS_API_KEY','PEXELS_API_KEY','RUNWAYML_API_KEY','YOUTUBE_CLIENT_ID','YOUTUBE_CLIENT_SECRET','YOUTUBE_REFRESH_TOKEN'];
   for (const k of envKeys) {
     if (keys[k]) process.env[k] = keys[k];
   }
