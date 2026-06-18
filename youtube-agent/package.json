@@ -1,6 +1,6 @@
 {
   "name": "youtube-longform-agent",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "YouTube 롱폼 영상 제작 자동화 에이전트",
   "type": "module",
   "main": "server.js",
