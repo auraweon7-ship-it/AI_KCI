@@ -2140,7 +2140,6 @@ async function doAutoTopicAi(){
         </span>
       </div>
       <div style="max-height:300px;overflow-y:auto">${topicListHtml}</div>
-      <button class="b bp blg" onclick="startBatchPipeline()" style="width:100%;justify-content:center;margin-top:8px;border-radius:8px">🚀 체크된 주제 연속 제작 + 업로드</button>
       <div id="batchProgress" style="margin-top:6px;font-size:11px;color:var(--t2)"></div>
     `;
     toast(`AI가 ${topics.length}개 주제를 추천했습니다 ✨`);
@@ -2291,10 +2290,16 @@ function stopAutoPipeline(){
   document.getElementById('autoStopBtn').style.display='none';
   document.getElementById('autoBtn').style.display='';
   document.getElementById('autoBtn').disabled=false;
-  document.getElementById('autoBtn').innerHTML='🚀 자동 제작 시작';
+  document.getElementById('autoBtn').innerHTML='🎬 영상 제작 시작';
   toast('⏹️ 제작 중지됨');
 }
 async function startAutoPipeline(isResume){
+  // 체크된 배치 주제가 있으면 연속 제작으로 전환
+  const batchChecks=document.querySelectorAll('.batch-topic-chk:checked');
+  if(batchChecks.length>0&&!isResume){
+    await startBatchPipeline();
+    return;
+  }
   let topic=document.getElementById('autoTopic').value.trim();
   const kw=document.getElementById('autoTopicKw')?.value.trim()||'';
   // 주제 없으면 키워드로 AI 자동 생성
@@ -2788,7 +2793,7 @@ async function startAutoPipeline(isResume){
   autoRunning=false;
   releaseWakeLock();
   document.getElementById('autoBtn').disabled=false;
-  document.getElementById('autoBtn').innerHTML='🚀 자동 제작 시작';
+  document.getElementById('autoBtn').innerHTML='🎬 영상 제작 시작';
   document.getElementById('autoStopBtn').style.display='none';
 }
 
