@@ -2478,6 +2478,8 @@ async function startAutoPipeline(isResume){
       // Runway 모드: DALL-E로 이미지 생성 → Runway image-to-video (promptImage 필수)
       const totalScenes=S.imgPrompts.length;
       const origin=window.location.origin;
+      // Runway API ratio 변환 ('16:9'→'1280:768', '9:16'→'768:1280')
+      const rwRatio=ratio==='9:16'?'768:1280':ratio==='1:1'?'960:960':'1280:768';
       // 1단계: 이미지 생성
       autoStatus('image','running',`0/${totalScenes} 기준 이미지 생성 중 (DALL-E)...`);
       for(let i=0;i<S.imgPrompts.length;i++){
@@ -2489,22 +2491,23 @@ async function startAutoPipeline(isResume){
         if(i<S.imgPrompts.length-1)await new Promise(r=>setTimeout(r,1000));
       }
       // 2단계: Runway 영상 생성
-      autoStatus('image','running',`0/${totalScenes} Runway Gen-3 영상 생성 중...`);
+      autoStatus('image','running',`0/${totalScenes} Runway Gen-3 영상 생성 중... (ratio: ${rwRatio})`);
       let rwOk=0,rwFail=0;
+      const rwErrors=[];
       const BATCH=3;
       for(let batch=0;batch<totalScenes;batch+=BATCH){
         const batchItems=S.imgPrompts.slice(batch,batch+BATCH);
         const tasks=await Promise.all(batchItems.map(async(scene,bi)=>{
           const idx=batch+bi;
           const promptImage=scene.imageUrl ? (origin+scene.imageUrl) : null;
-          if(!promptImage){return {taskId:null,idx,err:'이미지 생성 실패'};}
+          if(!promptImage){rwErrors.push(`장면${idx+1}: 이미지 생성 실패`);return {taskId:null,idx,err:'이미지 생성 실패'};}
           try{
             const t=await api('/api/runway/text-to-video',{
               prompt: scene.prompt||scene.description||`cinematic scene ${idx+1}`,
-              promptImage, duration:5, ratio
+              promptImage, duration:5, ratio:rwRatio
             });
             return {taskId:t.taskId,idx};
-          }catch(e){return {taskId:null,idx,err:e.message};}
+          }catch(e){rwErrors.push(`장면${idx+1}: ${e.message}`);return {taskId:null,idx,err:e.message};}
         }));
         // 폴링: 배치 내 모든 작업 완료까지 대기
         await Promise.all(tasks.map(async({taskId,idx,err})=>{
@@ -2527,7 +2530,7 @@ async function startAutoPipeline(isResume){
         // 배치 간 1초 대기
         if(batch+BATCH<totalScenes) await new Promise(r=>setTimeout(r,1000));
       }
-      if(rwOk===0) throw new Error(`Runway 영상 생성 전부 실패 (${rwFail}개). API 키·크레딧 확인 필요.`);
+      if(rwOk===0) throw new Error(`Runway 영상 생성 전부 실패 (${rwFail}개).\n${rwErrors.slice(0,3).join('\n')}`);
       markOk('image');save();
       pipeMark('image',{imgPrompts:S.imgPrompts});
       autoTime('image',Math.round((Date.now()-t1)/1000));
