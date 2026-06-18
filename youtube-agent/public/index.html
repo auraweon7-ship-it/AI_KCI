@@ -1992,6 +1992,22 @@ function updateSourceModeHint(){
   // 이미지 모드 전용 메뉴 비활성화 (영상/Runway 모드 시)
   const imageOnly=['autoStyle','autoImgCnt','autoKenburns'];
   const isVideo=mode==='video'||mode==='runway';
+  // Runway 모드: 이미지/영상 수 비활성화 (Runway가 씬 수 결정)
+  const imgCnt2El=document.getElementById('autoImgCnt2');
+  const imgCnt2Wrap=imgCnt2El?.closest('.fg');
+  if(imgCnt2El){
+    imgCnt2El.disabled=mode==='runway';
+    imgCnt2El.style.opacity=mode==='runway'?'0.4':'1';
+    imgCnt2El.style.cursor=mode==='runway'?'not-allowed':'';
+  }
+  if(imgCnt2Wrap){
+    const lbl=imgCnt2Wrap.querySelector('.fl');
+    if(lbl){
+      lbl.dataset.baseText=lbl.dataset.baseText||lbl.textContent;
+      lbl.textContent=mode==='runway'?lbl.dataset.baseText+' (Runway 자동)':lbl.dataset.baseText;
+    }
+    imgCnt2Wrap.style.opacity=mode==='runway'?'0.5':'1';
+  }
   imageOnly.forEach(id=>{
     const el=document.getElementById(id);
     if(!el)return;
@@ -2312,8 +2328,11 @@ async function startAutoPipeline(isResume){
   // 영상 길이에 따라 이미지/클립 수 자동 계산 (10초당 1개, 최소 5, 최대 50)
   const manualImgCnt=parseInt(document.getElementById('autoImgCnt2').value)||8;
   const autoImgCntByLen={1:5,3:10,4:12,5:15,10:30,15:40,20:50,30:50,40:50,50:50,60:50};
-  const imgCnt=Math.max(manualImgCnt, autoImgCntByLen[len]||Math.min(50,Math.round(len*60/10)));
-  console.log(`[Auto] 영상 ${len}분 → 이미지/클립 ${imgCnt}개`);
+  // Runway 모드: 씬 수는 generate-prompts가 결정, imgCnt는 프롬프트 생성 후 갱신
+  const imgCnt=sourceMode==='runway'
+    ? (autoImgCntByLen[len]||Math.min(50,Math.round(len*60/10)))
+    : Math.max(manualImgCnt, autoImgCntByLen[len]||Math.min(50,Math.round(len*60/10)));
+  console.log(`[Auto] 영상 ${len}분 → 이미지/클립 ${imgCnt}개 (모드: ${sourceMode})`);
   const voiceId=document.getElementById('autoVoice').value;
   const transition=document.getElementById('autoTrans').value;
   const transDur=parseFloat(document.getElementById('autoTransDur').value)||0.8;
