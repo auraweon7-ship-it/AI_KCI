@@ -2464,21 +2464,33 @@ async function startAutoPipeline(isResume){
         setPreview('image',`<div>🎬 ${ok}개 클립</div><div class="sp-grid">${clipsHtml}</div>`);
       }catch(e){autoStatus('image','fail',e.message);throw e}
     } else if(sourceMode==='runway'){
-      // Runway 모드: 대본 기반 장면별 text-to-video (Gen-4 Turbo) — 이미지 생성 생략
+      // Runway 모드: DALL-E로 이미지 생성 → Runway image-to-video (promptImage 필수)
       const totalScenes=S.imgPrompts.length;
-      autoStatus('image','running',`Runway Gen-4 Turbo: 0/${totalScenes} 장면 영상 생성 중...`);
+      const origin=window.location.origin;
+      // 1단계: 이미지 생성
+      autoStatus('image','running',`0/${totalScenes} 기준 이미지 생성 중 (DALL-E)...`);
+      for(let i=0;i<S.imgPrompts.length;i++){
+        autoStatus('image','running',`${i+1}/${totalScenes} 이미지 생성 중...`);
+        try{
+          const d=await api('/api/images/generate',{prompt:S.imgPrompts[i].prompt,style,ratio,index:i+1});
+          S.imgPrompts[i].imageUrl=d.imageUrl; // 상대 경로: /output/images/scene_N.png
+        }catch(e){S.imgPrompts[i].imageUrl=null;}
+        if(i<S.imgPrompts.length-1)await new Promise(r=>setTimeout(r,1000));
+      }
+      // 2단계: Runway 영상 생성
+      autoStatus('image','running',`0/${totalScenes} Runway Gen-3 영상 생성 중...`);
       let rwOk=0,rwFail=0;
-      // 장면 영상 병렬 생성 (최대 3개 동시, Runway rate limit 고려)
       const BATCH=3;
       for(let batch=0;batch<totalScenes;batch+=BATCH){
         const batchItems=S.imgPrompts.slice(batch,batch+BATCH);
-        // 배치 내 모든 작업 동시 시작
         const tasks=await Promise.all(batchItems.map(async(scene,bi)=>{
           const idx=batch+bi;
+          const promptImage=scene.imageUrl ? (origin+scene.imageUrl) : null;
+          if(!promptImage){return {taskId:null,idx,err:'이미지 생성 실패'};}
           try{
             const t=await api('/api/runway/text-to-video',{
               prompt: scene.prompt||scene.description||`cinematic scene ${idx+1}`,
-              duration:5, ratio
+              promptImage, duration:5, ratio
             });
             return {taskId:t.taskId,idx};
           }catch(e){return {taskId:null,idx,err:e.message};}

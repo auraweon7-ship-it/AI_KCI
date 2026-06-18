@@ -3709,13 +3709,14 @@ app.post('/api/runway/image-to-video', async (req, res) => {
   } catch(e) { console.error('[Runway] image-to-video 오류:', e.message); res.status(500).json({ success: false, error: e.message }); }
 });
 
-// 텍스트 → 영상 (gen3a_turbo, image_to_video endpoint, text-only)
+// 텍스트+이미지 → 영상 (gen3a_turbo, promptImage 필수)
 app.post('/api/runway/text-to-video', async (req, res) => {
   try {
-    const { prompt, duration=5, ratio='1280:768', apiKey } = req.body;
+    const { prompt, promptImage, duration=5, ratio='1280:768', apiKey } = req.body;
     if (!prompt) return res.status(400).json({ success: false, error: '프롬프트 필요' });
-    const body = { model: 'gen3a_turbo', promptText: prompt, duration, ratio };
-    console.log('[Runway] text-to-video 요청:', JSON.stringify(body));
+    if (!promptImage) return res.status(400).json({ success: false, error: 'promptImage 필요 (Runway image_to_video는 이미지 필수)' });
+    const body = { model: 'gen3a_turbo', promptText: prompt, promptImage, duration, ratio };
+    console.log('[Runway] image-to-video 요청 (promptImage 앞 50자):', typeof promptImage === 'string' ? promptImage.slice(0,50) : 'array');
     const data = await runwayFetch('/image_to_video', 'POST', body, apiKey);
     res.json({ success: true, taskId: data.id, status: data.status });
   } catch(e) {
