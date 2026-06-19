@@ -602,6 +602,7 @@ ${refText ? `\n[참고 대본 텍스트]:\n아래 텍스트를 핵심 자료로 
 // 4. 이미지 생성 (ChatGPT Images 2.0)
 // ========================
 app.post('/api/images/generate', async (req, res) => {
+  req.setTimeout(300000); res.setTimeout(300000);
   try {
     const { projectId, prompt, style, index, ratio } = req.body;
 
