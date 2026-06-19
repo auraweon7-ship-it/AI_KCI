@@ -657,14 +657,9 @@ app.post('/api/images/generate', async (req, res) => {
 
     const fullPrompt = `${stylePrefix[style] || ''} ${prompt}. High quality, detailed, professional.`;
 
-    // dall-e-3: 빠름(10-15초), gpt-image-1: 느림(1-3분) — Runway 모드에서 속도 중요
-    const useModel = req.body.fastMode ? 'dall-e-3' : 'gpt-image-1';
-    const dalleSize = useModel === 'dall-e-3'
-      ? (ratio === '9:16' ? '1024x1792' : ratio === '1:1' ? '1024x1024' : '1792x1024')
-      : (sizeMap[ratio] || '1536x1024');
-    const imageReqOpts = useModel === 'dall-e-3'
-      ? { model: 'dall-e-3', prompt: fullPrompt, size: dalleSize, quality: 'standard', n: 1 }
-      : { model: 'gpt-image-1', prompt: fullPrompt, size: sizeMap[ratio] || '1536x1024', quality: 'high', n: 1 };
+    // gpt-image-1: fastMode=quality:low(빠름), 일반=quality:high
+    const imageQuality = req.body.fastMode ? 'low' : 'high';
+    const imageReqOpts = { model: 'gpt-image-1', prompt: fullPrompt, size: sizeMap[ratio] || '1536x1024', quality: imageQuality, n: 1 };
     const image = await openai.images.generate(imageReqOpts);
 
     const filename = `scene_${index || Date.now()}.png`;
