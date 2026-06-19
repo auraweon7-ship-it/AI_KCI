@@ -2348,7 +2348,7 @@ async function startAutoPipeline(isResume){
   const imgCnt=sourceMode==='runway'
     ? Math.min(50,Math.ceil(parseInt(len)*60/8))  // runway: 8초 클립
     : sourceMode==='falai'
-    ? Math.min(50,Math.ceil(parseInt(len)*60/5))  // falai: 5초 클립
+    ? Math.min(50,Math.ceil(parseInt(len)*60/8))  // falai: 8초 단위 계산
     : Math.max(manualImgCnt, autoImgCntByLen[len]||Math.min(50,Math.round(len*60/10)));
   console.log(`[Auto] 영상 ${len}분 → 이미지/클립 ${imgCnt}개 (모드: ${sourceMode})`);
   const voiceId=document.getElementById('autoVoice').value;
@@ -2567,21 +2567,40 @@ async function startAutoPipeline(isResume){
         setPreview('image',`<div>🎬 ${clips.length}개 장면 영상</div><div class="sp-grid">${clipsHtml}</div>`);
       }catch(e){}
     } else if(sourceMode==='falai'){
-      // fal.ai Wan2.1 모드: ①이미지 생성 → ②fal.ai I2V
+      // fal.ai Wan2.1 모드: ①영상 프롬프트 생성 → ②DALL-E 이미지 생성 → ③fal.ai I2V
       const totalScenes=S.imgPrompts.length;
       const origin=window.location.origin;
       const falRatio=ratio==='9:16'?'9:16':ratio==='1:1'?'1:1':'16:9';
 
-      // 1단계: DALL-E 이미지 생성
+      // 1단계: fal.ai 영상 전용 motion prompt 생성 (Claude Haiku)
+      autoStatus('image','running',`⚡ fal.ai 영상 프롬프트 생성 중... (${totalScenes}개 장면, 8초 단위)`);
+      try{
+        const fpRes=await api('/api/runway/generate-prompts',{script:S.script,scenes:S.imgPrompts});
+        if(fpRes.prompts){
+          fpRes.prompts.forEach(p=>{
+            const idx=(p.scene||1)-1;
+            if(S.imgPrompts[idx]) S.imgPrompts[idx].runwayPrompt=p.runwayPrompt||null;
+          });
+        }
+        autoStatus('image','running',`✅ 영상 프롬프트 ${totalScenes}개 완료 → 이미지 생성 시작...`);
+      }catch(e){
+        autoStatus('image','running',`⚠️ 영상 프롬프트 생성 실패 (기본 프롬프트 사용): ${e.message}`);
+      }
+      await new Promise(r=>setTimeout(r,500));
+
+      // 2단계: DALL-E 이미지 생성
       autoStatus('image','running',`0/${totalScenes} 기준 이미지 생성 중 (DALL-E)...`);
+      let imgFail=0;
       for(let i=0;i<S.imgPrompts.length;i++){
         autoStatus('image','running',`${i+1}/${totalScenes} 이미지 생성 중...`);
         try{
           const d=await api('/api/images/generate',{prompt:S.imgPrompts[i].prompt,style,ratio,index:i+1,fastMode:true});
           S.imgPrompts[i].imageUrl=d.imageUrl;
-        }catch(e){S.imgPrompts[i].imageUrl=null;}
+        }catch(e){S.imgPrompts[i].imageUrl=null;imgFail++;}
         if(i<S.imgPrompts.length-1)await new Promise(r=>setTimeout(r,800));
       }
+      if(imgFail===totalScenes) throw new Error(`DALL-E 이미지 생성 전부 실패 (${imgFail}개). OpenAI API 키 및 할당량을 확인하세요.`);
+      if(imgFail>0) autoStatus('image','running',`⚠️ 이미지 ${totalScenes-imgFail}/${totalScenes} 생성 성공 (${imgFail}개 실패) — 영상 생성 계속...`);
 
       // 2단계: fal.ai 영상 생성
       autoStatus('image','running',`0/${totalScenes} fal.ai Wan2.1 영상 생성 중...`);
