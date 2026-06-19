@@ -1654,10 +1654,10 @@ app.post('/api/render/video', async (req, res) => {
     const outH = isVertical ? 1920 : 1080;
     const project = getProject(projectId);
 
-    // 소스 모드: 'image' (기본) / 'video' (Pexels) / 'runway' (Runway AI 영상)
-    const useVideo = sourceMode === 'video' || sourceMode === 'runway';
+    // 소스 모드: 'image' (기본) / 'video' (Pexels) / 'runway' (Runway AI 영상) / 'falai' (fal.ai Wan2.1)
+    const useVideo = sourceMode === 'video' || sourceMode === 'runway' || sourceMode === 'falai';
     const sourceDir = useVideo ? 'clips' : 'images';
-    const sourcePrefix = sourceMode === 'runway' ? 'runway_' : (useVideo ? 'clip_' : 'scene_');
+    const sourcePrefix = sourceMode === 'runway' ? 'runway_' : sourceMode === 'falai' ? 'falai_' : (useVideo ? 'clip_' : 'scene_');
     const sourceExt = useVideo ? '.mp4' : '.png';
 
     // 이미지/영상 클립: 파일명 순서대로
@@ -2648,7 +2648,7 @@ function saveUserSettingsJSON(data) {
 }
 function applyUserKeys(keys) {
   if (!keys) return;
-  const envKeys = ['ANTHROPIC_API_KEY','OPENAI_API_KEY','ELEVENLABS_API_KEY','PEXELS_API_KEY','RUNWAYML_API_KEY','YOUTUBE_CLIENT_ID','YOUTUBE_CLIENT_SECRET','YOUTUBE_REFRESH_TOKEN'];
+  const envKeys = ['ANTHROPIC_API_KEY','OPENAI_API_KEY','ELEVENLABS_API_KEY','PEXELS_API_KEY','RUNWAYML_API_KEY','FALAI_API_KEY','YOUTUBE_CLIENT_ID','YOUTUBE_CLIENT_SECRET','YOUTUBE_REFRESH_TOKEN'];
   for (const k of envKeys) {
     if (keys[k]) process.env[k] = keys[k];
   }
@@ -2694,6 +2694,7 @@ app.get('/api/settings/status', (req, res) => {
       elevenlabs: !!ELEVENLABS_KEY,
       pexels: !!PEXELS_KEY,
       runway: !!process.env.RUNWAYML_API_KEY,
+      falai: !!process.env.FALAI_API_KEY,
       youtube: !!process.env.YOUTUBE_CLIENT_ID
     },
     masked: {
@@ -2702,6 +2703,7 @@ app.get('/api/settings/status', (req, res) => {
       elevenlabs: ELEVENLABS_KEY ? maskKey(ELEVENLABS_KEY) : '',
       pexels: PEXELS_KEY ? maskKey(PEXELS_KEY) : '',
       runway: process.env.RUNWAYML_API_KEY ? maskKey(process.env.RUNWAYML_API_KEY) : '',
+      falai: process.env.FALAI_API_KEY ? maskKey(process.env.FALAI_API_KEY) : '',
       ytClientId: process.env.YOUTUBE_CLIENT_ID ? maskKey(process.env.YOUTUBE_CLIENT_ID) : ''
     }
   });
@@ -2711,7 +2713,7 @@ app.post('/api/settings/save', async (req, res) => {
   try {
     const updates = req.body || {};
     const envKeys = ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'ELEVENLABS_API_KEY', 'PEXELS_API_KEY',
-                     'RUNWAYML_API_KEY',
+                     'RUNWAYML_API_KEY', 'FALAI_API_KEY',
                      'YOUTUBE_CLIENT_ID', 'YOUTUBE_CLIENT_SECRET', 'YOUTUBE_REDIRECT_URI', 'YOUTUBE_REFRESH_TOKEN', 'PORT'];
 
     // 1. 메모리에 즉시 반영 (가장 중요)
@@ -3794,6 +3796,83 @@ app.get('/api/runway/status/:taskId', async (req, res) => {
       videoUrl: data.output?.[0] || null,
       progress: data.progress || 0
     });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// ========================
+// fal.ai Wan2.1 이미지→영상
+// ========================
+const FAL_API_BASE = 'https://queue.fal.run/fal-ai/wan/v2.1/i2v';
+
+async function falFetch(path, method='GET', body=null, apiKey=null) {
+  const key = apiKey || process.env.FALAI_API_KEY;
+  if (!key) throw new Error('FALAI_API_KEY 미설정. 설정에서 API 키를 입력하세요.');
+  const opts = { method, headers: { 'Authorization': `Key ${key}`, 'Content-Type': 'application/json' } };
+  if (body) opts.body = JSON.stringify(body);
+  const r = await fetch(`${FAL_API_BASE}${path}`, opts);
+  const d = await r.json();
+  if (!r.ok) throw new Error(d?.detail || d?.error || `fal.ai 오류 ${r.status}`);
+  return d;
+}
+
+// fal.ai 이미지→영상 생성 요청
+app.post('/api/falai/image-to-video', async (req, res) => {
+  req.setTimeout(120000); res.setTimeout(120000);
+  try {
+    const { imageUrl, prompt, duration=5, ratio='16:9', apiKey } = req.body;
+    if (!imageUrl) return res.status(400).json({ success: false, error: 'imageUrl 필요' });
+    const aspectRatio = ratio === '9:16' ? '9:16' : ratio === '1:1' ? '1:1' : '16:9';
+    const data = await falFetch('', 'POST', {
+      image_url: imageUrl,
+      prompt: prompt || 'cinematic smooth motion',
+      duration: String(Math.min(duration, 5)), // Wan2.1 최대 5초
+      resolution: '480p',
+      aspect_ratio: aspectRatio
+    }, apiKey);
+    res.json({ success: true, requestId: data.request_id });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// fal.ai 상태 폴링
+app.get('/api/falai/status/:requestId', async (req, res) => {
+  try {
+    const key = req.query.apiKey || process.env.FALAI_API_KEY;
+    if (!key) return res.status(400).json({ success: false, error: 'FALAI_API_KEY 미설정' });
+    const r = await fetch(`${FAL_API_BASE}/requests/${req.params.requestId}/status`, {
+      headers: { 'Authorization': `Key ${key}` }
+    });
+    const d = await r.json();
+    // status: IN_QUEUE / IN_PROGRESS / COMPLETED
+    res.json({ success: true, status: d.status, logs: d.logs });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// fal.ai 결과 조회
+app.get('/api/falai/result/:requestId', async (req, res) => {
+  try {
+    const key = req.query.apiKey || process.env.FALAI_API_KEY;
+    if (!key) return res.status(400).json({ success: false, error: 'FALAI_API_KEY 미설정' });
+    const r = await fetch(`${FAL_API_BASE}/requests/${req.params.requestId}`, {
+      headers: { 'Authorization': `Key ${key}` }
+    });
+    const d = await r.json();
+    const videoUrl = d?.video?.url || d?.output?.video?.url || null;
+    res.json({ success: true, videoUrl, status: d.status });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
+// fal.ai 영상 로컬 다운로드
+app.post('/api/falai/download', async (req, res) => {
+  try {
+    const { videoUrl, index=0 } = req.body;
+    if (!videoUrl) return res.status(400).json({ success: false, error: 'videoUrl 필요' });
+    const r = await fetch(videoUrl);
+    if (!r.ok) throw new Error(`다운로드 실패: ${r.status}`);
+    const filename = `falai_${String(index).padStart(3,'0')}.mp4`;
+    const clipsDir = path.join(OUTPUT_DIR, 'clips');
+    fs.mkdirSync(clipsDir, { recursive: true });
+    fs.writeFileSync(path.join(clipsDir, filename), Buffer.from(await r.arrayBuffer()));
+    res.json({ success: true, filename, url: `/output/clips/${filename}` });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 

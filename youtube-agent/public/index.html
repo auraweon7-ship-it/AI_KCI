@@ -700,6 +700,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper{color:var(--t
                 <option value="image">🖼️ 이미지 기반</option>
                 <option value="video" selected>🎬 영상 기반 (Pexels)</option>
                 <option value="runway">🎥 AI 영상 (Runway Gen-3/4)</option>
+                <option value="falai">⚡ AI 영상 (fal.ai Wan2.1)</option>
               </select>
               <div class="fh" id="autoSourceModeHint">이미지 + Ken Burns</div>
             </div>
@@ -1985,13 +1986,15 @@ function updateSourceModeHint(){
       hint.innerHTML='⚠️ Pexels API 키 필요 (.env에 PEXELS_API_KEY 설정). <a href="https://www.pexels.com/api/" target="_blank" style="color:var(--acc)">무료 발급</a>';
     } else if(mode==='runway'){
       hint.innerHTML='⚠️ Runway API 키 필요 (설정 → RUNWAYML_API_KEY). Gen-3a Turbo (이미지→영상) 또는 Gen-4 Turbo (텍스트→영상) 사용';
+    } else if(mode==='falai'){
+      hint.innerHTML='⚡ fal.ai Wan2.1 I2V — 이미지→영상, 약 $0.015/클립. <a href="https://fal.ai/dashboard/keys" target="_blank" style="color:var(--acc)">FALAI_API_KEY 발급</a>';
     } else {
       hint.textContent='AI 생성 이미지에 카메라 움직임을 적용합니다';
     }
   }
   // 이미지 모드 전용 메뉴 비활성화 (영상/Runway 모드 시)
   const imageOnly=['autoStyle','autoImgCnt','autoKenburns'];
-  const isVideo=mode==='video'||mode==='runway';
+  const isVideo=mode==='video'||mode==='runway'||mode==='falai';
   // Runway 모드: 이미지/영상 수 비활성화 (Runway가 씬 수 결정)
   const imgCnt2El=document.getElementById('autoImgCnt2');
   const imgCnt2Wrap=imgCnt2El?.closest('.fg');
@@ -2343,7 +2346,9 @@ async function startAutoPipeline(isResume){
   const autoImgCntByLen={1:5,3:10,4:12,5:15,10:30,15:40,20:50,30:50,40:50,50:50,60:50};
   // Runway 모드: 씬 수는 generate-prompts가 결정, imgCnt는 프롬프트 생성 후 갱신
   const imgCnt=sourceMode==='runway'
-    ? Math.min(50,Math.ceil(parseInt(len)*60/8))
+    ? Math.min(50,Math.ceil(parseInt(len)*60/8))  // runway: 8초 클립
+    : sourceMode==='falai'
+    ? Math.min(50,Math.ceil(parseInt(len)*60/5))  // falai: 5초 클립
     : Math.max(manualImgCnt, autoImgCntByLen[len]||Math.min(50,Math.round(len*60/10)));
   console.log(`[Auto] 영상 ${len}분 → 이미지/클립 ${imgCnt}개 (모드: ${sourceMode})`);
   const voiceId=document.getElementById('autoVoice').value;
@@ -2560,6 +2565,71 @@ async function startAutoPipeline(isResume){
         const clips=(fl.files.clips||[]).filter(f=>f.name.startsWith('runway_'));
         const clipsHtml=clips.map(c=>`<video src="${c.url}" muted style="max-width:100%"></video>`).join('');
         setPreview('image',`<div>🎬 ${clips.length}개 장면 영상</div><div class="sp-grid">${clipsHtml}</div>`);
+      }catch(e){}
+    } else if(sourceMode==='falai'){
+      // fal.ai Wan2.1 모드: ①이미지 생성 → ②fal.ai I2V
+      const totalScenes=S.imgPrompts.length;
+      const origin=window.location.origin;
+      const falRatio=ratio==='9:16'?'9:16':ratio==='1:1'?'1:1':'16:9';
+
+      // 1단계: DALL-E 이미지 생성
+      autoStatus('image','running',`0/${totalScenes} 기준 이미지 생성 중 (DALL-E)...`);
+      for(let i=0;i<S.imgPrompts.length;i++){
+        autoStatus('image','running',`${i+1}/${totalScenes} 이미지 생성 중...`);
+        try{
+          const d=await api('/api/images/generate',{prompt:S.imgPrompts[i].prompt,style,ratio,index:i+1,fastMode:true});
+          S.imgPrompts[i].imageUrl=d.imageUrl;
+        }catch(e){S.imgPrompts[i].imageUrl=null;}
+        if(i<S.imgPrompts.length-1)await new Promise(r=>setTimeout(r,800));
+      }
+
+      // 2단계: fal.ai 영상 생성
+      autoStatus('image','running',`0/${totalScenes} fal.ai Wan2.1 영상 생성 중...`);
+      let falOk=0,falFail=0;
+      const falErrors=[];
+      const FAL_BATCH=3;
+      for(let batch=0;batch<totalScenes;batch+=FAL_BATCH){
+        const batchItems=S.imgPrompts.slice(batch,batch+FAL_BATCH);
+        const tasks=await Promise.all(batchItems.map(async(scene,bi)=>{
+          const idx=batch+bi;
+          const promptImage=scene.imageUrl?(origin+scene.imageUrl):null;
+          if(!promptImage){falErrors.push(`장면${idx+1}: 이미지 없음`);return{requestId:null,idx};}
+          const falPrompt=scene.runwayPrompt||scene.prompt||scene.description||`cinematic scene ${idx+1}`;
+          try{
+            const t=await api('/api/falai/image-to-video',{imageUrl:promptImage,prompt:falPrompt,duration:5,ratio:falRatio});
+            return{requestId:t.requestId,idx};
+          }catch(e){falErrors.push(`장면${idx+1}: ${e.message}`);return{requestId:null,idx};}
+        }));
+        // 폴링
+        await Promise.all(tasks.map(async({requestId,idx})=>{
+          if(!requestId){falFail++;return;}
+          autoStatus('image','running',`fal.ai 폴링 ${idx+1}/${totalScenes}...`);
+          let done=false;
+          for(let p=0;p<60&&!done;p++){
+            await new Promise(r=>setTimeout(r,3000));
+            try{
+              const st=await fetch('/api/falai/status/'+requestId).then(r=>r.json());
+              if(st.status==='COMPLETED'){
+                const result=await fetch('/api/falai/result/'+requestId).then(r=>r.json());
+                if(result.videoUrl){await api('/api/falai/download',{videoUrl:result.videoUrl,index:idx+1});}
+                falOk++;done=true;
+              }else if(st.status==='FAILED'){falErrors.push(`장면${idx+1}: fal.ai 실패`);falFail++;done=true;}
+            }catch(e){}
+          }
+          if(!done)falFail++;
+        }));
+        autoStatus('image','running',`fal.ai: ${falOk}/${totalScenes} 완료, ${falFail} 실패...`);
+        if(batch+FAL_BATCH<totalScenes)await new Promise(r=>setTimeout(r,500));
+      }
+      if(falOk===0)throw new Error(`fal.ai 영상 생성 전부 실패 (${falFail}개).\n${falErrors.slice(0,3).join('\n')}`);
+      markOk('image');save();
+      pipeMark('image',{imgPrompts:S.imgPrompts});
+      autoTime('image',Math.round((Date.now()-t1)/1000));
+      autoStatus('image','done',`fal.ai Wan2.1 영상 ${falOk}/${totalScenes}개 완료${falFail>0?` (실패 ${falFail})`:''}`);
+      try{
+        const fl=await fetch('/api/files/list').then(r=>r.json());
+        const clips=(fl.files.clips||[]).filter(f=>f.name.startsWith('falai_'));
+        setPreview('image',`<div>⚡ ${clips.length}개 fal.ai 영상</div><div class="sp-grid">${clips.map(c=>`<video src="${c.url}" muted style="max-width:100%"></video>`).join('')}</div>`);
       }catch(e){}
     } else {
       // 이미지 모드: 기존 로직
@@ -3465,8 +3535,8 @@ async function openSettings(){
   try{
     const d=await fetch('/api/settings/status').then(r=>r.json());
     const st=document.getElementById('settingsStatus');
-    const keys=['anthropic','openai','elevenlabs','pexels','youtube'];
-    const labels={'anthropic':'Claude','openai':'GPT Image','elevenlabs':'ElevenLabs','pexels':'Pexels','youtube':'YouTube'};
+    const keys=['anthropic','openai','elevenlabs','pexels','youtube','runway','falai'];
+    const labels={'anthropic':'Claude','openai':'GPT Image','elevenlabs':'ElevenLabs','pexels':'Pexels','youtube':'YouTube','runway':'Runway','falai':'fal.ai'};
     st.innerHTML=keys.map(k=>{
       const ok=d.keys?.[k];
       return `<span style="display:inline-block;font-size:9px;padding:2px 8px;border-radius:8px;margin:2px;${ok?'background:rgba(52,211,153,.15);color:var(--ok)':'background:rgba(255,59,59,.1);color:#ff5252'}">${labels[k]} ${ok?'✅':'❌'}</span>`;
@@ -3474,7 +3544,7 @@ async function openSettings(){
     // 마스킹된 키 표시 + 입력됨 배지
     const fieldMap={
       anthropic:'setAnthropicKey', openai:'setOpenaiKey',
-      elevenlabs:'setElevenlabsKey', pexels:'setPexelsKey', runway:'setRunwayKey'
+      elevenlabs:'setElevenlabsKey', pexels:'setPexelsKey', runway:'setRunwayKey', falai:'setFalaiKey'
     };
     Object.entries(fieldMap).forEach(([k,id])=>{
       const el=document.getElementById(id);
@@ -3515,7 +3585,8 @@ async function openSettings(){
     const localMap={
       ANTHROPIC_API_KEY:'setAnthropicKey', OPENAI_API_KEY:'setOpenaiKey',
       ELEVENLABS_API_KEY:'setElevenlabsKey', PEXELS_API_KEY:'setPexelsKey',
-      RUNWAYML_API_KEY:'setRunwayKey', YOUTUBE_CLIENT_ID:'setYtClientId',
+      RUNWAYML_API_KEY:'setRunwayKey', FALAI_API_KEY:'setFalaiKey',
+      YOUTUBE_CLIENT_ID:'setYtClientId',
       YOUTUBE_CLIENT_SECRET:'setYtClientSecret'
     };
     Object.entries(localMap).forEach(([k,id])=>{
@@ -3544,6 +3615,7 @@ async function saveSettings(){
   const ek=document.getElementById('setElevenlabsKey').value.trim();
   const pk=document.getElementById('setPexelsKey').value.trim();
   const rk=document.getElementById('setRunwayKey').value.trim();
+  const fk=document.getElementById('setFalaiKey').value.trim();
   const yci=document.getElementById('setYtClientId').value.trim();
   const ycs=document.getElementById('setYtClientSecret').value.trim();
   const yrt=document.getElementById('setYtRefreshToken').value.trim();
@@ -3552,6 +3624,7 @@ async function saveSettings(){
   if(ek) body.ELEVENLABS_API_KEY=ek;
   if(pk) body.PEXELS_API_KEY=pk;
   if(rk) body.RUNWAYML_API_KEY=rk;
+  if(fk) body.FALAI_API_KEY=fk;
   if(yci) body.YOUTUBE_CLIENT_ID=yci;
   if(ycs) body.YOUTUBE_CLIENT_SECRET=ycs;
   if(yrt) body.YOUTUBE_REFRESH_TOKEN=yrt;
@@ -3791,6 +3864,10 @@ async function adminDeleteUser(email){
     <div class="fg"><label class="fl">🎥 Runway (AI 영상 생성) <span class="badge badge-api">유료</span></label>
       <input type="password" class="fi" id="setRunwayKey" placeholder="key_...">
       <div class="fh">Runway Gen-3/Gen-4 — 장면별 AI 영상 생성. <a href="https://app.runwayml.com/settings" target="_blank" style="color:var(--acc)">API 키 발급</a></div>
+    </div>
+    <div class="fg"><label class="fl">⚡ fal.ai (Wan2.1 AI 영상) <span class="badge badge-key">저비용</span></label>
+      <input type="password" class="fi" id="setFalaiKey" placeholder="...">
+      <div class="fh">Wan2.1 이미지→영상, ~$0.015/클립. <a href="https://fal.ai/dashboard/keys" target="_blank" style="color:var(--acc)">무료 가입 후 API 키 발급</a></div>
     </div>
 
     <div class="divider"></div>
