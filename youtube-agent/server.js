@@ -471,6 +471,7 @@ JSON 배열만 반환:` }]
 // 2. 대본 기획 (Claude)
 // ========================
 app.post('/api/plan/generate', async (req, res) => {
+  req.setTimeout(600000); res.setTimeout(600000);
   try {
     const { projectId, topic, target, length, tone, style, notes, refText, videoType } = req.body;
     const project = getProject(projectId);
@@ -521,6 +522,7 @@ ${refText ? `\n[참고 대본 텍스트]:\n아래 텍스트를 핵심 자료로 
 // 3. 대본 생성 (Claude)
 // ========================
 app.post('/api/script/generate', async (req, res) => {
+  req.setTimeout(600000); res.setTimeout(600000);
   try {
     const { projectId, topic, target, wordCount, narration, plan, tone, language, refText, targetMinutes, videoType } = req.body;
     const project = getProject(projectId);
@@ -690,6 +692,7 @@ app.post('/api/images/generate', async (req, res) => {
 });
 
 app.post('/api/images/generate-prompts', async (req, res) => {
+  req.setTimeout(300000); res.setTimeout(300000);
   try {
     const { projectId, script, style, count, videoType } = req.body;
     const project = getProject(projectId);
@@ -1162,6 +1165,7 @@ app.post('/api/tts/sample', async (req, res) => {
 // 숏폼 대본 요약
 // ========================
 app.post('/api/shorts/summarize', async (req, res) => {
+  req.setTimeout(300000); res.setTimeout(300000);
   try {
     checkAnthropic();
     const { script, topic, language } = req.body;
@@ -2102,6 +2106,7 @@ app.delete('/api/project/:id', (req, res) => {
 // 7. 제목/설명/태그 생성 (Claude)
 // ========================
 app.post('/api/meta/generate', async (req, res) => {
+  req.setTimeout(300000); res.setTimeout(300000);
   try {
     const { projectId, topic, script, languages } = req.body;
     const project = getProject(projectId);
