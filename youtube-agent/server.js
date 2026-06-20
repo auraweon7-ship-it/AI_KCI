@@ -3798,7 +3798,7 @@ app.get('/api/runway/status/:taskId', async (req, res) => {
 // ========================
 // fal.ai Wan2.1 이미지→영상
 // ========================
-const FAL_API_BASE = 'https://queue.fal.run/fal-ai/wan/v2.1/i2v';
+const FAL_API_BASE = 'https://queue.fal.run/fal-ai/wan-i2v';
 
 async function falFetch(path, method='GET', body=null, apiKey=null) {
   const key = apiKey || process.env.FALAI_API_KEY;
@@ -3875,11 +3875,14 @@ app.post('/api/falai/image-to-video', async (req, res) => {
     const falImageUrl = await resolveImageUrlForFal(imageUrl, apiKey);
     console.log(`[fal.ai i2v] imageUrl: ${imageUrl} → ${falImageUrl}`);
 
+    // num_frames: 5초×16fps=80 → 81 (최소값), duration 파라미터 없음
+    const numFrames = Math.min(Math.max(Math.round(duration * 16), 81), 100);
     const data = await falFetch('', 'POST', {
       image_url: falImageUrl,
       prompt: prompt || 'cinematic smooth motion',
-      duration: String(Math.min(duration, 5)), // Wan2.1 최대 5초
-      resolution: '480p',
+      num_frames: numFrames,
+      frames_per_second: 16,
+      resolution: '720p',
       aspect_ratio: aspectRatio
     }, apiKey);
     res.json({ success: true, requestId: data.request_id, statusUrl: data.status_url, responseUrl: data.response_url });
