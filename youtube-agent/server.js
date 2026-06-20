@@ -3872,7 +3872,7 @@ app.post('/api/falai/text-to-video', async (req, res) => {
     const key = apiKey || process.env.FALAI_API_KEY;
     if (!key) return res.status(400).json({ success: false, error: 'FALAI_API_KEY 미설정' });
     const aspectRatio = ratio === '9:16' ? '9:16' : ratio === '1:1' ? '1:1' : '16:9';
-    const r = await fetch('https://queue.fal.run/fal-ai/seedance-2-0/text-to-video', {
+    const r = await fetch('https://queue.fal.run/bytedance/seedance-2.0/text-to-video', {
       method: 'POST',
       headers: { 'Authorization': `Key ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
