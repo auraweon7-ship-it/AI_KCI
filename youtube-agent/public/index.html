@@ -2000,18 +2000,20 @@ function updateSourceModeHint(){
   // Runway 모드: 이미지/영상 수 비활성화 (Runway가 씬 수 결정)
   const imgCnt2El=document.getElementById('autoImgCnt2');
   const imgCnt2Wrap=imgCnt2El?.closest('.fg');
+  const autoImgMode=mode==='runway'||mode==='falai';
   if(imgCnt2El){
-    imgCnt2El.disabled=mode==='runway';
-    imgCnt2El.style.opacity=mode==='runway'?'0.4':'1';
-    imgCnt2El.style.cursor=mode==='runway'?'not-allowed':'';
+    imgCnt2El.disabled=autoImgMode;
+    imgCnt2El.style.opacity=autoImgMode?'0.4':'1';
+    imgCnt2El.style.cursor=autoImgMode?'not-allowed':'';
   }
   if(imgCnt2Wrap){
     const lbl=imgCnt2Wrap.querySelector('.fl');
     if(lbl){
       lbl.dataset.baseText=lbl.dataset.baseText||lbl.textContent;
-      lbl.textContent=mode==='runway'?lbl.dataset.baseText+' (Runway 자동)':lbl.dataset.baseText;
+      const suffix=mode==='runway'?' (Runway 자동)':mode==='falai'?' (8초 단위 자동)':'';
+      lbl.textContent=lbl.dataset.baseText+suffix;
     }
-    imgCnt2Wrap.style.opacity=mode==='runway'?'0.5':'1';
+    imgCnt2Wrap.style.opacity=autoImgMode?'0.5':'1';
   }
   imageOnly.forEach(id=>{
     const el=document.getElementById(id);
