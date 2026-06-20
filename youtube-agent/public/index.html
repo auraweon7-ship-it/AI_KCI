@@ -2525,6 +2525,8 @@ async function startAutoPipeline(isResume, _fromBatch){
           });
         }
         markOk('prompts');autoTime('prompts',0);autoStatus('prompts','done',`Runway 프롬프트 ${totalScenes}개 생성 완료`);
+        const rpHtml=S.imgPrompts.map((p,i)=>`<div style="padding:4px 0;border-bottom:1px solid var(--bd)"><span style="color:var(--acc);font-weight:700">장면${i+1}</span> <span style="color:var(--t2)">${esc(p.runwayPrompt||p.prompt||'(프롬프트 없음)')}</span></div>`).join('');
+        setPreview('prompts',`<div class="sp-txt">${rpHtml}</div>`);
       }catch(e){
         autoStatus('prompts','done',`⚠️ 프롬프트 생성 실패 (기본 프롬프트 사용): ${e.message}`);
       }
@@ -2612,6 +2614,8 @@ async function startAutoPipeline(isResume, _fromBatch){
           });
         }
         markOk('prompts');autoTime('prompts',0);autoStatus('prompts','done',`fal.ai 영상 프롬프트 ${totalScenes}개 생성 완료`);
+        const fpHtml=S.imgPrompts.map((p,i)=>`<div style="padding:4px 0;border-bottom:1px solid var(--bd)"><span style="color:var(--acc);font-weight:700">장면${i+1}</span> <span style="color:var(--t2)">${esc(p.runwayPrompt||p.prompt||'(프롬프트 없음)')}</span></div>`).join('');
+        setPreview('prompts',`<div class="sp-txt">${fpHtml}</div>`);
       }catch(e){
         autoStatus('prompts','done',`⚠️ 프롬프트 생성 실패 (기본 프롬프트 사용): ${e.message}`);
       }
