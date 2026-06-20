@@ -604,6 +604,11 @@ input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper{color:var(--t
             </div>
             <div class="fg"><label class="fl"><span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--info);color:#fff;font-size:9px;font-weight:800;margin-right:4px">5</span>⏱️ 영상 길이</label>
               <select class="fs" id="autoLen">
+                <option value="0.0833">5초 (단일 클립 테스트)</option>
+                <option value="0.1667">10초</option>
+                <option value="0.25">15초</option>
+                <option value="0.3333">20초</option>
+                <option value="0.5">30초</option>
                 <option value="1">1분 (쇼츠/티저)</option>
                 <option value="3" selected>3분 (짧은 영상)</option>
                 <option value="4">4분</option>
@@ -2374,9 +2379,9 @@ async function startAutoPipeline(isResume, _fromBatch){
   const autoImgCntByLen={1:5,3:10,4:12,5:15,10:30,15:40,20:50,30:50,40:50,50:50,60:50};
   // Runway 모드: 씬 수는 generate-prompts가 결정, imgCnt는 프롬프트 생성 후 갱신
   const imgCnt=sourceMode==='runway'
-    ? Math.min(50,Math.ceil(parseInt(len)*60/8))  // runway: 8초 클립
+    ? Math.min(50,Math.ceil(parseFloat(len)*60/8))  // runway: 8초 클립
     : sourceMode==='falai'
-    ? Math.min(50,Math.ceil(parseInt(len)*60/8))  // falai: 8초 단위 계산
+    ? Math.min(50,Math.ceil(parseFloat(len)*60/8))  // falai: 8초 단위 계산
     : Math.max(manualImgCnt, autoImgCntByLen[len]||Math.min(50,Math.round(len*60/10)));
   console.log(`[Auto] 영상 ${len}분 → 이미지/클립 ${imgCnt}개 (모드: ${sourceMode})`);
   const voiceId=document.getElementById('autoVoice').value;
@@ -2446,7 +2451,7 @@ async function startAutoPipeline(isResume, _fromBatch){
 
   const t0=Date.now();
   let lastResult={};
-  let audioDur=parseInt(len)*60; // 재개 시 기본값, tts 단계서 갱신
+  let audioDur=parseFloat(len)*60; // 재개 시 기본값, tts 단계서 갱신
   let thumbData=(isResume&&P.data.thumbData)||{}; // 재개 시 복원
   let renderData=(isResume&&P.data.renderData)||{};
 
@@ -2726,7 +2731,7 @@ async function startAutoPipeline(isResume, _fromBatch){
     const cleanScript=cleanTTSScript(S.script);
     const ttsData=await api('/api/tts/full-script',{script:cleanScript,voiceId,stability:ttsSt,similarity:ttsSim,language:lang});
     S.audioFile=ttsData.filename;markOk('tts');save();
-    audioDur=parseInt(len)*60;
+    audioDur=parseFloat(len)*60;
     try{const dr=await fetch('/api/audio/duration/'+ttsData.filename).then(r=>r.json());if(dr.duration>0)audioDur=Math.ceil(dr.duration)}catch(e){}
     pipeMark('tts',{audioFile:S.audioFile,audioDur});
     autoTime('tts',Math.round((Date.now()-t1)/1000));
