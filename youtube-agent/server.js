@@ -3872,6 +3872,7 @@ app.get('/api/falai/result/:requestId', async (req, res) => {
 
 // fal.ai 영상 로컬 다운로드
 app.post('/api/falai/download', async (req, res) => {
+  req.setTimeout(300000); res.setTimeout(300000);
   try {
     const { videoUrl, index=0 } = req.body;
     if (!videoUrl) return res.status(400).json({ success: false, error: 'videoUrl 필요' });

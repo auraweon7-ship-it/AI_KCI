@@ -2665,8 +2665,19 @@ async function startAutoPipeline(isResume, _fromBatch){
               const st=await fetch('/api/falai/status/'+requestId+statusQ).then(r=>r.json());
               if(st.status==='COMPLETED'){
                 const result=await fetch('/api/falai/result/'+requestId+resultQ).then(r=>r.json());
-                if(result.videoUrl){await api('/api/falai/download',{videoUrl:result.videoUrl,index:idx+1});}
-                falOk++;done=true;
+                if(result.videoUrl){
+                  try{
+                    await api('/api/falai/download',{videoUrl:result.videoUrl,index:idx+1});
+                    falOk++;
+                  }catch(de){
+                    falErrors.push(`장면${idx+1} 다운로드 실패: ${de.message}`);
+                    falFail++;
+                  }
+                }else{
+                  falErrors.push(`장면${idx+1}: videoUrl 없음 (status=${result.status})`);
+                  falFail++;
+                }
+                done=true;
               }else if(st.status==='FAILED'){falErrors.push(`장면${idx+1}: fal.ai 실패`);falFail++;done=true;}
             }catch(e){falErrors.push(`장면${idx+1}폴링: ${e.message}`);}
           }
