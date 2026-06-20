@@ -3859,7 +3859,7 @@ app.get('/api/falai/result/:requestId', async (req, res) => {
   try {
     const key = req.query.apiKey || process.env.FALAI_API_KEY;
     if (!key) return res.status(400).json({ success: false, error: 'FALAI_API_KEY 미설정' });
-    const responseUrl = req.query.responseUrl || `${FAL_API_BASE}/requests/${req.params.requestId}`;
+    const responseUrl = req.query.responseUrl || `${FAL_API_BASE}/requests/${req.params.requestId}/response`;
     const r = await fetch(responseUrl, {
       headers: { 'Authorization': `Key ${key}` }
     });
