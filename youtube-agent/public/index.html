@@ -2621,22 +2621,8 @@ async function startAutoPipeline(isResume, _fromBatch){
       }
       await new Promise(r=>setTimeout(r,500));
 
-      // 2단계: DALL-E 이미지 생성
-      autoStatus('image','running',`0/${totalScenes} 기준 이미지 생성 중 (DALL-E)...`);
-      let imgFail=0;
-      for(let i=0;i<S.imgPrompts.length;i++){
-        autoStatus('image','running',`${i+1}/${totalScenes} 이미지 생성 중...`);
-        try{
-          const d=await api('/api/images/generate',{prompt:S.imgPrompts[i].prompt,style,ratio,index:i+1,fastMode:true});
-          S.imgPrompts[i].imageUrl=d.imageUrl;
-        }catch(e){S.imgPrompts[i].imageUrl=null;imgFail++;}
-        if(i<S.imgPrompts.length-1)await new Promise(r=>setTimeout(r,800));
-      }
-      if(imgFail===totalScenes) throw new Error(`DALL-E 이미지 생성 전부 실패 (${imgFail}개). OpenAI API 키 및 할당량을 확인하세요.`);
-      if(imgFail>0) autoStatus('image','running',`⚠️ 이미지 ${totalScenes-imgFail}/${totalScenes} 생성 성공 (${imgFail}개 실패) — 영상 생성 계속...`);
-
-      // 2단계: fal.ai 영상 생성
-      autoStatus('image','running',`0/${totalScenes} fal.ai Wan2.1 영상 생성 중...`);
+      // fal.ai Seedance 2.0 T2V 영상 생성 (이미지 불필요)
+      autoStatus('image','running',`0/${totalScenes} Seedance 2.0 영상 생성 중...`);
       let falOk=0,falFail=0;
       const falErrors=[];
       const falDoneClips=[];
@@ -2645,11 +2631,9 @@ async function startAutoPipeline(isResume, _fromBatch){
         const batchItems=S.imgPrompts.slice(batch,batch+FAL_BATCH);
         const tasks=await Promise.all(batchItems.map(async(scene,bi)=>{
           const idx=batch+bi;
-          const promptImage=scene.imageUrl?(origin+scene.imageUrl):null;
-          if(!promptImage){falErrors.push(`장면${idx+1}: 이미지 없음`);return{requestId:null,idx};}
           const falPrompt=scene.runwayPrompt||scene.prompt||scene.description||`cinematic scene ${idx+1}`;
           try{
-            const t=await api('/api/falai/image-to-video',{imageUrl:promptImage,prompt:falPrompt,duration:5,ratio:falRatio});
+            const t=await api('/api/falai/text-to-video',{prompt:falPrompt,duration:5,ratio:falRatio});
             return{requestId:t.requestId,statusUrl:t.statusUrl,responseUrl:t.responseUrl,idx};
           }catch(e){falErrors.push(`장면${idx+1}: ${e.message}`);return{requestId:null,idx};}
         }));
@@ -2695,7 +2679,7 @@ async function startAutoPipeline(isResume, _fromBatch){
       markOk('image');save();
       pipeMark('image',{imgPrompts:S.imgPrompts});
       autoTime('image',Math.round((Date.now()-t1)/1000));
-      autoStatus('image','done',`fal.ai Wan2.1 영상 ${falOk}/${totalScenes}개 완료${falFail>0?` (실패 ${falFail})`:''}`);
+      autoStatus('image','done',`Seedance 2.0 영상 ${falOk}/${totalScenes}개 완료${falFail>0?` (실패 ${falFail})`:''}`);
       try{
         const fl=await fetch('/api/files/list').then(r=>r.json());
         const clips=(fl.files.clips||[]).filter(f=>f.name.startsWith('falai_')).sort((a,b)=>a.name.localeCompare(b.name));

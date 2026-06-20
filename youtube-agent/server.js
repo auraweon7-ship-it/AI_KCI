@@ -3863,6 +3863,33 @@ async function resolveImageUrlForFal(imageUrl, apiKey) {
   return await uploadImageToFalStorage(localPath, apiKey);
 }
 
+// fal.ai Seedance 2.0 텍스트→영상 생성 요청
+app.post('/api/falai/text-to-video', async (req, res) => {
+  req.setTimeout(120000); res.setTimeout(120000);
+  try {
+    const { prompt, duration=5, ratio='16:9', apiKey } = req.body;
+    if (!prompt) return res.status(400).json({ success: false, error: 'prompt 필요' });
+    const key = apiKey || process.env.FALAI_API_KEY;
+    if (!key) return res.status(400).json({ success: false, error: 'FALAI_API_KEY 미설정' });
+    const aspectRatio = ratio === '9:16' ? '9:16' : ratio === '1:1' ? '1:1' : '16:9';
+    const r = await fetch('https://queue.fal.run/fal-ai/seedance-2-0/text-to-video', {
+      method: 'POST',
+      headers: { 'Authorization': `Key ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        prompt,
+        duration,
+        resolution: '720p',
+        aspect_ratio: aspectRatio,
+        end_user_id: 'youtube-agent'
+      })
+    });
+    const d = await falSafeJson(r);
+    if (!r.ok) return res.status(r.status).json({ success: false, error: d?.detail || d?.error || `fal.ai HTTP ${r.status}` });
+    console.log(`[seedance t2v] submit ok: requestId=${d.request_id}`);
+    res.json({ success: true, requestId: d.request_id, statusUrl: d.status_url, responseUrl: d.response_url });
+  } catch(e) { res.status(500).json({ success: false, error: e.message }); }
+});
+
 // fal.ai 이미지→영상 생성 요청
 app.post('/api/falai/image-to-video', async (req, res) => {
   req.setTimeout(120000); res.setTimeout(120000);
