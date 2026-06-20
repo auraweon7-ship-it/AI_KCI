@@ -3265,6 +3265,8 @@ function loadAnalytics() {
 // === Init ===
 async function init(){
   load();
+  const _as=document.getElementById('autoSteps');
+  if(_as) _as.style.display='block';
   checkResumablePipeline();
   try{
     const r=await fetch('/api/health').then(r=>r.json());
