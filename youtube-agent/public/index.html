@@ -2332,6 +2332,30 @@ async function startAutoPipeline(isResume){
     return;
   }
   if(autoRunning&&!batchMode){toast('이미 실행 중','err');return}
+
+  // fal.ai 모드 키 사전 체크
+  const _srcMode=document.getElementById('autoSourceMode')?.value||'image';
+  if(_srcMode==='falai'){
+    try{
+      const _st=await fetch('/api/settings/status').then(r=>r.json());
+      if(!_st.keys?.falai){
+        toast('⚡ fal.ai API 키가 없습니다. 설정(⚙️)에서 FALAI_API_KEY를 입력하세요.','err');
+        document.getElementById('settingsBtn')?.click();
+        return;
+      }
+    }catch(e){}
+  }
+  if(_srcMode==='runway'){
+    try{
+      const _st=await fetch('/api/settings/status').then(r=>r.json());
+      if(!_st.keys?.runway){
+        toast('🎥 Runway API 키가 없습니다. 설정(⚙️)에서 RUNWAYML_API_KEY를 입력하세요.','err');
+        document.getElementById('settingsBtn')?.click();
+        return;
+      }
+    }catch(e){}
+  }
+
   autoRunning=true;
   autoStopped=false;
   acquireWakeLock();
