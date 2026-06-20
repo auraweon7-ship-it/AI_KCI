@@ -2649,7 +2649,15 @@ async function startAutoPipeline(isResume, _fromBatch){
             try{
               const st=await fetch('/api/falai/status/'+requestId+statusQ).then(r=>r.json());
               if(st.status==='COMPLETED'){
-                const videoUrl=st.videoUrl;
+                // status에 videoUrl 없으면 response_url로 직접 result 조회
+                let videoUrl=st.videoUrl;
+                if(!videoUrl && responseUrl){
+                  try{
+                    const res=await fetch('/api/falai/result/'+requestId+resultQ).then(r=>r.json());
+                    videoUrl=res.videoUrl;
+                    console.log(`[fal.ai result] 장면${idx+1}:`,JSON.stringify(res).substring(0,200));
+                  }catch(re){falErrors.push(`장면${idx+1} result 조회 실패: ${re.message}`);}
+                }
                 if(videoUrl){
                   try{
                     const dl=await api('/api/falai/download',{videoUrl,index:idx+1});
@@ -2663,7 +2671,7 @@ async function startAutoPipeline(isResume, _fromBatch){
                     falFail++;
                   }
                 }else{
-                  falErrors.push(`장면${idx+1}: COMPLETED이나 videoUrl 없음 (output=${JSON.stringify(st.output??null).substring(0,100)})`);
+                  falErrors.push(`장면${idx+1}: videoUrl 없음 | status.output=${JSON.stringify(st.output??null).substring(0,80)} | result raw=${JSON.stringify(st._raw??null).substring(0,80)}`);
                   falFail++;
                 }
                 done=true;
