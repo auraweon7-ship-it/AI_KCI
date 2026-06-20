@@ -3825,7 +3825,7 @@ app.post('/api/falai/image-to-video', async (req, res) => {
       resolution: '480p',
       aspect_ratio: aspectRatio
     }, apiKey);
-    res.json({ success: true, requestId: data.request_id });
+    res.json({ success: true, requestId: data.request_id, statusUrl: data.status_url, responseUrl: data.response_url });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -3844,7 +3844,8 @@ app.get('/api/falai/status/:requestId', async (req, res) => {
   try {
     const key = req.query.apiKey || process.env.FALAI_API_KEY;
     if (!key) return res.status(400).json({ success: false, error: 'FALAI_API_KEY 미설정' });
-    const r = await fetch(`${FAL_API_BASE}/requests/${req.params.requestId}/status`, {
+    const statusUrl = req.query.statusUrl || `${FAL_API_BASE}/requests/${req.params.requestId}/status`;
+    const r = await fetch(statusUrl, {
       headers: { 'Authorization': `Key ${key}` }
     });
     const d = await falSafeJson(r);
@@ -3858,7 +3859,8 @@ app.get('/api/falai/result/:requestId', async (req, res) => {
   try {
     const key = req.query.apiKey || process.env.FALAI_API_KEY;
     if (!key) return res.status(400).json({ success: false, error: 'FALAI_API_KEY 미설정' });
-    const r = await fetch(`${FAL_API_BASE}/requests/${req.params.requestId}`, {
+    const responseUrl = req.query.responseUrl || `${FAL_API_BASE}/requests/${req.params.requestId}`;
+    const r = await fetch(responseUrl, {
       headers: { 'Authorization': `Key ${key}` }
     });
     const d = await falSafeJson(r);

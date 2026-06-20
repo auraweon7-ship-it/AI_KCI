@@ -2640,24 +2640,26 @@ async function startAutoPipeline(isResume){
           const falPrompt=scene.runwayPrompt||scene.prompt||scene.description||`cinematic scene ${idx+1}`;
           try{
             const t=await api('/api/falai/image-to-video',{imageUrl:promptImage,prompt:falPrompt,duration:5,ratio:falRatio});
-            return{requestId:t.requestId,idx};
+            return{requestId:t.requestId,statusUrl:t.statusUrl,responseUrl:t.responseUrl,idx};
           }catch(e){falErrors.push(`장면${idx+1}: ${e.message}`);return{requestId:null,idx};}
         }));
         // 폴링
-        await Promise.all(tasks.map(async({requestId,idx})=>{
+        await Promise.all(tasks.map(async({requestId,statusUrl,responseUrl,idx})=>{
           if(!requestId){falFail++;return;}
           autoStatus('image','running',`fal.ai 폴링 ${idx+1}/${totalScenes}...`);
           let done=false;
+          const statusQ=statusUrl?`?statusUrl=${encodeURIComponent(statusUrl)}`:'';
+          const resultQ=responseUrl?`?responseUrl=${encodeURIComponent(responseUrl)}`:'';
           for(let p=0;p<60&&!done;p++){
-            await new Promise(r=>setTimeout(r,3000));
+            await new Promise(r=>setTimeout(r,5000));
             try{
-              const st=await fetch('/api/falai/status/'+requestId).then(r=>r.json());
+              const st=await fetch('/api/falai/status/'+requestId+statusQ).then(r=>r.json());
               if(st.status==='COMPLETED'){
-                const result=await fetch('/api/falai/result/'+requestId).then(r=>r.json());
+                const result=await fetch('/api/falai/result/'+requestId+resultQ).then(r=>r.json());
                 if(result.videoUrl){await api('/api/falai/download',{videoUrl:result.videoUrl,index:idx+1});}
                 falOk++;done=true;
               }else if(st.status==='FAILED'){falErrors.push(`장면${idx+1}: fal.ai 실패`);falFail++;done=true;}
-            }catch(e){}
+            }catch(e){falErrors.push(`장면${idx+1}폴링: ${e.message}`);}
           }
           if(!done)falFail++;
         }));
