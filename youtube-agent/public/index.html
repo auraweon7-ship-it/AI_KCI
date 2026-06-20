@@ -700,7 +700,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper{color:var(--t
                 <option value="image">🖼️ 이미지 기반</option>
                 <option value="video" selected>🎬 영상 기반 (Pexels)</option>
                 <option value="runway">🎥 AI 영상 (Runway Gen-3/4)</option>
-                <option value="falai">⚡ AI 영상 (fal.ai Wan2.1)</option>
+                <option value="falai">⚡ AI 영상 (Seedance 2.0)</option>
               </select>
               <div class="fh" id="autoSourceModeHint">이미지 + Ken Burns</div>
             </div>
@@ -1989,7 +1989,7 @@ function updateSourceModeHint(){
     } else if(mode==='runway'){
       hint.innerHTML='⚠️ Runway API 키 필요 (설정 → RUNWAYML_API_KEY). Gen-3a Turbo (이미지→영상) 또는 Gen-4 Turbo (텍스트→영상) 사용';
     } else if(mode==='falai'){
-      hint.innerHTML='⚡ fal.ai Wan2.1 I2V — 이미지→영상, 약 $0.015/클립. <a href="https://fal.ai/dashboard/keys" target="_blank" style="color:var(--acc)">FALAI_API_KEY 발급</a>';
+      hint.innerHTML='⚡ Seedance 2.0 T2V — 텍스트→영상 직접 생성. <a href="https://fal.ai/dashboard/keys" target="_blank" style="color:var(--acc)">FALAI_API_KEY 발급</a>';
     } else {
       hint.textContent='AI 생성 이미지에 카메라 움직임을 적용합니다';
     }
@@ -2598,7 +2598,7 @@ async function startAutoPipeline(isResume, _fromBatch){
         setPreview('image',`<div>🎬 ${clips.length}개 장면 영상</div><div class="sp-grid">${clipsHtml}</div>`);
       }catch(e){}
     } else if(sourceMode==='falai'){
-      // fal.ai Wan2.1 모드: ①영상 프롬프트 생성 → ②DALL-E 이미지 생성 → ③fal.ai I2V
+      // fal.ai Seedance 2.0 T2V 모드: ①영상 프롬프트 생성 → ②Seedance 2.0 직접 영상 생성
       const totalScenes=S.imgPrompts.length;
       const origin=window.location.origin;
       const falRatio=ratio==='9:16'?'9:16':ratio==='1:1'?'1:1':'16:9';
@@ -3923,9 +3923,9 @@ async function adminDeleteUser(email){
       <input type="password" class="fi" id="setRunwayKey" placeholder="key_...">
       <div class="fh">Runway Gen-3/Gen-4 — 장면별 AI 영상 생성. <a href="https://app.runwayml.com/settings" target="_blank" style="color:var(--acc)">API 키 발급</a></div>
     </div>
-    <div class="fg"><label class="fl">⚡ fal.ai (Wan2.1 AI 영상) <span class="badge badge-key">저비용</span></label>
+    <div class="fg"><label class="fl">⚡ fal.ai (Seedance 2.0 AI 영상) <span class="badge badge-key">저비용</span></label>
       <input type="password" class="fi" id="setFalaiKey" placeholder="...">
-      <div class="fh">Wan2.1 이미지→영상, ~$0.015/클립. <a href="https://fal.ai/dashboard/keys" target="_blank" style="color:var(--acc)">무료 가입 후 API 키 발급</a></div>
+      <div class="fh">Seedance 2.0 텍스트→영상 직접 생성. <a href="https://fal.ai/dashboard/keys" target="_blank" style="color:var(--acc)">무료 가입 후 API 키 발급</a></div>
     </div>
 
     <div class="divider"></div>
