@@ -2306,7 +2306,7 @@ async function startAutoPipeline(isResume){
   try{
   // 체크된 배치 주제가 있으면 연속 제작으로 전환
   const batchChecks=document.querySelectorAll('.batch-topic-chk:checked');
-  if(batchChecks.length>0&&!isResume){
+  if(batchChecks.length>0&&!isResume&&!batchMode){
     await startBatchPipeline();
     return;
   }
