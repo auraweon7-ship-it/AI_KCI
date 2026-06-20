@@ -3883,7 +3883,8 @@ app.post('/api/falai/image-to-video', async (req, res) => {
       num_frames: numFrames,
       frames_per_second: 16,
       resolution: '720p',
-      aspect_ratio: aspectRatio
+      aspect_ratio: aspectRatio,
+      enable_safety_checker: false
     }, apiKey);
     res.json({ success: true, requestId: data.request_id, statusUrl: data.status_url, responseUrl: data.response_url });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
