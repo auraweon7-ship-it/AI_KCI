@@ -3850,7 +3850,8 @@ app.get('/api/falai/status/:requestId', async (req, res) => {
     });
     const d = await falSafeJson(r);
     if (!r.ok) return res.status(r.status).json({ success: false, error: d?.detail || d?.error || `fal.ai HTTP ${r.status}` });
-    res.json({ success: true, status: d.status || 'IN_QUEUE', queue_position: d.queue_position, logs: d.logs });
+    const videoUrl = d?.output?.video?.url || d?.output?.url || d?.video?.url || null;
+    res.json({ success: true, status: d.status || 'IN_QUEUE', queue_position: d.queue_position, logs: d.logs, videoUrl, output: d.output });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
