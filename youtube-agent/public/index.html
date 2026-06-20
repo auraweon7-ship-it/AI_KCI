@@ -2209,7 +2209,7 @@ async function startBatchPipeline(){
     let batchError=null;
 
     try{
-      await startAutoPipeline();
+      await startAutoPipeline(false, true);
     }catch(e){
       batchError=e.message;
       console.warn(`[Batch] ${n+1}/${total} 실패:`,e.message);
@@ -2302,11 +2302,11 @@ function stopAutoPipeline(){
   document.getElementById('autoBtn').innerHTML='🎬 영상 제작 시작';
   toast('⏹️ 제작 중지됨');
 }
-async function startAutoPipeline(isResume){
+async function startAutoPipeline(isResume, _fromBatch){
   try{
   // 체크된 배치 주제가 있으면 연속 제작으로 전환
   const batchChecks=document.querySelectorAll('.batch-topic-chk:checked');
-  if(batchChecks.length>0&&!isResume&&!batchMode){
+  if(batchChecks.length>0&&!isResume&&!_fromBatch){
     await startBatchPipeline();
     return;
   }
