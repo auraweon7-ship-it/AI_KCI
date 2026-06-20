@@ -2674,7 +2674,7 @@ async function startAutoPipeline(isResume, _fromBatch){
                     falFail++;
                   }
                 }else{
-                  falErrors.push(`장면${idx+1}: videoUrl 없음 (status=${result.status})`);
+                  falErrors.push(`장면${idx+1}: videoUrl 없음 | raw=${JSON.stringify(result._raw||result).substring(0,200)}`);
                   falFail++;
                 }
                 done=true;
