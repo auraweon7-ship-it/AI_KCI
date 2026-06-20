@@ -2631,21 +2631,32 @@ async function startAutoPipeline(isResume, _fromBatch){
       let falOk=0,falFail=0;
       const falErrors=[];
       const falDoneClips=[];
+      const falLogs=[];
+      const updateLog=()=>{
+        const logHtml=falLogs.slice(-20).map(l=>`<div style="font-size:11px;padding:2px 0;color:var(--t2);border-bottom:1px solid var(--bd)">${esc(l)}</div>`).join('');
+        const clipHtml=falDoneClips.map(u=>`<video src="${u}" muted controls style="width:100%;border-radius:6px"></video>`).join('');
+        setPreview('image',`<div style="margin-bottom:6px">⚡ ${falOk}/${totalScenes} 완료 | 실패 ${falFail}</div><div class="sp-txt" style="max-height:150px;overflow:auto;margin-bottom:8px">${logHtml}</div>${clipHtml?`<div class="sp-grid">${clipHtml}</div>`:''}`);
+      };
       const FAL_BATCH=3;
       for(let batch=0;batch<totalScenes;batch+=FAL_BATCH){
         const batchItems=S.imgPrompts.slice(batch,batch+FAL_BATCH);
         const tasks=await Promise.all(batchItems.map(async(scene,bi)=>{
           const idx=batch+bi;
           const falPrompt=scene.runwayPrompt||scene.prompt||scene.description||`cinematic scene ${idx+1}`;
+          falLogs.push(`[장면${idx+1}] submit 요청 중...`);updateLog();
           try{
             const t=await api('/api/falai/text-to-video',{prompt:falPrompt,duration:5,ratio:falRatio});
+            falLogs.push(`[장면${idx+1}] submit 완료 requestId=${t.requestId}`);updateLog();
             return{requestId:t.requestId,statusUrl:t.statusUrl,responseUrl:t.responseUrl,idx};
-          }catch(e){falErrors.push(`장면${idx+1}: ${e.message}`);return{requestId:null,idx};}
+          }catch(e){
+            const msg=`[장면${idx+1}] submit 실패: ${e.message}`;
+            falErrors.push(msg);falLogs.push(msg);updateLog();
+            return{requestId:null,idx};
+          }
         }));
         // 폴링
         await Promise.all(tasks.map(async({requestId,statusUrl,responseUrl,idx})=>{
           if(!requestId){falFail++;return;}
-          autoStatus('image','running',`fal.ai 폴링 ${idx+1}/${totalScenes}...`);
           let done=false;
           const statusQ=statusUrl?`?statusUrl=${encodeURIComponent(statusUrl)}`:'';
           const resultQ=responseUrl?`?responseUrl=${encodeURIComponent(responseUrl)}`:'';
@@ -2653,6 +2664,8 @@ async function startAutoPipeline(isResume, _fromBatch){
             await new Promise(r=>setTimeout(r,5000));
             try{
               const st=await fetch('/api/falai/status/'+requestId+statusQ).then(r=>r.json());
+              falLogs.push(`[장면${idx+1}] poll#${p+1} → ${st.status||'unknown'}${st.queue_position!=null?' (queue:'+st.queue_position+')':''}`);
+              updateLog();
               if(st.status==='COMPLETED'){
                 // status에 videoUrl 없으면 response_url로 직접 result 조회
                 let videoUrl=st.videoUrl;
@@ -2660,35 +2673,51 @@ async function startAutoPipeline(isResume, _fromBatch){
                   try{
                     const res=await fetch('/api/falai/result/'+requestId+resultQ).then(r=>r.json());
                     videoUrl=res.videoUrl;
-                    console.log(`[fal.ai result] 장면${idx+1}:`,JSON.stringify(res).substring(0,200));
-                  }catch(re){falErrors.push(`장면${idx+1} result 조회 실패: ${re.message}`);}
+                    const rawSnip=JSON.stringify(res._raw??res).substring(0,150);
+                    falLogs.push(`[장면${idx+1}] result raw: ${rawSnip}`);updateLog();
+                  }catch(re){
+                    const msg=`[장면${idx+1}] result 조회 실패: ${re.message}`;
+                    falErrors.push(msg);falLogs.push(msg);updateLog();
+                  }
                 }
                 if(videoUrl){
+                  falLogs.push(`[장면${idx+1}] videoUrl 획득 → 다운로드 중...`);updateLog();
                   try{
                     const dl=await api('/api/falai/download',{videoUrl,index:idx+1});
                     falOk++;
                     falDoneClips.push(dl.url||`/output/clips/falai_${String(idx+1).padStart(3,'0')}.mp4`);
-                    // 실시간 미리보기 업데이트
-                    const previewHtml=falDoneClips.map(u=>`<video src="${u}" muted controls style="width:100%;border-radius:6px"></video>`).join('');
-                    setPreview('image',`<div>⚡ ${falOk}/${totalScenes} fal.ai 영상 생성 중...</div><div class="sp-grid">${previewHtml}</div>`);
+                    falLogs.push(`[장면${idx+1}] ✅ 다운로드 완료: ${dl.url}`);updateLog();
                   }catch(de){
-                    falErrors.push(`장면${idx+1} 다운로드 실패: ${de.message}`);
-                    falFail++;
+                    const msg=`[장면${idx+1}] 다운로드 실패: ${de.message}`;
+                    falErrors.push(msg);falLogs.push(msg);falFail++;updateLog();
                   }
                 }else{
-                  falErrors.push(`장면${idx+1}: videoUrl 없음 | status.output=${JSON.stringify(st.output??null).substring(0,80)} | result raw=${JSON.stringify(st._raw??null).substring(0,80)}`);
-                  falFail++;
+                  const raw=JSON.stringify(st.output??null).substring(0,100);
+                  const msg=`[장면${idx+1}] COMPLETED이나 videoUrl 없음. output=${raw}`;
+                  falErrors.push(msg);falLogs.push(msg);falFail++;updateLog();
                 }
                 done=true;
-              }else if(st.status==='FAILED'){falErrors.push(`장면${idx+1}: fal.ai 실패`);falFail++;done=true;}
-            }catch(e){falErrors.push(`장면${idx+1}폴링: ${e.message}`);}
+              }else if(st.status==='FAILED'){
+                const msg=`[장면${idx+1}] fal.ai FAILED`;
+                falErrors.push(msg);falLogs.push(msg);falFail++;done=true;updateLog();
+              }
+            }catch(e){
+              const msg=`[장면${idx+1}] 폴링 오류: ${e.message}`;
+              falErrors.push(msg);falLogs.push(msg);updateLog();
+            }
           }
-          if(!done)falFail++;
+          if(!done){
+            const msg=`[장면${idx+1}] 300초 타임아웃`;
+            falErrors.push(msg);falLogs.push(msg);falFail++;updateLog();
+          }
         }));
-        autoStatus('image','running',`fal.ai: ${falOk}/${totalScenes} 완료, ${falFail} 실패...`);
+        autoStatus('image','running',`Seedance 2.0: ${falOk}/${totalScenes} 완료, ${falFail} 실패...`);
         if(batch+FAL_BATCH<totalScenes)await new Promise(r=>setTimeout(r,500));
       }
-      if(falOk===0)throw new Error(`fal.ai 영상 생성 전부 실패 (${falFail}개).\n${falErrors.slice(0,3).join('\n')}`);
+      if(falOk===0){
+        updateLog();
+        throw new Error(`fal.ai 영상 생성 전부 실패 (${falFail}개).\n${falErrors.join('\n')}`);
+      }
       markOk('image');save();
       pipeMark('image',{imgPrompts:S.imgPrompts});
       autoTime('image',Math.round((Date.now()-t1)/1000));
