@@ -2660,7 +2660,7 @@ async function startAutoPipeline(isResume, _fromBatch){
           let done=false;
           const statusQ=statusUrl?`?statusUrl=${encodeURIComponent(statusUrl)}`:'';
           const resultQ=responseUrl?`?responseUrl=${encodeURIComponent(responseUrl)}`:'';
-          for(let p=0;p<60&&!done;p++){
+          for(let p=0;p<180&&!done;p++){
             await new Promise(r=>setTimeout(r,5000));
             try{
               const st=await fetch('/api/falai/status/'+requestId+statusQ).then(r=>r.json());
@@ -2707,7 +2707,7 @@ async function startAutoPipeline(isResume, _fromBatch){
             }
           }
           if(!done){
-            const msg=`[장면${idx+1}] 300초 타임아웃`;
+            const msg=`[장면${idx+1}] 900초 타임아웃`;
             falErrors.push(msg);falLogs.push(msg);falFail++;updateLog();
           }
         }));
