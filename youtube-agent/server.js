@@ -3811,6 +3811,58 @@ async function falFetch(path, method='GET', body=null, apiKey=null) {
   return d;
 }
 
+// fal.ai 스토리지에 이미지 업로드 (Railway 이미지를 fal.ai CDN으로)
+async function uploadImageToFalStorage(localPath, apiKey) {
+  const key = apiKey || process.env.FALAI_API_KEY;
+  const filename = path.basename(localPath);
+  const ext = path.extname(filename).toLowerCase();
+  const contentType = (ext === '.jpg' || ext === '.jpeg') ? 'image/jpeg' : 'image/png';
+
+  // presigned URL 요청
+  const initR = await fetch('https://rest.alpha.fal.ai/storage/upload/initiate', {
+    method: 'POST',
+    headers: { 'Authorization': `Key ${key}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ content_type: contentType, file_name: filename })
+  });
+  if (!initR.ok) {
+    const t = await initR.text();
+    throw new Error(`fal.ai 스토리지 initiate 실패: ${initR.status} - ${t.substring(0, 150)}`);
+  }
+  const { upload_url, file_url } = await initR.json();
+
+  // 파일 PUT 업로드
+  const fileBuffer = fs.readFileSync(localPath);
+  const putR = await fetch(upload_url, {
+    method: 'PUT',
+    headers: { 'Content-Type': contentType },
+    body: fileBuffer
+  });
+  if (!putR.ok) throw new Error(`fal.ai 파일 PUT 실패: ${putR.status}`);
+
+  console.log(`[fal.ai storage] 업로드 완료: ${file_url}`);
+  return file_url;
+}
+
+// imageUrl (Railway URL or /output/... path)을 fal.ai 접근 가능 URL로 변환
+async function resolveImageUrlForFal(imageUrl, apiKey) {
+  // 이미 외부 URL이고 Railway가 아니면 그대로 사용
+  if (imageUrl.startsWith('http') && !imageUrl.includes('railway.app') && !imageUrl.includes('localhost')) {
+    return imageUrl;
+  }
+  // 로컬 파일 경로 추출
+  let localPath;
+  if (imageUrl.includes('/output/')) {
+    const rel = imageUrl.split('/output/')[1];
+    localPath = path.join(OUTPUT_DIR, rel);
+  } else if (imageUrl.startsWith('/')) {
+    localPath = path.join(OUTPUT_DIR, imageUrl.replace(/^\/output\//, ''));
+  } else {
+    localPath = imageUrl;
+  }
+  if (!fs.existsSync(localPath)) throw new Error(`이미지 파일 없음: ${localPath}`);
+  return await uploadImageToFalStorage(localPath, apiKey);
+}
+
 // fal.ai 이미지→영상 생성 요청
 app.post('/api/falai/image-to-video', async (req, res) => {
   req.setTimeout(120000); res.setTimeout(120000);
@@ -3818,8 +3870,13 @@ app.post('/api/falai/image-to-video', async (req, res) => {
     const { imageUrl, prompt, duration=5, ratio='16:9', apiKey } = req.body;
     if (!imageUrl) return res.status(400).json({ success: false, error: 'imageUrl 필요' });
     const aspectRatio = ratio === '9:16' ? '9:16' : ratio === '1:1' ? '1:1' : '16:9';
+
+    // Railway 이미지를 fal.ai 스토리지에 업로드
+    const falImageUrl = await resolveImageUrlForFal(imageUrl, apiKey);
+    console.log(`[fal.ai i2v] imageUrl: ${imageUrl} → ${falImageUrl}`);
+
     const data = await falFetch('', 'POST', {
-      image_url: imageUrl,
+      image_url: falImageUrl,
       prompt: prompt || 'cinematic smooth motion',
       duration: String(Math.min(duration, 5)), // Wan2.1 최대 5초
       resolution: '480p',
