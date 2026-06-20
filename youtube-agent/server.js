@@ -3829,6 +3829,16 @@ app.post('/api/falai/image-to-video', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// fal.ai JSON 안전 파싱 헬퍼
+async function falSafeJson(r) {
+  const text = await r.text();
+  if (!text || !text.trim()) return {};
+  try { return JSON.parse(text); } catch(e) {
+    console.error('[fal.ai] JSON parse error:', e.message, '| HTTP:', r.status, '| body:', text.substring(0, 200));
+    throw new Error(`fal.ai 응답 파싱 실패 (HTTP ${r.status}): ${text.substring(0, 100)}`);
+  }
+}
+
 // fal.ai 상태 폴링
 app.get('/api/falai/status/:requestId', async (req, res) => {
   try {
@@ -3837,9 +3847,9 @@ app.get('/api/falai/status/:requestId', async (req, res) => {
     const r = await fetch(`${FAL_API_BASE}/requests/${req.params.requestId}/status`, {
       headers: { 'Authorization': `Key ${key}` }
     });
-    const d = await r.json();
-    // status: IN_QUEUE / IN_PROGRESS / COMPLETED
-    res.json({ success: true, status: d.status, logs: d.logs });
+    const d = await falSafeJson(r);
+    if (!r.ok) return res.status(r.status).json({ success: false, error: d?.detail || d?.error || `fal.ai HTTP ${r.status}` });
+    res.json({ success: true, status: d.status || 'IN_QUEUE', queue_position: d.queue_position, logs: d.logs });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
@@ -3851,8 +3861,9 @@ app.get('/api/falai/result/:requestId', async (req, res) => {
     const r = await fetch(`${FAL_API_BASE}/requests/${req.params.requestId}`, {
       headers: { 'Authorization': `Key ${key}` }
     });
-    const d = await r.json();
-    const videoUrl = d?.video?.url || d?.output?.video?.url || null;
+    const d = await falSafeJson(r);
+    if (!r.ok) return res.status(r.status).json({ success: false, error: d?.detail || d?.error || `fal.ai HTTP ${r.status}` });
+    const videoUrl = d?.video?.url || d?.output?.video?.url || d?.videos?.[0]?.url || null;
     res.json({ success: true, videoUrl, status: d.status });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
