@@ -3890,6 +3890,92 @@ app.post('/api/falai/text-to-video', async (req, res) => {
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
+// fal.ai Seedance 2.0 SSE 통합 endpoint (submit+poll+result 서버에서 처리)
+app.post('/api/falai/generate-sse', async (req, res) => {
+  req.setTimeout(1800000);
+  res.setTimeout(1800000);
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  const send = (obj) => res.write(`data: ${JSON.stringify(obj)}\n\n`);
+  const hb = setInterval(() => res.write(': ping\n\n'), 25000);
+
+  try {
+    const { prompt, duration=5, ratio='16:9', apiKey, index=0 } = req.body;
+    const key = apiKey || process.env.FALAI_API_KEY;
+    if (!key) { send({ type:'error', error:'FALAI_API_KEY 미설정' }); return; }
+    const aspectRatio = ratio === '9:16' ? '9:16' : ratio === '1:1' ? '1:1' : '16:9';
+
+    // 1. submit
+    const subR = await fetch('https://queue.fal.run/bytedance/seedance-2.0/text-to-video', {
+      method: 'POST',
+      headers: { 'Authorization': `Key ${key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, duration, resolution: '720p', aspect_ratio: aspectRatio, end_user_id: 'youtube-agent' })
+    });
+    const sub = await falSafeJson(subR);
+    if (!subR.ok) { send({ type:'error', error: sub?.detail || sub?.error || `submit HTTP ${subR.status}` }); return; }
+    const requestId = sub.request_id;
+    const statusUrl = sub.status_url;
+    const responseUrl = sub.response_url;
+    console.log(`[seedance SSE] submit ok: ${requestId} statusUrl=${statusUrl}`);
+    send({ type:'submitted', requestId, statusUrl, responseUrl });
+
+    // 2. poll
+    let done = false;
+    for (let i = 0; i < 200 && !done; i++) {
+      await new Promise(r => setTimeout(r, 5000));
+      try {
+        const stR = await fetch(statusUrl, { headers: { 'Authorization': `Key ${key}` } });
+        const st = await falSafeJson(stR);
+        send({ type:'status', status: st.status, queue: st.queue_position, poll: i+1 });
+        console.log(`[seedance SSE] poll#${i+1} status=${st.status} queue=${st.queue_position}`);
+
+        if (st.status === 'COMPLETED') {
+          done = true;
+          // 3. result
+          let videoUrl = null;
+          let raw = null;
+          try {
+            const resR = await fetch(responseUrl, { headers: { 'Authorization': `Key ${key}` } });
+            raw = await falSafeJson(resR);
+            console.log('[seedance SSE] result raw:', JSON.stringify(raw).substring(0, 400));
+            videoUrl = raw?.video?.url || raw?.output?.video?.url || raw?.videos?.[0]?.url
+              || raw?.output?.url || raw?.video_url || raw?.url || null;
+          } catch(re) { console.error('[seedance SSE] result fetch error:', re.message); }
+
+          if (videoUrl) {
+            // 4. download
+            const filename = `falai_${String(index).padStart(3,'0')}.mp4`;
+            const clipsDir = path.join(OUTPUT_DIR, 'clips');
+            fs.mkdirSync(clipsDir, { recursive: true });
+            const dlR = await fetch(videoUrl);
+            if (!dlR.ok) throw new Error(`다운로드 실패: ${dlR.status}`);
+            fs.writeFileSync(path.join(clipsDir, filename), Buffer.from(await dlR.arrayBuffer()));
+            const clipUrl = `/output/clips/${filename}`;
+            send({ type:'done', videoUrl, clipUrl, filename });
+          } else {
+            send({ type:'error', error: `videoUrl 없음. raw=${JSON.stringify(raw).substring(0,200)}` });
+          }
+        } else if (st.status === 'FAILED') {
+          done = true;
+          send({ type:'error', error: 'fal.ai FAILED' });
+        }
+      } catch(pe) {
+        send({ type:'poll_error', error: pe.message, poll: i+1 });
+      }
+    }
+    if (!done) send({ type:'error', error: '1000초 타임아웃' });
+  } catch(e) {
+    send({ type:'error', error: e.message });
+  }
+  clearInterval(hb);
+  send({ type:'end' });
+  res.end();
+});
+
 // fal.ai 이미지→영상 생성 요청
 app.post('/api/falai/image-to-video', async (req, res) => {
   req.setTimeout(120000); res.setTimeout(120000);

@@ -2640,74 +2640,52 @@ async function startAutoPipeline(isResume, _fromBatch){
       const FAL_BATCH=3;
       for(let batch=0;batch<totalScenes;batch+=FAL_BATCH){
         const batchItems=S.imgPrompts.slice(batch,batch+FAL_BATCH);
-        const tasks=await Promise.all(batchItems.map(async(scene,bi)=>{
+        // SSE 방식: 서버에서 submit+poll+download 통합 처리
+        await Promise.all(batchItems.map(async(scene,bi)=>{
           const idx=batch+bi;
           const falPrompt=scene.runwayPrompt||scene.prompt||scene.description||`cinematic scene ${idx+1}`;
-          falLogs.push(`[장면${idx+1}] submit 요청 중...`);updateLog();
+          falLogs.push(`[장면${idx+1}] SSE 요청 시작...`);updateLog();
           try{
-            const t=await api('/api/falai/text-to-video',{prompt:falPrompt,duration:5,ratio:falRatio});
-            falLogs.push(`[장면${idx+1}] submit 완료 requestId=${t.requestId}`);updateLog();
-            return{requestId:t.requestId,statusUrl:t.statusUrl,responseUrl:t.responseUrl,idx};
-          }catch(e){
-            const msg=`[장면${idx+1}] submit 실패: ${e.message}`;
-            falErrors.push(msg);falLogs.push(msg);updateLog();
-            return{requestId:null,idx};
-          }
-        }));
-        // 폴링
-        await Promise.all(tasks.map(async({requestId,statusUrl,responseUrl,idx})=>{
-          if(!requestId){falFail++;return;}
-          let done=false;
-          const statusQ=statusUrl?`?statusUrl=${encodeURIComponent(statusUrl)}`:'';
-          const resultQ=responseUrl?`?responseUrl=${encodeURIComponent(responseUrl)}`:'';
-          for(let p=0;p<180&&!done;p++){
-            await new Promise(r=>setTimeout(r,5000));
-            try{
-              const st=await fetch('/api/falai/status/'+requestId+statusQ).then(r=>r.json());
-              falLogs.push(`[장면${idx+1}] poll#${p+1} → ${st.status||'unknown'}${st.queue_position!=null?' (queue:'+st.queue_position+')':''}`);
-              updateLog();
-              if(st.status==='COMPLETED'){
-                // status에 videoUrl 없으면 response_url로 직접 result 조회
-                let videoUrl=st.videoUrl;
-                if(!videoUrl && responseUrl){
-                  try{
-                    const res=await fetch('/api/falai/result/'+requestId+resultQ).then(r=>r.json());
-                    videoUrl=res.videoUrl;
-                    const rawSnip=JSON.stringify(res._raw??res).substring(0,150);
-                    falLogs.push(`[장면${idx+1}] result raw: ${rawSnip}`);updateLog();
-                  }catch(re){
-                    const msg=`[장면${idx+1}] result 조회 실패: ${re.message}`;
-                    falErrors.push(msg);falLogs.push(msg);updateLog();
-                  }
-                }
-                if(videoUrl){
-                  falLogs.push(`[장면${idx+1}] videoUrl 획득 → 다운로드 중...`);updateLog();
-                  try{
-                    const dl=await api('/api/falai/download',{videoUrl,index:idx+1});
-                    falOk++;
-                    falDoneClips.push(dl.url||`/output/clips/falai_${String(idx+1).padStart(3,'0')}.mp4`);
-                    falLogs.push(`[장면${idx+1}] ✅ 다운로드 완료: ${dl.url}`);updateLog();
-                  }catch(de){
-                    const msg=`[장면${idx+1}] 다운로드 실패: ${de.message}`;
-                    falErrors.push(msg);falLogs.push(msg);falFail++;updateLog();
-                  }
-                }else{
-                  const raw=JSON.stringify(st.output??null).substring(0,100);
-                  const msg=`[장면${idx+1}] COMPLETED이나 videoUrl 없음. output=${raw}`;
-                  falErrors.push(msg);falLogs.push(msg);falFail++;updateLog();
-                }
-                done=true;
-              }else if(st.status==='FAILED'){
-                const msg=`[장면${idx+1}] fal.ai FAILED`;
-                falErrors.push(msg);falLogs.push(msg);falFail++;done=true;updateLog();
-              }
-            }catch(e){
-              const msg=`[장면${idx+1}] 폴링 오류: ${e.message}`;
-              falErrors.push(msg);falLogs.push(msg);updateLog();
+            const resp=await fetch('/api/falai/generate-sse',{
+              method:'POST',
+              headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({prompt:falPrompt,duration:5,ratio:falRatio,index:idx+1})
+            });
+            if(!resp.ok){
+              const e=await resp.text();
+              throw new Error(`HTTP ${resp.status}: ${e.substring(0,100)}`);
             }
-          }
-          if(!done){
-            const msg=`[장면${idx+1}] 900초 타임아웃`;
+            const reader=resp.body.getReader();
+            const dec=new TextDecoder();
+            let buf='';
+            let sceneDone=false;
+            while(!sceneDone){
+              const{done,value}=await reader.read();
+              if(done)break;
+              buf+=dec.decode(value,{stream:true});
+              const lines=buf.split('\n');
+              buf=lines.pop();
+              for(const line of lines){
+                if(!line.startsWith('data: '))continue;
+                try{
+                  const d=JSON.parse(line.slice(6));
+                  if(d.type==='submitted'){falLogs.push(`[장면${idx+1}] submitted: ${d.requestId}`);}
+                  else if(d.type==='status'){falLogs.push(`[장면${idx+1}] poll#${d.poll} → ${d.status}${d.queue!=null?' (q:'+d.queue+')':''}`);}
+                  else if(d.type==='done'){
+                    falOk++;falDoneClips.push(d.clipUrl);
+                    falLogs.push(`[장면${idx+1}] ✅ 완료: ${d.clipUrl}`);
+                    sceneDone=true;
+                  }else if(d.type==='error'){
+                    falErrors.push(`[장면${idx+1}] ${d.error}`);falFail++;
+                    falLogs.push(`[장면${idx+1}] ❌ ${d.error}`);
+                    sceneDone=true;
+                  }else if(d.type==='end'){sceneDone=true;}
+                  updateLog();
+                }catch(_){}
+              }
+            }
+          }catch(e){
+            const msg=`[장면${idx+1}] SSE 오류: ${e.message}`;
             falErrors.push(msg);falLogs.push(msg);falFail++;updateLog();
           }
         }));
