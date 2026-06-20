@@ -3864,9 +3864,17 @@ app.get('/api/falai/result/:requestId', async (req, res) => {
       headers: { 'Authorization': `Key ${key}` }
     });
     const d = await falSafeJson(r);
+    console.log('[fal.ai result] HTTP', r.status, 'keys:', Object.keys(d||{}), 'raw:', JSON.stringify(d).substring(0,300));
     if (!r.ok) return res.status(r.status).json({ success: false, error: d?.detail || d?.error || `fal.ai HTTP ${r.status}` });
-    const videoUrl = d?.video?.url || d?.output?.video?.url || d?.videos?.[0]?.url || null;
-    res.json({ success: true, videoUrl, status: d.status });
+    const videoUrl = d?.video?.url
+      || d?.output?.video?.url
+      || d?.videos?.[0]?.url
+      || d?.output?.url
+      || d?.video_url
+      || d?.url
+      || (d?.output && typeof d.output === 'string' ? d.output : null)
+      || null;
+    res.json({ success: true, videoUrl, status: d.status, _raw: d });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
