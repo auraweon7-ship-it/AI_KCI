@@ -3852,8 +3852,8 @@ app.get('/api/falai/status/:requestId', async (req, res) => {
     if (!r.ok) return res.status(r.status).json({ success: false, error: d?.detail || d?.error || `fal.ai HTTP ${r.status}` });
     const videoUrl = d?.output?.video?.url || d?.output?.url || d?.video?.url
       || d?.video?.url || d?.url || null;
-    if (d.status === 'COMPLETED') console.log('[fal.ai status COMPLETED] keys:', Object.keys(d), 'output:', JSON.stringify(d.output||{}).substring(0,200));
-    res.json({ success: true, status: d.status || 'IN_QUEUE', queue_position: d.queue_position, logs: d.logs, videoUrl, output: d.output ?? null });
+    if (d.status === 'COMPLETED') console.log('[fal.ai COMPLETED] raw:', JSON.stringify(d).substring(0,500));
+    res.json({ success: true, status: d.status || 'IN_QUEUE', queue_position: d.queue_position, logs: d.logs, videoUrl, output: d.output ?? null, _fal: d.status === 'COMPLETED' ? d : undefined });
   } catch(e) { res.status(500).json({ success: false, error: e.message }); }
 });
 
