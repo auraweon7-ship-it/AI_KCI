@@ -372,7 +372,8 @@ input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper{color:var(--t
   </div>
   <nav class="sb-nav">
     <div class="ni act" data-s="home" onclick="goHome()" style="margin:4px 0 2px;font-weight:600;color:var(--t1)"><span>🏠</span> 홈</div>
-    <div class="ni" data-s="auto" onclick="go('auto')" style="margin:2px 0 4px;background:linear-gradient(135deg,rgba(255,59,59,.08),rgba(255,107,53,.08));border:1px solid rgba(255,59,59,.15);border-radius:var(--rs)"><span>🎬</span> <strong>영상 제작</strong></div>
+    <div class="ni" data-s="auto" onclick="go('auto')" style="margin:2px 0 1px;background:linear-gradient(135deg,rgba(255,59,59,.08),rgba(255,107,53,.08));border:1px solid rgba(255,59,59,.15);border-radius:var(--rs)"><span>🎬</span> <strong>영상 제작</strong></div>
+    <div class="ni" data-s="projmgr" onclick="go('projmgr')" style="margin:1px 0 4px;padding-left:22px;font-size:11px;color:var(--t2)"><span>📁</span> 프로젝트 DB</div>
   </nav>
   <div class="sb-ft">
     <div class="pr-info"><span>진행률</span><span id="pT">0%</span></div>
@@ -986,6 +987,20 @@ input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper{color:var(--t
         <div class="cd-t" style="margin-bottom:10px">🔑 이 에이전트로 제작된 프로젝트</div>
         <div id="anProjectStats"></div>
       </div>
+    </div>
+
+    <!-- ===== 프로젝트 DB ===== -->
+    <div class="sec" id="sec-projmgr">
+      <div class="cd">
+        <div class="cd-h">
+          <div><div class="cd-t">📁 프로젝트 DB</div><div class="cd-s">저장된 프로젝트 목록 · <span id="projCount">0개</span></div></div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <input type="text" class="fi" id="projName" placeholder="프로젝트 이름 (선택)" style="width:160px;font-size:11px">
+            <button class="b bp" onclick="saveCurrentProject()" style="white-space:nowrap">💾 현재 저장</button>
+          </div>
+        </div>
+      </div>
+      <div id="projList" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-top:4px"></div>
     </div>
 
   </div>
@@ -2973,7 +2988,7 @@ async function startAutoPipeline(isResume, _fromBatch){
         <div>🖼️ 썸네일: ${thumbData.filename||''}</div>
         ${lastResult.srt?`<div>📝 자막: ${lastResult.srt.filename} (${lastResult.srt.subtitleCount}개)</div>`:''}
         ${lastResult.upload?.videoUrl?`<div>📤 YouTube: <a href="${lastResult.upload.videoUrl}" target="_blank" style="color:var(--acc)">${lastResult.upload.videoUrl}</a></div>`:''}
-        <div>💾 프로젝트 자동 저장됨</div>
+        <div>💾 프로젝트 자동 저장됨 · <button class="b bs" onclick="go('projmgr')" style="font-size:10px;padding:2px 8px">📁 프로젝트 DB 보기</button></div>
       </div>
       <div class="cd-t" style="margin:10px 0 6px">${sourceMode==='video'?'🎬 다운로드된 영상 클립':'🖼️ 생성된 이미지'} 미리보기</div>
       <div class="prev-grid" id="autoPrevGrid"></div>
