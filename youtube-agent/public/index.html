@@ -3609,6 +3609,9 @@ function closeScriptEditor(doSave){
 // === Settings ===
 async function openSettings(){
   document.getElementById('settingsModal').style.display='flex';
+  // 현재 redirect URI 표시
+  const uriEl=document.getElementById('oauthRedirectUri');
+  if(uriEl) uriEl.textContent=`${location.protocol}//${location.host}/api/google/callback`;
   // 현재 키 상태 로드
   try{
     const d=await fetch('/api/settings/status').then(r=>r.json());
@@ -3950,6 +3953,14 @@ async function adminDeleteUser(email){
 
     <div class="divider"></div>
     <div style="font-size:10px;font-weight:600;color:var(--t2);margin-bottom:8px">📤 YouTube OAuth (선택)</div>
+    <div class="fg" style="background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);border-radius:8px;padding:10px 12px;margin-bottom:8px">
+      <div style="font-size:10px;color:var(--info);font-weight:600;margin-bottom:4px">🔐 Google Cloud Console 승인된 리디렉션 URI에 아래 주소를 추가하세요</div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <code id="oauthRedirectUri" style="font-size:10px;color:var(--t1);background:var(--bg3);padding:4px 8px;border-radius:4px;flex:1;word-break:break-all"></code>
+        <button onclick="navigator.clipboard.writeText(document.getElementById('oauthRedirectUri').textContent);this.textContent='✅';setTimeout(()=>this.textContent='📋',1500)" style="background:var(--info);color:#fff;border:none;border-radius:6px;padding:4px 8px;font-size:10px;cursor:pointer;white-space:nowrap">📋</button>
+      </div>
+      <div style="font-size:9px;color:var(--t3);margin-top:4px">localhost와 Railway 모두 자동 감지 — 각 환경에서 이 URI를 등록하세요</div>
+    </div>
     <div class="fg"><label class="fl">Client ID</label>
       <input type="text" class="fi" id="setYtClientId" placeholder="xxxxx.apps.googleusercontent.com">
     </div>

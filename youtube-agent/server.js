@@ -2773,10 +2773,10 @@ app.get('/api/google/auth', (req, res) => {
       </div>
     </body></html>`);
   }
-  // 동적 redirect URI: 요청 호스트 기반
+  // 동적 redirect URI: 요청 호스트 기반 (localhost/Railway 모두 자동 지원)
   const host = req.get('host');
   const protocol = req.get('x-forwarded-proto') || req.protocol;
-  const dynamicRedirect = cleanKey(process.env.YOUTUBE_REDIRECT_URI) || `${protocol}://${host}/api/google/callback`;
+  const dynamicRedirect = `${protocol}://${host}/api/google/callback`;
   console.log(`[OAuth auth] redirect_uri: ${dynamicRedirect}`);
   oauth2Client._redirectUri = dynamicRedirect;
 
@@ -2801,10 +2801,10 @@ app.get('/api/google/auth', (req, res) => {
 app.get('/api/google/callback', async (req, res) => {
   try {
     const { code } = req.query;
-    // 동적 redirect URI 설정 (getToken 시 필요)
+    // 동적 redirect URI 설정 (getToken 시 필요, localhost/Railway 자동 지원)
     const host = req.get('host');
     const protocol = req.get('x-forwarded-proto') || req.protocol;
-    const dynamicRedirect = cleanKey(process.env.YOUTUBE_REDIRECT_URI) || `${protocol}://${host}/api/google/callback`;
+    const dynamicRedirect = `${protocol}://${host}/api/google/callback`;
     console.log(`[OAuth callback] redirect_uri: ${dynamicRedirect}`);
     const { tokens } = await oauth2Client.getToken({ code, redirect_uri: dynamicRedirect });
     console.log('[OAuth callback] 토큰 수신:', { hasAccess: !!tokens.access_token, hasRefresh: !!tokens.refresh_token, expiry: tokens.expiry_date });
