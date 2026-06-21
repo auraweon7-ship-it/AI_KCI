@@ -147,12 +147,14 @@ let ANTHROPIC_KEY = cleanKey(process.env.ANTHROPIC_API_KEY);
 let OPENAI_KEY = cleanKey(process.env.OPENAI_API_KEY);
 let ELEVENLABS_KEY = cleanKey(process.env.ELEVENLABS_API_KEY);
 let PEXELS_KEY = cleanKey(process.env.PEXELS_API_KEY);
+let PIXABAY_KEY = cleanKey(process.env.PIXABAY_API_KEY);
 
 console.log('[Boot] env 검증:');
 console.log('  ANTHROPIC:', ANTHROPIC_KEY ? `set (${ANTHROPIC_KEY.length}자, prefix=${ANTHROPIC_KEY.substring(0,7)}...)` : '❌ 미설정');
 console.log('  OPENAI:', OPENAI_KEY ? `set (${OPENAI_KEY.length}자, prefix=${OPENAI_KEY.substring(0,5)}...)` : '❌ 미설정');
 console.log('  ELEVENLABS:', ELEVENLABS_KEY ? `set (${ELEVENLABS_KEY.length}자)` : '❌ 미설정');
 console.log('  PEXELS:', PEXELS_KEY ? `set (${PEXELS_KEY.length}자)` : '❌ 미설정');
+console.log('  PIXABAY:', PIXABAY_KEY ? `set (${PIXABAY_KEY.length}자)` : '❌ 미설정');
 
 if (ANTHROPIC_KEY) {
   try { anthropic = new Anthropic({ apiKey: ANTHROPIC_KEY }); }
@@ -274,6 +276,7 @@ app.get('/api/health', async (req, res) => {
       dalle: !!OPENAI_KEY && !!openai,
       elevenlabs: !!ELEVENLABS_KEY,
       pexels: !!PEXELS_KEY,
+      pixabay: !!PIXABAY_KEY,
       youtube: !!process.env.YOUTUBE_CLIENT_ID
     },
     ytClientPrefix: process.env.YOUTUBE_CLIENT_ID?.substring(0, 15) || 'NOT_SET',
@@ -282,7 +285,8 @@ app.get('/api/health', async (req, res) => {
       anthropic: ANTHROPIC_KEY?.length || 0,
       openai: OPENAI_KEY?.length || 0,
       elevenlabs: ELEVENLABS_KEY?.length || 0,
-      pexels: PEXELS_KEY?.length || 0
+      pexels: PEXELS_KEY?.length || 0,
+      pixabay: PIXABAY_KEY?.length || 0
     },
     ffmpeg: await new Promise(resolve => {
       execFile('ffmpeg', ['-version'], { timeout: 5000 }, (err, stdout) => {
@@ -1426,6 +1430,103 @@ app.post('/api/clips/generate', async (req, res) => {
   }
 });
 
+// Pixabay API로 장면별 키워드 영상 검색 후 다운로드
+app.post('/api/clips/generate-pixabay', async (req, res) => {
+  try {
+    if (!PIXABAY_KEY) throw new Error('PIXABAY_API_KEY가 설정되지 않았습니다. https://pixabay.com/api/docs/ 에서 무료 발급하세요.');
+
+    const { projectId, scenePrompts, perSceneDuration, ratio } = req.body;
+    const orientation = ratio === '9:16' ? 'vertical' : 'horizontal';
+    const project = getProject(projectId);
+    const prompts = scenePrompts || project.scenePrompts || [];
+    if (!prompts.length) throw new Error('장면 프롬프트가 없습니다. 먼저 프롬프트를 생성하세요.');
+
+    // 기존 clip 파일 정리
+    fs.readdirSync(path.join(OUTPUT_DIR, 'clips'))
+      .filter(f => f.startsWith('clip_') && f.endsWith('.mp4'))
+      .forEach(f => { try { fs.unlinkSync(path.join(OUTPUT_DIR, 'clips', f)); } catch(e) {} });
+
+    const targetDur = perSceneDuration || 10;
+    const clips = [];
+    const usedVideoIds = new Set(project.usedClipVideoIds || []);
+    const FALLBACK_GENERIC = ['city street', 'nature landscape', 'people working', 'abstract background', 'sky timelapse', 'ocean waves', 'forest sunlight', 'urban night'];
+
+    async function searchPixabay(query) {
+      const url = `https://pixabay.com/api/videos/?key=${PIXABAY_KEY}&q=${encodeURIComponent(query)}&per_page=15&video_type=film&orientation=${orientation}`;
+      const r = await fetch(url);
+      if (!r.ok) { console.warn('[Pixabay]', r.status, query); return []; }
+      const data = await r.json();
+      return (data.hits || []).filter(v => !usedVideoIds.has(v.id));
+    }
+
+    for (let i = 0; i < prompts.length; i++) {
+      const p = prompts[i];
+      let baseQuery;
+      if (p.search_keywords && typeof p.search_keywords === 'string') {
+        baseQuery = p.search_keywords.trim().substring(0, 50);
+      } else {
+        const englishWords = (p.prompt || '').match(/[a-zA-Z]+/g) || [];
+        baseQuery = englishWords.slice(0, 4).join(' ').substring(0, 50);
+        if (!baseQuery) baseQuery = (p.name || 'nature landscape').replace(/[^a-zA-Z\s]/g, ' ').trim();
+      }
+
+      let videos = await searchPixabay(baseQuery);
+      const triedQueries = [baseQuery];
+
+      if (!videos.length) {
+        const generic = FALLBACK_GENERIC[i % FALLBACK_GENERIC.length];
+        triedQueries.push(generic);
+        console.log(`[Pixabay] 장면 ${i+1} fallback: "${generic}"`);
+        videos = await searchPixabay(generic);
+      }
+
+      if (!videos.length) {
+        clips.push({ index: i + 1, error: 'no result', triedQueries });
+        continue;
+      }
+
+      try {
+        const video = videos[0];
+        usedVideoIds.add(video.id);
+        const vf = video.videos;
+        const best = vf.large?.url ? vf.large : (vf.medium?.url ? vf.medium : vf.small);
+        if (!best?.url) { clips.push({ index: i + 1, error: 'no video url', videoId: video.id }); continue; }
+
+        const vRes = await fetch(best.url);
+        if (!vRes.ok) throw new Error(`Download ${vRes.status}`);
+        const buffer = Buffer.from(await vRes.arrayBuffer());
+        const sceneNum = String(i + 1).padStart(2, '0');
+        const filename = `clip_${sceneNum}.mp4`;
+        const filepath = path.join(OUTPUT_DIR, 'clips', filename);
+        fs.writeFileSync(filepath, buffer);
+        clips.push({
+          index: i + 1,
+          filename,
+          url: `/output/clips/${filename}`,
+          size: `${(buffer.length / 1024 / 1024).toFixed(1)}MB`,
+          query: triedQueries[triedQueries.length - 1],
+          videoId: video.id,
+          source: 'pixabay',
+          author: video.user || 'Unknown',
+          authorUrl: video.pageURL || ''
+        });
+        await new Promise(r => setTimeout(r, 800));
+      } catch(e) {
+        clips.push({ index: i + 1, error: e.message, triedQueries });
+      }
+    }
+
+    project.usedClipVideoIds = Array.from(usedVideoIds);
+    project.clipFiles = clips.filter(c => c.filename);
+    const uniqueCheck = new Set(clips.filter(c => c.videoId).map(c => c.videoId));
+    const allUnique = uniqueCheck.size === clips.filter(c => c.videoId).length;
+
+    res.json({ success: true, clips, allUnique, totalUsedIds: usedVideoIds.size });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // 클립 목록 조회
 app.get('/api/clips/list', (req, res) => {
   const dir = path.join(OUTPUT_DIR, 'clips');
@@ -1650,8 +1751,8 @@ app.post('/api/render/video', async (req, res) => {
     const outH = isVertical ? 1920 : 1080;
     const project = getProject(projectId);
 
-    // 소스 모드: 'image' (기본) / 'video' (Pexels) / 'runway' (Runway AI 영상) / 'falai' (fal.ai Wan2.1)
-    const useVideo = sourceMode === 'video' || sourceMode === 'runway' || sourceMode === 'falai';
+    // 소스 모드: 'image' (기본) / 'video' (Pexels) / 'pixabay' (Pixabay) / 'runway' (Runway AI 영상) / 'falai' (fal.ai Wan2.1)
+    const useVideo = sourceMode === 'video' || sourceMode === 'pixabay' || sourceMode === 'runway' || sourceMode === 'falai';
     const sourceDir = useVideo ? 'clips' : 'images';
     const sourcePrefix = sourceMode === 'runway' ? 'runway_' : sourceMode === 'falai' ? 'falai_' : (useVideo ? 'clip_' : 'scene_');
     const sourceExt = useVideo ? '.mp4' : '.png';
@@ -2660,7 +2761,7 @@ function saveUserSettingsJSON(data) {
 }
 function applyUserKeys(keys) {
   if (!keys) return;
-  const envKeys = ['ANTHROPIC_API_KEY','OPENAI_API_KEY','ELEVENLABS_API_KEY','PEXELS_API_KEY','RUNWAYML_API_KEY','FALAI_API_KEY','YOUTUBE_CLIENT_ID','YOUTUBE_CLIENT_SECRET','YOUTUBE_REFRESH_TOKEN'];
+  const envKeys = ['ANTHROPIC_API_KEY','OPENAI_API_KEY','ELEVENLABS_API_KEY','PEXELS_API_KEY','PIXABAY_API_KEY','RUNWAYML_API_KEY','FALAI_API_KEY','YOUTUBE_CLIENT_ID','YOUTUBE_CLIENT_SECRET','YOUTUBE_REFRESH_TOKEN'];
   for (const k of envKeys) {
     if (keys[k]) process.env[k] = keys[k];
   }
@@ -2675,6 +2776,7 @@ function applyUserKeys(keys) {
   }
   if (keys.ELEVENLABS_API_KEY) { ELEVENLABS_KEY = cleanKey(keys.ELEVENLABS_API_KEY); }
   if (keys.PEXELS_API_KEY) { PEXELS_KEY = cleanKey(keys.PEXELS_API_KEY); }
+  if (keys.PIXABAY_API_KEY) { PIXABAY_KEY = cleanKey(keys.PIXABAY_API_KEY); }
   if (keys.YOUTUBE_CLIENT_ID) { oauth2Client._clientId = keys.YOUTUBE_CLIENT_ID; }
   if (keys.YOUTUBE_CLIENT_SECRET) { oauth2Client._clientSecret = keys.YOUTUBE_CLIENT_SECRET; }
   if (keys.YOUTUBE_REFRESH_TOKEN) {
@@ -2705,6 +2807,7 @@ app.get('/api/settings/status', (req, res) => {
       openai: !!OPENAI_KEY,
       elevenlabs: !!ELEVENLABS_KEY,
       pexels: !!PEXELS_KEY,
+      pixabay: !!PIXABAY_KEY,
       runway: !!process.env.RUNWAYML_API_KEY,
       falai: !!process.env.FALAI_API_KEY,
       youtube: !!process.env.YOUTUBE_CLIENT_ID
@@ -2714,6 +2817,7 @@ app.get('/api/settings/status', (req, res) => {
       openai: OPENAI_KEY ? maskKey(OPENAI_KEY) : '',
       elevenlabs: ELEVENLABS_KEY ? maskKey(ELEVENLABS_KEY) : '',
       pexels: PEXELS_KEY ? maskKey(PEXELS_KEY) : '',
+      pixabay: PIXABAY_KEY ? maskKey(PIXABAY_KEY) : '',
       runway: process.env.RUNWAYML_API_KEY ? maskKey(process.env.RUNWAYML_API_KEY) : '',
       falai: process.env.FALAI_API_KEY ? maskKey(process.env.FALAI_API_KEY) : '',
       ytClientId: process.env.YOUTUBE_CLIENT_ID ? maskKey(process.env.YOUTUBE_CLIENT_ID) : ''
@@ -2724,7 +2828,7 @@ app.get('/api/settings/status', (req, res) => {
 app.post('/api/settings/save', async (req, res) => {
   try {
     const updates = req.body || {};
-    const envKeys = ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'ELEVENLABS_API_KEY', 'PEXELS_API_KEY',
+    const envKeys = ['ANTHROPIC_API_KEY', 'OPENAI_API_KEY', 'ELEVENLABS_API_KEY', 'PEXELS_API_KEY', 'PIXABAY_API_KEY',
                      'RUNWAYML_API_KEY', 'FALAI_API_KEY',
                      'YOUTUBE_CLIENT_ID', 'YOUTUBE_CLIENT_SECRET', 'YOUTUBE_REDIRECT_URI', 'YOUTUBE_REFRESH_TOKEN', 'PORT'];
 

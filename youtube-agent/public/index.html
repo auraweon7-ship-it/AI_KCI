@@ -705,6 +705,7 @@ input[type="datetime-local"]::-webkit-datetime-edit-fields-wrapper{color:var(--t
               <select class="fs" id="autoSourceMode" onchange="updateSourceModeHint()">
                 <option value="image">🖼️ 이미지 기반</option>
                 <option value="video" selected>🎬 영상 기반 (Pexels)</option>
+                <option value="pixabay">🎬 영상 기반 (Pixabay)</option>
                 <option value="runway">🎥 AI 영상 (Runway Gen-3/4)</option>
                 <option value="falai">⚡ AI 영상 (Seedance 2.0)</option>
               </select>
@@ -2005,7 +2006,9 @@ function updateSourceModeHint(){
   const hint=document.getElementById('autoSourceModeHint');
   if(hint){
     if(mode==='video'){
-      hint.innerHTML='⚠️ Pexels API 키 필요 (.env에 PEXELS_API_KEY 설정). <a href="https://www.pexels.com/api/" target="_blank" style="color:var(--acc)">무료 발급</a>';
+      hint.innerHTML='⚠️ Pexels API 키 필요 (설정 → PEXELS_API_KEY). <a href="https://www.pexels.com/api/" target="_blank" style="color:var(--acc)">무료 발급</a>';
+    } else if(mode==='pixabay'){
+      hint.innerHTML='⚠️ Pixabay API 키 필요 (설정 → PIXABAY_API_KEY). <a href="https://pixabay.com/api/docs/" target="_blank" style="color:var(--acc)">무료 발급</a>';
     } else if(mode==='runway'){
       hint.innerHTML='⚠️ Runway API 키 필요 (설정 → RUNWAYML_API_KEY). Gen-3a Turbo (이미지→영상) 또는 Gen-4 Turbo (텍스트→영상) 사용';
     } else if(mode==='falai'){
@@ -2016,7 +2019,7 @@ function updateSourceModeHint(){
   }
   // 이미지 모드 전용 메뉴 비활성화 (영상/Runway 모드 시)
   const imageOnly=['autoStyle','autoImgCnt','autoKenburns'];
-  const isVideo=mode==='video'||mode==='runway'||mode==='falai';
+  const isVideo=mode==='video'||mode==='pixabay'||mode==='runway'||mode==='falai';
   // Runway 모드: 이미지/영상 수 비활성화 (Runway가 씬 수 결정)
   const imgCnt2El=document.getElementById('autoImgCnt2');
   const imgCnt2Wrap=imgCnt2El?.closest('.fg');
@@ -2518,12 +2521,14 @@ async function startAutoPipeline(isResume, _fromBatch){
     autoStatus('prompts','running','프롬프트 생성 중...');
     const promptData=await api('/api/images/generate-prompts',{script:S.script,style,count:imgCnt,videoType:S.videoType});
     S.imgPrompts=promptData.prompts;
-    if(sourceMode==='video'){
-      // 비디오 모드: Pexels 스톡 영상 다운로드
+    if(sourceMode==='video'||sourceMode==='pixabay'){
+      // 비디오 모드: Pexels 또는 Pixabay 스톡 영상 다운로드
+      const clipEndpoint=sourceMode==='pixabay'?'/api/clips/generate-pixabay':'/api/clips/generate';
+      const clipLabel=sourceMode==='pixabay'?'Pixabay':'Pexels';
       markOk('prompts');autoTime('prompts',0);autoStatus('prompts','done',`프롬프트 ${S.imgPrompts.length}개 생성 완료`);
-      autoStatus('image','running','Pexels 영상 검색·다운로드 중...');
+      autoStatus('image','running',`${clipLabel} 영상 검색·다운로드 중...`);
       try{
-        const clipData=await api('/api/clips/generate',{scenePrompts:S.imgPrompts,perSceneDuration:10,ratio});
+        const clipData=await api(clipEndpoint,{scenePrompts:S.imgPrompts,perSceneDuration:10,ratio});
         const ok=clipData.clips.filter(c=>c.filename).length;
         const fail=clipData.clips.length-ok;
         markOk('image');save();
@@ -2990,7 +2995,7 @@ async function startAutoPipeline(isResume, _fromBatch){
         ${lastResult.upload?.videoUrl?`<div>📤 YouTube: <a href="${lastResult.upload.videoUrl}" target="_blank" style="color:var(--acc)">${lastResult.upload.videoUrl}</a></div>`:''}
         <div>💾 프로젝트 자동 저장됨 · <button class="b bs" onclick="go('projmgr')" style="font-size:10px;padding:2px 8px">📁 프로젝트 DB 보기</button></div>
       </div>
-      <div class="cd-t" style="margin:10px 0 6px">${sourceMode==='video'?'🎬 다운로드된 영상 클립':'🖼️ 생성된 이미지'} 미리보기</div>
+      <div class="cd-t" style="margin:10px 0 6px">${(sourceMode==='video'||sourceMode==='pixabay')?'🎬 다운로드된 영상 클립':'🖼️ 생성된 이미지'} 미리보기</div>
       <div class="prev-grid" id="autoPrevGrid"></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
         ${renderData.videoUrl?`<a href="${renderData.videoUrl}" download class="b bs">💾 영상 다운로드</a>`:''}
@@ -3005,7 +3010,7 @@ async function startAutoPipeline(isResume, _fromBatch){
     try{
       const prevEl=document.getElementById('autoPrevGrid');
       if(prevEl){
-        if(sourceMode==='video'){
+        if(sourceMode==='video'||sourceMode==='pixabay'){
           const clipList=await fetch('/api/clips/list').then(r=>r.json());
           const clips=(clipList.files||[]).filter(f=>f.name.startsWith('clip_'));
           prevEl.innerHTML=clips.map((c,i)=>`<div class="prev-item" onclick="window.open('${c.url}','_blank')"><video src="${c.url}" muted style="width:100%;display:block"></video><div class="prev-label">클립 ${i+1} | ${c.size}</div></div>`).join('');
@@ -3645,7 +3650,7 @@ async function openSettings(){
     // 마스킹된 키 표시 + 입력됨 배지
     const fieldMap={
       anthropic:'setAnthropicKey', openai:'setOpenaiKey',
-      elevenlabs:'setElevenlabsKey', pexels:'setPexelsKey', runway:'setRunwayKey', falai:'setFalaiKey'
+      elevenlabs:'setElevenlabsKey', pexels:'setPexelsKey', pixabay:'setPixabayKey', runway:'setRunwayKey', falai:'setFalaiKey'
     };
     Object.entries(fieldMap).forEach(([k,id])=>{
       const el=document.getElementById(id);
@@ -3685,7 +3690,7 @@ async function openSettings(){
     const saved=JSON.parse(localStorage.getItem('yt_mix_keys')||'{}');
     const localMap={
       ANTHROPIC_API_KEY:'setAnthropicKey', OPENAI_API_KEY:'setOpenaiKey',
-      ELEVENLABS_API_KEY:'setElevenlabsKey', PEXELS_API_KEY:'setPexelsKey',
+      ELEVENLABS_API_KEY:'setElevenlabsKey', PEXELS_API_KEY:'setPexelsKey', PIXABAY_API_KEY:'setPixabayKey',
       RUNWAYML_API_KEY:'setRunwayKey', FALAI_API_KEY:'setFalaiKey',
       YOUTUBE_CLIENT_ID:'setYtClientId',
       YOUTUBE_CLIENT_SECRET:'setYtClientSecret'
@@ -3715,6 +3720,7 @@ async function saveSettings(){
   const ok=document.getElementById('setOpenaiKey').value.trim();
   const ek=document.getElementById('setElevenlabsKey').value.trim();
   const pk=document.getElementById('setPexelsKey').value.trim();
+  const pbk=document.getElementById('setPixabayKey').value.trim();
   const rk=document.getElementById('setRunwayKey').value.trim();
   const fk=document.getElementById('setFalaiKey').value.trim();
   const yci=document.getElementById('setYtClientId').value.trim();
@@ -3724,6 +3730,7 @@ async function saveSettings(){
   if(ok) body.OPENAI_API_KEY=ok;
   if(ek) body.ELEVENLABS_API_KEY=ek;
   if(pk) body.PEXELS_API_KEY=pk;
+  if(pbk) body.PIXABAY_API_KEY=pbk;
   if(rk) body.RUNWAYML_API_KEY=rk;
   if(fk) body.FALAI_API_KEY=fk;
   if(yci) body.YOUTUBE_CLIENT_ID=yci;
@@ -3753,6 +3760,7 @@ async function restoreKeysFromLocal(){
       if(k==='OPENAI_API_KEY') return !status.keys?.openai;
       if(k==='ELEVENLABS_API_KEY') return !status.keys?.elevenlabs;
       if(k==='PEXELS_API_KEY') return !status.keys?.pexels;
+      if(k==='PIXABAY_API_KEY') return !status.keys?.pixabay;
       if(k==='RUNWAYML_API_KEY') return !status.keys?.runway;
       return !!v;
     });
@@ -3960,7 +3968,11 @@ async function adminDeleteUser(email){
     </div>
     <div class="fg"><label class="fl">🎬 Pexels (스톡 영상) <span class="badge badge-key">무료</span></label>
       <input type="password" class="fi" id="setPexelsKey" placeholder="...">
-      <div class="fh">영상 기반 모드에서 스톡 영상 다운로드</div>
+      <div class="fh">영상 기반 (Pexels) 모드에서 스톡 영상 다운로드</div>
+    </div>
+    <div class="fg"><label class="fl">🎬 Pixabay (스톡 영상) <span class="badge badge-key">무료</span></label>
+      <input type="password" class="fi" id="setPixabayKey" placeholder="...">
+      <div class="fh">영상 기반 (Pixabay) 모드에서 스톡 영상 다운로드</div>
     </div>
     <div class="fg"><label class="fl">🎥 Runway (AI 영상 생성) <span class="badge badge-api">유료</span></label>
       <input type="password" class="fi" id="setRunwayKey" placeholder="key_...">
