@@ -2403,7 +2403,11 @@ async function startAutoPipeline(isResume, _fromBatch){
   const refText=useRefText?(document.getElementById('autoRefText')?.value||'').trim():'';
   const langNames={ko:'한국어',en:'English',zh:'中文'};
   // 한국어 TTS ~230자/분 기준, 장면 헤더 제거분 ~10% 감안
-  const wordCounts={1:'250',3:'760',4:'1020',5:'1270',10:'2530',15:'3800',20:'5060',30:'7600',40:'10120',50:'12650',60:'15180'};
+  // 소수점 키: 단일 클립 테스트용 초단위 옵션 (0.0833=5초, 0.1667=10초, 0.25=15초, 0.3333=20초, 0.5=30초)
+  const wordCounts={
+    '0.0833':'20','0.1667':'38','0.25':'58','0.3333':'77','0.5':'115',
+    1:'250',3:'760',4:'1020',5:'1270',10:'2530',15:'3800',20:'5060',30:'7600',40:'10120',50:'12650',60:'15180'
+  };
 
   S.topic=topic;
 
@@ -2478,7 +2482,8 @@ async function startAutoPipeline(isResume, _fromBatch){
     t1=Date.now();
     if(!pipeDone('script')){
       autoStatus('script','running','Claude AI 대본 작성 중...');
-      const scriptData=await api('/api/script/generate',{topic,target:'전 연령',plan:S.plan,wordCount:wordCounts[len]||'3000',narration:'3인칭 나레이터',tone:toneStr,language:langNames[lang],refText,targetMinutes:len,videoType:S.videoType});
+      const targetMinLabel=parseFloat(len)<1?`${Math.round(parseFloat(len)*60)}초`:len;
+      const scriptData=await api('/api/script/generate',{topic,target:'전 연령',plan:S.plan,wordCount:wordCounts[len]||'3000',narration:'3인칭 나레이터',tone:toneStr,language:langNames[lang],refText,targetMinutes:targetMinLabel,videoType:S.videoType});
       S.script=scriptData.script;markOk('script');save();
       pipeMark('script',{script:S.script});
       autoTime('script',Math.round((Date.now()-t1)/1000));
