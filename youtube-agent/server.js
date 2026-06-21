@@ -1932,15 +1932,31 @@ app.post('/api/render/video', async (req, res) => {
     // === 단계 4: SRT 자막 burn (기존 SRT 파일 우선 사용 → 이중자막 포함) ===
     if (burnSrt) {
       const scriptText = project.script || '';
-      if (scriptText) {
-        // 기존 SRT 파일 찾기 (이중자막 포함된 파일 우선)
-        const existingSrtFiles = listFilesByMtime(path.join(OUTPUT_DIR, 'srt'), f => f.endsWith('.srt'));
+      // 기존 SRT 파일 찾기 (이중자막 포함된 파일 우선)
+      const existingSrtFiles = listFilesByMtime(path.join(OUTPUT_DIR, 'srt'), f => f.endsWith('.srt'));
+      const hasSrt = existingSrtFiles.length > 0;
+      const canGenerate = !!scriptText;
+
+      if (hasSrt || canGenerate) {
         let freshSrtPath;
 
-        if (existingSrtFiles.length > 0 && srtOffset === 0) {
-          // 썸네일 인트로 없으면 기존 SRT 사용 (이중자막 포함)
+        if (hasSrt && srtOffset === 0) {
+          // 기존 SRT 사용 (썸네일 인트로 없음)
           freshSrtPath = path.join(OUTPUT_DIR, 'srt', existingSrtFiles[0]);
-          console.log(`[Render] 4. 기존 SRT 사용: ${existingSrtFiles[0]} (이중자막 포함)`);
+          console.log(`[Render] 4. 기존 SRT 사용: ${existingSrtFiles[0]}`);
+        } else if (hasSrt && srtOffset > 0) {
+          // 썸네일 인트로 있음 → 기존 SRT 타이밍 shift
+          console.log(`[Render] 4. 기존 SRT 타이밍 shift +${srtOffset}초`);
+          const rawSrt = fs.readFileSync(path.join(OUTPUT_DIR, 'srt', existingSrtFiles[0]), 'utf-8');
+          const shiftedSrt = rawSrt.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/g, (_, ts, ms) => {
+            const [h, m, s] = ts.split(':').map(Number);
+            const totalSec = h * 3600 + m * 60 + s + srtOffset;
+            const nh = Math.floor(totalSec / 3600), nm = Math.floor((totalSec % 3600) / 60), ns = totalSec % 60;
+            return `${String(nh).padStart(2,'0')}:${String(nm).padStart(2,'0')}:${String(ns).padStart(2,'0')},${ms}`;
+          });
+          const shiftedFile = `render_shift_${Date.now()}.srt`;
+          freshSrtPath = path.join(OUTPUT_DIR, 'srt', shiftedFile);
+          fs.writeFileSync(freshSrtPath, shiftedSrt, 'utf-8');
         } else {
           // 새로 생성 (썸네일 오프셋 적용 시)
           console.log(`[Render] 4. SRT 새로 생성 (오프셋 ${srtOffset}초)`);
@@ -1996,7 +2012,7 @@ app.post('/api/render/video', async (req, res) => {
         await new Promise((resolve, reject) => {
           execFile('ffmpeg', [
             '-i', outputPath,
-            '-vf', `subtitles='${srtPathEscaped}':fontsdir='${(CJK_FONT_PATH ? path.dirname(CJK_FONT_PATH) : path.join(__dirname, 'assets', 'fonts')).replace(/\\/g, '/').replace(/:/g, '\\:')}':force_style='FontName=Noto Sans CJK SC,Fontname=Noto Sans CJK SC,FontSize=${srtFontSize},PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=1,Outline=${srtOutline},Shadow=1,MarginV=${srtMarginV},MarginL=${srtMarginLR},MarginR=${srtMarginLR},WrapStyle=2,Bold=1,Italic=0,Alignment=2'`,
+            '-vf', `subtitles='${srtPathEscaped}':fontsdir='${(CJK_FONT_PATH ? path.dirname(CJK_FONT_PATH) : path.join(__dirname, 'assets', 'fonts')).replace(/\\/g, '/').replace(/:/g, '\\:')}':force_style='FontSize=${srtFontSize},PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000,BackColour=&H80000000,BorderStyle=1,Outline=${srtOutline},Shadow=1,MarginV=${srtMarginV},MarginL=${srtMarginLR},MarginR=${srtMarginLR},WrapStyle=2,Bold=1,Italic=0,Alignment=2'`,
             '-c:a', 'copy', '-c:v', 'libx264', '-preset', 'medium', '-crf', '23',
             '-movflags', '+faststart', '-y', srtOutput
           ], { timeout: 600000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
