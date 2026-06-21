@@ -2510,14 +2510,14 @@ async function startAutoPipeline(isResume, _fromBatch){
     await prePause('image');
     t1=Date.now();
     if(!pipeDone('image')){
-    autoStatus('prompts','running','프롬프트 생성 중...');
-    const promptData=await api('/api/images/generate-prompts',{script:S.script,style,count:imgCnt,videoType:S.videoType});
-    S.imgPrompts=promptData.prompts;
     if(sourceMode==='video'||sourceMode==='pixabay'){
-      // 비디오 모드: Pexels 또는 Pixabay 스톡 영상 다운로드
+      // 비디오 모드: 검색 키워드만 생성 (이미지 프롬프트 불필요 → 빠름)
       const clipEndpoint=sourceMode==='pixabay'?'/api/clips/generate-pixabay':'/api/clips/generate';
       const clipLabel=sourceMode==='pixabay'?'Pixabay':'Pexels';
-      markOk('prompts');autoTime('prompts',0);autoStatus('prompts','done',`프롬프트 ${S.imgPrompts.length}개 생성 완료`);
+      autoStatus('prompts','running',`${clipLabel} 검색 키워드 생성 중...`);
+      const promptData=await api('/api/clips/generate-keywords',{script:S.script,count:imgCnt});
+      S.imgPrompts=promptData.prompts;
+      markOk('prompts');autoTime('prompts',0);autoStatus('prompts','done',`키워드 ${S.imgPrompts.length}개 생성 완료`);
       autoStatus('image','running',`${clipLabel} 영상 검색·다운로드 중...`);
       try{
         const clipData=await api(clipEndpoint,{scenePrompts:S.imgPrompts,perSceneDuration:10,ratio});
@@ -2530,7 +2530,16 @@ async function startAutoPipeline(isResume, _fromBatch){
         const clipsHtml=clipData.clips.filter(c=>c.url).map(c=>`<video src="${c.url}" muted></video>`).join('');
         setPreview('image',`<div>🎬 ${ok}개 클립</div><div class="sp-grid">${clipsHtml}</div>`);
       }catch(e){autoStatus('image','fail',e.message);throw e}
-    } else if(sourceMode==='runway'){
+    } else {
+      // 이미지/Runway/falai 모드: DALL-E 이미지 프롬프트 생성
+      autoStatus('prompts','running','프롬프트 생성 중...');
+      const promptData=await api('/api/images/generate-prompts',{script:S.script,style,count:imgCnt,videoType:S.videoType});
+      S.imgPrompts=promptData.prompts;
+      if(sourceMode!=='runway'&&sourceMode!=='falai'){
+        markOk('prompts');autoTime('prompts',0);autoStatus('prompts','done',`프롬프트 ${S.imgPrompts.length}개 생성 완료`);
+      }
+    }
+    if(sourceMode==='runway'){
       // Runway 모드: ①Runway 프롬프트 생성 → ②DALL-E 이미지 생성 → ③Runway image-to-video
       const totalScenes=S.imgPrompts.length;
       const origin=window.location.origin;
@@ -2725,7 +2734,6 @@ async function startAutoPipeline(isResume, _fromBatch){
       }catch(e){}
     } else {
       // 이미지 모드: 기존 로직
-      markOk('prompts');autoTime('prompts',0);autoStatus('prompts','done',`프롬프트 ${S.imgPrompts.length}개 생성 완료`);
       autoStatus('image','running',`0/${imgCnt} 이미지 생성 중...`);
       for(let i=0;i<S.imgPrompts.length;i++){
         autoStatus('image','running',`${i+1}/${S.imgPrompts.length} 이미지 생성 중...`);

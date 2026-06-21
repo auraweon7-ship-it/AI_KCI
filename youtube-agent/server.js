@@ -747,6 +747,45 @@ JSON 배열 형식으로만 반환:
   }
 });
 
+// Pexels/Pixabay 전용: 검색 키워드만 생성 (이미지 프롬프트 생략 → 빠름)
+app.post('/api/clips/generate-keywords', async (req, res) => {
+  req.setTimeout(120000); res.setTimeout(120000);
+  try {
+    const { projectId, script, count } = req.body;
+    const project = getProject(projectId);
+    const fullScript = script || project.script || '';
+    const sceneCount = parseInt(count) || 8;
+
+    const prompt = `다음 유튜브 영상 대본을 읽고, ${sceneCount}개 장면에 대해 스톡 영상 검색에 최적화된 키워드를 생성하세요.
+
+대본:
+${fullScript.substring(0, 6000)}
+
+규칙:
+- search_keywords: 2~4단어 영어 키워드, 대본 내용에 부합하는 구체적 장소/시대/분위기 반영
+- 각 장면마다 서로 다른 키워드 (중복 영상 회피)
+- 한국어·추상명사 금지, 폭력·성인·혐오 관련 단어 금지
+
+JSON 배열로만 반환:
+[{"scene":1,"name":"장면 이름(한국어)","search_keywords":"english search terms"}]
+
+반드시 ${sceneCount}개 모두 생성.`;
+
+    const message = await anthropic.messages.create({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2000,
+      messages: [{ role: 'user', content: prompt }]
+    });
+
+    const text = message.content[0].text;
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    const prompts = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+    res.json({ success: true, prompts });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // ========================
 // 5. TTS 생성 (ElevenLabs)
 // ========================
