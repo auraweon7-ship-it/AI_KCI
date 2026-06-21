@@ -2511,16 +2511,14 @@ async function startAutoPipeline(isResume, _fromBatch){
     t1=Date.now();
     if(!pipeDone('image')){
     if(sourceMode==='video'||sourceMode==='pixabay'){
-      // 비디오 모드: 검색 키워드만 생성 (이미지 프롬프트 불필요 → 빠름)
+      // 비디오 모드: script를 서버에 전달 → 서버 내부에서 키워드 생성 + 다운로드 통합
       const clipEndpoint=sourceMode==='pixabay'?'/api/clips/generate-pixabay':'/api/clips/generate';
       const clipLabel=sourceMode==='pixabay'?'Pixabay':'Pexels';
-      autoStatus('prompts','running',`${clipLabel} 검색 키워드 생성 중...`);
-      const promptData=await api('/api/clips/generate-keywords',{script:S.script,count:imgCnt});
-      S.imgPrompts=promptData.prompts;
-      markOk('prompts');autoTime('prompts',0);autoStatus('prompts','done',`키워드 ${S.imgPrompts.length}개 생성 완료`);
-      autoStatus('image','running',`${clipLabel} 영상 검색·다운로드 중...`);
+      markOk('prompts');autoTime('prompts',0);autoStatus('prompts','done',`${clipLabel} 모드 — 키워드 생성 서버 통합`);
+      autoStatus('image','running',`${clipLabel} 키워드 생성 + 영상 검색·다운로드 중...`);
       try{
-        const clipData=await api(clipEndpoint,{scenePrompts:S.imgPrompts,perSceneDuration:10,ratio});
+        const clipData=await api(clipEndpoint,{script:S.script,count:imgCnt,perSceneDuration:10,ratio});
+        S.imgPrompts=clipData.keywords||[];
         const ok=clipData.clips.filter(c=>c.filename).length;
         const fail=clipData.clips.length-ok;
         markOk('image');save();

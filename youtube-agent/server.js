@@ -1341,10 +1341,20 @@ app.post('/api/clips/generate', async (req, res) => {
     const apiKey = process.env.PEXELS_API_KEY;
     if (!apiKey) throw new Error('PEXELS_API_KEY가 설정되지 않았습니다. .env 파일에 추가하세요. (무료 발급: https://www.pexels.com/api/)');
 
-    const { projectId, scenePrompts, perSceneDuration, ratio } = req.body;
+    const { projectId, scenePrompts, perSceneDuration, ratio, script, count } = req.body;
     const pexelsOrientation = ratio === '9:16' ? 'portrait' : 'landscape';
     const project = getProject(projectId);
-    const prompts = scenePrompts || project.scenePrompts || [];
+
+    // scenePrompts가 없으면 script로 키워드 자동 생성
+    let prompts = scenePrompts || project.scenePrompts || [];
+    if (!prompts.length && (script || project.script)) {
+      const fullScript = script || project.script;
+      const sceneCount = parseInt(count) || 8;
+      const kwPrompt = `다음 유튜브 영상 대본을 읽고 ${sceneCount}개 장면의 스톡 영상 검색 키워드를 생성하세요.\n대본:\n${fullScript.substring(0, 6000)}\n규칙: search_keywords는 2~4단어 영어, 장면마다 다른 키워드, 한국어·폭력·성인 금지.\nJSON 배열로만:\n[{"scene":1,"name":"장면명(한국어)","search_keywords":"english keywords"}]\n반드시 ${sceneCount}개 생성.`;
+      const msg = await anthropic.messages.create({ model: 'claude-haiku-4-5-20251001', max_tokens: 2000, messages: [{ role: 'user', content: kwPrompt }] });
+      const m = msg.content[0].text.match(/\[[\s\S]*\]/);
+      prompts = m ? JSON.parse(m[0]) : [];
+    }
     if (!prompts.length) throw new Error('장면 프롬프트가 없습니다. 먼저 프롬프트를 생성하세요.');
 
     // 기존 clip 파일 정리
@@ -1459,11 +1469,10 @@ app.post('/api/clips/generate', async (req, res) => {
     project.usedClipVideoIds = Array.from(usedVideoIds);
     project.clipFiles = clips.filter(c => c.filename);
 
-    // 검증: 모든 clip이 unique한지 (videoId 중복 체크)
     const uniqueCheck = new Set(clips.filter(c => c.videoId).map(c => c.videoId));
     const allUnique = uniqueCheck.size === clips.filter(c => c.videoId).length;
 
-    res.json({ success: true, clips, allUnique, totalUsedIds: usedVideoIds.size });
+    res.json({ success: true, clips, allUnique, totalUsedIds: usedVideoIds.size, keywords: prompts });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -1474,10 +1483,20 @@ app.post('/api/clips/generate-pixabay', async (req, res) => {
   try {
     if (!PIXABAY_KEY) throw new Error('PIXABAY_API_KEY가 설정되지 않았습니다. https://pixabay.com/api/docs/ 에서 무료 발급하세요.');
 
-    const { projectId, scenePrompts, perSceneDuration, ratio } = req.body;
+    const { projectId, scenePrompts, perSceneDuration, ratio, script, count } = req.body;
     const orientation = ratio === '9:16' ? 'vertical' : 'horizontal';
     const project = getProject(projectId);
-    const prompts = scenePrompts || project.scenePrompts || [];
+
+    // scenePrompts가 없으면 script로 키워드 자동 생성
+    let prompts = scenePrompts || project.scenePrompts || [];
+    if (!prompts.length && (script || project.script)) {
+      const fullScript = script || project.script;
+      const sceneCount = parseInt(count) || 8;
+      const kwPrompt = `다음 유튜브 영상 대본을 읽고 ${sceneCount}개 장면의 스톡 영상 검색 키워드를 생성하세요.\n대본:\n${fullScript.substring(0, 6000)}\n규칙: search_keywords는 2~4단어 영어, 장면마다 다른 키워드, 한국어·폭력·성인 금지.\nJSON 배열로만:\n[{"scene":1,"name":"장면명(한국어)","search_keywords":"english keywords"}]\n반드시 ${sceneCount}개 생성.`;
+      const msg = await anthropic.messages.create({ model: 'claude-haiku-4-5-20251001', max_tokens: 2000, messages: [{ role: 'user', content: kwPrompt }] });
+      const m = msg.content[0].text.match(/\[[\s\S]*\]/);
+      prompts = m ? JSON.parse(m[0]) : [];
+    }
     if (!prompts.length) throw new Error('장면 프롬프트가 없습니다. 먼저 프롬프트를 생성하세요.');
 
     // 기존 clip 파일 정리
@@ -1560,7 +1579,7 @@ app.post('/api/clips/generate-pixabay', async (req, res) => {
     const uniqueCheck = new Set(clips.filter(c => c.videoId).map(c => c.videoId));
     const allUnique = uniqueCheck.size === clips.filter(c => c.videoId).length;
 
-    res.json({ success: true, clips, allUnique, totalUsedIds: usedVideoIds.size });
+    res.json({ success: true, clips, allUnique, totalUsedIds: usedVideoIds.size, keywords: prompts });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
