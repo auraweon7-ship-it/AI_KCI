@@ -2953,6 +2953,8 @@
                         <button class="btn btn-outline btn-sm" onclick="startQuiz(true)">윤곽 없이</button>
                         <button class="btn btn-outline btn-sm" onclick="startQuiz()">다시 쓰기</button>
                         <button class="btn btn-outline btn-sm" onclick="showHint()">힌트</button>
+                        <button class="btn btn-outline btn-sm" id="writerFavBtn" onclick="toggleWriterFav()" title="즐겨찾기">☆</button>
+                        <button class="btn btn-outline btn-sm" onclick="showWriterExample()" title="예문 보기">예문</button>
                     </div>
                 </div>
             </div>
@@ -3401,6 +3403,7 @@
             createQuizWriter(char);
             loadStrokeBreakdown(char);
             updateFavBtn();
+            updateWriterFavBtn();
             showRadicalInfo(char);
             showRelatedIdioms(char);
             updateCharNav();
@@ -3584,6 +3587,38 @@
         }
 
         function showHint() { if (animWriter) animWriter.animateStroke(currentStrokeNum); }
+
+        function toggleWriterFav() {
+            if (!currentChar) return;
+            var data = getWordlists();
+            var idx = data.favorites.indexOf(currentChar);
+            if (idx === -1) {
+                data.favorites.push(currentChar);
+                showToast(currentChar + ' 즐겨찾기 추가');
+            } else {
+                data.favorites.splice(idx, 1);
+                showToast(currentChar + ' 즐겨찾기 해제');
+            }
+            saveWordlists(data);
+            updateWriterFavBtn();
+            if (typeof renderWordlistSection === 'function') renderWordlistSection();
+        }
+        function updateWriterFavBtn() {
+            var btn = document.getElementById('writerFavBtn');
+            if (!btn || !currentChar) return;
+            var data = getWordlists();
+            var isFav = data.favorites && data.favorites.indexOf(currentChar) !== -1;
+            btn.textContent = isFav ? '★' : '☆';
+            btn.style.color = isFav ? '#fbbf24' : '';
+        }
+        function showWriterExample() {
+            if (!currentChar) return;
+            loadExample(currentChar);
+            var panel = document.getElementById('examplePanel');
+            if (panel && panel.style.display === 'block') {
+                panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
 
         function updateStats() {
             document.getElementById('statCorrect').textContent = stats.correct;
