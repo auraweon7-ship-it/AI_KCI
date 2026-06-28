@@ -329,11 +329,64 @@ body.admin .admin-badge{display:block;}
 .yt-play-icon{font-size:2.4rem;opacity:.8;}
 .yt-title-small{font-size:.8rem;text-align:center;padding:0 10px;opacity:.85;line-height:1.3;}
 
-/* responsive */
+/* ── RESPONSIVE ── */
 @media(max-width:720px){
   .section-header{flex-direction:column;}
   .hero h1{font-size:1.8rem;}
   .hero-stats{gap:20px;}
+  .section-wrap-inner{padding:24px 16px;}
+  .section{padding:40px 12px;}
+  .poll-wrap{padding:24px 16px;margin-top:32px;}
+  .stars-row{gap:6px;}
+  .star-btn{font-size:2.2rem;}
+  .modal{padding:20px 16px;}
+  .score-card{padding:20px 16px;}
+  .tab-bar{width:100%;justify-content:stretch;}
+  .tab-btn{flex:1;text-align:center;}
+  .subsection-header{flex-direction:column;align-items:flex-start;}
+  .tts-controls{gap:8px;}
+  .chinese-sample-btns{gap:6px;}
+  .type-selector{grid-template-columns:repeat(2,1fr);}
+  .hero{padding:60px 16px 40px;}
+  /* 카드 액션 버튼: 터치 기기에서 항상 표시 */
+  .card-actions{opacity:1;}
+  .blog-card .card-actions{opacity:1;}
+  /* 구글 로그인: 텍스트 숨김 */
+  .glogin-btn span:last-child{display:none;}
+  .glogin-btn{padding:6px 10px;}
+  .glogin-wrap{right:64px;top:8px;}
+  .admin-btn{top:8px;right:14px;}
+  .admin-badge{top:54px;right:10px;}
+  /* 블로그 뷰어 모달 */
+  #blog-view-overlay .modal{padding:0;}
+  #blog-view-inner{padding:16px;}
+}
+@media(max-width:480px){
+  .hero h1{font-size:1.5rem;}
+  .hero-photo{width:140px;height:170px;}
+  .hero-photo-tag{font-size:.68rem;padding:4px 12px;}
+  .btn-hero{padding:11px 22px;font-size:.9rem;}
+  .hero-stats{gap:16px;}
+  .stat-num{font-size:1.6rem;}
+  .nav-item{padding:12px 12px;font-size:.8rem;}
+  .section-title{font-size:1.4rem;}
+  .grid3{grid-template-columns:1fr;}
+  .filter-chip{padding:6px 12px;font-size:.78rem;}
+  .score-mic-btn{width:70px;height:70px;font-size:1.6rem;}
+  .poll-wrap{border-radius:14px;}
+  .star-btn{font-size:1.9rem;}
+  .star-labels{font-size:.68rem;}
+  .modal{border-radius:14px;}
+  .portfolio-actions{flex-wrap:wrap;}
+  .card-social{flex-wrap:wrap;gap:6px;}
+  .comment-form{flex-direction:column;}
+  .comment-submit{border-radius:8px;}
+  .glogin-wrap{right:56px;}
+  .admin-btn{width:34px;height:34px;font-size:.9rem;right:12px;}
+  .blog-gen-btn{font-size:.82rem;}
+  .bp-title{font-size:1.2rem;}
+  .bp-section-body{font-size:.82rem;}
+  .section-wrap-inner{padding:16px 12px;}
 }
 </style>
 </head>
