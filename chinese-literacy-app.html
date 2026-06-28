@@ -2070,7 +2070,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 // ══════════════════════════════════════════════
 const STAR_LABELS=['','매우 불만족','불만족','보통','만족','매우 만족'];
 const STAR_COLORS=['','#ef4444','#f97316','#f59e0b','#84cc16','#10b981'];
-let selectedStar=0;
+let selectedStar=5;
 
 function getPollData(){
   try{return JSON.parse(localStorage.getItem('poll_satisfaction')||'{"votes":[0,0,0,0,0],"myVote":0}');}
@@ -2158,11 +2158,13 @@ function changePollVote(){
 
 function initPoll(){
   const d=getPollData();
-  if(d.myVote){
-    selectedStar=d.myVote;
-    document.querySelectorAll('.star-btn').forEach((b,i)=>b.classList.toggle('lit',i<d.myVote));
-    renderPollResults(d);
-  }
+  const v=d.myVote||5;
+  selectedStar=v;
+  document.querySelectorAll('.star-btn').forEach((b,i)=>b.classList.toggle('lit',i<v));
+  const btn=document.getElementById('poll-submit-btn');
+  btn.disabled=false;
+  btn.textContent=`${v}점 · ${STAR_LABELS[v]} 투표하기`;
+  if(d.myVote) renderPollResults(d);
 }
 
 // close modal on overlay click
