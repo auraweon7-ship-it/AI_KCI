@@ -261,7 +261,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ── 정적 파일 서빙 ─────────────────────────
-  let filePath = pathname === '/' ? '/index.html' : pathname;
+  let filePath = pathname === '/' ? '/chinese-literacy-app.html' : pathname;
   filePath = path.normalize(filePath).replace(/^(\.\.[\/\\])+/, '');
   filePath = path.join(__dirname, filePath);
 
