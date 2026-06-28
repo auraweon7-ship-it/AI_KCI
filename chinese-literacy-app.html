@@ -1055,7 +1055,33 @@ function closeIframe(){
 //  STORAGE
 // ══════════════════════════════════════════════
 function loadData(key){try{return JSON.parse(localStorage.getItem('clit_'+key)||'[]');}catch{return[];}}
-function saveData(key,arr){try{localStorage.setItem('clit_'+key,JSON.stringify(arr));}catch{toast('저장 공간 부족 — 일부 항목은 세션 중에만 유지됩니다','err');}}
+function saveData(key,arr){
+  try{localStorage.setItem('clit_'+key,JSON.stringify(arr));}catch(e){toast('저장 공간 부족','err');}
+  // 서버 동기화 (비동기, 실패해도 로컬은 유지)
+  fetch('/api/appdata/'+encodeURIComponent(key),{
+    method:'PUT',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({data:arr})
+  }).catch(()=>{});
+}
+
+const APP_DATA_TYPES=['blog','travel','song','sensory','media-song','media-dance','stickman','portfolio-meta'];
+
+async function syncFromServer(){
+  try{
+    const results=await Promise.all(APP_DATA_TYPES.map(async type=>{
+      try{
+        const r=await fetch('/api/appdata/'+encodeURIComponent(type));
+        if(!r.ok)return;
+        const {data}=await r.json();
+        if(Array.isArray(data)&&data.length>0){
+          localStorage.setItem('clit_'+type,JSON.stringify(data));
+        }
+      }catch(e){}
+    }));
+    // 소셜 데이터 동기화는 카드 렌더 후 개별 처리
+    console.log('[DB] 서버 동기화 완료');
+  }catch(e){console.warn('[DB] 동기화 실패, 로컬 데이터 사용');}
+}
 
 // ══════════════════════════════════════════════
 //  MODAL SYSTEM
@@ -2216,6 +2242,13 @@ document.addEventListener('DOMContentLoaded',()=>{
   applyAdminState();
   // 구글 로그인 초기화
   initGoogleLogin();
+  // 서버 DB 동기화 → 완료 후 전체 섹션 재렌더
+  syncFromServer().then(()=>{
+    ['travel','song','sensory','media-song','media-dance','stickman','blog'].forEach(t=>renderSection(t));
+    renderPortfolio();
+    // 서버 투표 데이터 동기화
+    syncPollFromServer();
+  });
   // admin 모달 오버레이 클릭 닫기
   document.getElementById('admin-modal-overlay').addEventListener('click',e=>{
     if(e.target===document.getElementById('admin-modal-overlay'))closeAdminModal();
@@ -2233,7 +2266,22 @@ function getPollData(){
   try{return JSON.parse(localStorage.getItem('poll_satisfaction')||'{"votes":[0,0,0,0,0],"myVote":0}');}
   catch{return{votes:[0,0,0,0,0],myVote:0};}
 }
-function savePollData(d){localStorage.setItem('poll_satisfaction',JSON.stringify(d));}
+function savePollData(d){
+  localStorage.setItem('poll_satisfaction',JSON.stringify(d));
+}
+
+async function syncPollFromServer(){
+  try{
+    const r=await fetch('/api/poll');
+    if(!r.ok)return;
+    const {votes}=await r.json();
+    if(!Array.isArray(votes))return;
+    const d=getPollData();
+    d.votes=votes;
+    savePollData(d);
+    renderPollResults(d);
+  }catch(e){}
+}
 
 function hoverStar(v){
   selectedStar=v;
@@ -2255,13 +2303,15 @@ function submitPoll(){
   if(!selectedStar)return;
   const d=getPollData();
   if(d.myVote){
-    // 이전 표 취소 후 새로 투표
     if(d.myVote>=1&&d.myVote<=5) d.votes[d.myVote-1]=Math.max(0,d.votes[d.myVote-1]-1);
   }
   d.votes[selectedStar-1]=(d.votes[selectedStar-1]||0)+1;
   d.myVote=selectedStar;
   savePollData(d);
   renderPollResults(d);
+  // 서버에도 저장
+  fetch('/api/poll',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({rating:selectedStar})})
+    .then(r=>r.json()).then(({votes})=>{if(votes){const d2=getPollData();d2.votes=votes;savePollData(d2);renderPollResults(d2);}}).catch(()=>{});
   // 폭죽 if 5점
   if(selectedStar>=4){
     const btn=document.getElementById('poll-submit-btn');

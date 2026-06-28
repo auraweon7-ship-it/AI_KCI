@@ -33,6 +33,23 @@ async function initDB() {
   }
   try {
     await pool.query(`
+      CREATE TABLE IF NOT EXISTS app_data (
+        key TEXT PRIMARY KEY,
+        data JSONB NOT NULL DEFAULT '[]',
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+      CREATE TABLE IF NOT EXISTS app_social (
+        key TEXT PRIMARY KEY,
+        likes INTEGER DEFAULT 0,
+        liked_by JSONB DEFAULT '[]',
+        comments JSONB DEFAULT '[]'
+      );
+      CREATE TABLE IF NOT EXISTS app_poll (
+        key TEXT PRIMARY KEY,
+        votes JSONB DEFAULT '[0,0,0,0,0]'
+      );
+    `);
+    await pool.query(`
       CREATE TABLE IF NOT EXISTS users (
         sub TEXT PRIMARY KEY,
         name TEXT,
@@ -128,6 +145,108 @@ const server = http.createServer(async (req, res) => {
       uptime: process.uptime()
     });
     return;
+  }
+
+  // ── 앱 데이터 API ───────────────────────────
+  try {
+    // GET /api/appdata/:key
+    const m_get = pathname.match(/^\/api\/appdata\/(.+)$/);
+    if (m_get && req.method === 'GET') {
+      const key = decodeURIComponent(m_get[1]);
+      if (!pool) return jsonResponse(res, 200, { data: [] });
+      const r = await pool.query('SELECT data FROM app_data WHERE key=$1', [key]);
+      return jsonResponse(res, 200, { data: r.rows[0]?.data || [] });
+    }
+
+    // PUT /api/appdata/:key
+    const m_put = pathname.match(/^\/api\/appdata\/(.+)$/);
+    if (m_put && req.method === 'PUT') {
+      const key = decodeURIComponent(m_put[1]);
+      if (!pool) return jsonResponse(res, 200, { ok: true, db: false });
+      const { data } = await readBody(req);
+      await pool.query(`
+        INSERT INTO app_data (key, data, updated_at)
+        VALUES ($1, $2, NOW())
+        ON CONFLICT (key) DO UPDATE SET data=$2, updated_at=NOW()
+      `, [key, JSON.stringify(data)]);
+      return jsonResponse(res, 200, { ok: true });
+    }
+
+    // GET /api/social/:key
+    const m_sg = pathname.match(/^\/api\/social\/(.+)$/);
+    if (m_sg && req.method === 'GET') {
+      const key = decodeURIComponent(m_sg[1]);
+      if (!pool) return jsonResponse(res, 200, { likes: 0, liked_by: [], comments: [] });
+      const r = await pool.query('SELECT * FROM app_social WHERE key=$1', [key]);
+      const row = r.rows[0] || { likes: 0, liked_by: [], comments: [] };
+      return jsonResponse(res, 200, row);
+    }
+
+    // POST /api/social/:key/like  body: {userId}
+    const m_like = pathname.match(/^\/api\/social\/(.+)\/like$/);
+    if (m_like && req.method === 'POST') {
+      const key = decodeURIComponent(m_like[1]);
+      if (!pool) return jsonResponse(res, 200, { ok: true, db: false });
+      const { userId } = await readBody(req);
+      const r = await pool.query('SELECT * FROM app_social WHERE key=$1', [key]);
+      const row = r.rows[0] || { likes: 0, liked_by: [], comments: [] };
+      const likedBy = Array.isArray(row.liked_by) ? row.liked_by : [];
+      const idx = likedBy.indexOf(userId);
+      let newLikes;
+      if (idx >= 0) { likedBy.splice(idx, 1); newLikes = Math.max(0, (row.likes||0) - 1); }
+      else { likedBy.push(userId); newLikes = (row.likes||0) + 1; }
+      await pool.query(`
+        INSERT INTO app_social (key, likes, liked_by, comments)
+        VALUES ($1,$2,$3,$4)
+        ON CONFLICT (key) DO UPDATE SET likes=$2, liked_by=$3
+      `, [key, newLikes, JSON.stringify(likedBy), JSON.stringify(row.comments||[])]);
+      return jsonResponse(res, 200, { ok: true, likes: newLikes, liked: idx < 0 });
+    }
+
+    // POST /api/social/:key/comment  body: {text}
+    const m_cmt = pathname.match(/^\/api\/social\/(.+)\/comment$/);
+    if (m_cmt && req.method === 'POST') {
+      const key = decodeURIComponent(m_cmt[1]);
+      if (!pool) return jsonResponse(res, 200, { ok: true, db: false });
+      const { text } = await readBody(req);
+      if (!text) return jsonResponse(res, 400, { error: 'text required' });
+      const r = await pool.query('SELECT * FROM app_social WHERE key=$1', [key]);
+      const row = r.rows[0] || { likes: 0, liked_by: [], comments: [] };
+      const comments = Array.isArray(row.comments) ? row.comments : [];
+      comments.push({ text: text.slice(0, 50), ts: Date.now() });
+      await pool.query(`
+        INSERT INTO app_social (key, likes, liked_by, comments)
+        VALUES ($1,$2,$3,$4)
+        ON CONFLICT (key) DO UPDATE SET comments=$4
+      `, [key, row.likes||0, JSON.stringify(row.liked_by||[]), JSON.stringify(comments)]);
+      return jsonResponse(res, 200, { ok: true, comments });
+    }
+
+    // GET /api/poll
+    if (pathname === '/api/poll' && req.method === 'GET') {
+      if (!pool) return jsonResponse(res, 200, { votes: [0,0,0,0,0] });
+      const r = await pool.query("SELECT votes FROM app_poll WHERE key='main'");
+      return jsonResponse(res, 200, { votes: r.rows[0]?.votes || [0,0,0,0,0] });
+    }
+
+    // POST /api/poll  body: {rating: 1-5}
+    if (pathname === '/api/poll' && req.method === 'POST') {
+      if (!pool) return jsonResponse(res, 200, { ok: true, db: false });
+      const { rating } = await readBody(req);
+      if (!rating || rating < 1 || rating > 5) return jsonResponse(res, 400, { error: 'rating 1-5 required' });
+      const r = await pool.query("SELECT votes FROM app_poll WHERE key='main'");
+      const votes = r.rows[0]?.votes || [0,0,0,0,0];
+      votes[rating - 1]++;
+      await pool.query(`
+        INSERT INTO app_poll (key, votes) VALUES ('main', $1)
+        ON CONFLICT (key) DO UPDATE SET votes=$1
+      `, [JSON.stringify(votes)]);
+      return jsonResponse(res, 200, { ok: true, votes });
+    }
+
+  } catch (e) {
+    console.error('[APP DATA API ERROR]', pathname, e.message);
+    return jsonResponse(res, 500, { error: e.message });
   }
 
   // ── 사용자 API ──────────────────────────────
