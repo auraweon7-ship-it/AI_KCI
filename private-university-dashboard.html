@@ -175,6 +175,63 @@
   .footer-copy{max-width:900px;margin:0.8rem auto 0;text-align:center;padding-top:0.8rem;border-top:1px solid var(--border);font-size:0.7rem;color:var(--text-dim);}
   @media(max-width:768px){.footer-row1{flex-direction:column;text-align:center;}.footer-info{justify-content:center;}.footer-links{justify-content:center;}}
 
+  /* ═══ 정책기획서 섹션 ═══ */
+  .policy-section{background:linear-gradient(135deg,#0d1117 0%,#161b26 50%,#0d1117 100%);border:1px solid var(--border);border-radius:16px;margin:2rem auto;padding:2.5rem 2rem;max-width:1200px;}
+  .policy-header{text-align:center;margin-bottom:2rem;border-bottom:2px solid var(--accent);padding-bottom:1.5rem;}
+  .policy-header h2{font-size:1.6rem;font-weight:900;color:var(--text);margin:0 0 0.3rem;}
+  .policy-header .policy-sub{font-size:0.85rem;color:var(--text-dim);margin:0.3rem 0;}
+  .policy-header .policy-date{font-size:0.75rem;color:var(--accent2);font-weight:600;}
+  .policy-exec{background:rgba(108,92,231,0.08);border:1px solid rgba(108,92,231,0.25);border-radius:12px;padding:1.5rem;margin-bottom:2rem;}
+  .policy-exec h3{font-size:1rem;font-weight:800;color:var(--accent2);margin:0 0 0.8rem;}
+  .policy-exec p{font-size:0.82rem;color:var(--text-dim);line-height:1.7;margin:0.4rem 0;}
+  .policy-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.5rem;margin-bottom:2rem;}
+  .policy-card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:1.2rem;transition:border-color 0.2s;}
+  .policy-card:hover{border-color:var(--accent);}
+  .policy-card h4{font-size:0.9rem;font-weight:800;margin:0 0 0.6rem;display:flex;align-items:center;gap:0.5rem;}
+  .policy-card .pc-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;}
+  .policy-card ul{margin:0;padding-left:1.2rem;font-size:0.78rem;color:var(--text-dim);line-height:1.8;}
+  .policy-card ul li::marker{color:var(--accent);}
+  .policy-card .pc-stat{display:flex;gap:0.8rem;margin-top:0.8rem;flex-wrap:wrap;}
+  .policy-card .pc-stat-item{background:rgba(255,255,255,0.04);border-radius:8px;padding:0.4rem 0.7rem;text-align:center;flex:1;min-width:70px;}
+  .policy-card .pc-stat-item .sv{font-size:1.1rem;font-weight:900;}
+  .policy-card .pc-stat-item .sl{font-size:0.6rem;color:var(--text-dim);}
+  .policy-charts{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;}
+  .policy-chart-box{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:1.2rem;}
+  .policy-chart-box h4{font-size:0.85rem;font-weight:700;color:var(--text);margin:0 0 0.8rem;}
+  .policy-chart-box canvas{max-height:220px;}
+  .policy-roadmap{margin-bottom:2rem;}
+  .policy-roadmap h3{font-size:1rem;font-weight:800;color:var(--accent2);margin:0 0 1rem;}
+  .roadmap-track{display:flex;gap:0;position:relative;overflow-x:auto;padding-bottom:0.5rem;}
+  .roadmap-phase{flex:1;min-width:160px;position:relative;padding:1rem 0.8rem;text-align:center;}
+  .roadmap-phase::before{content:'';position:absolute;top:28px;left:0;right:0;height:3px;background:var(--border);}
+  .roadmap-phase:first-child::before{left:50%;}
+  .roadmap-phase:last-child::before{right:50%;}
+  .roadmap-dot{width:16px;height:16px;border-radius:50%;margin:0 auto 0.6rem;position:relative;z-index:1;border:3px solid;}
+  .roadmap-phase .rm-label{font-size:0.7rem;font-weight:700;color:var(--text);margin-bottom:0.2rem;}
+  .roadmap-phase .rm-period{font-size:0.6rem;color:var(--text-dim);}
+  .roadmap-phase .rm-items{font-size:0.65rem;color:var(--text-dim);line-height:1.6;margin-top:0.4rem;}
+  .policy-table{width:100%;border-collapse:collapse;font-size:0.78rem;margin-bottom:2rem;}
+  .policy-table th{background:rgba(108,92,231,0.15);color:var(--accent2);font-weight:700;padding:0.6rem 0.8rem;text-align:left;border:1px solid var(--border);}
+  .policy-table td{padding:0.5rem 0.8rem;border:1px solid var(--border);color:var(--text-dim);}
+  .policy-table tr:hover td{background:rgba(255,255,255,0.03);}
+  .policy-kpi{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:2rem;}
+  .kpi-card{background:linear-gradient(135deg,rgba(108,92,231,0.1) 0%,rgba(0,0,0,0) 100%);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;}
+  .kpi-card .kpi-icon{font-size:1.5rem;margin-bottom:0.3rem;}
+  .kpi-card .kpi-value{font-size:1.4rem;font-weight:900;color:var(--text);}
+  .kpi-card .kpi-label{font-size:0.65rem;color:var(--text-dim);margin-top:0.15rem;}
+  .kpi-card .kpi-target{font-size:0.6rem;color:var(--accent);margin-top:0.3rem;font-weight:600;}
+  .policy-infographic{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem;}
+  .info-card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;}
+  .info-card .info-emoji{font-size:2rem;margin-bottom:0.4rem;}
+  .info-card .info-num{font-size:1.8rem;font-weight:900;}
+  .info-card .info-desc{font-size:0.7rem;color:var(--text-dim);line-height:1.5;}
+  @media(max-width:768px){
+    .policy-grid,.policy-charts,.policy-infographic{grid-template-columns:1fr;}
+    .policy-kpi{grid-template-columns:repeat(2,1fr);}
+    .roadmap-track{flex-direction:column;}
+    .roadmap-phase::before{display:none;}
+  }
+
   @media(max-width:768px){
     .header{padding:1.5rem 1rem 1rem;}.header h1{font-size:1.3rem;}
     .controls,.filter-row,.major-types,.sub-categories,.stats-bar,.news-grid{padding-left:1rem;padding-right:1rem;}
@@ -360,6 +417,58 @@
 
 <!-- 뉴스 카드 그리드 (차트·인사이트 아래) -->
 <div class="news-grid" id="newsGrid"></div>
+
+<!-- ═══ 정책기획서 섹션 ═══ -->
+<section class="policy-section" id="policySection">
+  <div class="policy-header">
+    <h2>📋 사립대학 재정 건전성 및 지속가능성 강화 정책기획서</h2>
+    <p class="policy-sub">뉴스 데이터 기반 자동 생성 | 중요도 ★4 이상 기사 분석</p>
+    <p class="policy-date" id="policyDate"></p>
+  </div>
+
+  <!-- 핵심 요약 -->
+  <div class="policy-exec">
+    <h3>📌 Executive Summary</h3>
+    <p>본 기획서는 사립대학 관련 <strong id="policyNewsCount">0</strong>건의 주요 뉴스(중요도 ★4 이상)를 분석하여, 5대 핵심 영역의 문제점을 진단하고 실행 가능한 정책 대안을 제시합니다.</p>
+    <p>핵심 과제: ① 법인 전입금 의무화를 통한 재정 책임 강화 ② 등록금-적립금 연동 투명성 제고 ③ 학령인구 감소 대비 구조개혁 가속화 ④ 지역 사립대 특성화 지원 확대 ⑤ AI·디지털 전환 투자 촉진</p>
+  </div>
+
+  <!-- 인포그래픽 핵심 수치 -->
+  <div class="policy-infographic" id="policyInfoGraphic"></div>
+
+  <!-- KPI 대시보드 -->
+  <div class="policy-kpi" id="policyKPI"></div>
+
+  <!-- 차트 영역 -->
+  <div class="policy-charts">
+    <div class="policy-chart-box">
+      <h4>📊 5대 유형별 이슈 분포</h4>
+      <canvas id="policyChartMajor"></canvas>
+    </div>
+    <div class="policy-chart-box">
+      <h4>📈 세부 분류별 기사 수</h4>
+      <canvas id="policyChartSub"></canvas>
+    </div>
+  </div>
+
+  <!-- 5대 정책 카드 -->
+  <div class="policy-grid" id="policyCards"></div>
+
+  <!-- 현황 진단 테이블 -->
+  <h3 style="font-size:1rem;font-weight:800;color:var(--accent2);margin-bottom:1rem;">📋 현황 진단 및 정책 대응 매트릭스</h3>
+  <table class="policy-table" id="policyTable">
+    <thead>
+      <tr><th>영역</th><th>핵심 문제</th><th>근거 뉴스 (건수)</th><th>정책 대안</th><th>기대 효과</th><th>우선순위</th></tr>
+    </thead>
+    <tbody id="policyTableBody"></tbody>
+  </table>
+
+  <!-- 로드맵 -->
+  <div class="policy-roadmap">
+    <h3>🗓️ 정책 실행 로드맵</h3>
+    <div class="roadmap-track" id="policyRoadmap"></div>
+  </div>
+</section>
 
 <footer class="site-footer">
   <div class="footer-row1">
@@ -1090,6 +1199,100 @@ function toggleTheme(){
   }
 })();
 
+// ═══ 정책기획서 렌더 ═══
+let policyChartMajorInst, policyChartSubInst;
+function renderPolicyBrief(){
+  const top=allNews.filter(n=>(n.imp||3)>=4).sort((a,b)=>(b.imp||3)-(a.imp||3));
+  const now=new Date();
+  document.getElementById('policyDate').textContent=`분석 기준일: ${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 | 총 ${allNews.length}건 중 핵심 ${top.length}건 분석`;
+  document.getElementById('policyNewsCount').textContent=top.length;
+
+  // 유형별 집계
+  const majorCount={fiscal:0,invest:0,student:0,account:0,sustain:0};
+  const subCount={};
+  top.forEach(n=>{majorCount[n.major]=(majorCount[n.major]||0)+1;subCount[n.sub]=(subCount[n.sub]||0)+1;});
+
+  // 인포그래픽
+  const imp5=allNews.filter(n=>(n.imp||3)===5).length;
+  const sources=[...new Set(allNews.map(n=>n.source))].length;
+  const regions=[...new Set(allNews.map(n=>n.region))].length;
+  document.getElementById('policyInfoGraphic').innerHTML=[
+    {e:'📰',n:allNews.length,d:'전체 모니터링 뉴스',c:'#ef4444'},
+    {e:'⭐',n:imp5,d:'최고 중요도(★5) 기사',c:'#f59e0b'},
+    {e:'🏛️',n:top.length,d:'정책 분석 대상(★4+)',c:'#6366f1'},
+    {e:'📡',n:sources,d:'언론사 수',c:'#06b6d4'},
+    {e:'🗺️',n:regions,d:'지역 커버리지',c:'#10b981'},
+    {e:'📊',n:Object.keys(subCount).length,d:'세부 이슈 분류',c:'#ec4899'}
+  ].map(i=>`<div class="info-card"><div class="info-emoji">${i.e}</div><div class="info-num" style="color:${i.c}">${i.n}</div><div class="info-desc">${i.d}</div></div>`).join('');
+
+  // KPI
+  const fiscalRatio=majorCount.fiscal?Math.round(majorCount.fiscal/top.length*100):0;
+  document.getElementById('policyKPI').innerHTML=[
+    {icon:'💰',val:fiscalRatio+'%',label:'재정 이슈 비중',target:'목표: 30% 이하'},
+    {icon:'🏢',val:'3%',label:'법인 부담률',target:'목표: 15% 이상'},
+    {icon:'👶',val:'50%↓',label:'학령인구 감소 전망',target:'30년 후 반감'},
+    {icon:'📈',val:majorCount.student+'건',label:'학생 경쟁력 이슈',target:'충원·취업·유학생'},
+    {icon:'🤖',val:subCount.ai_digital||0+'건',label:'AI·디지털 전환',target:'특성화 핵심'}
+  ].map(k=>`<div class="kpi-card"><div class="kpi-icon">${k.icon}</div><div class="kpi-value">${k.val}</div><div class="kpi-label">${k.label}</div><div class="kpi-target">${k.target}</div></div>`).join('');
+
+  // 차트1: 5대 유형 radar
+  const mLabels=['재정 건전성','교육 투자','학생 경쟁력','법인 책무성','지속가능성'];
+  const mKeys=['fiscal','invest','student','account','sustain'];
+  const mData=mKeys.map(k=>majorCount[k]||0);
+  const ctx1=document.getElementById('policyChartMajor');
+  if(policyChartMajorInst)policyChartMajorInst.destroy();
+  policyChartMajorInst=new Chart(ctx1,{type:'radar',data:{labels:mLabels,datasets:[{label:'기사 수',data:mData,backgroundColor:'rgba(108,92,231,0.2)',borderColor:'#6c5ce7',borderWidth:2,pointBackgroundColor:['#ef4444','#06b6d4','#10b981','#f59e0b','#8b5cf6']}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{ticks:{color:'#999',backdropColor:'transparent'},grid:{color:'rgba(255,255,255,0.08)'},pointLabels:{color:'#e4e6eb',font:{size:11,weight:'bold'}}}},plugins:{legend:{display:false}}}});
+
+  // 차트2: 세부 분류 bar
+  const SUB_LABELS_MAP={tuition:'등록금',fund_transfer:'법인전입금',reserve:'적립금',debt:'부채',edu_cost:'교육비',edu_return:'교육비환원율',scholarship:'장학금',faculty:'교원확보',enrollment:'충원율',dropout:'중도탈락',employment:'취업률',intl_student:'유학생',governance:'이사회',audit:'감사·공시',corruption:'비리',law:'사립학교법',demography:'학령인구',reform:'구조개혁',regional:'지역연계',ai_digital:'AI·디지털'};
+  const subSorted=Object.entries(subCount).sort((a,b)=>b[1]-a[1]);
+  const ctx2=document.getElementById('policyChartSub');
+  if(policyChartSubInst)policyChartSubInst.destroy();
+  const barColors=subSorted.map(([k])=>{const m=allNews.find(n=>n.sub===k)?.major;return{fiscal:'#ef4444',invest:'#06b6d4',student:'#10b981',account:'#f59e0b',sustain:'#8b5cf6'}[m]||'#999';});
+  policyChartSubInst=new Chart(ctx2,{type:'bar',data:{labels:subSorted.map(([k])=>SUB_LABELS_MAP[k]||k),datasets:[{label:'기사 수',data:subSorted.map(([,v])=>v),backgroundColor:barColors,borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{ticks:{color:'#999'},grid:{color:'rgba(255,255,255,0.06)'}},y:{ticks:{color:'#e4e6eb',font:{size:10}},grid:{display:false}}},plugins:{legend:{display:false}}}});
+
+  // 5대 정책 카드
+  const policies=[
+    {icon:'💰',color:'#ef4444',title:'재정 건전성 강화',items:['법인 전입금 최소 비율(10%) 의무화','적립금-등록금 연동 투명성 공시 의무화','등록금 인상 시 적립금 사용 계획 공개','부채비율 상한제(50%) 도입 검토'],stats:[{v:majorCount.fiscal,l:'관련 기사'},{v:subCount.tuition||0,l:'등록금'},{v:subCount.fund_transfer||0,l:'전입금'},{v:subCount.reserve||0,l:'적립금'}]},
+    {icon:'📚',color:'#06b6d4',title:'교육 투자 효율화',items:['교육비환원율 기반 재정지원 차등 배분','교원확보율 미달 대학 신입생 모집 제한','1인당 교육비 공시 표준화','국가장학금 구조 다양화 (성과연동형 도입)'],stats:[{v:majorCount.invest,l:'관련 기사'},{v:subCount.edu_cost||0,l:'교육비'},{v:subCount.faculty||0,l:'교원'}]},
+    {icon:'🎓',color:'#10b981',title:'학생 경쟁력 제고',items:['비수도권 대학 취업률 격차 해소 프로그램','충원율 미달 대학 조기경보 시스템','중도탈락 예방 멘토링 의무화','외국인 유학생 체질 개선형 유치 전환'],stats:[{v:majorCount.student,l:'관련 기사'},{v:subCount.enrollment||0,l:'충원율'},{v:subCount.dropout||0,l:'탈락'}]},
+    {icon:'⚖️',color:'#f59e0b',title:'법인 책무성 강화',items:['이사회 전원찬성 비율 모니터링 공시','교비 전용·횡령 적발 시 즉시 재정지원 중단','사립학교법 개정: 외부이사 과반 의무화','구조개선법 시행 연계 퇴출 메커니즘'],stats:[{v:majorCount.account,l:'관련 기사'},{v:subCount.governance||0,l:'이사회'},{v:subCount.corruption||0,l:'비리'}]},
+    {icon:'🌱',color:'#8b5cf6',title:'지속가능성 확보',items:['학령인구 감소 대비 대학 통폐합 로드맵','폐교 청산 기간 단축 (17년→5년)','지방사립대 특성화 5년 50억 지원 확대','AI·디지털 전환 캠퍼스 인증제 도입'],stats:[{v:majorCount.sustain,l:'관련 기사'},{v:subCount.reform||0,l:'구조개혁'},{v:subCount.ai_digital||0,l:'AI·디지털'}]}
+  ];
+  document.getElementById('policyCards').innerHTML=policies.map(p=>`
+    <div class="policy-card" style="border-left:3px solid ${p.color}">
+      <h4><span class="pc-icon" style="background:${p.color}22;color:${p.color}">${p.icon}</span><span style="color:${p.color}">${p.title}</span></h4>
+      <ul>${p.items.map(i=>`<li>${i}</li>`).join('')}</ul>
+      <div class="pc-stat">${p.stats.map(s=>`<div class="pc-stat-item"><div class="sv" style="color:${p.color}">${s.v}</div><div class="sl">${s.l}</div></div>`).join('')}</div>
+    </div>`).join('');
+
+  // 현황 진단 테이블
+  const tableData=[
+    {area:'💰 재정 건전성',problem:'법인 전입금 13년째 정체, 적립금 쌓고도 등록금 인상',count:majorCount.fiscal,policy:'전입금 의무비율 도입 + 적립금 투명공시',effect:'법인 책임 재정 참여율 3%→15%',pri:'🔴 긴급'},
+    {area:'📚 교육 투자',problem:'교육비환원율 기반 평가 미흡, 교원확보율 저조',count:majorCount.invest,policy:'환원율 연동 재정배분 + 교원 확보 인센티브',effect:'교육의 질 향상, 비정규직 비율 감소',pri:'🟠 높음'},
+    {area:'🎓 학생 경쟁력',problem:'비수도권 충원율 하락, 의대발 이동, 취업률 격차',count:majorCount.student,policy:'지역인재 유출 방지 + 취업연계 강화',effect:'수도권-비수도권 취업률 격차 4.2%→2%',pri:'🟠 높음'},
+    {area:'⚖️ 법인 책무성',problem:'이사회 거수기화, 교비 전용·횡령, 법 개정 지연',count:majorCount.account,policy:'외부이사 과반 + 비리 대학 즉시 제재',effect:'투명성 지수 개선, 비리 건수 50% 감소',pri:'🔴 긴급'},
+    {area:'🌱 지속가능성',problem:'학령인구 30년 후 반감, 폐교 청산 17년, 디지털 전환 지체',count:majorCount.sustain,policy:'통폐합 로드맵 + 특성화 지원 확대',effect:'폐교 충격 최소화, 지역 대학 생존율 향상',pri:'🟡 중기'}
+  ];
+  document.getElementById('policyTableBody').innerHTML=tableData.map(r=>`<tr><td style="font-weight:700">${r.area}</td><td>${r.problem}</td><td style="text-align:center;font-weight:700;color:var(--accent)">${r.count}건</td><td>${r.policy}</td><td>${r.effect}</td><td>${r.pri}</td></tr>`).join('');
+
+  // 로드맵
+  const phases=[
+    {label:'1단계: 진단',period:'2026 Q3',items:'데이터 수집·분석\n현황 보고서 작성\n이해관계자 의견 수렴',color:'#ef4444'},
+    {label:'2단계: 법제화',period:'2026 Q4',items:'사립학교법 개정안\n구조개선법 시행령\n전입금 의무화 법안',color:'#f59e0b'},
+    {label:'3단계: 시범사업',period:'2027 H1',items:'시범대학 15교 선정\n특성화 지원금 집행\nAI캠퍼스 시범 인증',color:'#06b6d4'},
+    {label:'4단계: 확산',period:'2027 H2',items:'전국 확대 적용\n성과평가 체계 구축\n모니터링 대시보드',color:'#10b981'},
+    {label:'5단계: 고도화',period:'2028~',items:'AI 기반 조기경보\n대학 통폐합 실행\n글로벌 경쟁력 강화',color:'#8b5cf6'}
+  ];
+  document.getElementById('policyRoadmap').innerHTML=phases.map(p=>`
+    <div class="roadmap-phase">
+      <div class="roadmap-dot" style="background:${p.color};border-color:${p.color}"></div>
+      <div class="rm-label" style="color:${p.color}">${p.label}</div>
+      <div class="rm-period">${p.period}</div>
+      <div class="rm-items">${p.items.replace(/\n/g,'<br>')}</div>
+    </div>`).join('');
+}
+
 // ═══ Bookmark ═══
 function getBookmarks(){try{return JSON.parse(localStorage.getItem('news_bookmarks')||'[]');}catch(e){return[];}}
 function isBookmarked(link){return getBookmarks().includes(link);}
@@ -1140,6 +1343,7 @@ function renderSentimentGauge(f){
 })();
 
 render();
+renderPolicyBrief();
 updateApiKeyBtn();
 setTimeout(fetchAIInsight,500);
 setTimeout(()=>fetchOgImagesForNews(allNews),200);
