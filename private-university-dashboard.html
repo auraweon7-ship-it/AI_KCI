@@ -151,7 +151,9 @@
   /* AI Insight */
   .ai-insight{margin:1rem 2rem;padding:1.2rem 1.5rem;background:linear-gradient(135deg,#1a1040,#0f1117);border:1px solid var(--accent);border-radius:12px;position:relative;}
   .ai-insight::before{content:'AI';position:absolute;top:-10px;left:16px;background:var(--accent);color:#fff;font-size:0.65rem;font-weight:800;padding:0.15rem 0.5rem;border-radius:4px;letter-spacing:0.1em;}
-  .ai-insight-title{font-size:0.9rem;font-weight:800;color:var(--accent2);margin-bottom:0.6rem;}
+  .ai-insight-title{font-size:0.9rem;font-weight:800;color:var(--accent2);margin-bottom:0.6rem;display:flex;align-items:center;gap:0.8rem;}
+  .ai-gen-btn{background:linear-gradient(135deg,#6c5ce7,#a855f7);color:#fff;border:none;border-radius:8px;padding:0.4rem 1rem;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .ai-gen-btn:hover{transform:scale(1.05);box-shadow:0 4px 15px rgba(108,92,231,0.4);}
   .ai-insight-body{font-size:0.82rem;color:var(--text);line-height:1.8;}
   .ai-insight-loading{text-align:center;padding:2rem;color:var(--text-dim);font-size:0.85rem;}
   .ai-insight-loading .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin-right:0.5rem;vertical-align:middle;}
@@ -399,8 +401,8 @@
 
 <!-- AI Insight (차트 바로 아래) -->
 <div class="ai-insight" id="aiInsight">
-  <div class="ai-insight-title">🧠 AI 종합 분석 인사이트</div>
-  <div class="ai-insight-loading" id="aiLoading"><span class="spinner"></span>Claude AI 분석 중...</div>
+  <div class="ai-insight-title">🧠 AI 종합 분석 인사이트 <button class="ai-gen-btn" id="aiGenBtn" onclick="fetchAIInsight()">AI 작성</button></div>
+  <div class="ai-insight-loading" id="aiLoading" style="display:none;"><span class="spinner"></span>Claude AI 분석 중...</div>
   <div class="ai-insight-body" id="aiBody" style="display:none;"></div>
 </div>
 
@@ -421,12 +423,13 @@
 <!-- ═══ 정책기획서 섹션 ═══ -->
 <section class="policy-section" id="policySection">
   <div class="policy-header">
-    <h2>📋 사립대학 재정 건전성 및 지속가능성 강화 정책기획서</h2>
+    <h2>📋 사립대학 재정 건전성 및 지속가능성 강화 정책기획서 <button class="ai-gen-btn" id="policyGenBtn" onclick="renderPolicyBrief()">AI 작성</button></h2>
     <p class="policy-sub">뉴스 데이터 기반 자동 생성 | 중요도 ★4 이상 기사 분석</p>
     <p class="policy-date" id="policyDate"></p>
   </div>
 
   <!-- 핵심 요약 -->
+  <div class="policy-body" id="policyBody" style="display:none;">
   <div class="policy-exec">
     <h3>📌 Executive Summary</h3>
     <p>본 기획서는 사립대학 관련 <strong id="policyNewsCount">0</strong>건의 주요 뉴스(중요도 ★4 이상)를 분석하여, 5대 핵심 영역의 문제점을 진단하고 실행 가능한 정책 대안을 제시합니다.</p>
@@ -468,6 +471,7 @@
     <h3>🗓️ 정책 실행 로드맵</h3>
     <div class="roadmap-track" id="policyRoadmap"></div>
   </div>
+  </div><!-- /policy-body -->
 </section>
 
 <footer class="site-footer">
@@ -1023,7 +1027,6 @@ function saveAllKeys(){
   if(naverSecret) localStorage.setItem('naver_client_secret',naverSecret);
   updateApiKeyBtn();
   toggleApiKeyModal();
-  if(claude) fetchAIInsight();
 }
 function clearAllKeys(){
   localStorage.removeItem('claude_api_key');
@@ -1118,7 +1121,6 @@ async function fetchLiveNews(clientId,clientSecret){
 
   overlay.style.display='none';
   render();
-  setTimeout(fetchAIInsight,300);
   fetchOgImagesForNews(allNews);
 }
 
@@ -1142,9 +1144,11 @@ function highlightKeywords(text){
 async function fetchAIInsight(){
   const apiKey=localStorage.getItem('claude_api_key');
   if(!apiKey){
+    document.getElementById('aiLoading').style.display='block';
     document.getElementById('aiLoading').innerHTML='🔑 우측 상단 <b>API 키 설정</b> 버튼을 눌러 Claude API 키를 입력하면 AI 분석이 시작됩니다.';
     return;
   }
+  document.getElementById('aiGenBtn').style.display='none';
   document.getElementById('aiLoading').style.display='block';
   document.getElementById('aiBody').style.display='none';
   document.getElementById('aiLoading').innerHTML='<span class="spinner"></span>Claude AI 분석 중...';
@@ -1202,6 +1206,8 @@ function toggleTheme(){
 // ═══ 정책기획서 렌더 ═══
 let policyChartMajorInst, policyChartSubInst;
 function renderPolicyBrief(){
+  document.getElementById('policyBody').style.display='block';
+  document.getElementById('policyGenBtn').style.display='none';
   const top=allNews.filter(n=>(n.imp||3)>=4).sort((a,b)=>(b.imp||3)-(a.imp||3));
   const now=new Date();
   document.getElementById('policyDate').textContent=`분석 기준일: ${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 | 총 ${allNews.length}건 중 핵심 ${top.length}건 분석`;
@@ -1343,9 +1349,7 @@ function renderSentimentGauge(f){
 })();
 
 render();
-renderPolicyBrief();
 updateApiKeyBtn();
-setTimeout(fetchAIInsight,500);
 setTimeout(()=>fetchOgImagesForNews(allNews),200);
 </script>
 </body>
