@@ -778,8 +778,8 @@ function renderNews(f){
       <div class="card-urls">
         <div class="url-row">
           <span class="url-label">📷 표지이미지</span>
-          <span class="url-value"><a href="${n.og||n.link}" target="_blank" rel="noopener">${n.og||'(기사 내 이미지 참조)'}</a></span>
-          ${n.og?`<button class="url-copy" onclick="navigator.clipboard.writeText('${n.og}')">복사</button>`:''}
+          <span class="url-value"><a href="${n.og||'https://datamap.synology.me/news.png'}" target="_blank" rel="noopener">${n.og||'https://datamap.synology.me/news.png'}</a></span>
+          <button class="url-copy" onclick="navigator.clipboard.writeText('${n.og||'https://datamap.synology.me/news.png'}')">복사</button>
         </div>
         <div class="url-row">
           <span class="url-label">🔗 출처 URL</span>
