@@ -1447,25 +1447,39 @@ cards는 5개(각 major 영역당 1개), diagnosis는 5개, roadmap은 5단계, 
       throw new Error(data.error.message);
     }
     const rawText=data.content?.[0]?.text||'';
-    const jsonMatch=rawText.match(/\{[\s\S]*\}/);
+    let rawJSON=rawText.replace(/```[a-z]*\n?/g,'').replace(/\n```\s*$/g,'');
+    const jsonMatch=rawJSON.match(/\{[\s\S]*\}/);
     if(!jsonMatch) throw new Error('AI 응답에서 JSON을 파싱할 수 없습니다.');
-    function sanitizeJSON(s){
-      s=s.replace(/```[a-z]*\n?/g,'').replace(/\n```/g,'');
+    function repairJSON(s){
       s=s.replace(/,\s*([}\]])/g,'$1');
-      s=s.replace(/"(?:[^"\\]|\\.)*"/g,match=>{
-        return match.replace(/(?<!\\)\n/g,'\\n').replace(/(?<!\\)\r/g,'\\r').replace(/(?<!\\)\t/g,'\\t');
-      });
-      return s;
+      let out='',inStr=false,esc=false;
+      for(let i=0;i<s.length;i++){
+        const c=s[i];
+        if(esc){out+=c;esc=false;continue;}
+        if(c==='\\'){esc=true;out+=c;continue;}
+        if(c==='"'){
+          if(!inStr){inStr=true;out+=c;}
+          else{
+            const rest=s.substring(i+1).replace(/^\s+/,'');
+            const nx=rest[0];
+            if(!nx||nx===':'||nx===','||nx==='}'||nx===']'){inStr=false;out+=c;}
+            else{out+='\\"';}
+          }
+          continue;
+        }
+        if(inStr&&c==='\n'){out+='\\n';continue;}
+        if(inStr&&c==='\r'){continue;}
+        if(inStr&&c==='\t'){out+='\\t';continue;}
+        out+=c;
+      }
+      let depth=0;for(const c of out){if(c==='{'&&!inStr)depth++;if(c==='}'&&!inStr)depth--;}
+      while(depth>0){out+='}';depth--;}
+      return out;
     }
     let ai;
-    const attempts=[
-      ()=>JSON.parse(sanitizeJSON(jsonMatch[0])),
-      ()=>{let s=sanitizeJSON(jsonMatch[0]);s=s.replace(/([{,]\s*)(\w+)\s*:/g,'$1"$2":');return JSON.parse(s);},
-      ()=>{let s=sanitizeJSON(jsonMatch[0]);const last=Math.max(s.lastIndexOf(']}'),s.lastIndexOf('"}'));if(last>0){s=s.substring(0,last+1);let depth=0;for(const c of s){if(c==='{')depth++;if(c==='}')depth--;}while(depth>0){s+='}';depth--;}};return JSON.parse(s);}
-    ];
-    let parseErr;
-    for(const fn of attempts){try{ai=fn();break;}catch(e){parseErr=e;}}
-    if(!ai) throw new Error('JSON 파싱 실패: '+(parseErr?.message||'unknown'));
+    try{ai=JSON.parse(repairJSON(jsonMatch[0]));}catch(e){
+      throw new Error('JSON 파싱 실패: '+e.message);
+    }
 
     // AI 응답 기반 렌더링 시작
     document.getElementById('policyLoading').style.display='none';
