@@ -121,6 +121,8 @@
   .url-value a{color:#64748b;text-decoration:none;transition:color 0.15s;}
   .url-value a:hover{color:var(--accent2);text-decoration:underline;}
   .url-copy{flex-shrink:0;background:rgba(108,92,231,0.15);border:1px solid rgba(108,92,231,0.3);color:var(--accent2);padding:0.1rem 0.4rem;border-radius:4px;cursor:pointer;font-size:0.62rem;font-weight:600;transition:all 0.15s;}
+  .title-copy{margin-left:0.5rem;vertical-align:middle;font-size:0.6rem;padding:0.08rem 0.35rem;opacity:0.4;transition:opacity 0.15s;}
+  .title:hover .title-copy,.summary:hover .title-copy{opacity:1;}
   .url-copy:hover{background:var(--accent);color:#fff;border-color:var(--accent);}
 
   .mt-fiscal{background:#dc262620;color:#fca5a5;border:1px solid #dc262640;}
@@ -723,6 +725,7 @@ function preFilter(){
   });
 }
 
+let showBookmarksOnly=false;
 function getFiltered(){
   let f=preFilter();
   if(activeMajor!=='all')f=f.filter(n=>n.major===activeMajor);
@@ -769,8 +772,8 @@ function renderNews(f){
         <button class="bookmark-btn ${isBookmarked(n.link)?'bookmarked':''}" onclick="event.stopPropagation();toggleBookmark('${n.link.replace(/'/g,"\\'")}')" title="북마크">${isBookmarked(n.link)?'🔖':'🔖'}</button>
         <span class="date">${d}</span>
       </div>
-      <div class="title"><a href="${n.link}" target="_blank" rel="noopener">${n.title}</a></div>
-      <div class="summary">${n.summary}</div>
+      <div class="title"><a href="${n.link}" target="_blank" rel="noopener">${n.title}</a><button class="url-copy title-copy" data-copy="title">복사</button></div>
+      <div class="summary">${n.summary}<button class="url-copy title-copy" data-copy="summary">복사</button></div>
       <div class="card-footer">
         <span class="source-tag">${n.source}</span>
         ${(n.kw||[]).map(k=>`<span class="keyword-tag">${k}</span>`).join('')}
@@ -797,6 +800,17 @@ function render(){
   renderStats(f);renderNews(f);
   renderCharts(f);
 }
+document.getElementById('newsGrid').addEventListener('click',function(e){
+  const btn=e.target.closest('[data-copy]');
+  if(!btn) return;
+  e.preventDefault();
+  const parent=btn.parentElement;
+  const text=btn.dataset.copy==='title'
+    ? parent.querySelector('a').textContent
+    : parent.childNodes[0].textContent;
+  navigator.clipboard.writeText(text.trim());
+  btn.textContent='✓';setTimeout(()=>btn.textContent='복사',800);
+});
 document.getElementById('sortBy').addEventListener('change',render);
 document.getElementById('searchInput').addEventListener('input',render);
 
@@ -1056,7 +1070,6 @@ function toggleTheme(){
 })();
 
 // ═══ Bookmark ═══
-let showBookmarksOnly=false;
 function getBookmarks(){try{return JSON.parse(localStorage.getItem('news_bookmarks')||'[]');}catch(e){return[];}}
 function isBookmarked(link){return getBookmarks().includes(link);}
 function toggleBookmark(link){
