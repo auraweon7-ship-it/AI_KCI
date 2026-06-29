@@ -1427,7 +1427,13 @@ ${JSON.stringify(newsByMajor, null, 1)}
 }
 
 cards는 5개(각 major 영역당 1개), diagnosis는 5개, roadmap은 5단계, benchmarks는 5개, tasks는 6~8개, risks는 6개.
-JSON만 출력하세요. 다른 텍스트 없이 순수 JSON만 반환하세요.`;
+
+중요 규칙:
+1. 순수 JSON만 반환. 마크다운 코드블록(\`\`\`) 사용 금지.
+2. 문자열 값 안에 큰따옴표(") 사용 금지 — 작은따옴표(')나 「」로 대체.
+3. 문자열 값 안에 줄바꿈 금지 — 한 줄로 작성.
+4. trailing comma 금지 (마지막 요소 뒤에 쉼표 없음).
+5. budget 필드는 반드시 숫자(따옴표 없이). 예: "budget": 500`;
 
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
@@ -1443,15 +1449,23 @@ JSON만 출력하세요. 다른 텍스트 없이 순수 JSON만 반환하세요.
     const rawText=data.content?.[0]?.text||'';
     const jsonMatch=rawText.match(/\{[\s\S]*\}/);
     if(!jsonMatch) throw new Error('AI 응답에서 JSON을 파싱할 수 없습니다.');
-    let jsonStr=jsonMatch[0].replace(/,\s*([}\]])/g,'$1').replace(/[\x00-\x1f]/g,m=>m==='\n'||m==='\r'||m==='\t'?m:'');
-    let ai;
-    try{ai=JSON.parse(jsonStr);}catch(e1){
-      jsonStr=jsonStr.replace(/```[a-z]*\n?/g,'').replace(/\n```/g,'');
-      try{ai=JSON.parse(jsonStr);}catch(e2){
-        const partial=jsonStr.substring(0,jsonStr.lastIndexOf('}')+1);
-        try{ai=JSON.parse(partial);}catch(e3){throw new Error('JSON 파싱 실패: '+e1.message);}
-      }
+    function sanitizeJSON(s){
+      s=s.replace(/```[a-z]*\n?/g,'').replace(/\n```/g,'');
+      s=s.replace(/,\s*([}\]])/g,'$1');
+      s=s.replace(/"(?:[^"\\]|\\.)*"/g,match=>{
+        return match.replace(/(?<!\\)\n/g,'\\n').replace(/(?<!\\)\r/g,'\\r').replace(/(?<!\\)\t/g,'\\t');
+      });
+      return s;
     }
+    let ai;
+    const attempts=[
+      ()=>JSON.parse(sanitizeJSON(jsonMatch[0])),
+      ()=>{let s=sanitizeJSON(jsonMatch[0]);s=s.replace(/([{,]\s*)(\w+)\s*:/g,'$1"$2":');return JSON.parse(s);},
+      ()=>{let s=sanitizeJSON(jsonMatch[0]);const last=Math.max(s.lastIndexOf(']}'),s.lastIndexOf('"}'));if(last>0){s=s.substring(0,last+1);let depth=0;for(const c of s){if(c==='{')depth++;if(c==='}')depth--;}while(depth>0){s+='}';depth--;}};return JSON.parse(s);}
+    ];
+    let parseErr;
+    for(const fn of attempts){try{ai=fn();break;}catch(e){parseErr=e;}}
+    if(!ai) throw new Error('JSON 파싱 실패: '+(parseErr?.message||'unknown'));
 
     // AI 응답 기반 렌더링 시작
     document.getElementById('policyLoading').style.display='none';
