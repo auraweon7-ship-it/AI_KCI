@@ -569,24 +569,26 @@ const NEWS = [
 // OG 이미지 캐시
 const ogCache={};
 const OG_DEFAULT='https://datamap.synology.me/news.png';
+const OG_SKIP_DOMAINS=['n.news.naver.com','news.naver.com','m.news.naver.com','kr.people.com.cn'];
 async function fetchOgImage(link){
   if(ogCache[link]!==undefined) return ogCache[link];
+  if(OG_SKIP_DOMAINS.some(d=>link.includes(d))){ogCache[link]='';return '';}
   try{
-    const r=await fetch(`/api/og-image?url=${encodeURIComponent(link)}`);
+    const r=await fetch(`/api/og-image?url=${encodeURIComponent(link)}`,{signal:AbortSignal.timeout(4000)});
     const d=await r.json();
     ogCache[link]=d.og||'';
     return ogCache[link];
   }catch(e){ogCache[link]='';return '';}
 }
 async function fetchOgImagesForNews(items){
-  for(let i=0;i<items.length;i+=6){
-    const batch=items.slice(i,i+6);
+  for(let i=0;i<items.length;i+=8){
+    const batch=items.slice(i,i+8);
     await Promise.all(batch.map(async n=>{
       const og=await fetchOgImage(n.link);
       n.og=og;
     }));
+    render();
   }
-  render();
 }
 function findOg(link){return ogCache[link]||'';}
 

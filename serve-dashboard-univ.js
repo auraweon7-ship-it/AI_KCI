@@ -63,38 +63,37 @@ const server = http.createServer((req, res) => {
       res.end(JSON.stringify({ error: 'url 파라미터가 필요합니다.' }));
       return;
     }
-    const reqOpts = { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; NewsBot/1.0)' }, timeout: 5000 };
+    let responded = false;
+    const sendOg = (og) => { if (responded) return; responded = true; res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ og: og || '' })); };
+    const hardTimeout = setTimeout(() => sendOg(''), 4000);
+    const reqOpts = { headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36' }, timeout: 3000 };
     const fetchPage = (url, depth) => {
-      if (depth > 3) { res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ og: '' })); return; }
+      if (depth > 2) { sendOg(''); return; }
       const p = url.startsWith('https') ? https : http;
-      p.get(url, reqOpts, (pageRes) => {
+      const r = p.get(url, reqOpts, (pageRes) => {
         if ([301,302,303,307,308].includes(pageRes.statusCode) && pageRes.headers.location) {
           let loc = pageRes.headers.location;
           if (loc.startsWith('/')) { const u = new URL(url); loc = u.protocol + '//' + u.host + loc; }
-          fetchPage(loc, depth + 1);
           pageRes.resume();
+          fetchPage(loc, depth + 1);
           return;
         }
         let html = '';
         pageRes.setEncoding('utf8');
-        pageRes.on('data', chunk => { html += chunk; if (html.length > 200000) { pageRes.destroy(); } });
-        pageRes.on('end', () => {
-          let og = '';
-          const m = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-                 || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
-          if (m) og = m[1];
-          if (!og) {
-            const m2 = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
-                     || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i);
-            if (m2) og = m2[1];
-          }
-          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-          res.end(JSON.stringify({ og }));
-        });
-      }).on('error', () => {
-        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ og: '' }));
-      }).on('timeout', function() { this.destroy(); });
+        pageRes.on('data', chunk => { html += chunk; if (html.length > 100000) { pageRes.destroy(); clearTimeout(hardTimeout); sendOg(extractOg(html)); } });
+        pageRes.on('end', () => { clearTimeout(hardTimeout); sendOg(extractOg(html)); });
+        pageRes.on('error', () => { clearTimeout(hardTimeout); sendOg(''); });
+      });
+      r.on('error', () => { clearTimeout(hardTimeout); sendOg(''); });
+      r.on('timeout', () => { r.destroy(); clearTimeout(hardTimeout); sendOg(''); });
+    };
+    const extractOg = (html) => {
+      const m = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+             || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+      if (m) return m[1];
+      const m2 = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
+               || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i);
+      return m2 ? m2[1] : '';
     };
     fetchPage(targetUrl, 0);
     return;
