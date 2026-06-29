@@ -308,6 +308,18 @@
       <button class="pill" data-v="national">전국·정책</button>
     </div>
   </div>
+  <div class="filter-sep"></div>
+  <div class="filter-block">
+    <span class="filter-label">중요도</span>
+    <div class="pill-group" id="impFilter">
+      <button class="pill active" data-v="all">전체</button>
+      <button class="pill" data-v="5">★5</button>
+      <button class="pill" data-v="4">★4+</button>
+      <button class="pill" data-v="3">★3+</button>
+      <button class="pill" data-v="2">★2+</button>
+      <button class="pill" data-v="1">★1+</button>
+    </div>
+  </div>
 </div>
 
 <div class="major-types" id="majorTypes"></div>
@@ -646,7 +658,7 @@ let allNews = NEWS.map((n,i) => {
     major:SUB_CATS[n.sub]?.major||'sustain', og:n.og||findOg(n.link), imp:IMP[i]||3};
 });
 
-let activeMajor='all', activeSub='all', activePersp='all', activeRegion='all';
+let activeMajor='all', activeSub='all', activePersp='all', activeRegion='all', activeImp='all';
 
 // Date presets
 document.getElementById('datePresets').addEventListener('click',e=>{
@@ -691,6 +703,14 @@ document.getElementById('regionFilter').addEventListener('click',e=>{
   pill.classList.add('active');
   render();
 });
+// Importance filter
+document.getElementById('impFilter').addEventListener('click',e=>{
+  const pill=e.target.closest('.pill');if(!pill)return;
+  activeImp=pill.dataset.v;
+  document.querySelectorAll('#impFilter .pill').forEach(p=>p.classList.remove('active'));
+  pill.classList.add('active');
+  render();
+});
 
 function renderMajorTypes(){
   const el=document.getElementById('majorTypes');
@@ -719,6 +739,7 @@ function preFilter(){
   return allNews.filter(n=>{
     if(activePersp!=='all'&&n.perspective!==activePersp)return false;
     if(activeRegion!=='all'&&n.region!==activeRegion)return false;
+    if(activeImp!=='all'&&(n.imp||3)<parseInt(activeImp))return false;
     if(n.dateObj<from||n.dateObj>to)return false;
     if(q&&!(n.title.toLowerCase().includes(q)||n.desc.toLowerCase().includes(q)||n.source.toLowerCase().includes(q)))return false;
     return true;
