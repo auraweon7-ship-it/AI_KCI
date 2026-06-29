@@ -432,8 +432,9 @@
   <div class="policy-body" id="policyBody" style="display:none;">
   <div class="policy-exec">
     <h3>📌 Executive Summary</h3>
-    <p>본 기획서는 사립대학 관련 <strong id="policyNewsCount">0</strong>건의 주요 뉴스(중요도 ★4 이상)를 분석하여, 5대 핵심 영역의 문제점을 진단하고 실행 가능한 정책 대안을 제시합니다.</p>
-    <p>핵심 과제: ① 법인 전입금 의무화를 통한 재정 책임 강화 ② 등록금-적립금 연동 투명성 제고 ③ 학령인구 감소 대비 구조개혁 가속화 ④ 지역 사립대 특성화 지원 확대 ⑤ AI·디지털 전환 투자 촉진</p>
+    <p>본 기획서는 사립대학 관련 <strong id="policyNewsCount">0</strong>건의 주요 뉴스(중요도 ★4 이상)와 <b>한림대학교·충북대학교(한국교통대학교) 혁신기획서</b>를 분석하여, 5대 핵심 영역의 문제점을 진단하고 구체적 실행 방안을 제시합니다.</p>
+    <p><b>5대 핵심 과제:</b> ① 법인 전입금 의무비율(10%) 도입 + 재정건전성 등급제 ② K-에듀 AI 혁신(KELI) + Quarter제 학사구조 개편 ③ K-Culture 글로벌 유학생 유치 + T-Entrepreneur 창업교육 ④ 외부이사 과반 의무화 + 구조개선법 퇴출 메커니즘 ⑤ Quad-Helix 지역혁신 + RISE 연계 특성화</p>
+    <p><b>총 소요 예산:</b> 5개년(2026~2030) 2,500억 원 | <b>벤치마크:</b> 한림대 K-에듀/Station C, 충북대 Quad-Helix Hub, ASU, Station F</p>
   </div>
 
   <!-- 인포그래픽 핵심 수치 -->
@@ -471,6 +472,42 @@
     <h3>🗓️ 정책 실행 로드맵</h3>
     <div class="roadmap-track" id="policyRoadmap"></div>
   </div>
+
+  <!-- 혁신 모델 벤치마크 -->
+  <h3 style="font-size:1rem;font-weight:800;color:var(--accent2);margin:2rem 0 1rem;">🏫 대학 혁신 모델 벤치마크</h3>
+  <div class="policy-grid" id="policyBenchmark"></div>
+
+  <!-- 예산 배분 -->
+  <h3 style="font-size:1rem;font-weight:800;color:var(--accent2);margin:2rem 0 1rem;">💵 정책 예산 배분 계획</h3>
+  <div class="policy-charts">
+    <div class="policy-chart-box">
+      <h4>📊 영역별 예산 배분</h4>
+      <canvas id="policyChartBudget"></canvas>
+    </div>
+    <div class="policy-chart-box">
+      <h4>📈 연차별 투자 계획</h4>
+      <canvas id="policyChartYearly"></canvas>
+    </div>
+  </div>
+
+  <!-- 세부 추진과제 -->
+  <h3 style="font-size:1rem;font-weight:800;color:var(--accent2);margin:2rem 0 1rem;">📝 세부 추진과제 및 성과지표</h3>
+  <table class="policy-table" id="policyTaskTable">
+    <thead>
+      <tr><th>추진과제</th><th>세부 실행과제</th><th>담당부서</th><th>예산(억)</th><th>성과지표(KPI)</th><th>목표치</th></tr>
+    </thead>
+    <tbody id="policyTaskBody"></tbody>
+  </table>
+
+  <!-- 리스크 매트릭스 -->
+  <h3 style="font-size:1rem;font-weight:800;color:var(--accent2);margin:2rem 0 1rem;">⚠️ 리스크 분석 및 대응 전략</h3>
+  <table class="policy-table" id="policyRiskTable">
+    <thead>
+      <tr><th>리스크 요인</th><th>영향도</th><th>발생 가능성</th><th>리스크 등급</th><th>대응 전략</th><th>모니터링 지표</th></tr>
+    </thead>
+    <tbody id="policyRiskBody"></tbody>
+  </table>
+
   </div><!-- /policy-body -->
 </section>
 
@@ -1204,7 +1241,7 @@ function toggleTheme(){
 })();
 
 // ═══ 정책기획서 렌더 ═══
-let policyChartMajorInst, policyChartSubInst;
+let policyChartMajorInst, policyChartSubInst, policyChartBudgetInst, policyChartYearlyInst;
 function renderPolicyBrief(){
   document.getElementById('policyBody').style.display='block';
   document.getElementById('policyGenBtn').style.display='none';
@@ -1213,7 +1250,6 @@ function renderPolicyBrief(){
   document.getElementById('policyDate').textContent=`분석 기준일: ${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 | 총 ${allNews.length}건 중 핵심 ${top.length}건 분석`;
   document.getElementById('policyNewsCount').textContent=top.length;
 
-  // 유형별 집계
   const majorCount={fiscal:0,invest:0,student:0,account:0,sustain:0};
   const subCount={};
   top.forEach(n=>{majorCount[n.major]=(majorCount[n.major]||0)+1;subCount[n.sub]=(subCount[n.sub]||0)+1;});
@@ -1235,13 +1271,13 @@ function renderPolicyBrief(){
   const fiscalRatio=majorCount.fiscal?Math.round(majorCount.fiscal/top.length*100):0;
   document.getElementById('policyKPI').innerHTML=[
     {icon:'💰',val:fiscalRatio+'%',label:'재정 이슈 비중',target:'목표: 30% 이하'},
-    {icon:'🏢',val:'3%',label:'법인 부담률',target:'목표: 15% 이상'},
-    {icon:'👶',val:'50%↓',label:'학령인구 감소 전망',target:'30년 후 반감'},
+    {icon:'🏢',val:'3%→15%',label:'법인 부담률 목표',target:'전입금 의무화 기반'},
+    {icon:'👶',val:'50%↓',label:'학령인구 감소 전망',target:'2055년 반감 대비'},
     {icon:'📈',val:majorCount.student+'건',label:'학생 경쟁력 이슈',target:'충원·취업·유학생'},
-    {icon:'🤖',val:subCount.ai_digital||0+'건',label:'AI·디지털 전환',target:'특성화 핵심'}
+    {icon:'🤖',val:(subCount.ai_digital||0)+'건',label:'AI·디지털 전환',target:'K-에듀 혁신 핵심'}
   ].map(k=>`<div class="kpi-card"><div class="kpi-icon">${k.icon}</div><div class="kpi-value">${k.val}</div><div class="kpi-label">${k.label}</div><div class="kpi-target">${k.target}</div></div>`).join('');
 
-  // 차트1: 5대 유형 radar
+  // 차트1: radar
   const mLabels=['재정 건전성','교육 투자','학생 경쟁력','법인 책무성','지속가능성'];
   const mKeys=['fiscal','invest','student','account','sustain'];
   const mData=mKeys.map(k=>majorCount[k]||0);
@@ -1249,7 +1285,7 @@ function renderPolicyBrief(){
   if(policyChartMajorInst)policyChartMajorInst.destroy();
   policyChartMajorInst=new Chart(ctx1,{type:'radar',data:{labels:mLabels,datasets:[{label:'기사 수',data:mData,backgroundColor:'rgba(108,92,231,0.2)',borderColor:'#6c5ce7',borderWidth:2,pointBackgroundColor:['#ef4444','#06b6d4','#10b981','#f59e0b','#8b5cf6']}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{ticks:{color:'#999',backdropColor:'transparent'},grid:{color:'rgba(255,255,255,0.08)'},pointLabels:{color:'#e4e6eb',font:{size:11,weight:'bold'}}}},plugins:{legend:{display:false}}}});
 
-  // 차트2: 세부 분류 bar
+  // 차트2: bar
   const SUB_LABELS_MAP={tuition:'등록금',fund_transfer:'법인전입금',reserve:'적립금',debt:'부채',edu_cost:'교육비',edu_return:'교육비환원율',scholarship:'장학금',faculty:'교원확보',enrollment:'충원율',dropout:'중도탈락',employment:'취업률',intl_student:'유학생',governance:'이사회',audit:'감사·공시',corruption:'비리',law:'사립학교법',demography:'학령인구',reform:'구조개혁',regional:'지역연계',ai_digital:'AI·디지털'};
   const subSorted=Object.entries(subCount).sort((a,b)=>b[1]-a[1]);
   const ctx2=document.getElementById('policyChartSub');
@@ -1257,13 +1293,38 @@ function renderPolicyBrief(){
   const barColors=subSorted.map(([k])=>{const m=allNews.find(n=>n.sub===k)?.major;return{fiscal:'#ef4444',invest:'#06b6d4',student:'#10b981',account:'#f59e0b',sustain:'#8b5cf6'}[m]||'#999';});
   policyChartSubInst=new Chart(ctx2,{type:'bar',data:{labels:subSorted.map(([k])=>SUB_LABELS_MAP[k]||k),datasets:[{label:'기사 수',data:subSorted.map(([,v])=>v),backgroundColor:barColors,borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{ticks:{color:'#999'},grid:{color:'rgba(255,255,255,0.06)'}},y:{ticks:{color:'#e4e6eb',font:{size:10}},grid:{display:false}}},plugins:{legend:{display:false}}}});
 
-  // 5대 정책 카드
+  // 5대 정책 카드 (PDF 혁신기획서 참고 구체화)
   const policies=[
-    {icon:'💰',color:'#ef4444',title:'재정 건전성 강화',items:['법인 전입금 최소 비율(10%) 의무화','적립금-등록금 연동 투명성 공시 의무화','등록금 인상 시 적립금 사용 계획 공개','부채비율 상한제(50%) 도입 검토'],stats:[{v:majorCount.fiscal,l:'관련 기사'},{v:subCount.tuition||0,l:'등록금'},{v:subCount.fund_transfer||0,l:'전입금'},{v:subCount.reserve||0,l:'적립금'}]},
-    {icon:'📚',color:'#06b6d4',title:'교육 투자 효율화',items:['교육비환원율 기반 재정지원 차등 배분','교원확보율 미달 대학 신입생 모집 제한','1인당 교육비 공시 표준화','국가장학금 구조 다양화 (성과연동형 도입)'],stats:[{v:majorCount.invest,l:'관련 기사'},{v:subCount.edu_cost||0,l:'교육비'},{v:subCount.faculty||0,l:'교원'}]},
-    {icon:'🎓',color:'#10b981',title:'학생 경쟁력 제고',items:['비수도권 대학 취업률 격차 해소 프로그램','충원율 미달 대학 조기경보 시스템','중도탈락 예방 멘토링 의무화','외국인 유학생 체질 개선형 유치 전환'],stats:[{v:majorCount.student,l:'관련 기사'},{v:subCount.enrollment||0,l:'충원율'},{v:subCount.dropout||0,l:'탈락'}]},
-    {icon:'⚖️',color:'#f59e0b',title:'법인 책무성 강화',items:['이사회 전원찬성 비율 모니터링 공시','교비 전용·횡령 적발 시 즉시 재정지원 중단','사립학교법 개정: 외부이사 과반 의무화','구조개선법 시행 연계 퇴출 메커니즘'],stats:[{v:majorCount.account,l:'관련 기사'},{v:subCount.governance||0,l:'이사회'},{v:subCount.corruption||0,l:'비리'}]},
-    {icon:'🌱',color:'#8b5cf6',title:'지속가능성 확보',items:['학령인구 감소 대비 대학 통폐합 로드맵','폐교 청산 기간 단축 (17년→5년)','지방사립대 특성화 5년 50억 지원 확대','AI·디지털 전환 캠퍼스 인증제 도입'],stats:[{v:majorCount.sustain,l:'관련 기사'},{v:subCount.reform||0,l:'구조개혁'},{v:subCount.ai_digital||0,l:'AI·디지털'}]}
+    {icon:'💰',color:'#ef4444',title:'재정 건전성 강화',items:[
+      '<b>법인 전입금 의무비율(10%) 도입</b> — 사립학교법 시행령 개정, 3년 유예기간 부여',
+      '<b>적립금-등록금 연동 투명공시</b> — 적립금 수백억 보유 대학의 등록금 인상 사전심사제',
+      '<b>부채비율 상한제(50%)</b> — 부채비율 초과 대학 재정위기 조기경보 자동 발동',
+      '<b>재정건전성 평가 등급제</b> — A~E 5등급, 등급별 재정지원 차등(한림대 Station C 모델 참고)'
+    ],stats:[{v:majorCount.fiscal,l:'관련 기사'},{v:subCount.tuition||0,l:'등록금'},{v:subCount.fund_transfer||0,l:'전입금'},{v:subCount.reserve||0,l:'적립금'}]},
+    {icon:'📚',color:'#06b6d4',title:'교육 투자·AI 혁신',items:[
+      '<b>K-에듀 AI 교육혁신</b> — AI 리터러시 전 학생 필수화, AI 튜터 시스템 도입(한림대 KELI 모델)',
+      '<b>교육비환원율 연동 재정배분</b> — 환원율 상위 30% 대학 인센티브 500억 규모 배분',
+      '<b>Open Lab R&BD 허브</b> — 산학연 공동연구소, 대학당 연 50억 매칭펀드(한림대 Open Lab 벤치마크)',
+      '<b>Quarter제 학사구조 혁신</b> — 12주×3+계절학기, 교차수강 활성화(충북대 Quarter제 참고)'
+    ],stats:[{v:majorCount.invest,l:'관련 기사'},{v:subCount.edu_cost||0,l:'교육비'},{v:subCount.faculty||0,l:'교원'}]},
+    {icon:'🎓',color:'#10b981',title:'학생 경쟁력·글로벌화',items:[
+      '<b>충원율 조기경보 시스템</b> — 3년 연속 미달 대학 자동 구조개혁 대상 지정',
+      '<b>K-Culture 글로벌 유학생 유치</b> — 한류+전공 연계 특성화(충북대 K-Culture 모델 확대)',
+      '<b>T-Entrepreneur 창업교육</b> — AI·바이오 분야 창업 클러스터, Seeding→Growing→Harvesting 단계별 지원',
+      '<b>Joint Appointment 제도</b> — 산업체 전문가 공동임용, 실무형 교원확보(충북대 JA 모델)'
+    ],stats:[{v:majorCount.student,l:'관련 기사'},{v:subCount.enrollment||0,l:'충원율'},{v:subCount.dropout||0,l:'탈락'}]},
+    {icon:'⚖️',color:'#f59e0b',title:'법인 책무성·거버넌스',items:[
+      '<b>외부이사 과반 의무화</b> — 사립학교법 개정, 이사회 전원찬성 비율 공시 의무',
+      '<b>교비 전용 즉시 제재</b> — 적발 시 재정지원 즉시 중단 + 경영진 해임 권고',
+      '<b>대학재정알리미 고도화</b> — 실시간 재정 데이터 공시, 시민감시 플랫폼 연동',
+      '<b>구조개선법 퇴출 메커니즘</b> — 경영위기→개선명령→이행점검→폐교 4단계 프로세스 법제화'
+    ],stats:[{v:majorCount.account,l:'관련 기사'},{v:subCount.governance||0,l:'이사회'},{v:subCount.corruption||0,l:'비리'}]},
+    {icon:'🌱',color:'#8b5cf6',title:'지속가능성·지역혁신',items:[
+      '<b>Quad-Helix 지역혁신 허브</b> — 대학-지자체-산업-시민 4중나선 협력체계(충북대 Quad-Helix Hub 모델)',
+      '<b>RISE 지역혁신 연계</b> — 지방사립대 특성화 5년 50억+RISE 사업 연동, Open & Shared Campus',
+      '<b>폐교 청산 기간 단축(17년→5년)</b> — 잔여재산 처리 간소화, 의료법인·국공립 전환 허용',
+      '<b>AI 디지털전환 캠퍼스 인증제</b> — LMS·AI튜터·디지털교과서 도입 대학 인증, 재정 인센티브'
+    ],stats:[{v:majorCount.sustain,l:'관련 기사'},{v:subCount.reform||0,l:'구조개혁'},{v:subCount.ai_digital||0,l:'AI·디지털'}]}
   ];
   document.getElementById('policyCards').innerHTML=policies.map(p=>`
     <div class="policy-card" style="border-left:3px solid ${p.color}">
@@ -1274,21 +1335,21 @@ function renderPolicyBrief(){
 
   // 현황 진단 테이블
   const tableData=[
-    {area:'💰 재정 건전성',problem:'법인 전입금 13년째 정체, 적립금 쌓고도 등록금 인상',count:majorCount.fiscal,policy:'전입금 의무비율 도입 + 적립금 투명공시',effect:'법인 책임 재정 참여율 3%→15%',pri:'🔴 긴급'},
-    {area:'📚 교육 투자',problem:'교육비환원율 기반 평가 미흡, 교원확보율 저조',count:majorCount.invest,policy:'환원율 연동 재정배분 + 교원 확보 인센티브',effect:'교육의 질 향상, 비정규직 비율 감소',pri:'🟠 높음'},
-    {area:'🎓 학생 경쟁력',problem:'비수도권 충원율 하락, 의대발 이동, 취업률 격차',count:majorCount.student,policy:'지역인재 유출 방지 + 취업연계 강화',effect:'수도권-비수도권 취업률 격차 4.2%→2%',pri:'🟠 높음'},
-    {area:'⚖️ 법인 책무성',problem:'이사회 거수기화, 교비 전용·횡령, 법 개정 지연',count:majorCount.account,policy:'외부이사 과반 + 비리 대학 즉시 제재',effect:'투명성 지수 개선, 비리 건수 50% 감소',pri:'🔴 긴급'},
-    {area:'🌱 지속가능성',problem:'학령인구 30년 후 반감, 폐교 청산 17년, 디지털 전환 지체',count:majorCount.sustain,policy:'통폐합 로드맵 + 특성화 지원 확대',effect:'폐교 충격 최소화, 지역 대학 생존율 향상',pri:'🟡 중기'}
+    {area:'💰 재정 건전성',problem:'법인 전입금 13년째 정체(3%대), 적립금 11.5조 쌓고도 등록금 인상, 부채 1,274억 대학 존재',count:majorCount.fiscal,policy:'전입금 의무비율(10%) + 적립금 사용계획 공시 + 부채 상한제',effect:'법인 부담률 3%→15%, 적립금 교육투자 전환율 30%↑',pri:'🔴 긴급'},
+    {area:'📚 교육 투자',problem:'교육비환원율 기반 평가 미흡, 비정규직 교원 60% 초과 대학 존재, AI 교육 인프라 부재',count:majorCount.invest,policy:'환원율 연동 차등배분 + K-에듀 AI 혁신(KELI) + Quarter제 도입',effect:'교육비환원율 평균 10%p↑, AI 리터러시 이수율 100%',pri:'🟠 높음'},
+    {area:'🎓 학생 경쟁력',problem:'비수도권 충원율 하락, 의대발 이동(6명 중 1명), 취업률 격차 4.2%p',count:majorCount.student,policy:'조기경보 시스템 + K-Culture 유학생 유치 + T-Entrepreneur 창업교육',effect:'충원율 미달 대학 50%↓, 취업률 격차 2%p 이내',pri:'🟠 높음'},
+    {area:'⚖️ 법인 책무성',problem:'이사회 231건 전원찬성(거수기화), 교비 횡령·전용 반복, 사립학교법 92차 개정에도 실효성 미흡',count:majorCount.account,policy:'외부이사 과반 + 비리 대학 즉시 제재 + 퇴출 메커니즘',effect:'전원찬성 비율 50%↓, 비리 적발 건수 50%↓',pri:'🔴 긴급'},
+    {area:'🌱 지속가능성',problem:'2055년 학령인구 반감, 폐교 청산 최장 17년 5개월, 지방대 생존 위기',count:majorCount.sustain,policy:'Quad-Helix 지역혁신 + RISE 연계 특성화 + 폐교 청산 5년 단축',effect:'지역대학 생존율 80%↑, 디지털전환 인증 대학 100교',pri:'🟡 중기'}
   ];
   document.getElementById('policyTableBody').innerHTML=tableData.map(r=>`<tr><td style="font-weight:700">${r.area}</td><td>${r.problem}</td><td style="text-align:center;font-weight:700;color:var(--accent)">${r.count}건</td><td>${r.policy}</td><td>${r.effect}</td><td>${r.pri}</td></tr>`).join('');
 
-  // 로드맵
+  // 로드맵 (PDF 5개년 계획 참고)
   const phases=[
-    {label:'1단계: 진단',period:'2026 Q3',items:'데이터 수집·분석\n현황 보고서 작성\n이해관계자 의견 수렴',color:'#ef4444'},
-    {label:'2단계: 법제화',period:'2026 Q4',items:'사립학교법 개정안\n구조개선법 시행령\n전입금 의무화 법안',color:'#f59e0b'},
-    {label:'3단계: 시범사업',period:'2027 H1',items:'시범대학 15교 선정\n특성화 지원금 집행\nAI캠퍼스 시범 인증',color:'#06b6d4'},
-    {label:'4단계: 확산',period:'2027 H2',items:'전국 확대 적용\n성과평가 체계 구축\n모니터링 대시보드',color:'#10b981'},
-    {label:'5단계: 고도화',period:'2028~',items:'AI 기반 조기경보\n대학 통폐합 실행\n글로벌 경쟁력 강화',color:'#8b5cf6'}
+    {label:'1단계: 진단·설계',period:'2026 Q3-Q4',items:'뉴스 데이터 기반 현황 분석\n대학별 재정건전성 등급 산출\nQuad-Helix 파트너십 MOU 체결\n사립학교법 개정안 초안',color:'#ef4444'},
+    {label:'2단계: 법제화·기반구축',period:'2027 H1',items:'전입금 의무비율 법안 발의\n구조개선법 시행령 확정\nK-에듀 AI 플랫폼(KELI) 구축\nQuarter제 시범대학 10교 선정',color:'#f59e0b'},
+    {label:'3단계: 시범사업',period:'2027 H2',items:'특성화 15교 × 50억 집행\nStation C형 창업허브 5개소\nOpen Lab R&BD 센터 10개소\nJoint Appointment 시범 운영',color:'#06b6d4'},
+    {label:'4단계: 전국 확산',period:'2028',items:'전국 100교 확대 적용\nOpen & Shared Campus 네트워크\nT-Entrepreneur 클러스터 20개소\n성과평가 기반 예산 재배분',color:'#10b981'},
+    {label:'5단계: 고도화·글로벌',period:'2029~2030',items:'AI 기반 재정위기 조기경보\nQS 아시아 50위 내 10교 육성\n글로벌 캠퍼스 네트워크 구축\n정책 성과 백서 발간(5년 2,500억)',color:'#8b5cf6'}
   ];
   document.getElementById('policyRoadmap').innerHTML=phases.map(p=>`
     <div class="roadmap-phase">
@@ -1297,6 +1358,74 @@ function renderPolicyBrief(){
       <div class="rm-period">${p.period}</div>
       <div class="rm-items">${p.items.replace(/\n/g,'<br>')}</div>
     </div>`).join('');
+
+  // 혁신 모델 벤치마크 (PDF 기반)
+  document.getElementById('policyBenchmark').innerHTML=[
+    {icon:'🧠',color:'#6366f1',title:'한림대 K-에듀 AI 혁신모델',items:[
+      '<b>KELI (Korean Educational LLM Initiative)</b> — 한국형 교육 특화 AI 개발, 2032년까지 AI 교육 비중 20%(500과목)',
+      '<b>Station C 창업생태계</b> — Seeding 50억 → Growing 150억 → Harvesting 300억, 10년간 500개 창업',
+      '<b>Open Lab R&BD</b> — KIST·산업체 공동연구소, 1학과 1기업 1연구소 체계',
+      '<b>AI Companion 시스템</b> — HTHT(AI 튜터) 전 과목 확대, ASU 벤치마크'
+    ]},
+    {icon:'🔄',color:'#ec4899',title:'충북대 Quad-Helix 지역혁신모델',items:[
+      '<b>Quad-Helix Hub</b> — 대학·지자체·산업·시민 4중나선 혁신, 10대 핵심분야(AI, 바이오, CCU 등)',
+      '<b>Quarter제(12주×3+계절)</b> — 학사 유연화, 교차수강·복수학위 활성화',
+      '<b>Joint Appointment</b> — 산업체 전문가 공동임용, 대학-기업 간 인력 교류',
+      '<b>Open & Shared Campus</b> — 대학 간 시설·교원·교육과정 공유, RISE 사업 연동'
+    ]},
+    {icon:'🌍',color:'#06b6d4',title:'글로벌 벤치마크',items:[
+      '<b>ASU(Arizona State Univ.)</b> — 14개 단과대 4개로 통합, AI 기반 적응형 학습, QS 혁신대학 2위',
+      '<b>미네르바 프로젝트</b> — 100% 온라인+7개국 순환 캠퍼스, PBL 중심 교육',
+      '<b>Station F(프랑스)</b> — 세계 최대 창업캠퍼스, 1,600개 스타트업 입주, 대학-창업 연계 모델',
+      '<b>NUS(싱가포르)</b> — 국가 전략과 대학 혁신 동기화, 산학일체형 교육과정'
+    ]},
+    {icon:'🏛️',color:'#f59e0b',title:'정책 프레임워크',items:[
+      '<b>RISE 지역혁신시스템</b> — 지자체 주도 고등교육 혁신, 대학-지역 간 수요-공급 매칭',
+      '<b>대학혁신사업 1.4조</b> — 교육비환원율 반영 평가, 성과 기반 차등 배분',
+      '<b>구조개선법 시행</b> — 자발적 퇴로 법령 보완, 경영위기 판정→폐교 절차',
+      '<b>교육교부금 개편</b> — 내국세 연동률 조정, 대학 지원 재원 확대 검토'
+    ]}
+  ].map(b=>`
+    <div class="policy-card" style="border-left:3px solid ${b.color}">
+      <h4><span class="pc-icon" style="background:${b.color}22;color:${b.color}">${b.icon}</span><span style="color:${b.color}">${b.title}</span></h4>
+      <ul>${b.items.map(i=>`<li>${i}</li>`).join('')}</ul>
+    </div>`).join('');
+
+  // 예산 배분 차트
+  const budgetLabels=['AI·디지털 전환','지역 특성화','재정건전성 지원','창업생태계','글로벌화','거버넌스 개혁'];
+  const budgetData=[600,500,450,400,350,200];
+  const ctx3=document.getElementById('policyChartBudget');
+  if(policyChartBudgetInst)policyChartBudgetInst.destroy();
+  policyChartBudgetInst=new Chart(ctx3,{type:'doughnut',data:{labels:budgetLabels,datasets:[{data:budgetData,backgroundColor:['#8b5cf6','#10b981','#ef4444','#f59e0b','#06b6d4','#ec4899'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e4e6eb',font:{size:10},padding:8,usePointStyle:true}}}}});
+
+  const ctx4=document.getElementById('policyChartYearly');
+  if(policyChartYearlyInst)policyChartYearlyInst.destroy();
+  policyChartYearlyInst=new Chart(ctx4,{type:'bar',data:{labels:['2026','2027','2028','2029','2030'],datasets:[
+    {label:'AI·디지털',data:[80,150,150,120,100],backgroundColor:'#8b5cf6',borderRadius:3},
+    {label:'지역 특성화',data:[50,120,130,110,90],backgroundColor:'#10b981',borderRadius:3},
+    {label:'재정·거버넌스',data:[100,150,160,120,120],backgroundColor:'#ef4444',borderRadius:3},
+    {label:'창업·글로벌',data:[70,130,160,150,140],backgroundColor:'#06b6d4',borderRadius:3}
+  ]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{ticks:{color:'#999'},grid:{display:false},stacked:true},y:{ticks:{color:'#999',callback:v=>v+'억'},grid:{color:'rgba(255,255,255,0.06)'},stacked:true}},plugins:{legend:{labels:{color:'#e4e6eb',font:{size:10},usePointStyle:true}}}}});
+
+  // 세부 추진과제 테이블
+  document.getElementById('policyTaskBody').innerHTML=[
+    {task:'AI 교육혁신',sub:'K-에듀 AI 플랫폼(KELI) 구축 · AI 리터러시 필수과목 도입 · HTHT 튜터 시스템 전 대학 확산',dept:'교육부 / 대학혁신본부',budget:600,kpi:'AI 교육 이수율',target:'전체 학생 80%'},
+    {task:'지역 특성화',sub:'Quad-Helix Hub 20개소 · RISE 연계 특성화 15교×50억 · Open & Shared Campus 네트워크',dept:'교육부 / 지자체',budget:500,kpi:'지역인재 정착률',target:'졸업생 40%'},
+    {task:'재정건전성 강화',sub:'전입금 의무비율(10%) 법제화 · 적립금 투명공시 · 재정등급제(A~E) 도입',dept:'교육부 / 사학진흥재단',budget:450,kpi:'법인 전입금 비율',target:'평균 10%↑'},
+    {task:'창업생태계 조성',sub:'Station C형 창업허브 10개소 · T-Entrepreneur 클러스터 · 단계별 펀드(50→150→300억)',dept:'교육부 / 중기부',budget:400,kpi:'대학 창업 기업 수',target:'연 500개'},
+    {task:'글로벌 경쟁력',sub:'K-Culture 유학생 유치 · 해외 공동학위 · QS 아시아 50위 10교 육성',dept:'교육부 / 외교부',budget:350,kpi:'QS 50위 내 대학 수',target:'10교'},
+    {task:'거버넌스 개혁',sub:'외부이사 과반 의무화 · 비리대학 즉시 제재 · 대학재정알리미 고도화',dept:'교육부 / 국회',budget:200,kpi:'투명성 지수',target:'OECD 평균 이상'}
+  ].map(r=>`<tr><td style="font-weight:700">${r.task}</td><td>${r.sub}</td><td>${r.dept}</td><td style="text-align:right;font-weight:700;color:var(--accent)">${r.budget}</td><td>${r.kpi}</td><td style="font-weight:600;color:#10b981">${r.target}</td></tr>`).join('');
+
+  // 리스크 테이블
+  document.getElementById('policyRiskBody').innerHTML=[
+    {risk:'법인 반발·로비',impact:'🔴 높음',prob:'🔴 높음',grade:'<span style="color:#ef4444;font-weight:900">A급</span>',strategy:'단계적 시행(3년 유예) + 인센티브 병행 + 사학진흥재단 중재',monitor:'법인 전입금 이행률'},
+    {risk:'재원 확보 실패',impact:'🔴 높음',prob:'🟠 중간',grade:'<span style="color:#f59e0b;font-weight:900">B급</span>',strategy:'교육교부금 내국세 연동률 개편 + 민간 매칭펀드 도입',monitor:'연간 예산 집행률'},
+    {risk:'지방대 폐교 도미노',impact:'🔴 높음',prob:'🟠 중간',grade:'<span style="color:#f59e0b;font-weight:900">B급</span>',strategy:'조기경보 시스템 가동 + 의료법인·국공립 전환 허용',monitor:'충원율 70% 미달 대학 수'},
+    {risk:'AI 교육 품질 편차',impact:'🟠 중간',prob:'🟠 중간',grade:'<span style="color:#06b6d4;font-weight:900">C급</span>',strategy:'K-에듀 품질인증제 + 교수 AI 역량강화 연수 의무화',monitor:'AI 교과목 학생만족도'},
+    {risk:'이해관계자 갈등',impact:'🟠 중간',prob:'🔴 높음',grade:'<span style="color:#f59e0b;font-weight:900">B급</span>',strategy:'거버넌스 위원회(교수·학생·시민 참여) + 공론화 절차',monitor:'이해관계자 만족도 조사'},
+    {risk:'글로벌 경쟁 심화',impact:'🟠 중간',prob:'🟡 낮음',grade:'<span style="color:#10b981;font-weight:900">D급</span>',strategy:'해외 대학 전략적 제휴(ASU, NUS 등) + 공동학위 확대',monitor:'해외 유학생 유치 실적'}
+  ].map(r=>`<tr><td style="font-weight:700">${r.risk}</td><td>${r.impact}</td><td>${r.prob}</td><td>${r.grade}</td><td>${r.strategy}</td><td>${r.monitor}</td></tr>`).join('');
 }
 
 // ═══ Bookmark ═══
