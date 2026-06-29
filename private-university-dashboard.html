@@ -1251,26 +1251,106 @@ const MAJOR_META={
   sustain:{icon:'🌱',color:'#8b5cf6',label:'지속가능성'}
 };
 const POLICY_TEMPLATES={
-  tuition:{diag:'등록금 인상 관련',action:'등록금 인상 상한제 및 사전심사 의무화'},
-  fund_transfer:{diag:'법인 전입금 부족',action:'법인 전입금 최소 의무비율 도입'},
-  reserve:{diag:'적립금 과다 보유',action:'적립금-등록금 연동 투명공시 의무화'},
-  debt:{diag:'대학 부채 문제',action:'부채비율 상한제 도입 및 재정위기 조기경보'},
-  edu_cost:{diag:'교육비 배분 문제',action:'1인당 교육비 공시 표준화 및 재정배분 개선'},
-  edu_return:{diag:'교육비환원율 미흡',action:'교육비환원율 연동 재정지원 차등 배분'},
-  scholarship:{diag:'장학금 구조 한계',action:'성과연동형 장학금 체계 도입'},
-  faculty:{diag:'교원확보율 저조',action:'전임교원확보율 미달 대학 신입생 모집 제한'},
-  enrollment:{diag:'신입생 충원율 하락',action:'충원율 미달 대학 조기경보 시스템 구축'},
-  dropout:{diag:'중도탈락 증가',action:'중도탈락 예방 멘토링 및 학생지원 의무화'},
-  employment:{diag:'취업률 격차',action:'산학협력 취업연계 프로그램 강화'},
-  intl_student:{diag:'유학생 유치 전략',action:'체질 개선형 유학생 유치 및 정착 지원'},
-  governance:{diag:'이사회 거버넌스 부실',action:'외부이사 과반 의무화 및 이사회 투명성 공시'},
-  audit:{diag:'재정공시·감사 미흡',action:'대학재정알리미 실시간 공시 고도화'},
-  corruption:{diag:'교비 전용·비리',action:'비리 적발 시 재정지원 즉시 중단 및 퇴출'},
-  law:{diag:'사립학교법 실효성',action:'사립학교법 실질적 개정 및 구조개선법 연동'},
-  demography:{diag:'학령인구 감소 위기',action:'인구 감소 대비 대학 통폐합 로드맵 수립'},
-  reform:{diag:'대학 구조개혁 필요',action:'경영위기 판정→개선명령→폐교 절차 법제화'},
-  regional:{diag:'지역대학 생존 위기',action:'지역 특성화 지원 확대 및 지자체 협력 강화'},
-  ai_digital:{diag:'디지털 전환 지체',action:'AI·디지털 전환 캠퍼스 인증제 및 투자 확대'}
+  tuition:{
+    diag:'등록금 동결 16년차, 사립대 재정 자립도 하락 · 등록금 의존율 60% 이상 대학 다수',
+    actions:['등록금 인상률 상한제(소비자물가+1%p) 및 사전 심사 위원회 설치','등록금 의존율 70% 초과 대학 재정다변화 계획서 의무 제출','등록금심의위원회 학생 참여비율 1/3 이상 의무화','등록금 대비 교육비환원율 최소 기준(80%) 미달 시 인상 불허'],
+    kpi:'등록금 대비 교육비환원율',target:'80% 이상',dept:'교육부 등록금심의위원회',risk:'등록금 인상 시 학생 반발',mitigation:'장학금 확대·교육 품질 개선 선행 조건 부여'
+  },
+  fund_transfer:{
+    diag:'법인 전입금 비율 평균 3.2%(2023), 13년째 정체 · 설립 목적 대비 책무 미이행',
+    actions:['법인 전입금 의무비율 단계적 도입: 1단계 5%(Y1-Y2) → 2단계 10%(Y3-Y5)','미이행 법인 재정지원 제한 및 임원 선임 승인 유보','법인 수익사업 수익의 50% 이상 전입 의무화(사학기관 재무회계 규칙 개정)','전입금 이행 현황 반기별 공시(대학재정알리미 연동)'],
+    kpi:'법인 전입금 비율',target:'평균 10% 이상',dept:'교육부 사학정책과',risk:'재정 취약 법인 이행 불가',mitigation:'3년 유예기간 + 소규모 법인 차등 적용(자산 500억 미만 5%)'
+  },
+  reserve:{
+    diag:'사립대학 적립금 총 11.5조원(2023) · 적립금 보유하면서 등록금 인상 추진 대학 존재',
+    actions:['적립금 사용계획서 연 1회 공시 의무화(사용 목적·시기·규모 명시)','적립금 대비 교육투자 비율 30% 이상 권고 → 3년 후 의무화','적립금 5년 평균 교육비의 300% 초과 시 등록금 인상 불허','적립금 운용수익 교육환원 비율 50% 이상 의무화'],
+    kpi:'적립금 교육투자 전환율',target:'30% 이상',dept:'교육부 대학재정과',risk:'대학 재정 안전망 약화 우려',mitigation:'최소 적립금 기준(연간 교육비 50%) 보장 후 초과분 환원'
+  },
+  debt:{
+    diag:'부채비율 100% 초과 대학 다수 · 최대 부채 1,274억원 대학 존재 · 재정위기 조기 감지 미흡',
+    actions:['부채비율 상한제 도입: 경고(50%) → 위험(80%) → 위기(100%) 3단계','부채비율 위기 단계 진입 시 재정위기대학 자동 지정','신규 차입 시 교육부 사전 승인제(차입 목적·상환 계획 심사)','부채 감축 로드맵(연 10% 감축) 미이행 시 재정지원 제한'],
+    kpi:'부채비율 100% 초과 대학 수',target:'0교(5년 내)',dept:'교육부·사학진흥재단',risk:'긴급 시설투자 차입 불가',mitigation:'교육시설 목적 차입 예외 조항 + 정부 저리 융자 전환'
+  },
+  edu_cost:{
+    diag:'학생 1인당 교육비 대학 간 최대 10배 격차 · 교육비 산정 기준 불투명',
+    actions:['학생 1인당 교육비 표준 산정 기준 수립(OECD 기준 벤치마크)','교육비 대학별 비교 공시 의무화(대학알리미 표준 항목 추가)','1인당 교육비 하위 20% 대학 교육 품질 개선 계획 의무 제출','교육비 증감 추이 3개년 비교 공시'],
+    kpi:'1인당 교육비 하위 20% 비율',target:'격차 50% 축소',dept:'교육부 대학정책과',risk:'소규모 대학 불리',mitigation:'규모별 보정 계수 적용'
+  },
+  edu_return:{
+    diag:'교육비환원율 평균 72%(2023) · 100% 미만 대학 전체의 40% · 등록금 수입 대비 교육 재투자 부족',
+    actions:['교육비환원율 기반 재정지원 차등 배분(상위 30% 인센티브 100억 규모)','환원율 60% 미만 대학 3년 내 개선 계획 의무 제출','환원율 산정 항목 표준화(인건비·장학금·교육경비·연구비 포함)','환원율 3개년 연속 하락 대학 특별 재정 점검 실시'],
+    kpi:'교육비환원율 평균',target:'85% 이상',dept:'교육부·한국사학진흥재단',risk:'인건비 비중 과다 포함 왜곡',mitigation:'인건비 제외 순수교육투자율 병행 공시'
+  },
+  scholarship:{
+    diag:'장학금 지급률 대학 간 격차 · 교내장학금 비율 감소 추세 · 성적 위주 장학 편중',
+    actions:['교내장학금 등록금 대비 최소 비율(20%) 의무화','수요자 중심 장학금 체계 전환(성적→소득분위+역량 복합 기준)','장학금 수혜율·금액 대학별 비교 공시 의무화','국가장학금-교내장학금 연계 지급 체계 구축'],
+    kpi:'교내장학금 비율',target:'등록금 수입 대비 25%',dept:'교육부·한국장학재단',risk:'대학 재정 부담 가중',mitigation:'장학금 확대분 세제 혜택 연계'
+  },
+  faculty:{
+    diag:'전임교원확보율 법정 기준 미달 대학 다수 · 비전임 교원 60% 초과 대학 존재 · 교원 처우 격차',
+    actions:['전임교원확보율 미달 대학 신입생 모집 정원 단계적 감축(연 5%)','비전임 교원 비율 50% 상한 설정(3년 유예)','교원 1인당 학생 수 25명 이하 목표 · 초과 시 정원 조정','교원 처우 최소 기준(4년제 평균의 80%) 가이드라인 수립'],
+    kpi:'전임교원확보율',target:'전 대학 100% 이상',dept:'교육부 교원정책과',risk:'재정 취약 대학 교원 채용 어려움',mitigation:'공동 임용(Joint Appointment) 제도 · 정부 인건비 보조'
+  },
+  enrollment:{
+    diag:'비수도권 충원율 급락 · 2025 의대 증원발 이동 효과 · 정원 미달 대학 증가 추세',
+    actions:['충원율 3년 연속 80% 미달 대학 자동 구조개혁 대상 지정','충원율 조기경보 시스템 구축(실시간 모니터링 대시보드)','정원 감축 대학 재정 인센티브(감축 정원×500만원 지원)','수도권-비수도권 정원 이동 모니터링 및 총량 관리'],
+    kpi:'충원율 80% 미달 대학 수',target:'50% 감축',dept:'교육부 대학구조개혁과',risk:'지역 고등교육 공백',mitigation:'거점 국립대·지역 사립대 공동교육과정 구축'
+  },
+  dropout:{
+    diag:'중도탈락률 전국 평균 5.2%(2023) · 전문대 7% 이상 · 저소득층·1학년 집중',
+    actions:['중도탈락 예방 전담 부서 설치 의무화(학생 1,000명당 1명 전담인력)','중도탈락 위험군 조기 발견 AI 시스템 도입(출석·성적·상담 데이터 연동)','중도탈락률 상위 20% 대학 학생지원 프로그램 개선 계획 의무 제출','복학생 재적응 프로그램 및 학비 감면 인센티브 확대'],
+    kpi:'중도탈락률',target:'전국 평균 3% 이하',dept:'교육부·대학 학생처',risk:'통계 왜곡(휴학 유도)',mitigation:'휴학률 병행 모니터링 · 편입 포함 순이동률 공시'
+  },
+  employment:{
+    diag:'대학 간 취업률 격차 최대 40%p · 비수도권 취업 질적 격차 · 전공 불일치 비율 30%',
+    actions:['산학협력 취업연계 프로그램 전 대학 의무화(현장실습 120시간 이상)','취업률 공시 항목 고도화(정규직 비율·연봉 중위값·전공 일치율 포함)','지역 기업-대학 매칭 플랫폼 구축(RISE 사업 연동)','취업률 하위 20% 학과 교육과정 개편 의무화(산업 수요 반영)'],
+    kpi:'졸업생 정규직 취업률',target:'수도권-비수도권 격차 5%p 이내',dept:'교육부·고용노동부',risk:'단기 취업률 중심 왜곡',mitigation:'3년 후 고용유지율 병행 추적'
+  },
+  intl_student:{
+    diag:'유학생 수 30만 돌파 목표 · 불법체류·관리 부실 문제 · 교육 품질 논란',
+    actions:['유학생 유치 인증제 도입(교육·생활·취업 지원 체계 심사)','유학생 관리 부실 대학 모집 정원 제한(불법체류율 5% 초과 시)','K-Culture+전공 연계 특성화 유학생 유치 전략 수립','유학생 건강보험·주거·취업 원스톱 지원센터 설치 의무화'],
+    kpi:'유학생 관리 인증 대학 비율',target:'80% 이상',dept:'교육부 국제교육과·법무부',risk:'불법체류 증가',mitigation:'출입국관리 연계 모니터링 + 인증 미달 대학 모집 중단'
+  },
+  governance:{
+    diag:'이사회 의결 231건 전원찬성(거수기화) · 외부이사 비율 형식적 · 이사회 독립성 미흡',
+    actions:['외부이사 과반(50%+1) 의무화(사립학교법 제14조 개정)','이사회 안건별 투표 결과 전수 공시 의무화','이사회 내 학생·교직원 참관인 제도 도입','전원찬성 비율 70% 초과 시 교육부 특별 점검 실시'],
+    kpi:'이사회 전원찬성 비율',target:'50% 이하',dept:'교육부 사학정책과·국회',risk:'법인 반발·소송',mitigation:'3년 유예기간 + 법률 자문단 지원'
+  },
+  audit:{
+    diag:'대학재정공시 항목 부족 · 회계 감사 형식적 · 재정 정보 비교 가능성 미흡',
+    actions:['대학재정알리미 실시간 공시 체계 구축(분기별 → 월별 업데이트)','외부 회계 감사 의무화(자산 1,000억 이상 대학, Big4 회계법인)','재정공시 항목 표준화 및 OECD 기준 비교 지표 추가','시민감시 플랫폼 연동(재정 이상 징후 자동 알림 시스템)'],
+    kpi:'재정공시 충실도 지수',target:'전 대학 90점 이상',dept:'교육부·한국사학진흥재단',risk:'소규모 대학 행정 부담',mitigation:'공시 시스템 자동화 도구 무상 제공'
+  },
+  corruption:{
+    diag:'교비 횡령·전용 반복 발생 · 처벌 실효성 부족 · 적발 후 복귀 사례 존재',
+    actions:['교비 전용 적발 시 재정지원 즉시 전액 중단(최소 2년)','비리 관련 임원 영구 취임 제한(사립학교법 제22조 강화)','교비 사용 실시간 모니터링 시스템 도입(AI 이상 거래 탐지)','비리 신고 포상금 확대(적발 금액의 5%, 상한 1억원) 및 신고자 보호 강화'],
+    kpi:'교비 비리 적발 건수',target:'연간 50% 감소',dept:'교육부·검찰·감사원',risk:'교비 사용 위축',mitigation:'정상적 집행 명확 가이드라인 제공'
+  },
+  law:{
+    diag:'사립학교법 92차 개정에도 실효성 미흡 · 법인 책무성 조항 이행 감독 부재',
+    actions:['사립학교법 전면 개정(법인 책무성·투명성·퇴출 메커니즘 강화)','구조개선법과 사립학교법 연동 체계 구축','법 이행 모니터링 전담 기구 설치(교육부 내 사학감독관실 격상)','위반 시 제재 실효성 강화(과태료 상향 5배 + 형사 고발 의무화)'],
+    kpi:'법령 이행률',target:'전 대학 95% 이상',dept:'교육부·국회 교육위원회',risk:'입법 지연',mitigation:'시행령 우선 개정 + 행정지도 병행'
+  },
+  demography:{
+    diag:'2055년 학령인구(18세) 현재 대비 50% 감소 전망 · 2040년 대학 입학 가능 인구 28만명 미만',
+    actions:['학령인구 감소 시나리오별 대학 정원 조정 로드맵 수립(10년 단위)','정원 조정 대학 재정 인센티브(감축 1명당 연 500만원, 3년간)','지역별 적정 대학 수 산정 모델 개발 및 공시','평생교육 체제 전환 지원(성인학습자 정원 편입 허용 확대)'],
+    kpi:'정원 대비 학령인구 비율',target:'130% 이상 유지',dept:'교육부 대학구조개혁과',risk:'정원 감축 저항',mitigation:'자발적 감축 인센티브 + 특성화 지원 병행'
+  },
+  reform:{
+    diag:'폐교 청산 최장 17년 5개월 · 잔여재산 처리 법적 근거 미비 · 자발적 퇴로 부재',
+    actions:['폐교 청산 기간 5년 이내 단축(잔여재산 처리 간소화 특례법)','경영위기→개선명령→이행점검→폐교 4단계 프로세스 법제화','폐교 대학 부지·시설 국공립 전환·의료법인 전환 허용','자발적 통폐합 인센티브(잔여재산 처분 수익 법인 귀속 30% 허용)'],
+    kpi:'폐교 청산 평균 기간',target:'5년 이내',dept:'교육부·법무부·행안부',risk:'재산권 분쟁',mitigation:'법원 신속 처리 특례 + 중재위원회 설치'
+  },
+  regional:{
+    diag:'비수도권 대학 존립 위기 · 지역인재 유출 심화 · 지역 산업-대학 연계 부족',
+    actions:['RISE 지역혁신시스템 연계 사립대 특성화 지원(교당 연 50억, 5년)','지자체-대학 공동 거버넌스 의무화(지역혁신위원회 대학 참여)','지역인재 의무채용 비율 확대(공공기관 35% → 40%, 지방기업 세제 혜택)','대학-지역 기업 공동교육과정 개발 지원(산업 수요 기반 커리큘럼)'],
+    kpi:'지역인재 정착률',target:'졸업생 40% 이상',dept:'교육부·행안부·지자체',risk:'수도권 대학과 경쟁력 격차',mitigation:'비수도권 특화 분야 집중 투자(바이오·에너지·농생명)'
+  },
+  ai_digital:{
+    diag:'대학 AI·디지털 전환 격차 심화 · LMS 도입률 저조 · AI 교육 인프라 부재 대학 다수',
+    actions:['AI·디지털 전환 캠퍼스 인증제 도입(LMS·AI튜터·디지털교과서 기준)','AI 리터러시 전 학생 필수 이수 의무화(2학점 이상, 3년 내 전면 시행)','대학 AI 교육 인프라 구축 매칭펀드(정부 50%+대학 50%, 교당 최대 30억)','AI 기반 적응형 학습 시스템(AI 튜터) 도입 시범사업 50교 선정'],
+    kpi:'AI·디지털 인증 대학 수',target:'전국 100교 이상',dept:'교육부·과기정통부',risk:'디지털 격차 심화',mitigation:'교수 AI 역량강화 연수 의무화(연 30시간) + 중소규모 대학 기술 지원'
+  }
 };
 
 function renderPolicyBrief(){
@@ -1288,10 +1368,13 @@ function renderPolicyBrief(){
   const topSubs=Object.entries(subCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
   const topMajor=Object.entries(majorCount).sort((a,b)=>b[1]-a[1]);
   const star5=topNews.filter(n=>(n.imp||3)===5);
-  const star5titles=star5.slice(0,3).map(n=>n.title.replace(/^[^\s]+\s/,'')).join(', ');
-  document.getElementById('policyExecP1').innerHTML=`본 기획서는 사립대학 관련 <strong>${topNews.length}</strong>건의 주요 뉴스(중요도 ★4 이상)를 분석하여, 5대 핵심 영역의 문제점을 진단하고 실행 가능한 정책 대안을 제시합니다. 최다 이슈 영역은 <b>${MAJOR_META[topMajor[0][0]].label}(${topMajor[0][1]}건)</b>이며, ★5 기사 ${star5.length}건이 포함됩니다.`;
-  document.getElementById('policyExecP2').innerHTML=`<b>5대 핵심 세부 이슈:</b> ${topSubs.map(([k,v],i)=>`${i+1}) ${SUB_LABELS_MAP[k]||k}(${v}건)`).join(' ')}`;
-  document.getElementById('policyExecP3').innerHTML=`<b>대표 기사:</b> ${star5titles||topNews.slice(0,3).map(n=>n.title.replace(/^[^\s]+\s/,'')).join(', ')}`;
+  const star5titles=star5.slice(0,3).map(n=>`"${n.title.replace(/^[^\s]+\s/,'').substring(0,35)}"(${n.source})`).join(', ');
+  const regionDist=allNews.reduce((a,n)=>{a[n.region]=(a[n.region]||0)+1;return a;},{});
+  const topRegions=Object.entries(regionDist).sort((a,b)=>b[1]-a[1]).slice(0,3);
+  const urgentDiags=topSubs.slice(0,3).map(([k])=>POLICY_TEMPLATES[k]?.diag||SUB_LABELS_MAP[k]).join('; ');
+  document.getElementById('policyExecP1').innerHTML=`본 기획서는 사립대학 관련 <strong>총 ${allNews.length}건</strong>의 뉴스 중 중요도 ★4 이상 <strong>${topNews.length}건</strong>을 심층 분석하여, 5대 핵심 영역의 구조적 문제점을 진단하고 ${Object.keys(subCount).length}개 세부 이슈별 실행 가능한 정책 대안을 제시합니다. 최다 이슈 영역은 <b>${MAJOR_META[topMajor[0][0]].label}(${topMajor[0][1]}건, ${Math.round(topMajor[0][1]/topNews.length*100)}%)</b>이며, 최고 중요도(★5) 기사 <b>${star5.length}건</b>이 긴급 대응을 요구합니다.`;
+  document.getElementById('policyExecP2').innerHTML=`<b>〈핵심 진단〉</b> ${urgentDiags}. <b>〈5대 세부 이슈〉</b> ${topSubs.map(([k,v],i)=>`${i+1}) ${SUB_LABELS_MAP[k]||k}(${v}건)`).join(', ')}. <b>〈지역 분포〉</b> ${topRegions.map(([k,v])=>(REGION_LABELS[k]||k)+' '+v+'건').join(', ')}.`;
+  document.getElementById('policyExecP3').innerHTML=`<b>〈대표 기사〉</b> ${star5titles||topNews.slice(0,3).map(n=>`"${n.title.replace(/^[^\s]+\s/,'').substring(0,35)}"(${n.source})`).join(', ')}. 본 기획서는 상기 분석에 기반하여 <b>${topSubs.length}개 핵심 이슈별 ${topSubs.reduce((a,[,v])=>a+v,0)}건</b>의 뉴스를 정책 근거로 활용하며, 5개년 단계별 추진 로드맵과 예상 소요예산을 함께 제시합니다.`;
 
   // 인포그래픽
   const sources=[...new Set(allNews.map(n=>n.source))].length;
@@ -1331,61 +1414,97 @@ function renderPolicyBrief(){
   const barColors=subSorted.map(([k])=>{const m=topNews.find(n=>n.sub===k)?.major;return MAJOR_META[m]?.color||'#999';});
   policyChartSubInst=new Chart(ctx2,{type:'bar',data:{labels:subSorted.map(([k])=>SUB_LABELS_MAP[k]||k),datasets:[{label:'기사 수',data:subSorted.map(([,v])=>v),backgroundColor:barColors,borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{ticks:{color:'#999'},grid:{color:'rgba(255,255,255,0.06)'}},y:{ticks:{color:'#e4e6eb',font:{size:10}},grid:{display:false}}},plugins:{legend:{display:false}}}});
 
-  // 5대 정책 카드 — 뉴스 기사에서 동적 생성
+  // 5대 정책 카드 — 뉴스 기사에서 동적 생성 (구체적 액션+KPI)
   document.getElementById('policyCards').innerHTML=mKeys.map(mk=>{
     const meta=MAJOR_META[mk];
     const arts=topNews.filter(n=>n.major===mk);
     const subs={};arts.forEach(n=>{if(!subs[n.sub])subs[n.sub]=[];subs[n.sub].push(n);});
     const subEntries=Object.entries(subs).sort((a,b)=>b[1].length-a[1].length).slice(0,4);
     const items=subEntries.map(([sk,sarr])=>{
-      const tpl=POLICY_TEMPLATES[sk]||{diag:SUB_LABELS_MAP[sk],action:'관련 정책 개선 추진'};
+      const tpl=POLICY_TEMPLATES[sk]||{diag:SUB_LABELS_MAP[sk],actions:['관련 정책 개선 추진'],kpi:'-',target:'-'};
       const topArt=sarr.sort((a,b)=>(b.imp||3)-(a.imp||3))[0];
-      const shortTitle=topArt.title.replace(/^[^\s]+\s/,'').substring(0,40);
-      return `<b>[${SUB_LABELS_MAP[sk]}] ${tpl.action}</b><br><span style="font-size:0.7rem;color:var(--text-dim)">근거: "${shortTitle}…" (${sarr.length}건)</span>`;
+      const shortTitle=topArt.title.replace(/^[^\s]+\s/,'').substring(0,35);
+      const actionList=(tpl.actions||[tpl.action]).slice(0,3).map((a,i)=>`<span style="color:var(--text-dim);font-size:0.65rem">${i+1}.</span> ${a}`).join('<br>');
+      return `<b style="font-size:0.85rem">[${SUB_LABELS_MAP[sk]}]</b> <span style="font-size:0.7rem;background:${meta.color}15;color:${meta.color};padding:1px 6px;border-radius:3px">${sarr.length}건</span><br>${actionList}<br><span style="font-size:0.65rem;color:var(--text-dim)">📌 KPI: ${tpl.kpi||'-'} → 목표: ${tpl.target||'-'}</span><br><span style="font-size:0.65rem;color:var(--text-dim)">📰 근거: "${shortTitle}…" (${topArt.source})</span>`;
     });
     const statEntries=subEntries.slice(0,4).map(([sk,sarr])=>({v:sarr.length,l:SUB_LABELS_MAP[sk]}));
     return `<div class="policy-card" style="border-left:3px solid ${meta.color}">
       <h4><span class="pc-icon" style="background:${meta.color}22;color:${meta.color}">${meta.icon}</span><span style="color:${meta.color}">${meta.label} (${arts.length}건)</span></h4>
-      <ul>${items.map(i=>`<li>${i}</li>`).join('')}</ul>
+      <ul>${items.map(i=>`<li style="margin-bottom:0.8rem;line-height:1.5">${i}</li>`).join('')}</ul>
       <div class="pc-stat">${statEntries.map(s=>`<div class="pc-stat-item"><div class="sv" style="color:${meta.color}">${s.v}</div><div class="sl">${s.l}</div></div>`).join('')}</div>
     </div>`;
   }).join('');
 
-  // 현황 진단 테이블 — 뉴스 기반 동적
+  // 현황 진단 테이블 — 구체적 진단+정책+기대효과
   document.getElementById('policyTableBody').innerHTML=mKeys.map(mk=>{
     const meta=MAJOR_META[mk];
     const arts=topNews.filter(n=>n.major===mk);
     const subs=Object.entries(arts.reduce((a,n)=>{a[n.sub]=(a[n.sub]||0)+1;return a;},{})).sort((a,b)=>b[1]-a[1]);
-    const topTitles=arts.filter(n=>(n.imp||3)===5).slice(0,2).map(n=>n.title.replace(/^[^\s]+\s/,'').substring(0,25)).join('; ')||arts[0]?.title.replace(/^[^\s]+\s/,'').substring(0,40)||'-';
     const topSubKeys=subs.slice(0,3).map(([k])=>k);
-    const policies=topSubKeys.map(k=>POLICY_TEMPLATES[k]?.action||'정책 개선').join(' + ');
-    const effects=topSubKeys.map(k=>(SUB_LABELS_MAP[k]||k)+' 개선').join(', ');
+    const diagTexts=topSubKeys.map(k=>POLICY_TEMPLATES[k]?.diag||SUB_LABELS_MAP[k]).join(' / ');
+    const policyTexts=topSubKeys.map(k=>{const t=POLICY_TEMPLATES[k];return t?(t.actions||[t.action])[0]:'정책 개선';}).join(' + ');
+    const effectTexts=topSubKeys.map(k=>{const t=POLICY_TEMPLATES[k];return t?`${t.kpi||SUB_LABELS_MAP[k]} ${t.target||'개선'}`:(SUB_LABELS_MAP[k]+' 개선');}).join(', ');
     const pri=arts.some(n=>(n.imp||3)===5)?'🔴 긴급':arts.length>=8?'🟠 높음':'🟡 중기';
-    return `<tr><td style="font-weight:700">${meta.icon} ${meta.label}</td><td>${topTitles}</td><td style="text-align:center;font-weight:700;color:var(--accent)">${arts.length}건</td><td>${policies}</td><td>${effects}</td><td>${pri}</td></tr>`;
+    return `<tr><td style="font-weight:700">${meta.icon} ${meta.label}</td><td style="font-size:0.72rem;line-height:1.4">${diagTexts}</td><td style="text-align:center;font-weight:700;color:var(--accent)">${arts.length}건</td><td style="font-size:0.72rem;line-height:1.4">${policyTexts}</td><td style="font-size:0.72rem;line-height:1.4">${effectTexts}</td><td>${pri}</td></tr>`;
   }).join('');
 
-  // 로드맵 — 뉴스 이슈 기반 동적 생성
+  // 로드맵 — 이슈 우선순위 기반 구체적 산출물
   const urgentSubs=Object.entries(subCount).sort((a,b)=>b[1]-a[1]);
-  const phase1Items=urgentSubs.slice(0,3).map(([k])=>SUB_LABELS_MAP[k]+' 현황 분석').join('\n')+'이해관계자 의견 수렴';
-  const phase2Items=urgentSubs.slice(0,2).map(([k])=>POLICY_TEMPLATES[k]?.action||'').join('\n')+'\n관련 법·제도 개정안 마련';
-  const phase3Items='시범대학 선정 및 지원금 집행\n'+urgentSubs.slice(2,4).map(([k])=>(SUB_LABELS_MAP[k]||k)+' 시범사업').join('\n');
-  const phase4Items='전국 대학 확대 적용\n성과평가 체계 구축\n모니터링 대시보드 운영';
-  const phase5Items='데이터 기반 조기경보 시스템\n정책 성과 백서 발간\n지속적 개선 체계 고도화';
+  const u=k=>SUB_LABELS_MAP[k]||k;
+  const uAct=(k,i)=>{const t=POLICY_TEMPLATES[k];return t?(t.actions||[])[i||0]||t.actions?.[0]||'':''};
+  const phase1Items=[
+    `📊 ${urgentSubs.slice(0,3).map(([k])=>u(k)).join('·')} 실태 조사 보고서 작성`,
+    `📋 대학별 ${u(urgentSubs[0]?.[0]||'')} 현황 데이터 수집·분석`,
+    `🏛️ 이해관계자(대학·법인·학생·지자체) 공청회 3회 개최`,
+    `📝 정책 TF 구성 및 법령 개정 필요사항 목록 도출`
+  ].join('\n');
+  const phase2Items=[
+    `⚖️ ${uAct(urgentSubs[0]?.[0],0)} 법안 마련`,
+    `⚖️ ${uAct(urgentSubs[1]?.[0],0)} 시행령 개정`,
+    `💻 모니터링 시스템 설계·개발 착수`,
+    `📊 성과지표(KPI) 체계 확정 및 기준선 측정`
+  ].join('\n');
+  const phase3Items=[
+    `🏫 시범대학 ${Math.min(urgentSubs.length*5,30)}교 선정 및 지원금 집행`,
+    `🔬 ${urgentSubs.slice(2,4).map(([k])=>u(k)+' 개선').join(' · ')} 시범사업`,
+    `📈 분기별 성과 모니터링 및 중간 평가`,
+    `🔄 시범사업 결과 기반 정책 보완·수정`
+  ].join('\n');
+  const phase4Items=[
+    `🏫 전국 ${Math.min(urgentSubs.length*20,200)}교 확대 적용`,
+    `📊 성과평가 체계 본격 가동(연 2회 정기 평가)`,
+    `💻 통합 모니터링 대시보드 전 대학 공개`,
+    `🏆 우수 대학 인센티브 · 미달 대학 개선 명령`
+  ].join('\n');
+  const phase5Items=[
+    `🤖 AI 기반 재정위기 조기경보 시스템 고도화`,
+    `🌍 글로벌 벤치마크 대비 성과 비교 분석`,
+    `📖 5개년 정책 성과 백서 발간`,
+    `🔄 차기 5개년 계획 수립(환류 체계 구축)`
+  ].join('\n');
   document.getElementById('policyRoadmap').innerHTML=[
-    {label:'1단계: 진단·분석',period:'Q1-Q2',items:phase1Items,color:'#ef4444'},
-    {label:'2단계: 법·제도 정비',period:'Q3-Q4',items:phase2Items,color:'#f59e0b'},
-    {label:'3단계: 시범사업',period:'Y2 상반기',items:phase3Items,color:'#06b6d4'},
-    {label:'4단계: 전국 확산',period:'Y2 하반기~Y3',items:phase4Items,color:'#10b981'},
-    {label:'5단계: 고도화',period:'Y4~Y5',items:phase5Items,color:'#8b5cf6'}
+    {label:'1단계: 실태조사·진단',period:'Y1 상반기(6개월)',items:phase1Items,color:'#ef4444'},
+    {label:'2단계: 법·제도 정비',period:'Y1 하반기(6개월)',items:phase2Items,color:'#f59e0b'},
+    {label:'3단계: 시범사업 운영',period:'Y2(12개월)',items:phase3Items,color:'#06b6d4'},
+    {label:'4단계: 전국 확산·정착',period:'Y3(12개월)',items:phase4Items,color:'#10b981'},
+    {label:'5단계: 고도화·글로벌화',period:'Y4~Y5(24개월)',items:phase5Items,color:'#8b5cf6'}
   ].map(p=>`<div class="roadmap-phase"><div class="roadmap-dot" style="background:${p.color};border-color:${p.color}"></div><div class="rm-label" style="color:${p.color}">${p.label}</div><div class="rm-period">${p.period}</div><div class="rm-items">${p.items.replace(/\n/g,'<br>')}</div></div>`).join('');
 
-  // 벤치마크 → 핵심 근거 뉴스 (영역별 ★5 기사)
+  // 벤치마크 → 영역별 근거 뉴스 + 진단 + 정책 시사점
   document.getElementById('policyBenchmark').innerHTML=mKeys.map(mk=>{
     const meta=MAJOR_META[mk];
-    const arts=topNews.filter(n=>n.major===mk).sort((a,b)=>(b.imp||3)-(a.imp||3)).slice(0,4);
+    const arts=topNews.filter(n=>n.major===mk).sort((a,b)=>(b.imp||3)-(a.imp||3)).slice(0,5);
+    const subKeys=[...new Set(arts.map(a=>a.sub))].slice(0,3);
+    const diagSummary=subKeys.map(k=>POLICY_TEMPLATES[k]?.diag||'').filter(Boolean).join(' · ');
+    const policySummary=subKeys.map(k=>{const t=POLICY_TEMPLATES[k];return t?`${t.kpi||''} → ${t.target||'개선'}`:'';}).filter(Boolean).join(' | ');
     return `<div class="policy-card" style="border-left:3px solid ${meta.color}">
-      <h4><span class="pc-icon" style="background:${meta.color}22;color:${meta.color}">${meta.icon}</span><span style="color:${meta.color}">${meta.label} 핵심 근거 뉴스</span></h4>
-      <ul>${arts.map(a=>`<li><b>[${'★'.repeat(a.imp||3)}]</b> ${a.title.replace(/^[^\s]+\s/,'')} <span style="font-size:0.65rem;color:var(--text-dim)">(${a.source})</span></li>`).join('')}</ul>
+      <h4><span class="pc-icon" style="background:${meta.color}22;color:${meta.color}">${meta.icon}</span><span style="color:${meta.color}">${meta.label} — 근거 분석 (${arts.length}건)</span></h4>
+      <div style="font-size:0.72rem;color:var(--text-dim);margin:-0.3rem 0 0.5rem;padding:0.4rem 0.6rem;background:var(--card-bg);border-radius:6px;line-height:1.5"><b>〈진단〉</b> ${diagSummary||'-'}<br><b>〈목표〉</b> ${policySummary||'-'}</div>
+      <ul>${arts.map(a=>{
+        const tpl=POLICY_TEMPLATES[a.sub];
+        const implication=tpl?(tpl.actions||[])[0]||'':'정책 개선 필요';
+        return `<li style="margin-bottom:0.5rem;line-height:1.4"><b>[${'★'.repeat(a.imp||3)}]</b> ${a.title.replace(/^[^\s]+\s/,'')} <span style="font-size:0.6rem;color:var(--text-dim)">(${a.source}, ${REGION_LABELS[a.region]||'전국'})</span><br><span style="font-size:0.65rem;color:${meta.color}">→ 시사점: ${implication}</span></li>`;
+      }).join('')}</ul>
     </div>`;
   }).join('');
 
@@ -1403,26 +1522,24 @@ function renderPolicyBrief(){
   if(policyChartYearlyInst)policyChartYearlyInst.destroy();
   policyChartYearlyInst=new Chart(ctx4,{type:'bar',data:{labels:['1년차','2년차','3년차','4년차','5년차'],datasets:mKeys.map((k,i)=>({label:MAJOR_META[k].label,data:yearWeights[i].map(w=>Math.round(budgetData[i]*w)),backgroundColor:MAJOR_META[k].color,borderRadius:3}))},options:{responsive:true,maintainAspectRatio:false,scales:{x:{ticks:{color:'#999'},grid:{display:false},stacked:true},y:{ticks:{color:'#999',callback:v=>v+'억'},grid:{color:'rgba(255,255,255,0.06)'},stacked:true}},plugins:{legend:{labels:{color:'#e4e6eb',font:{size:10},usePointStyle:true}}}}});
 
-  // 세부 추진과제 — 세부분류별 동적 생성
+  // 세부 추진과제 — 구체적 액션+KPI+목표+담당부처
   const taskSubs=Object.entries(subCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
   document.getElementById('policyTaskBody').innerHTML=taskSubs.map(([sk,cnt])=>{
-    const tpl=POLICY_TEMPLATES[sk]||{action:'정책 개선'};
-    const majorKey=topNews.find(n=>n.sub===sk)?.major;
-    const relatedSubs=Object.entries(subCount).filter(([k])=>{const m2=topNews.find(n=>n.sub===k)?.major;return m2===majorKey&&k!==sk;}).slice(0,2);
-    const subActions=[tpl.action,...relatedSubs.map(([k])=>POLICY_TEMPLATES[k]?.action||SUB_LABELS_MAP[k]+' 개선')].join(' · ');
-    const depts=['교육부','사학진흥재단','지자체','국회','대학혁신본부'];
+    const tpl=POLICY_TEMPLATES[sk]||{actions:['정책 개선'],kpi:'-',target:'-',dept:'교육부'};
+    const topActions=(tpl.actions||[]).slice(0,2).join(' · ');
     const budgetAlloc=Math.round(cnt/ratioSum*totalBudget);
-    return `<tr><td style="font-weight:700">${SUB_LABELS_MAP[sk]}</td><td>${subActions}</td><td>${depts[mKeys.indexOf(majorKey)]||'교육부'}</td><td style="text-align:right;font-weight:700;color:var(--accent)">${budgetAlloc}</td><td>관련 기사 건수</td><td style="font-weight:600;color:#10b981">${cnt}건→${Math.round(cnt*0.5)}건 이하</td></tr>`;
+    return `<tr><td style="font-weight:700">${SUB_LABELS_MAP[sk]}</td><td style="font-size:0.72rem;line-height:1.4">${topActions}</td><td style="font-size:0.72rem">${tpl.dept||'교육부'}</td><td style="text-align:right;font-weight:700;color:var(--accent)">${budgetAlloc}</td><td style="font-size:0.72rem">${tpl.kpi||'관련 기사 추이'}</td><td style="font-weight:600;color:#10b981;font-size:0.72rem">${tpl.target||cnt+'건 감축'}</td></tr>`;
   }).join('');
 
-  // 리스크 — 뉴스 기반 동적 도출
+  // 리스크 — 구체적 리스크+대응전략+모니터링 지표
   const riskSubs=Object.entries(subCount).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  const impactLevels=['🔴 높음','🔴 높음','🟠 중간','🟠 중간','🟡 낮음','🟡 낮음'];
-  const probLevels=['🔴 높음','🟠 중간','🔴 높음','🟠 중간','🟠 중간','🟡 낮음'];
-  const grades=['<span style="color:#ef4444;font-weight:900">A급</span>','<span style="color:#f59e0b;font-weight:900">B급</span>','<span style="color:#f59e0b;font-weight:900">B급</span>','<span style="color:#06b6d4;font-weight:900">C급</span>','<span style="color:#06b6d4;font-weight:900">C급</span>','<span style="color:#10b981;font-weight:900">D급</span>'];
   document.getElementById('policyRiskBody').innerHTML=riskSubs.map(([sk,cnt],i)=>{
-    const tpl=POLICY_TEMPLATES[sk]||{diag:SUB_LABELS_MAP[sk],action:'개선'};
-    return `<tr><td style="font-weight:700">${tpl.diag} 미해결(${cnt}건)</td><td>${impactLevels[i]}</td><td>${probLevels[i]}</td><td>${grades[i]}</td><td>${tpl.action}</td><td>${SUB_LABELS_MAP[sk]} 관련 기사 추이</td></tr>`;
+    const tpl=POLICY_TEMPLATES[sk]||{risk:SUB_LABELS_MAP[sk]+' 정책 실패',mitigation:'단계적 시행 및 모니터링 강화'};
+    const impact=i<2?'🔴 높음':i<4?'🟠 중간':'🟡 낮음';
+    const prob=cnt>=5?'🔴 높음':cnt>=3?'🟠 중간':'🟡 낮음';
+    const gradeColor=i<1?'#ef4444':i<3?'#f59e0b':i<5?'#06b6d4':'#10b981';
+    const gradeLetter=i<1?'A':i<3?'B':i<5?'C':'D';
+    return `<tr><td style="font-weight:700;font-size:0.75rem;line-height:1.4">${tpl.risk||SUB_LABELS_MAP[sk]+' 미해결'} <span style="color:var(--accent)">(${cnt}건)</span></td><td>${impact}</td><td>${prob}</td><td><span style="color:${gradeColor};font-weight:900">${gradeLetter}급</span></td><td style="font-size:0.72rem;line-height:1.4">${tpl.mitigation||'단계적 시행'}</td><td style="font-size:0.72rem">${tpl.kpi||SUB_LABELS_MAP[sk]+' 추이'}</td></tr>`;
   }).join('');
 }
 
