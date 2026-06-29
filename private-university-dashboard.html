@@ -1433,7 +1433,7 @@ JSON만 출력하세요. 다른 텍스트 없이 순수 JSON만 반환하세요.
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:6000,messages:[{role:'user',content:prompt}]})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8000,messages:[{role:'user',content:prompt}]})
     });
     const data=await res.json();
     if(data.error){
@@ -1443,7 +1443,15 @@ JSON만 출력하세요. 다른 텍스트 없이 순수 JSON만 반환하세요.
     const rawText=data.content?.[0]?.text||'';
     const jsonMatch=rawText.match(/\{[\s\S]*\}/);
     if(!jsonMatch) throw new Error('AI 응답에서 JSON을 파싱할 수 없습니다.');
-    const ai=JSON.parse(jsonMatch[0]);
+    let jsonStr=jsonMatch[0].replace(/,\s*([}\]])/g,'$1').replace(/[\x00-\x1f]/g,m=>m==='\n'||m==='\r'||m==='\t'?m:'');
+    let ai;
+    try{ai=JSON.parse(jsonStr);}catch(e1){
+      jsonStr=jsonStr.replace(/```[a-z]*\n?/g,'').replace(/\n```/g,'');
+      try{ai=JSON.parse(jsonStr);}catch(e2){
+        const partial=jsonStr.substring(0,jsonStr.lastIndexOf('}')+1);
+        try{ai=JSON.parse(partial);}catch(e3){throw new Error('JSON 파싱 실패: '+e1.message);}
+      }
+    }
 
     // AI 응답 기반 렌더링 시작
     document.getElementById('policyLoading').style.display='none';
