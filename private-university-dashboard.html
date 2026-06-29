@@ -136,6 +136,7 @@
   .charts-section{padding:1.2rem 2rem 0.8rem;border-top:2px solid var(--border);}
   .charts-title{font-size:1.1rem;font-weight:800;color:var(--accent2);margin-bottom:1rem;}
   .charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;}
+  .charts-grid-row2{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem;}
   .chart-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem;min-height:340px;}
   .chart-card h3{font-size:0.88rem;color:var(--text);font-weight:700;margin-bottom:0.8rem;text-align:center;}
   .chart-card canvas{width:100%!important;height:280px!important;}
@@ -154,7 +155,7 @@
   .ai-insight-loading .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin-right:0.5rem;vertical-align:middle;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
-  @media(max-width:768px){.charts-grid{grid-template-columns:1fr;}}
+  @media(max-width:768px){.charts-grid{grid-template-columns:1fr;}.charts-grid-row2{grid-template-columns:1fr;}}
 
   /* Footer */
   .site-footer{background:linear-gradient(135deg,#1a1040 0%,#0f1117 100%);border-top:1px solid var(--border);padding:1.5rem 2rem 1rem;margin-top:1rem;}
@@ -317,6 +318,8 @@
   <div class="charts-grid">
     <div class="chart-card"><h3>🔤 키워드 워드클라우드</h3><div id="wordcloud" class="wordcloud-box"></div></div>
     <div class="chart-card"><h3>📁 대유형별 분포</h3><canvas id="chartMajor"></canvas></div>
+  </div>
+  <div class="charts-grid-row2">
     <div class="chart-card"><h3>📰 언론사별 보도량</h3><canvas id="chartSource"></canvas></div>
     <div class="chart-card"><h3>📅 일별 뉴스 추이</h3><canvas id="chartTimeline"></canvas></div>
     <div class="chart-card"><h3>😊 감성 분석 게이지</h3><canvas id="chartSentiment"></canvas><div class="sentiment-indicators" id="sentimentIndicators"></div></div>
@@ -563,34 +566,29 @@ const NEWS = [
   {sub:'ai_digital',title:'🏫 지방사립대 15개 대학 5년간 50억씩… 디지털 전환 특성화 포함',link:'http://www.dynews.co.kr/news/articleView.html?idxno=854576',desc:'교육부가 지방 사립대 15교를 선정해 5년간 각 50억원씩 총 850억원을 지원한다. 특성화 방향에는 대학 간 역할·기능 조정, 디지털 전환 특성화, 대학 자체 특성화 등이 포함되며, 교원 정년기준 완화 등 규제 개혁도 함께 추진된다.',pubDate:'2026-06-17',kw:['디지털전환','지방사립대','특성화'],r:'national'},
 ];
 
-// 표지이미지 URL 맵핑
-const OG_IMAGES = {
-  'news.unn.net/593654':'https://cdn.news.unn.net/news/photo/202606/593654_417500_1234.jpg',
-  'news.unn.net/593626':'https://cdn.news.unn.net/news/photo/202606/593626_417400_1234.jpg',
-  'news.unn.net/593680':'https://cdn.news.unn.net/news/photo/202606/593680_417500_2345.jpg',
-  'news.unn.net/593401':'https://cdn.news.unn.net/news/photo/202606/593401_417100_1234.jpg',
-  'news.unn.net/593135':'https://cdn.news.unn.net/news/photo/202606/593135_416800_1234.jpg',
-  'news.unn.net/592522':'https://cdn.news.unn.net/news/photo/202605/592522_415722_2945.jpg',
-  'news.unn.net/593974':'https://cdn.news.unn.net/news/photo/202606/593974_417900_1234.jpg',
-  'news.unn.net/593552':'https://cdn.news.unn.net/news/photo/202606/593552_417400_3456.jpg',
-  'news.unn.net/593337':'https://cdn.news.unn.net/news/photo/202606/593337_417000_1234.jpg',
-  'news.unn.net/592513':'https://cdn.news.unn.net/news/photo/202605/592513_415695_1357.jpg',
-  'businesspost.co.kr/440575':'https://www.businesspost.co.kr/news/photo/202606/440575_1.jpg',
-  'businesspost.co.kr/440474':'https://www.businesspost.co.kr/news/photo/202606/440474_1.jpg',
-  'businesspost.co.kr/436769':'https://www.businesspost.co.kr/news/photo/202604/436769_1.jpg',
-  'm-economynews.com/67241':'https://www.m-economynews.com/data/photos/20260521/art_17794082513329_e68c52.jpg',
-  'm-economynews.com/67556':'https://www.m-economynews.com/data/photos/20260625/art_17794082513330.jpg',
-  'kyosu.net/206832':'https://cdn.kyosu.net/news/photo/202606/206832_73500_1234.jpg',
-  'kyosu.net/203353':'https://cdn.kyosu.net/news/photo/202604/203353_72100_1234.jpg',
-  'kyosu.net/202940':'https://cdn.kyosu.net/news/photo/202604/202940_72000_1234.jpg',
-  'kyosu.net/202162':'https://cdn.kyosu.net/news/photo/202603/202162_71500_1234.jpg',
-};
-function findOg(link){
-  for(const[k,v] of Object.entries(OG_IMAGES)){
-    if(link.includes(k)) return v;
-  }
-  return '';
+// OG 이미지 캐시
+const ogCache={};
+const OG_DEFAULT='https://datamap.synology.me/news.png';
+async function fetchOgImage(link){
+  if(ogCache[link]!==undefined) return ogCache[link];
+  try{
+    const r=await fetch(`/api/og-image?url=${encodeURIComponent(link)}`);
+    const d=await r.json();
+    ogCache[link]=d.og||'';
+    return ogCache[link];
+  }catch(e){ogCache[link]='';return '';}
 }
+async function fetchOgImagesForNews(items){
+  for(let i=0;i<items.length;i+=6){
+    const batch=items.slice(i,i+6);
+    await Promise.all(batch.map(async n=>{
+      const og=await fetchOgImage(n.link);
+      n.og=og;
+    }));
+  }
+  render();
+}
+function findOg(link){return ogCache[link]||'';}
 
 // 뉴스 중요도 (1~5)
 const IMP = [
@@ -975,6 +973,7 @@ async function fetchLiveNews(clientId,clientSecret){
   overlay.style.display='none';
   render();
   setTimeout(fetchAIInsight,300);
+  fetchOgImagesForNews(allNews);
 }
 
 function extractKeywords(title,desc){
@@ -1107,6 +1106,7 @@ function renderSentimentGauge(f){
 render();
 updateApiKeyBtn();
 setTimeout(fetchAIInsight,500);
+setTimeout(()=>fetchOgImagesForNews(allNews),200);
 </script>
 </body>
 </html>

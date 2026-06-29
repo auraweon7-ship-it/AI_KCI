@@ -54,6 +54,52 @@ const server = http.createServer((req, res) => {
     return;
   }
 
+  // OG image scraper proxy
+  if (parsed.pathname === '/api/og-image') {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    const targetUrl = parsed.searchParams.get('url');
+    if (!targetUrl) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: 'url 파라미터가 필요합니다.' }));
+      return;
+    }
+    const reqOpts = { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; NewsBot/1.0)' }, timeout: 5000 };
+    const fetchPage = (url, depth) => {
+      if (depth > 3) { res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify({ og: '' })); return; }
+      const p = url.startsWith('https') ? https : http;
+      p.get(url, reqOpts, (pageRes) => {
+        if ([301,302,303,307,308].includes(pageRes.statusCode) && pageRes.headers.location) {
+          let loc = pageRes.headers.location;
+          if (loc.startsWith('/')) { const u = new URL(url); loc = u.protocol + '//' + u.host + loc; }
+          fetchPage(loc, depth + 1);
+          pageRes.resume();
+          return;
+        }
+        let html = '';
+        pageRes.setEncoding('utf8');
+        pageRes.on('data', chunk => { html += chunk; if (html.length > 200000) { pageRes.destroy(); } });
+        pageRes.on('end', () => {
+          let og = '';
+          const m = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+                 || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i);
+          if (m) og = m[1];
+          if (!og) {
+            const m2 = html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i)
+                     || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i);
+            if (m2) og = m2[1];
+          }
+          res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+          res.end(JSON.stringify({ og }));
+        });
+      }).on('error', () => {
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify({ og: '' }));
+      }).on('timeout', function() { this.destroy(); });
+    };
+    fetchPage(targetUrl, 0);
+    return;
+  }
+
   // Serve HTML
   const filePath = path.join(__dirname, 'private-university-dashboard.html');
   fs.readFile(filePath, (err, data) => {
