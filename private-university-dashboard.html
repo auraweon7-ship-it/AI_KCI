@@ -427,6 +427,7 @@
     <p class="policy-sub">뉴스 데이터 기반 자동 생성 | 중요도 ★4 이상 기사 분석</p>
     <p class="policy-date" id="policyDate"></p>
   </div>
+  <div class="ai-insight-loading" id="policyLoading" style="display:none;"><span class="spinner"></span>Claude AI가 뉴스 기사를 분석하여 정책기획서를 작성 중입니다... (약 30초 소요)</div>
 
   <!-- 핵심 요약 -->
   <div class="policy-body" id="policyBody" style="display:none;">
@@ -1353,194 +1354,218 @@ const POLICY_TEMPLATES={
   }
 };
 
-function renderPolicyBrief(){
-  document.getElementById('policyBody').style.display='block';
+async function renderPolicyBrief(){
+  const apiKey=localStorage.getItem('claude_api_key');
+  if(!apiKey){
+    document.getElementById('policyLoading').style.display='block';
+    document.getElementById('policyLoading').innerHTML='🔑 우측 상단 <b>API 키 설정</b> 버튼을 눌러 Claude API 키를 입력하면 AI가 뉴스를 분석하여 정책기획서를 작성합니다.';
+    return;
+  }
   document.getElementById('policyGenBtn').style.display='none';
-  const topNews=allNews.filter(n=>(n.imp||3)>=4).sort((a,b)=>(b.imp||3)-(a.imp||3));
-  const now=new Date();
-  document.getElementById('policyDate').textContent=`분석 기준일: ${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 | 총 ${allNews.length}건 중 핵심 ${topNews.length}건 분석`;
+  document.getElementById('policyLoading').style.display='block';
+  document.getElementById('policyLoading').innerHTML='<span class="spinner"></span>Claude AI가 뉴스 기사를 분석하여 정책기획서를 작성 중입니다... (약 30초 소요)';
 
+  const topNews=allNews.filter(n=>(n.imp||3)>=4).sort((a,b)=>(b.imp||3)-(a.imp||3));
   const majorCount={fiscal:0,invest:0,student:0,account:0,sustain:0};
   const subCount={};
   topNews.forEach(n=>{majorCount[n.major]=(majorCount[n.major]||0)+1;subCount[n.sub]=(subCount[n.sub]||0)+1;});
-
-  // Executive Summary — 뉴스 기반 동적 생성
-  const topSubs=Object.entries(subCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
-  const topMajor=Object.entries(majorCount).sort((a,b)=>b[1]-a[1]);
-  const star5=topNews.filter(n=>(n.imp||3)===5);
-  const star5titles=star5.slice(0,3).map(n=>`"${n.title.replace(/^[^\s]+\s/,'').substring(0,35)}"(${n.source})`).join(', ');
-  const regionDist=allNews.reduce((a,n)=>{a[n.region]=(a[n.region]||0)+1;return a;},{});
-  const topRegions=Object.entries(regionDist).sort((a,b)=>b[1]-a[1]).slice(0,3);
-  const urgentDiags=topSubs.slice(0,3).map(([k])=>POLICY_TEMPLATES[k]?.diag||SUB_LABELS_MAP[k]).join('; ');
-  document.getElementById('policyExecP1').innerHTML=`본 기획서는 사립대학 관련 <strong>총 ${allNews.length}건</strong>의 뉴스 중 중요도 ★4 이상 <strong>${topNews.length}건</strong>을 심층 분석하여, 5대 핵심 영역의 구조적 문제점을 진단하고 ${Object.keys(subCount).length}개 세부 이슈별 실행 가능한 정책 대안을 제시합니다. 최다 이슈 영역은 <b>${MAJOR_META[topMajor[0][0]].label}(${topMajor[0][1]}건, ${Math.round(topMajor[0][1]/topNews.length*100)}%)</b>이며, 최고 중요도(★5) 기사 <b>${star5.length}건</b>이 긴급 대응을 요구합니다.`;
-  document.getElementById('policyExecP2').innerHTML=`<b>〈핵심 진단〉</b> ${urgentDiags}. <b>〈5대 세부 이슈〉</b> ${topSubs.map(([k,v],i)=>`${i+1}) ${SUB_LABELS_MAP[k]||k}(${v}건)`).join(', ')}. <b>〈지역 분포〉</b> ${topRegions.map(([k,v])=>(REGION_LABELS[k]||k)+' '+v+'건').join(', ')}.`;
-  document.getElementById('policyExecP3').innerHTML=`<b>〈대표 기사〉</b> ${star5titles||topNews.slice(0,3).map(n=>`"${n.title.replace(/^[^\s]+\s/,'').substring(0,35)}"(${n.source})`).join(', ')}. 본 기획서는 상기 분석에 기반하여 <b>${topSubs.length}개 핵심 이슈별 ${topSubs.reduce((a,[,v])=>a+v,0)}건</b>의 뉴스를 정책 근거로 활용하며, 5개년 단계별 추진 로드맵과 예상 소요예산을 함께 제시합니다.`;
-
-  // 인포그래픽
-  const sources=[...new Set(allNews.map(n=>n.source))].length;
-  const regions=[...new Set(allNews.map(n=>n.region))].length;
-  document.getElementById('policyInfoGraphic').innerHTML=[
-    {e:'📰',n:allNews.length,d:'전체 모니터링 뉴스',c:'#ef4444'},
-    {e:'⭐',n:star5.length,d:'최고 중요도(★5) 기사',c:'#f59e0b'},
-    {e:'🏛️',n:topNews.length,d:'정책 분석 대상(★4+)',c:'#6366f1'},
-    {e:'📡',n:sources,d:'언론사 수',c:'#06b6d4'},
-    {e:'🗺️',n:regions,d:'지역 커버리지',c:'#10b981'},
-    {e:'📊',n:Object.keys(subCount).length,d:'세부 이슈 분류',c:'#ec4899'}
-  ].map(i=>`<div class="info-card"><div class="info-emoji">${i.e}</div><div class="info-num" style="color:${i.c}">${i.n}</div><div class="info-desc">${i.d}</div></div>`).join('');
-
-  // KPI — 뉴스 데이터 기반
-  const fiscalRatio=majorCount.fiscal?Math.round(majorCount.fiscal/topNews.length*100):0;
-  const topRegion=Object.entries(allNews.reduce((a,n)=>{a[n.region]=(a[n.region]||0)+1;return a;},{})).sort((a,b)=>b[1]-a[1])[0];
-  document.getElementById('policyKPI').innerHTML=[
-    {icon:'💰',val:fiscalRatio+'%',label:'재정 이슈 비중',target:`${majorCount.fiscal}건/${topNews.length}건`},
-    {icon:'📈',val:topMajor[0][1]+'건',label:'최다 이슈 영역',target:MAJOR_META[topMajor[0][0]].label},
-    {icon:'⭐',val:star5.length+'건',label:'★5 긴급 기사',target:'최고 중요도'},
-    {icon:'🗺️',val:REGION_LABELS[topRegion[0]]||topRegion[0],label:'최다 보도 지역',target:topRegion[1]+'건'},
-    {icon:'📊',val:topSubs[0]?topSubs[0][1]+'건':'0건',label:'최다 세부 이슈',target:SUB_LABELS_MAP[topSubs[0]?topSubs[0][0]:'']}
-  ].map(k=>`<div class="kpi-card"><div class="kpi-icon">${k.icon}</div><div class="kpi-value">${k.val}</div><div class="kpi-label">${k.label}</div><div class="kpi-target">${k.target}</div></div>`).join('');
-
-  // 차트1: radar
-  const mLabels=Object.values(MAJOR_META).map(m=>m.label);
   const mKeys=Object.keys(MAJOR_META);
-  const mData=mKeys.map(k=>majorCount[k]||0);
-  const ctx1=document.getElementById('policyChartMajor');
-  if(policyChartMajorInst)policyChartMajorInst.destroy();
-  policyChartMajorInst=new Chart(ctx1,{type:'radar',data:{labels:mLabels,datasets:[{label:'기사 수',data:mData,backgroundColor:'rgba(108,92,231,0.2)',borderColor:'#6c5ce7',borderWidth:2,pointBackgroundColor:mKeys.map(k=>MAJOR_META[k].color)}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{ticks:{color:'#999',backdropColor:'transparent'},grid:{color:'rgba(255,255,255,0.08)'},pointLabels:{color:'#e4e6eb',font:{size:11,weight:'bold'}}}},plugins:{legend:{display:false}}}});
 
-  // 차트2: bar
-  const subSorted=Object.entries(subCount).sort((a,b)=>b[1]-a[1]);
-  const ctx2=document.getElementById('policyChartSub');
-  if(policyChartSubInst)policyChartSubInst.destroy();
-  const barColors=subSorted.map(([k])=>{const m=topNews.find(n=>n.sub===k)?.major;return MAJOR_META[m]?.color||'#999';});
-  policyChartSubInst=new Chart(ctx2,{type:'bar',data:{labels:subSorted.map(([k])=>SUB_LABELS_MAP[k]||k),datasets:[{label:'기사 수',data:subSorted.map(([,v])=>v),backgroundColor:barColors,borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{ticks:{color:'#999'},grid:{color:'rgba(255,255,255,0.06)'}},y:{ticks:{color:'#e4e6eb',font:{size:10}},grid:{display:false}}},plugins:{legend:{display:false}}}});
-
-  // 5대 정책 카드 — 뉴스 기사에서 동적 생성 (구체적 액션+KPI)
-  document.getElementById('policyCards').innerHTML=mKeys.map(mk=>{
-    const meta=MAJOR_META[mk];
+  // 뉴스 데이터를 AI 프롬프트용으로 구조화
+  const newsByMajor={};
+  mKeys.forEach(mk=>{
     const arts=topNews.filter(n=>n.major===mk);
-    const subs={};arts.forEach(n=>{if(!subs[n.sub])subs[n.sub]=[];subs[n.sub].push(n);});
-    const subEntries=Object.entries(subs).sort((a,b)=>b[1].length-a[1].length).slice(0,4);
-    const items=subEntries.map(([sk,sarr])=>{
-      const tpl=POLICY_TEMPLATES[sk]||{diag:SUB_LABELS_MAP[sk],actions:['관련 정책 개선 추진'],kpi:'-',target:'-'};
-      const topArt=sarr.sort((a,b)=>(b.imp||3)-(a.imp||3))[0];
-      const shortTitle=topArt.title.replace(/^[^\s]+\s/,'').substring(0,35);
-      const actionList=(tpl.actions||[tpl.action]).slice(0,3).map((a,i)=>`<span style="color:var(--text-dim);font-size:0.65rem">${i+1}.</span> ${a}`).join('<br>');
-      return `<b style="font-size:0.85rem">[${SUB_LABELS_MAP[sk]}]</b> <span style="font-size:0.7rem;background:${meta.color}15;color:${meta.color};padding:1px 6px;border-radius:3px">${sarr.length}건</span><br>${actionList}<br><span style="font-size:0.65rem;color:var(--text-dim)">📌 KPI: ${tpl.kpi||'-'} → 목표: ${tpl.target||'-'}</span><br><span style="font-size:0.65rem;color:var(--text-dim)">📰 근거: "${shortTitle}…" (${topArt.source})</span>`;
+    const bySub={};
+    arts.forEach(n=>{if(!bySub[n.sub])bySub[n.sub]=[];bySub[n.sub].push(n);});
+    newsByMajor[mk]={label:MAJOR_META[mk].label,count:arts.length,subs:{}};
+    Object.entries(bySub).forEach(([sk,sarr])=>{
+      newsByMajor[mk].subs[SUB_LABELS_MAP[sk]||sk]={
+        count:sarr.length,
+        articles:sarr.slice(0,3).map(a=>({title:a.title,summary:a.summary?.substring(0,100)||'',source:a.source,imp:a.imp||3}))
+      };
     });
-    const statEntries=subEntries.slice(0,4).map(([sk,sarr])=>({v:sarr.length,l:SUB_LABELS_MAP[sk]}));
-    return `<div class="policy-card" style="border-left:3px solid ${meta.color}">
-      <h4><span class="pc-icon" style="background:${meta.color}22;color:${meta.color}">${meta.icon}</span><span style="color:${meta.color}">${meta.label} (${arts.length}건)</span></h4>
-      <ul>${items.map(i=>`<li style="margin-bottom:0.8rem;line-height:1.5">${i}</li>`).join('')}</ul>
-      <div class="pc-stat">${statEntries.map(s=>`<div class="pc-stat-item"><div class="sv" style="color:${meta.color}">${s.v}</div><div class="sl">${s.l}</div></div>`).join('')}</div>
-    </div>`;
-  }).join('');
+  });
 
-  // 현황 진단 테이블 — 구체적 진단+정책+기대효과
-  document.getElementById('policyTableBody').innerHTML=mKeys.map(mk=>{
-    const meta=MAJOR_META[mk];
-    const arts=topNews.filter(n=>n.major===mk);
-    const subs=Object.entries(arts.reduce((a,n)=>{a[n.sub]=(a[n.sub]||0)+1;return a;},{})).sort((a,b)=>b[1]-a[1]);
-    const topSubKeys=subs.slice(0,3).map(([k])=>k);
-    const diagTexts=topSubKeys.map(k=>POLICY_TEMPLATES[k]?.diag||SUB_LABELS_MAP[k]).join(' / ');
-    const policyTexts=topSubKeys.map(k=>{const t=POLICY_TEMPLATES[k];return t?(t.actions||[t.action])[0]:'정책 개선';}).join(' + ');
-    const effectTexts=topSubKeys.map(k=>{const t=POLICY_TEMPLATES[k];return t?`${t.kpi||SUB_LABELS_MAP[k]} ${t.target||'개선'}`:(SUB_LABELS_MAP[k]+' 개선');}).join(', ');
-    const pri=arts.some(n=>(n.imp||3)===5)?'🔴 긴급':arts.length>=8?'🟠 높음':'🟡 중기';
-    return `<tr><td style="font-weight:700">${meta.icon} ${meta.label}</td><td style="font-size:0.72rem;line-height:1.4">${diagTexts}</td><td style="text-align:center;font-weight:700;color:var(--accent)">${arts.length}건</td><td style="font-size:0.72rem;line-height:1.4">${policyTexts}</td><td style="font-size:0.72rem;line-height:1.4">${effectTexts}</td><td>${pri}</td></tr>`;
-  }).join('');
+  const prompt=`당신은 한국 고등교육 정책 전문가입니다. 아래 뉴스 데이터를 분석하여 "사립대학 재정 건전성 및 지속가능성 강화 정책기획서"를 작성하세요.
 
-  // 로드맵 — 이슈 우선순위 기반 구체적 산출물
-  const urgentSubs=Object.entries(subCount).sort((a,b)=>b[1]-a[1]);
-  const u=k=>SUB_LABELS_MAP[k]||k;
-  const uAct=(k,i)=>{const t=POLICY_TEMPLATES[k];return t?(t.actions||[])[i||0]||t.actions?.[0]||'':''};
-  const phase1Items=[
-    `📊 ${urgentSubs.slice(0,3).map(([k])=>u(k)).join('·')} 실태 조사 보고서 작성`,
-    `📋 대학별 ${u(urgentSubs[0]?.[0]||'')} 현황 데이터 수집·분석`,
-    `🏛️ 이해관계자(대학·법인·학생·지자체) 공청회 3회 개최`,
-    `📝 정책 TF 구성 및 법령 개정 필요사항 목록 도출`
-  ].join('\n');
-  const phase2Items=[
-    `⚖️ ${uAct(urgentSubs[0]?.[0],0)} 법안 마련`,
-    `⚖️ ${uAct(urgentSubs[1]?.[0],0)} 시행령 개정`,
-    `💻 모니터링 시스템 설계·개발 착수`,
-    `📊 성과지표(KPI) 체계 확정 및 기준선 측정`
-  ].join('\n');
-  const phase3Items=[
-    `🏫 시범대학 ${Math.min(urgentSubs.length*5,30)}교 선정 및 지원금 집행`,
-    `🔬 ${urgentSubs.slice(2,4).map(([k])=>u(k)+' 개선').join(' · ')} 시범사업`,
-    `📈 분기별 성과 모니터링 및 중간 평가`,
-    `🔄 시범사업 결과 기반 정책 보완·수정`
-  ].join('\n');
-  const phase4Items=[
-    `🏫 전국 ${Math.min(urgentSubs.length*20,200)}교 확대 적용`,
-    `📊 성과평가 체계 본격 가동(연 2회 정기 평가)`,
-    `💻 통합 모니터링 대시보드 전 대학 공개`,
-    `🏆 우수 대학 인센티브 · 미달 대학 개선 명령`
-  ].join('\n');
-  const phase5Items=[
-    `🤖 AI 기반 재정위기 조기경보 시스템 고도화`,
-    `🌍 글로벌 벤치마크 대비 성과 비교 분석`,
-    `📖 5개년 정책 성과 백서 발간`,
-    `🔄 차기 5개년 계획 수립(환류 체계 구축)`
-  ].join('\n');
-  document.getElementById('policyRoadmap').innerHTML=[
-    {label:'1단계: 실태조사·진단',period:'Y1 상반기(6개월)',items:phase1Items,color:'#ef4444'},
-    {label:'2단계: 법·제도 정비',period:'Y1 하반기(6개월)',items:phase2Items,color:'#f59e0b'},
-    {label:'3단계: 시범사업 운영',period:'Y2(12개월)',items:phase3Items,color:'#06b6d4'},
-    {label:'4단계: 전국 확산·정착',period:'Y3(12개월)',items:phase4Items,color:'#10b981'},
-    {label:'5단계: 고도화·글로벌화',period:'Y4~Y5(24개월)',items:phase5Items,color:'#8b5cf6'}
-  ].map(p=>`<div class="roadmap-phase"><div class="roadmap-dot" style="background:${p.color};border-color:${p.color}"></div><div class="rm-label" style="color:${p.color}">${p.label}</div><div class="rm-period">${p.period}</div><div class="rm-items">${p.items.replace(/\n/g,'<br>')}</div></div>`).join('');
+[분석 대상: 총 ${allNews.length}건 중 중요도 ★4 이상 ${topNews.length}건]
 
-  // 벤치마크 → 영역별 근거 뉴스 + 진단 + 정책 시사점
-  document.getElementById('policyBenchmark').innerHTML=mKeys.map(mk=>{
-    const meta=MAJOR_META[mk];
-    const arts=topNews.filter(n=>n.major===mk).sort((a,b)=>(b.imp||3)-(a.imp||3)).slice(0,5);
-    const subKeys=[...new Set(arts.map(a=>a.sub))].slice(0,3);
-    const diagSummary=subKeys.map(k=>POLICY_TEMPLATES[k]?.diag||'').filter(Boolean).join(' · ');
-    const policySummary=subKeys.map(k=>{const t=POLICY_TEMPLATES[k];return t?`${t.kpi||''} → ${t.target||'개선'}`:'';}).filter(Boolean).join(' | ');
-    return `<div class="policy-card" style="border-left:3px solid ${meta.color}">
-      <h4><span class="pc-icon" style="background:${meta.color}22;color:${meta.color}">${meta.icon}</span><span style="color:${meta.color}">${meta.label} — 근거 분석 (${arts.length}건)</span></h4>
-      <div style="font-size:0.72rem;color:var(--text-dim);margin:-0.3rem 0 0.5rem;padding:0.4rem 0.6rem;background:var(--card-bg);border-radius:6px;line-height:1.5"><b>〈진단〉</b> ${diagSummary||'-'}<br><b>〈목표〉</b> ${policySummary||'-'}</div>
-      <ul>${arts.map(a=>{
-        const tpl=POLICY_TEMPLATES[a.sub];
-        const implication=tpl?(tpl.actions||[])[0]||'':'정책 개선 필요';
-        return `<li style="margin-bottom:0.5rem;line-height:1.4"><b>[${'★'.repeat(a.imp||3)}]</b> ${a.title.replace(/^[^\s]+\s/,'')} <span style="font-size:0.6rem;color:var(--text-dim)">(${a.source}, ${REGION_LABELS[a.region]||'전국'})</span><br><span style="font-size:0.65rem;color:${meta.color}">→ 시사점: ${implication}</span></li>`;
-      }).join('')}</ul>
-    </div>`;
-  }).join('');
+[영역별 뉴스 데이터]
+${JSON.stringify(newsByMajor, null, 1)}
 
-  // 예산 배분 — 이슈 건수 비례 동적 계산
-  const totalBudget=2500;
-  const budgetRatio=mKeys.map(k=>majorCount[k]||0);
-  const ratioSum=budgetRatio.reduce((a,b)=>a+b,0)||1;
-  const budgetData=budgetRatio.map(r=>Math.round(r/ratioSum*totalBudget));
-  const ctx3=document.getElementById('policyChartBudget');
-  if(policyChartBudgetInst)policyChartBudgetInst.destroy();
-  policyChartBudgetInst=new Chart(ctx3,{type:'doughnut',data:{labels:mKeys.map(k=>MAJOR_META[k].label),datasets:[{data:budgetData,backgroundColor:mKeys.map(k=>MAJOR_META[k].color),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e4e6eb',font:{size:10},padding:8,usePointStyle:true}}}}});
+위 뉴스를 심층 분석하여 아래 JSON 형식으로 정책기획서를 작성하세요. 반드시 실제 뉴스 기사 내용을 근거로 사용하고, 구체적 수치·법률·제도를 포함하세요.
 
-  const yearWeights=[[0.1,0.25,0.3,0.2,0.15],[0.15,0.25,0.25,0.2,0.15],[0.2,0.3,0.25,0.15,0.1],[0.1,0.2,0.3,0.25,0.15],[0.1,0.2,0.25,0.25,0.2]];
-  const ctx4=document.getElementById('policyChartYearly');
-  if(policyChartYearlyInst)policyChartYearlyInst.destroy();
-  policyChartYearlyInst=new Chart(ctx4,{type:'bar',data:{labels:['1년차','2년차','3년차','4년차','5년차'],datasets:mKeys.map((k,i)=>({label:MAJOR_META[k].label,data:yearWeights[i].map(w=>Math.round(budgetData[i]*w)),backgroundColor:MAJOR_META[k].color,borderRadius:3}))},options:{responsive:true,maintainAspectRatio:false,scales:{x:{ticks:{color:'#999'},grid:{display:false},stacked:true},y:{ticks:{color:'#999',callback:v=>v+'억'},grid:{color:'rgba(255,255,255,0.06)'},stacked:true}},plugins:{legend:{labels:{color:'#e4e6eb',font:{size:10},usePointStyle:true}}}}});
+{
+  "exec": {
+    "p1": "기획서 개요 및 핵심 진단 (뉴스 건수, 주요 이슈 영역, 긴급성 포함. HTML <b> 태그 사용 가능)",
+    "p2": "핵심 이슈 분석 결과 요약 (각 영역별 핵심 문제점 + 지역 분포. HTML <b> 태그 사용)",
+    "p3": "대표 기사 인용 및 정책 방향 제시 (HTML <b> 태그 사용)"
+  },
+  "cards": [
+    {
+      "major": "fiscal|invest|student|account|sustain",
+      "items": [
+        {"sub": "세부이슈명", "actions": ["구체적 정책과제1 (수치·법률 포함)", "구체적 정책과제2", "구체적 정책과제3"], "kpi": "성과지표", "target": "목표치", "evidence": "근거 기사 제목 요약"}
+      ]
+    }
+  ],
+  "diagnosis": [
+    {"area": "fiscal|invest|student|account|sustain", "problem": "구체적 현황 진단 (기사 내용 기반, 수치 포함)", "policy": "핵심 정책 대안", "effect": "기대효과 (수치 목표)", "priority": "긴급|높음|중기"}
+  ],
+  "roadmap": [
+    {"label": "단계명", "period": "기간", "items": ["구체적 산출물/과제 (이모지 포함)"], "color": "#hex"}
+  ],
+  "benchmarks": [
+    {"major": "fiscal|invest|student|account|sustain", "summary": "영역 종합 진단 요약", "goal": "정책 목표 요약", "articles": [{"title": "기사제목 요약", "source": "출처", "imp": 5, "implication": "정책 시사점"}]}
+  ],
+  "tasks": [
+    {"name": "과제명", "actions": "세부 추진과제 설명", "dept": "담당부처", "budget": 숫자(억원), "kpi": "성과지표", "target": "목표치"}
+  ],
+  "risks": [
+    {"name": "리스크명 (관련 기사 건수 포함)", "impact": "높음|중간|낮음", "prob": "높음|중간|낮음", "grade": "A|B|C|D", "strategy": "대응전략", "monitor": "모니터링 지표"}
+  ]
+}
 
-  // 세부 추진과제 — 구체적 액션+KPI+목표+담당부처
-  const taskSubs=Object.entries(subCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  document.getElementById('policyTaskBody').innerHTML=taskSubs.map(([sk,cnt])=>{
-    const tpl=POLICY_TEMPLATES[sk]||{actions:['정책 개선'],kpi:'-',target:'-',dept:'교육부'};
-    const topActions=(tpl.actions||[]).slice(0,2).join(' · ');
-    const budgetAlloc=Math.round(cnt/ratioSum*totalBudget);
-    return `<tr><td style="font-weight:700">${SUB_LABELS_MAP[sk]}</td><td style="font-size:0.72rem;line-height:1.4">${topActions}</td><td style="font-size:0.72rem">${tpl.dept||'교육부'}</td><td style="text-align:right;font-weight:700;color:var(--accent)">${budgetAlloc}</td><td style="font-size:0.72rem">${tpl.kpi||'관련 기사 추이'}</td><td style="font-weight:600;color:#10b981;font-size:0.72rem">${tpl.target||cnt+'건 감축'}</td></tr>`;
-  }).join('');
+cards는 5개(각 major 영역당 1개), diagnosis는 5개, roadmap은 5단계, benchmarks는 5개, tasks는 6~8개, risks는 6개.
+JSON만 출력하세요. 다른 텍스트 없이 순수 JSON만 반환하세요.`;
 
-  // 리스크 — 구체적 리스크+대응전략+모니터링 지표
-  const riskSubs=Object.entries(subCount).sort((a,b)=>b[1]-a[1]).slice(0,6);
-  document.getElementById('policyRiskBody').innerHTML=riskSubs.map(([sk,cnt],i)=>{
-    const tpl=POLICY_TEMPLATES[sk]||{risk:SUB_LABELS_MAP[sk]+' 정책 실패',mitigation:'단계적 시행 및 모니터링 강화'};
-    const impact=i<2?'🔴 높음':i<4?'🟠 중간':'🟡 낮음';
-    const prob=cnt>=5?'🔴 높음':cnt>=3?'🟠 중간':'🟡 낮음';
-    const gradeColor=i<1?'#ef4444':i<3?'#f59e0b':i<5?'#06b6d4':'#10b981';
-    const gradeLetter=i<1?'A':i<3?'B':i<5?'C':'D';
-    return `<tr><td style="font-weight:700;font-size:0.75rem;line-height:1.4">${tpl.risk||SUB_LABELS_MAP[sk]+' 미해결'} <span style="color:var(--accent)">(${cnt}건)</span></td><td>${impact}</td><td>${prob}</td><td><span style="color:${gradeColor};font-weight:900">${gradeLetter}급</span></td><td style="font-size:0.72rem;line-height:1.4">${tpl.mitigation||'단계적 시행'}</td><td style="font-size:0.72rem">${tpl.kpi||SUB_LABELS_MAP[sk]+' 추이'}</td></tr>`;
-  }).join('');
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:6000,messages:[{role:'user',content:prompt}]})
+    });
+    const data=await res.json();
+    if(data.error){
+      if(data.error.type==='authentication_error'){localStorage.removeItem('claude_api_key');}
+      throw new Error(data.error.message);
+    }
+    const rawText=data.content?.[0]?.text||'';
+    const jsonMatch=rawText.match(/\{[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('AI 응답에서 JSON을 파싱할 수 없습니다.');
+    const ai=JSON.parse(jsonMatch[0]);
+
+    // AI 응답 기반 렌더링 시작
+    document.getElementById('policyLoading').style.display='none';
+    document.getElementById('policyBody').style.display='block';
+    const now=new Date();
+    document.getElementById('policyDate').textContent=`분석 기준일: ${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 | 총 ${allNews.length}건 중 핵심 ${topNews.length}건 AI 분석`;
+
+    // Executive Summary
+    document.getElementById('policyExecP1').innerHTML=ai.exec?.p1||'';
+    document.getElementById('policyExecP2').innerHTML=ai.exec?.p2||'';
+    document.getElementById('policyExecP3').innerHTML=ai.exec?.p3||'';
+
+    // 인포그래픽 (수치 기반 — 차트와 동일)
+    const star5=topNews.filter(n=>(n.imp||3)===5);
+    const sources=[...new Set(allNews.map(n=>n.source))].length;
+    const regions=[...new Set(allNews.map(n=>n.region))].length;
+    document.getElementById('policyInfoGraphic').innerHTML=[
+      {e:'📰',n:allNews.length,d:'전체 모니터링 뉴스',c:'#ef4444'},
+      {e:'⭐',n:star5.length,d:'최고 중요도(★5) 기사',c:'#f59e0b'},
+      {e:'🏛️',n:topNews.length,d:'정책 분석 대상(★4+)',c:'#6366f1'},
+      {e:'📡',n:sources,d:'언론사 수',c:'#06b6d4'},
+      {e:'🗺️',n:regions,d:'지역 커버리지',c:'#10b981'},
+      {e:'📊',n:Object.keys(subCount).length,d:'세부 이슈 분류',c:'#ec4899'}
+    ].map(i=>`<div class="info-card"><div class="info-emoji">${i.e}</div><div class="info-num" style="color:${i.c}">${i.n}</div><div class="info-desc">${i.d}</div></div>`).join('');
+
+    // KPI
+    const topMajor=Object.entries(majorCount).sort((a,b)=>b[1]-a[1]);
+    const topSubs=Object.entries(subCount).sort((a,b)=>b[1]-a[1]).slice(0,5);
+    const fiscalRatio=majorCount.fiscal?Math.round(majorCount.fiscal/topNews.length*100):0;
+    const topRegion=Object.entries(allNews.reduce((a,n)=>{a[n.region]=(a[n.region]||0)+1;return a;},{})).sort((a,b)=>b[1]-a[1])[0];
+    document.getElementById('policyKPI').innerHTML=[
+      {icon:'💰',val:fiscalRatio+'%',label:'재정 이슈 비중',target:`${majorCount.fiscal}건/${topNews.length}건`},
+      {icon:'📈',val:topMajor[0][1]+'건',label:'최다 이슈 영역',target:MAJOR_META[topMajor[0][0]].label},
+      {icon:'⭐',val:star5.length+'건',label:'★5 긴급 기사',target:'최고 중요도'},
+      {icon:'🗺️',val:REGION_LABELS[topRegion[0]]||topRegion[0],label:'최다 보도 지역',target:topRegion[1]+'건'},
+      {icon:'📊',val:topSubs[0]?topSubs[0][1]+'건':'0건',label:'최다 세부 이슈',target:SUB_LABELS_MAP[topSubs[0]?topSubs[0][0]:'']}
+    ].map(k=>`<div class="kpi-card"><div class="kpi-icon">${k.icon}</div><div class="kpi-value">${k.val}</div><div class="kpi-label">${k.label}</div><div class="kpi-target">${k.target}</div></div>`).join('');
+
+    // 차트1: radar
+    const mLabels=Object.values(MAJOR_META).map(m=>m.label);
+    const mData=mKeys.map(k=>majorCount[k]||0);
+    const ctx1=document.getElementById('policyChartMajor');
+    if(policyChartMajorInst)policyChartMajorInst.destroy();
+    policyChartMajorInst=new Chart(ctx1,{type:'radar',data:{labels:mLabels,datasets:[{label:'기사 수',data:mData,backgroundColor:'rgba(108,92,231,0.2)',borderColor:'#6c5ce7',borderWidth:2,pointBackgroundColor:mKeys.map(k=>MAJOR_META[k].color)}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{ticks:{color:'#999',backdropColor:'transparent'},grid:{color:'rgba(255,255,255,0.08)'},pointLabels:{color:'#e4e6eb',font:{size:11,weight:'bold'}}}},plugins:{legend:{display:false}}}});
+
+    // 차트2: bar
+    const subSorted=Object.entries(subCount).sort((a,b)=>b[1]-a[1]);
+    const ctx2=document.getElementById('policyChartSub');
+    if(policyChartSubInst)policyChartSubInst.destroy();
+    const barColors=subSorted.map(([k])=>{const m=topNews.find(n=>n.sub===k)?.major;return MAJOR_META[m]?.color||'#999';});
+    policyChartSubInst=new Chart(ctx2,{type:'bar',data:{labels:subSorted.map(([k])=>SUB_LABELS_MAP[k]||k),datasets:[{label:'기사 수',data:subSorted.map(([,v])=>v),backgroundColor:barColors,borderWidth:0,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',scales:{x:{ticks:{color:'#999'},grid:{color:'rgba(255,255,255,0.06)'}},y:{ticks:{color:'#e4e6eb',font:{size:10}},grid:{display:false}}},plugins:{legend:{display:false}}}});
+
+    // 5대 정책 카드 — AI 생성
+    document.getElementById('policyCards').innerHTML=(ai.cards||[]).map(card=>{
+      const mk=card.major;const meta=MAJOR_META[mk]||{icon:'📋',color:'#999',label:mk};
+      const cnt=majorCount[mk]||0;
+      const items=(card.items||[]).map(item=>{
+        const actionList=(item.actions||[]).slice(0,3).map((a,i)=>`<span style="color:var(--text-dim);font-size:0.65rem">${i+1}.</span> ${a}`).join('<br>');
+        return `<b style="font-size:0.85rem">[${item.sub}]</b><br>${actionList}<br><span style="font-size:0.65rem;color:var(--text-dim)">📌 KPI: ${item.kpi||'-'} → 목표: ${item.target||'-'}</span><br><span style="font-size:0.65rem;color:var(--text-dim)">📰 근거: ${item.evidence||''}</span>`;
+      });
+      const statEntries=Object.entries((topNews.filter(n=>n.major===mk).reduce((a,n)=>{a[SUB_LABELS_MAP[n.sub]||n.sub]=(a[SUB_LABELS_MAP[n.sub]||n.sub]||0)+1;return a;},{}))).sort((a,b)=>b[1]-a[1]).slice(0,4);
+      return `<div class="policy-card" style="border-left:3px solid ${meta.color}">
+        <h4><span class="pc-icon" style="background:${meta.color}22;color:${meta.color}">${meta.icon}</span><span style="color:${meta.color}">${meta.label} (${cnt}건)</span></h4>
+        <ul>${items.map(i=>`<li style="margin-bottom:0.8rem;line-height:1.5">${i}</li>`).join('')}</ul>
+        <div class="pc-stat">${statEntries.map(([l,v])=>`<div class="pc-stat-item"><div class="sv" style="color:${meta.color}">${v}</div><div class="sl">${l}</div></div>`).join('')}</div>
+      </div>`;
+    }).join('');
+
+    // 현황 진단 테이블 — AI 생성
+    document.getElementById('policyTableBody').innerHTML=(ai.diagnosis||[]).map(d=>{
+      const meta=MAJOR_META[d.area]||{icon:'📋',color:'#999',label:d.area};
+      const cnt=majorCount[d.area]||0;
+      const priMap={긴급:'🔴 긴급',높음:'🟠 높음',중기:'🟡 중기'};
+      return `<tr><td style="font-weight:700">${meta.icon} ${meta.label}</td><td style="font-size:0.72rem;line-height:1.4">${d.problem}</td><td style="text-align:center;font-weight:700;color:var(--accent)">${cnt}건</td><td style="font-size:0.72rem;line-height:1.4">${d.policy}</td><td style="font-size:0.72rem;line-height:1.4">${d.effect}</td><td>${priMap[d.priority]||d.priority}</td></tr>`;
+    }).join('');
+
+    // 로드맵 — AI 생성
+    const defaultColors=['#ef4444','#f59e0b','#06b6d4','#10b981','#8b5cf6'];
+    document.getElementById('policyRoadmap').innerHTML=(ai.roadmap||[]).map((p,i)=>{
+      const c=p.color||defaultColors[i%5];
+      const itemsHtml=Array.isArray(p.items)?p.items.join('<br>'):p.items||'';
+      return `<div class="roadmap-phase"><div class="roadmap-dot" style="background:${c};border-color:${c}"></div><div class="rm-label" style="color:${c}">${p.label}</div><div class="rm-period">${p.period}</div><div class="rm-items">${itemsHtml}</div></div>`;
+    }).join('');
+
+    // 벤치마크 → AI 생성 근거 분석
+    document.getElementById('policyBenchmark').innerHTML=(ai.benchmarks||[]).map(b=>{
+      const meta=MAJOR_META[b.major]||{icon:'📋',color:'#999',label:b.major};
+      const artHtml=(b.articles||[]).map(a=>`<li style="margin-bottom:0.5rem;line-height:1.4"><b>[${'★'.repeat(a.imp||3)}]</b> ${a.title} <span style="font-size:0.6rem;color:var(--text-dim)">(${a.source})</span><br><span style="font-size:0.65rem;color:${meta.color}">→ 시사점: ${a.implication||''}</span></li>`).join('');
+      return `<div class="policy-card" style="border-left:3px solid ${meta.color}">
+        <h4><span class="pc-icon" style="background:${meta.color}22;color:${meta.color}">${meta.icon}</span><span style="color:${meta.color}">${meta.label} — 근거 분석</span></h4>
+        <div style="font-size:0.72rem;color:var(--text-dim);margin:-0.3rem 0 0.5rem;padding:0.4rem 0.6rem;background:var(--card-bg);border-radius:6px;line-height:1.5"><b>〈진단〉</b> ${b.summary||''}<br><b>〈목표〉</b> ${b.goal||''}</div>
+        <ul>${artHtml}</ul>
+      </div>`;
+    }).join('');
+
+    // 예산 배분 차트 (수치 기반)
+    const totalBudget=2500;
+    const budgetRatio=mKeys.map(k=>majorCount[k]||0);
+    const ratioSum=budgetRatio.reduce((a,b)=>a+b,0)||1;
+    const budgetData=budgetRatio.map(r=>Math.round(r/ratioSum*totalBudget));
+    const ctx3=document.getElementById('policyChartBudget');
+    if(policyChartBudgetInst)policyChartBudgetInst.destroy();
+    policyChartBudgetInst=new Chart(ctx3,{type:'doughnut',data:{labels:mKeys.map(k=>MAJOR_META[k].label),datasets:[{data:budgetData,backgroundColor:mKeys.map(k=>MAJOR_META[k].color),borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#e4e6eb',font:{size:10},padding:8,usePointStyle:true}}}}});
+
+    const yearWeights=[[0.1,0.25,0.3,0.2,0.15],[0.15,0.25,0.25,0.2,0.15],[0.2,0.3,0.25,0.15,0.1],[0.1,0.2,0.3,0.25,0.15],[0.1,0.2,0.25,0.25,0.2]];
+    const ctx4=document.getElementById('policyChartYearly');
+    if(policyChartYearlyInst)policyChartYearlyInst.destroy();
+    policyChartYearlyInst=new Chart(ctx4,{type:'bar',data:{labels:['1년차','2년차','3년차','4년차','5년차'],datasets:mKeys.map((k,i)=>({label:MAJOR_META[k].label,data:yearWeights[i].map(w=>Math.round(budgetData[i]*w)),backgroundColor:MAJOR_META[k].color,borderRadius:3}))},options:{responsive:true,maintainAspectRatio:false,scales:{x:{ticks:{color:'#999'},grid:{display:false},stacked:true},y:{ticks:{color:'#999',callback:v=>v+'억'},grid:{color:'rgba(255,255,255,0.06)'},stacked:true}},plugins:{legend:{labels:{color:'#e4e6eb',font:{size:10},usePointStyle:true}}}}});
+
+    // 세부 추진과제 — AI 생성
+    document.getElementById('policyTaskBody').innerHTML=(ai.tasks||[]).map(t=>`<tr><td style="font-weight:700">${t.name}</td><td style="font-size:0.72rem;line-height:1.4">${t.actions}</td><td style="font-size:0.72rem">${t.dept}</td><td style="text-align:right;font-weight:700;color:var(--accent)">${t.budget||0}</td><td style="font-size:0.72rem">${t.kpi}</td><td style="font-weight:600;color:#10b981;font-size:0.72rem">${t.target}</td></tr>`).join('');
+
+    // 리스크 — AI 생성
+    document.getElementById('policyRiskBody').innerHTML=(ai.risks||[]).map(r=>{
+      const impMap={높음:'🔴 높음',중간:'🟠 중간',낮음:'🟡 낮음'};
+      const gradeColorMap={A:'#ef4444',B:'#f59e0b',C:'#06b6d4',D:'#10b981'};
+      return `<tr><td style="font-weight:700;font-size:0.75rem;line-height:1.4">${r.name}</td><td>${impMap[r.impact]||r.impact}</td><td>${impMap[r.prob]||r.prob}</td><td><span style="color:${gradeColorMap[r.grade]||'#999'};font-weight:900">${r.grade}급</span></td><td style="font-size:0.72rem;line-height:1.4">${r.strategy}</td><td style="font-size:0.72rem">${r.monitor}</td></tr>`;
+    }).join('');
+
+  }catch(e){
+    document.getElementById('policyLoading').innerHTML='⚠️ AI 정책기획서 생성 실패: '+e.message+'<br><button class="ai-gen-btn" style="margin-top:0.5rem" onclick="renderPolicyBrief()">다시 시도</button>';
+  }
 }
 
 // ═══ Bookmark ═══
