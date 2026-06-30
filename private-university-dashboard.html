@@ -268,6 +268,50 @@
   .sentiment-indicators{display:flex;justify-content:center;gap:1.2rem;margin-top:0.6rem;font-size:0.8rem;font-weight:700;}
   .sentiment-indicators span{display:flex;align-items:center;gap:0.3rem;}
   .sentiment-dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+
+  /* ═══ 분석보고서 섹션 ═══ */
+  .report-section{background:linear-gradient(135deg,#0d1117 0%,#161b26 50%,#0d1117 100%);border:1px solid var(--border);border-radius:16px;margin:2rem auto;padding:2.5rem 2rem;max-width:1200px;}
+  .report-controls{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;justify-content:center;margin-bottom:1.5rem;}
+  .report-controls select{background:var(--card);border:1px solid var(--border);color:var(--text);padding:0.4rem 0.8rem;border-radius:6px;font-size:0.83rem;cursor:pointer;}
+  .report-controls select:focus{border-color:var(--accent);}
+  .report-gen-btn{background:linear-gradient(135deg,#e67e22,#f39c12);color:#fff;border:none;border-radius:8px;padding:0.5rem 1.2rem;font-size:0.8rem;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .report-gen-btn:hover{transform:scale(1.05);box-shadow:0 4px 15px rgba(230,126,34,0.4);}
+  .report-hwpx-btn{background:linear-gradient(135deg,#27ae60,#2ecc71);color:#fff;border:none;border-radius:8px;padding:0.5rem 1.2rem;font-size:0.8rem;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .report-hwpx-btn:hover{transform:scale(1.05);box-shadow:0 4px 15px rgba(39,174,96,0.4);}
+  .report-body{margin-top:1.5rem;}
+  .report-toc{background:rgba(108,92,231,0.08);border:1px solid rgba(108,92,231,0.25);border-radius:12px;padding:1.5rem;margin-bottom:2rem;}
+  .report-toc h3{font-size:1rem;font-weight:800;color:var(--accent2);margin:0 0 0.8rem;}
+  .report-toc ol{margin:0;padding-left:1.5rem;font-size:0.82rem;color:var(--text-dim);line-height:2;}
+  .report-toc ol li{cursor:default;}
+  .report-toc ol li::marker{color:var(--accent);}
+  .report-chapter{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;}
+  .report-chapter h3{font-size:1.1rem;font-weight:800;color:var(--accent2);margin:0 0 1rem;padding-bottom:0.6rem;border-bottom:2px solid var(--accent);}
+  .report-chapter h4{font-size:0.9rem;font-weight:700;color:var(--text);margin:1rem 0 0.5rem;padding-left:0.5rem;border-left:3px solid var(--accent);}
+  .report-chapter p{font-size:0.82rem;color:var(--text-dim);line-height:1.8;margin:0.4rem 0;text-align:justify;}
+  .report-citation{font-size:0.68rem;color:#8b8fa3;font-style:italic;}
+  .report-bib{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:1.5rem;margin-top:2rem;}
+  .report-bib h3{font-size:1rem;font-weight:800;color:var(--accent2);margin:0 0 0.8rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);}
+  .report-bib ol{margin:0;padding-left:1.5rem;font-size:0.75rem;color:var(--text-dim);line-height:1.8;}
+  .report-bib ol li{margin-bottom:0.3rem;}
+  .report-bib a{color:var(--accent2);text-decoration:none;font-size:0.68rem;}
+  .report-bib a:hover{text-decoration:underline;}
+  .report-charts{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin:2rem 0;}
+  .report-chart-box{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:1.2rem;}
+  .report-chart-box h4{font-size:0.85rem;font-weight:700;color:var(--text);margin:0 0 0.8rem;text-align:center;}
+  .report-chart-box canvas{max-height:260px;}
+  .report-infographic{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin:2rem 0;}
+  .report-info-card{background:rgba(255,255,255,0.02);border:1px solid var(--border);border-radius:12px;padding:1rem;text-align:center;}
+  .report-info-card .ri-emoji{font-size:2rem;margin-bottom:0.4rem;}
+  .report-info-card .ri-num{font-size:1.6rem;font-weight:900;}
+  .report-info-card .ri-desc{font-size:0.7rem;color:var(--text-dim);line-height:1.5;margin-top:0.2rem;}
+  .report-exec{background:rgba(230,126,34,0.08);border:1px solid rgba(230,126,34,0.25);border-radius:12px;padding:1.5rem;margin-bottom:2rem;}
+  .report-exec h3{font-size:1rem;font-weight:800;color:#e67e22;margin:0 0 0.8rem;}
+  .report-exec p{font-size:0.82rem;color:var(--text-dim);line-height:1.7;margin:0.4rem 0;}
+  @media(max-width:768px){
+    .report-charts{grid-template-columns:1fr;}
+    .report-infographic{grid-template-columns:repeat(2,1fr);}
+    .report-controls{flex-direction:column;}
+  }
 </style>
 </head>
 <body>
@@ -423,6 +467,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
 <!-- 뉴스 카드 그리드 (차트·인사이트 아래) -->
 <div class="news-grid" id="newsGrid"></div>
@@ -517,6 +562,40 @@
   </table>
 
   </div><!-- /policy-body -->
+</section>
+
+<!-- ═══ 분석보고서 섹션 ═══ -->
+<section class="report-section" id="reportSection">
+  <div class="policy-header">
+    <h2>📄 사립대학 재정 건전성 분석보고서</h2>
+    <p class="policy-sub">뉴스 데이터 기반 학술 분석 보고서 자동 생성</p>
+    <p class="policy-date" id="reportDate"></p>
+  </div>
+  <div class="report-controls">
+    <label style="font-size:0.78rem;color:var(--text-dim);font-weight:700;">페이지 수:</label>
+    <select id="reportPageCount">
+      <option value="5">5페이지</option>
+      <option value="10" selected>10페이지</option>
+      <option value="15">15페이지</option>
+      <option value="20">20페이지</option>
+      <option value="25">25페이지</option>
+      <option value="30">30페이지</option>
+    </select>
+    <button class="report-gen-btn" id="reportGenBtn" onclick="generateAnalysisReport()">📝 보고서 생성</button>
+    <button class="report-hwpx-btn" id="reportHwpxBtn" onclick="downloadReportHWPX()" style="display:none;">📥 HWPX 다운로드</button>
+  </div>
+  <div class="ai-insight-loading" id="reportLoading" style="display:none;"><span class="spinner"></span>Claude AI가 학술 분석보고서를 작성 중입니다... (약 60초 소요)</div>
+  <div class="report-body" id="reportBody" style="display:none;">
+    <div class="report-exec" id="reportExec"></div>
+    <div class="report-toc" id="reportToc"></div>
+    <div class="report-infographic" id="reportInfoCards"></div>
+    <div id="reportChapters"></div>
+    <div class="report-charts">
+      <div class="report-chart-box"><h4>📊 영역별 기사 분포</h4><canvas id="reportChartTrend"></canvas></div>
+      <div class="report-chart-box"><h4>🕸️ 하위분류 분포</h4><canvas id="reportChartRadar"></canvas></div>
+    </div>
+    <div class="report-bib" id="reportBib"></div>
+  </div>
 </section>
 
 <footer class="site-footer">
@@ -1252,6 +1331,7 @@ function toggleTheme(){
 
 // ═══ 정책기획서 렌더 ═══
 let policyChartMajorInst, policyChartSubInst, policyChartBudgetInst, policyChartYearlyInst;
+let reportChartTrendInst=null, reportChartRadarInst=null;
 const SUB_LABELS_MAP={tuition:'등록금',fund_transfer:'법인전입금',reserve:'적립금',debt:'부채',edu_cost:'교육비',edu_return:'교육비환원율',scholarship:'장학금',faculty:'교원확보',enrollment:'충원율',dropout:'중도탈락',employment:'취업률',intl_student:'유학생',governance:'이사회',audit:'감사·공시',corruption:'비리',law:'사립학교법',demography:'학령인구',reform:'구조개혁',regional:'지역연계',ai_digital:'AI·디지털'};
 const MAJOR_META={
   fiscal:{icon:'💰',color:'#ef4444',label:'재정 건전성'},
@@ -1626,6 +1706,293 @@ ${JSON.stringify(newsByMajor, null, 1)}`;
   }catch(e){
     document.getElementById('policyLoading').innerHTML='⚠️ AI 보강 실패 (데이터 차트는 정상): '+e.message+'<br><button class="ai-gen-btn" style="margin-top:0.5rem" onclick="renderPolicyBrief()">AI 재시도</button>';
   }
+}
+
+// ═══ 분석보고서 ═══
+let lastReportData=null;
+
+async function generateAnalysisReport(){
+  const pageCount=parseInt(document.getElementById('reportPageCount').value)||10;
+  const sectionCount=Math.max(3,Math.round(pageCount/2));
+
+  // Infographic cards from allNews
+  const majorCount={fiscal:0,invest:0,student:0,account:0,sustain:0};
+  const subCount={};
+  allNews.forEach(n=>{majorCount[n.major]=(majorCount[n.major]||0)+1;subCount[n.sub]=(subCount[n.sub]||0)+1;});
+  const sources=[...new Set(allNews.map(n=>n.source))];
+  const dates=allNews.map(n=>n.pubDate).filter(Boolean).sort();
+  const dateRange=dates.length>=2?`${dates[0]} ~ ${dates[dates.length-1]}`:'N/A';
+  const topCat=Object.entries(majorCount).sort((a,b)=>b[1]-a[1])[0];
+
+  document.getElementById('reportInfoCards').innerHTML=[
+    {e:'📰',n:allNews.length,d:'분석 대상 기사 수',c:'#ef4444'},
+    {e:'🏆',n:MAJOR_META[topCat[0]]?.label||topCat[0],d:`최다 영역 (${topCat[1]}건)`,c:'#f59e0b'},
+    {e:'📡',n:sources.length,d:'참여 언론사 수',c:'#06b6d4'},
+    {e:'📅',n:dateRange,d:'분석 기간',c:'#10b981'}
+  ].map(i=>`<div class="report-info-card"><div class="ri-emoji">${i.e}</div><div class="ri-num" style="color:${i.c};font-size:${typeof i.n==='number'?'1.6rem':'0.75rem'}">${i.n}</div><div class="ri-desc">${i.d}</div></div>`).join('');
+
+  // Charts
+  const mKeys=Object.keys(MAJOR_META);
+  const mLabels=Object.values(MAJOR_META).map(m=>m.label);
+  const mData=mKeys.map(k=>majorCount[k]||0);
+  const mColors=mKeys.map(k=>MAJOR_META[k].color);
+
+  const ctx1=document.getElementById('reportChartTrend');
+  if(reportChartTrendInst)reportChartTrendInst.destroy();
+  reportChartTrendInst=new Chart(ctx1,{type:'bar',data:{labels:mLabels,datasets:[{label:'기사 수',data:mData,backgroundColor:mColors.map(c=>c+'99'),borderColor:mColors,borderWidth:2,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{ticks:{color:'#e4e6eb',font:{size:10}},grid:{display:false}},y:{ticks:{color:'#999'},grid:{color:'rgba(255,255,255,0.06)'}}},plugins:{legend:{display:false}}}});
+
+  const subSorted=Object.entries(subCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const subLabels=subSorted.map(([k])=>SUB_LABELS_MAP[k]||k);
+  const subData=subSorted.map(([,v])=>v);
+  const subColors=subSorted.map(([k])=>{const m=allNews.find(n=>n.sub===k)?.major;return MAJOR_META[m]?.color||'#999';});
+
+  const ctx2=document.getElementById('reportChartRadar');
+  if(reportChartRadarInst)reportChartRadarInst.destroy();
+  reportChartRadarInst=new Chart(ctx2,{type:'radar',data:{labels:subLabels,datasets:[{label:'기사 수',data:subData,backgroundColor:'rgba(230,126,34,0.2)',borderColor:'#e67e22',borderWidth:2,pointBackgroundColor:subColors}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{ticks:{color:'#999',backdropColor:'transparent'},grid:{color:'rgba(255,255,255,0.08)'},pointLabels:{color:'#e4e6eb',font:{size:10,weight:'bold'}}}},plugins:{legend:{display:false}}}});
+
+  // API call
+  const apiKey=localStorage.getItem('claude_api_key');
+  if(!apiKey){
+    document.getElementById('reportLoading').style.display='block';
+    document.getElementById('reportLoading').innerHTML='🔑 우측 상단 <b>API 키 설정</b> 버튼을 눌러 Claude API 키를 입력하면 AI가 학술 분석보고서를 작성합니다.';
+    document.getElementById('reportGenBtn').style.display='inline-block';
+    document.getElementById('reportBody').style.display='block';
+    return;
+  }
+
+  document.getElementById('reportGenBtn').style.display='none';
+  document.getElementById('reportLoading').style.display='block';
+  document.getElementById('reportLoading').innerHTML='<span class="spinner"></span>Claude AI가 학술 분석보고서를 작성 중입니다... (약 60초 소요)';
+  document.getElementById('reportBody').style.display='block';
+
+  const newsByMajor={};
+  mKeys.forEach(mk=>{
+    const arts=allNews.filter(n=>n.major===mk);
+    const bySub={};
+    arts.forEach(n=>{if(!bySub[n.sub])bySub[n.sub]=[];bySub[n.sub].push(n);});
+    newsByMajor[mk]={label:MAJOR_META[mk].label,count:arts.length,subs:{}};
+    Object.entries(bySub).forEach(([sk,sarr])=>{
+      newsByMajor[mk].subs[SUB_LABELS_MAP[sk]||sk]={
+        count:sarr.length,
+        articles:sarr.slice(0,3).map(a=>({title:a.title.replace(/^[^\s]+\s/,''),summary:a.summary?.substring(0,120)||'',source:a.source,date:a.pubDate,imp:a.imp||3}))
+      };
+    });
+  });
+
+  const toolSchema={
+    name:'write_analysis_report',
+    description:'사립대학 재정 건전성 학술 분석보고서를 구조화하여 반환합니다.',
+    input_schema:{
+      type:'object',
+      properties:{
+        title:{type:'string',description:'보고서 제목'},
+        toc:{type:'array',items:{type:'string'},description:'목차 (장 제목 목록)'},
+        chapters:{type:'array',items:{type:'object',properties:{
+          title:{type:'string'},
+          sections:{type:'array',items:{type:'object',properties:{
+            heading:{type:'string'},
+            content:{type:'string',description:'본문. 각 문장 뒤에 반드시 (출처명, YYYY.MM.DD) 형식 인용을 포함.'},
+            citations:{type:'array',items:{type:'object',properties:{
+              text:{type:'string'},source:{type:'string'},date:{type:'string'}
+            },required:['text','source','date']}}
+          },required:['heading','content','citations']}}
+        },required:['title','sections']},description:`${sectionCount}개 장`},
+        recommendations:{type:'array',items:{type:'string'},description:'정책 제언 5~8개'},
+        conclusion:{type:'string',description:'결론 요약 (3~5문장)'},
+        references:{type:'array',items:{type:'object',properties:{
+          author:{type:'string'},title:{type:'string'},source:{type:'string'},date:{type:'string'},url:{type:'string'}
+        },required:['author','title','source','date','url']},description:'참고문헌 목록'}
+      },required:['title','toc','chapters','recommendations','conclusion','references']
+    }
+  };
+
+  const prompt=`당신은 한국 고등교육 재정 분석 전문 연구자입니다. 아래 뉴스 데이터를 바탕으로 "${pageCount}페이지 분량"의 학술 분석보고서를 작성하세요.
+
+[작성 지침]
+- 학술 보고서 형식(서론→현황분석→영역별 심층분석→정책제언→결론)
+- 각 문장 끝에 반드시 인용 표기: (출처명, YYYY.MM.DD) 형식
+- 장(chapter) 수: ${sectionCount}개 (서론, 현황분석, 영역별 분석 ${sectionCount-4}개, 정책제언, 결론)
+- 한국어 학술 논문체 (경어체, 객관적 서술)
+- 구체적 수치와 데이터를 근거로 사용
+- write_analysis_report 도구를 호출하여 결과를 반환하세요.
+
+[분석 대상: 총 ${allNews.length}건]
+
+[영역별 뉴스 데이터]
+${JSON.stringify(newsByMajor,null,1)}`;
+
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4096,messages:[{role:'user',content:prompt}],tools:[toolSchema],tool_choice:{type:'tool',name:'write_analysis_report'}})
+    });
+    if(!res.ok){
+      const errText=await res.text();
+      try{const ej=JSON.parse(errText);if(ej.error?.type==='authentication_error')localStorage.removeItem('claude_api_key');throw new Error(ej.error?.message||`HTTP ${res.status}`);}catch(pe){if(pe.message.startsWith('HTTP'))throw pe;throw new Error(`HTTP ${res.status}: ${errText.substring(0,200)}`);}
+    }
+    const rawText=await res.text();
+    let data;
+    try{data=JSON.parse(rawText);}catch(parseErr){
+      console.error('Report API 응답 파싱 실패:',parseErr.message);
+      const toolMatch=rawText.match(/"type"\s*:\s*"tool_use"[\s\S]*?"input"\s*:\s*(\{[\s\S]+)/);
+      if(toolMatch){
+        let inputStr=toolMatch[1];let depth=0,end=-1;
+        for(let i=0;i<inputStr.length;i++){if(inputStr[i]==='{')depth++;else if(inputStr[i]==='}'){depth--;if(depth===0){end=i+1;break;}}}
+        if(end>0){try{data={content:[{type:'tool_use',input:JSON.parse(inputStr.substring(0,end))}]};}catch(e2){throw new Error('응답 복구 실패: '+parseErr.message);}}
+        else throw new Error('응답 파싱 실패: '+parseErr.message);
+      }else throw new Error('응답 파싱 실패: '+parseErr.message);
+    }
+    if(data.error){
+      if(data.error.type==='authentication_error')localStorage.removeItem('claude_api_key');
+      throw new Error(data.error.message);
+    }
+    const toolBlock=data.content?.find(b=>b.type==='tool_use');
+    if(!toolBlock) throw new Error('AI가 도구 호출을 반환하지 않았습니다.');
+    const ai=toolBlock.input;
+    lastReportData=ai;
+
+    // Render report
+    const now=new Date();
+    document.getElementById('reportDate').textContent=`작성일: ${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 | 총 ${allNews.length}건 분석 | AI 생성 완료`;
+
+    // Executive summary
+    document.getElementById('reportExec').innerHTML=`<h3>📌 Executive Summary</h3><p>${ai.conclusion||''}</p>`;
+
+    // TOC
+    if(ai.toc?.length){
+      document.getElementById('reportToc').innerHTML=`<h3>📑 목차</h3><ol>${ai.toc.map((t,i)=>`<li><strong>${t}</strong></li>`).join('')}</ol>`;
+    }
+
+    // Chapters
+    document.getElementById('reportChapters').innerHTML=(ai.chapters||[]).map((ch,ci)=>{
+      const sectionsHtml=(ch.sections||[]).map(s=>{
+        let content=s.content||'';
+        // Style inline citations
+        content=content.replace(/\(([^)]{2,60},\s*\d{4}[\.\-]\d{2}[\.\-]\d{2})\)/g,'<span class="report-citation">($1)</span>');
+        return `<h4>${s.heading}</h4><p>${content}</p>`;
+      }).join('');
+      return `<div class="report-chapter"><h3>제${ci+1}장. ${ch.title}</h3>${sectionsHtml}</div>`;
+    }).join('');
+
+    // Recommendations
+    if(ai.recommendations?.length){
+      const recsHtml=ai.recommendations.map((r,i)=>`<li style="margin-bottom:0.5rem;">${r}</li>`).join('');
+      document.getElementById('reportChapters').innerHTML+=`<div class="report-chapter"><h3>정책 제언</h3><ol style="padding-left:1.5rem;font-size:0.82rem;color:var(--text-dim);line-height:1.8;">${recsHtml}</ol></div>`;
+    }
+
+    // Bibliography
+    if(ai.references?.length){
+      document.getElementById('reportBib').innerHTML=`<h3>📚 참고문헌</h3><ol>${ai.references.map(r=>`<li>${r.author} (${r.date}). "${r.title}". <em>${r.source}</em>. ${r.url?`<a href="${r.url}" target="_blank">[원문]</a>`:''}</li>`).join('')}</ol>`;
+    }
+
+    document.getElementById('reportLoading').style.display='none';
+    document.getElementById('reportHwpxBtn').style.display='inline-block';
+    document.getElementById('reportGenBtn').style.display='inline-block';
+
+  }catch(e){
+    document.getElementById('reportLoading').innerHTML='⚠️ 보고서 생성 실패: '+e.message+'<br><button class="report-gen-btn" style="margin-top:0.5rem" onclick="generateAnalysisReport()">재시도</button>';
+    document.getElementById('reportGenBtn').style.display='inline-block';
+  }
+}
+
+async function downloadReportHWPX(){
+  if(!lastReportData){alert('먼저 보고서를 생성하세요.');return;}
+  const ai=lastReportData;
+  const now=new Date();
+  const dateStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+  // Build section XML paragraphs
+  let parasXml='';
+  function addPara(text,fontSize=1000,bold=false,charPrId='0'){
+    const escapedText=(text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    parasXml+=`<hp:p><hp:run><hp:rPr><hp:sz val="${fontSize}" />${bold?'<hp:bold />':''}</hp:rPr><hp:t>${escapedText}</hp:t></hp:run></hp:p>\n`;
+  }
+
+  // Title
+  addPara(ai.title||'사립대학 재정 건전성 분석보고서',1800,true);
+  addPara(`작성일: ${dateStr} | AI 분석 보고서`,800);
+  addPara('');
+
+  // TOC
+  if(ai.toc?.length){
+    addPara('목 차',1400,true);
+    ai.toc.forEach((t,i)=>addPara(`${i+1}. ${t}`,1000));
+    addPara('');
+  }
+
+  // Chapters
+  (ai.chapters||[]).forEach((ch,ci)=>{
+    addPara(`제${ci+1}장. ${ch.title}`,1400,true);
+    (ch.sections||[]).forEach(s=>{
+      addPara(s.heading,1100,true);
+      const plainContent=(s.content||'').replace(/<[^>]+>/g,'');
+      addPara(plainContent,1000);
+    });
+    addPara('');
+  });
+
+  // Recommendations
+  if(ai.recommendations?.length){
+    addPara('정책 제언',1400,true);
+    ai.recommendations.forEach((r,i)=>addPara(`${i+1}. ${r}`,1000));
+    addPara('');
+  }
+
+  // References
+  if(ai.references?.length){
+    addPara('참고문헌',1400,true);
+    ai.references.forEach((r,i)=>addPara(`[${i+1}] ${r.author} (${r.date}). "${r.title}". ${r.source}.`,900));
+  }
+
+  const sectionXml=`<?xml version="1.0" encoding="UTF-8"?>
+<hp:sec xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph"
+        xmlns:hp2="http://www.hancom.co.kr/hwpml/2011/paragraph-v2">
+<hp:subList>
+${parasXml}
+</hp:subList>
+</hp:sec>`;
+
+  const headerXml=`<?xml version="1.0" encoding="UTF-8"?>
+<hh:head xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head">
+  <hh:beginNum page="1" footnote="1" endnote="1" />
+  <hh:refList>
+    <hh:fontfaces>
+      <hh:fontface lang="hangul"><hh:font face="함초롬돋움" /></hh:fontface>
+      <hh:fontface lang="latin"><hh:font face="함초롬돋움" /></hh:fontface>
+    </hh:fontfaces>
+  </hh:refList>
+</hh:head>`;
+
+  const contentHpf=`<?xml version="1.0" encoding="UTF-8"?>
+<hpf:hwpDocInfo xmlns:hpf="http://www.hancom.co.kr/hwpml/2011/content">
+  <hpf:sectionCnt val="1" />
+</hpf:hwpDocInfo>`;
+
+  const manifestXml=`<?xml version="1.0" encoding="UTF-8"?>
+<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0">
+  <manifest:file-entry manifest:full-path="/" manifest:media-type="application/hwp+zip" />
+  <manifest:file-entry manifest:full-path="Contents/content.hpf" manifest:media-type="application/xml" />
+  <manifest:file-entry manifest:full-path="Contents/header.xml" manifest:media-type="application/xml" />
+  <manifest:file-entry manifest:full-path="Contents/section0.xml" manifest:media-type="application/xml" />
+</manifest:manifest>`;
+
+  const zip=new JSZip();
+  zip.file('mimetype','application/hwp+zip');
+  zip.folder('META-INF').file('manifest.xml',manifestXml);
+  const contents=zip.folder('Contents');
+  contents.file('content.hpf',contentHpf);
+  contents.file('header.xml',headerXml);
+  contents.file('section0.xml',sectionXml);
+
+  const blob=await zip.generateAsync({type:'blob',mimeType:'application/hwp+zip'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`분석보고서_${dateStr}.hwpx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
 }
 
 // ═══ Bookmark ═══
