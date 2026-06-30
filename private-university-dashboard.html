@@ -1784,6 +1784,8 @@ async function generateAnalysisReport(){
     });
   });
 
+  const sectionsPerChapter=Math.max(2,Math.round(pageCount/sectionCount*1.2));
+
   const toolSchema={
     name:'write_analysis_report',
     description:'뉴스 데이터 기반 종합 정책 분석보고서를 구조화하여 반환합니다.',
@@ -1812,8 +1814,6 @@ async function generateAnalysisReport(){
       },required:['title','toc','chapters','recommendations','conclusion','executive_summary','infographic_cards','references']
     }
   };
-
-  const sectionsPerChapter=Math.max(2,Math.round(pageCount/sectionCount*1.2));
 
   const prompt=`당신은 한국 고등교육 정책 분석 전문 연구자입니다. 아래 뉴스 데이터를 바탕으로 **정확히 ${pageCount}페이지 분량**의 종합 정책 분석보고서를 작성하세요.
 
