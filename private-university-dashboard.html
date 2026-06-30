@@ -325,7 +325,14 @@
       <button class="preset-btn" data-months="6">6개월</button>
       <button class="preset-btn" data-months="12">올해 전체</button>
     </div>
-    <button id="liveSearchBtn" class="preset-btn" style="background:#e67e22;color:#fff;font-weight:700;margin-left:8px;padding:4px 14px;" onclick="triggerLiveSearch()">🔍 실시간 검색</button>
+    <select id="liveSearchCount" class="ctrl-input" style="width:auto;margin-left:8px;padding:2px 6px;font-size:0.75rem;background:var(--card-bg);color:var(--text);border:1px solid var(--border);">
+      <option value="100">100건</option>
+      <option value="200" selected>200건</option>
+      <option value="300">300건</option>
+      <option value="400">400건</option>
+      <option value="500">500건</option>
+    </select>
+    <button id="liveSearchBtn" class="preset-btn" style="background:#e67e22;color:#fff;font-weight:700;margin-left:4px;padding:4px 14px;" onclick="triggerLiveSearch()">🔍 실시간 검색</button>
   </div>
   <div class="control-group">
     <label>정렬</label>
@@ -1099,6 +1106,8 @@ async function fetchLiveNews(clientId,clientSecret){
   status.textContent='뉴스 검색 중...';
 
   const subs=Object.keys(SEARCH_QUERIES);
+  const maxTotal=parseInt(document.getElementById('liveSearchCount')?.value||'200',10);
+  const perSub=Math.min(100,Math.max(5,Math.ceil(maxTotal/subs.length)));
   const results=[];
   const seenLinks=new Set();
   let done=0;
@@ -1109,7 +1118,7 @@ async function fetchLiveNews(clientId,clientSecret){
     const batch=subs.slice(i,i+4);
     const promises=batch.map(sub=>{
       const q=SEARCH_QUERIES[sub];
-      return fetch(`/api/news?query=${encodeURIComponent(q)}&display=10&sort=date`,{
+      return fetch(`/api/news?query=${encodeURIComponent(q)}&display=${perSub}&sort=date`,{
         headers:{'X-Naver-Client-Id':clientId,'X-Naver-Client-Secret':clientSecret}
       }).then(r=>{
         if(!r.ok) return r.text().then(t=>{lastError=`HTTP ${r.status}: ${t}`;return null;});
