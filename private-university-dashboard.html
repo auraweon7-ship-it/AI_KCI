@@ -567,8 +567,8 @@
 <!-- ═══ 분석보고서 섹션 ═══ -->
 <section class="report-section" id="reportSection">
   <div class="policy-header">
-    <h2>📄 사립대학 재정 건전성 분석보고서</h2>
-    <p class="policy-sub">뉴스 데이터 기반 학술 분석 보고서 자동 생성</p>
+    <h2>📊 종합 정책 분석보고서</h2>
+    <p class="policy-sub">뉴스 데이터 기반 종합 정책 분석 보고서 자동 생성</p>
     <p class="policy-date" id="reportDate"></p>
   </div>
   <div class="report-controls">
@@ -1716,7 +1716,7 @@ let lastReportData=null;
 
 async function generateAnalysisReport(){
   const pageCount=parseInt(document.getElementById('reportPageCount').value)||10;
-  const sectionCount=Math.max(3,Math.round(pageCount/2));
+  const sectionCount=Math.max(5,Math.round(pageCount*0.7));
 
   // Infographic cards from allNews
   const majorCount={fiscal:0,invest:0,student:0,account:0,sustain:0};
@@ -1784,7 +1784,7 @@ async function generateAnalysisReport(){
 
   const toolSchema={
     name:'write_analysis_report',
-    description:'사립대학 재정 건전성 학술 분석보고서를 구조화하여 반환합니다.',
+    description:'뉴스 데이터 기반 종합 정책 분석보고서를 구조화하여 반환합니다.',
     input_schema:{
       type:'object',
       properties:{
@@ -1799,24 +1799,36 @@ async function generateAnalysisReport(){
               text:{type:'string'},source:{type:'string'},date:{type:'string'}
             },required:['text','source','date']}}
           },required:['heading','content','citations']}}
-        },required:['title','sections']},description:`${sectionCount}개 장`},
+        },required:['title','sections']},description:`${sectionCount}개 이상의 장. 각 장은 2~3개 세부 절(section)로 구성하고, 각 절의 content는 반드시 3문장 이상 상세히 작성할 것`},
         recommendations:{type:'array',items:{type:'string'},description:'정책 제언 5~8개'},
         conclusion:{type:'string',description:'결론 요약 (3~5문장)'},
+        executive_summary:{type:'string',description:'핵심 요약 (5~8문장, 주요 발견과 시사점을 포함하는 상세 요약)'},
+        infographic_cards:{type:'array',items:{type:'object',properties:{label:{type:'string'},value:{type:'string'},description:{type:'string'}},required:['label','value','description']},description:'핵심 지표 카드 6개'},
         references:{type:'array',items:{type:'object',properties:{
           author:{type:'string'},title:{type:'string'},source:{type:'string'},date:{type:'string'},url:{type:'string'}
         },required:['author','title','source','date','url']},description:'참고문헌 목록'}
-      },required:['title','toc','chapters','recommendations','conclusion','references']
+      },required:['title','toc','chapters','recommendations','conclusion','executive_summary','infographic_cards','references']
     }
   };
 
-  const prompt=`당신은 한국 고등교육 재정 분석 전문 연구자입니다. 아래 뉴스 데이터를 바탕으로 "${pageCount}페이지 분량"의 학술 분석보고서를 작성하세요.
+  const prompt=`당신은 한국 고등교육 정책 분석 전문 연구자입니다. 아래 뉴스 데이터를 바탕으로 "${pageCount}페이지 분량"의 종합 정책 분석보고서를 작성하세요.
+
+[보고서 구조 - 반드시 5개 이상 하위 분류로 나누어 작성]
+1. 서론: 분석 배경과 목적 (2~3단락, 각 단락 3~5문장)
+2. 재정 건전성 분석: 등록금, 법인전입금, 적립금, 부채 현황 (3~4단락)
+3. 교육 투자 분석: 교육비환원율, 장학금, 교원확보율, 1인당 교육비 (3~4단락)
+4. 학생 경쟁력 분석: 충원율, 중도탈락률, 취업률, 유학생 (3~4단락)
+5. 법인 책무성 분석: 이사회, 수익용기본재산, 정보공시, 비리 (3~4단락)
+6. 지속가능성 분석: 학령인구, 구조개혁, 지방대학, AI/디지털전환 (3~4단락)
+7. 정책 제언 및 결론: 구체적 정책 방안 5~8개
 
 [작성 지침]
-- 학술 보고서 형식(서론→현황분석→영역별 심층분석→정책제언→결론)
-- 각 문장 끝에 반드시 인용 표기: (출처명, YYYY.MM.DD) 형식
-- 장(chapter) 수: ${sectionCount}개 (서론, 현황분석, 영역별 분석 ${sectionCount-4}개, 정책제언, 결론)
-- 한국어 학술 논문체 (경어체, 객관적 서술)
-- 구체적 수치와 데이터를 근거로 사용
+- 각 장(chapter)은 2~3개 세부 절(section)로 구성
+- 각 절의 content는 반드시 3~5문장 이상의 실질적 분석 본문 작성 (제목만 쓰지 말 것)
+- 각 문장 끝에 반드시 인용: (출처명, YYYY.MM.DD) 형식
+- 한국어 학술 논문체, 구체적 수치와 데이터 근거 사용
+- executive_summary는 전체 보고서의 핵심 발견과 시사점을 5~8문장으로 요약
+- infographic_cards에 핵심 지표 6개를 숫자 중심으로 제시
 - write_analysis_report 도구를 호출하여 결과를 반환하세요.
 
 [분석 대상: 총 ${allNews.length}건]
@@ -1828,7 +1840,7 @@ ${JSON.stringify(newsByMajor,null,1)}`;
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:4096,messages:[{role:'user',content:prompt}],tools:[toolSchema],tool_choice:{type:'tool',name:'write_analysis_report'}})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8192,messages:[{role:'user',content:prompt}],tools:[toolSchema],tool_choice:{type:'tool',name:'write_analysis_report'}})
     });
     if(!res.ok){
       const errText=await res.text();
@@ -1914,16 +1926,16 @@ async function downloadReportHWPX(){
   function addPara(text,charPrId='0',paraPrId='0'){
     const e=esc(text);
     if(isFirst){
-      parasXml+=`<hp:p paraPrIDRef="${paraPrId}" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="${charPrId}"><hp:secPr textDirection="HORIZONTAL" spaceColumns="1134" tabStop="8000" outlineShapeIDRef="1"><hp:grid lineGrid="0" charGrid="0" wonggojiFormat="0"/><hp:startNum pageStartsOn="BOTH" page="0"/><hp:pagePr landscape="WIDELY" width="59528" height="84186" gutterType="LEFT_ONLY"><hp:margin header="4252" footer="4252" gutter="0" left="8504" right="8504" top="5668" bottom="4252"/></hp:pagePr><hp:pageBorderFill type="BOTH" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER"><hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill></hp:secPr><hp:t>${e}</hp:t></hp:run></hp:p>\n`;
+      parasXml+=`<hp:p id="0" paraPrIDRef="${paraPrId}" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="${charPrId}"><hp:secPr id="" textDirection="HORIZONTAL" spaceColumns="1134" tabStop="8000" tabStopVal="4000" tabStopUnit="HWPUNIT" outlineShapeIDRef="1" memoShapeIDRef="0" textVerticalWidthHead="0" masterPageCnt="0"><hp:grid lineGrid="0" charGrid="0" wonggojiFormat="0"/><hp:startNum pageStartsOn="BOTH" page="0" pic="0" tbl="0" equation="0"/><hp:visibility hideFirstHeader="0" hideFirstFooter="0" hideFirstMasterPage="0" border="SHOW_ALL" fill="SHOW_ALL" hideFirstPageNum="0" hideFirstEmptyLine="0" showLineNumber="0"/><hp:lineNumberShape restartType="0" countBy="0" distance="0" startNumber="0"/><hp:pagePr landscape="WIDELY" width="59528" height="84186" gutterType="LEFT_ONLY"><hp:margin header="4252" footer="4252" gutter="0" left="8504" right="8504" top="5668" bottom="4252"/></hp:pagePr><hp:footNotePr><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/><hp:noteLine length="-1" type="SOLID" width="0.12 mm" color="#000000"/><hp:noteSpacing betweenNotes="283" belowLine="567" aboveLine="850"/><hp:numbering type="CONTINUOUS" newNum="1"/><hp:placement place="EACH_COLUMN" beneathText="0"/></hp:footNotePr><hp:endNotePr><hp:autoNumFormat type="DIGIT" userChar="" prefixChar="" suffixChar=")" supscript="0"/><hp:noteLine length="14692344" type="SOLID" width="0.12 mm" color="#000000"/><hp:noteSpacing betweenNotes="0" belowLine="567" aboveLine="850"/><hp:numbering type="CONTINUOUS" newNum="1"/><hp:placement place="END_OF_DOCUMENT" beneathText="0"/></hp:endNotePr><hp:pageBorderFill type="BOTH" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER"><hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill><hp:pageBorderFill type="EVEN" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER"><hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill><hp:pageBorderFill type="ODD" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER"><hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill></hp:secPr><hp:ctrl><hp:colPr id="" type="NEWSPAPER" layout="LEFT" colCount="1" sameSz="1" sameGap="0"/></hp:ctrl></hp:run><hp:run charPrIDRef="${charPrId}"><hp:t>${e}</hp:t></hp:run></hp:p>\n`;
       isFirst=false;
     } else {
-      parasXml+=`<hp:p paraPrIDRef="${paraPrId}" styleIDRef="0"><hp:run charPrIDRef="${charPrId}"><hp:t>${e}</hp:t></hp:run></hp:p>\n`;
+      parasXml+=`<hp:p id="0" paraPrIDRef="${paraPrId}" styleIDRef="0"><hp:run charPrIDRef="${charPrId}"><hp:t>${e}</hp:t></hp:run></hp:p>\n`;
     }
   }
-  function addEmpty(){parasXml+=`<hp:p paraPrIDRef="0" styleIDRef="0"><hp:run charPrIDRef="0"><hp:t></hp:t></hp:run></hp:p>\n`;}
+  function addEmpty(){parasXml+=`<hp:p id="0" paraPrIDRef="0" styleIDRef="0"><hp:run charPrIDRef="0"><hp:t></hp:t></hp:run></hp:p>\n`;}
 
   // Title
-  addPara(ai.title||'사립대학 재정 건전성 분석보고서','2','2');
+  addPara(ai.title||'종합 정책 분석보고서','2','2');
   addPara(`작성일: ${dateStr} | AI 분석 보고서`,'3','0');
   addEmpty();
 
@@ -1982,7 +1994,7 @@ async function downloadReportHWPX(){
 
   const containerRdf='<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>';
 
-  const reportTitle=esc(ai.title||'사립대학 재정 건전성 분석보고서');
+  const reportTitle=esc(ai.title||'종합 정책 분석보고서');
   const contentHpf=`<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><opf:package ${NS} version="" unique-identifier="" id=""><opf:metadata><opf:title>${reportTitle}</opf:title><opf:language>ko</opf:language><opf:meta name="creator" content="text">Claude AI</opf:meta><opf:meta name="CreatedDate" content="text">${dateStr}</opf:meta><opf:meta name="ModifiedDate" content="text">${dateStr}</opf:meta></opf:metadata><opf:manifest><opf:item id="header" href="Contents/header.xml" media-type="application/xml"/><opf:item id="section0" href="Contents/section0.xml" media-type="application/xml"/><opf:item id="settings" href="settings.xml" media-type="application/xml"/></opf:manifest><opf:spine><opf:itemref idref="header" linear="yes"/><opf:itemref idref="section0" linear="yes"/></opf:spine></opf:package>`;
 
   const headerXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hh:head ${NS} version="1.5" secCnt="1"><hh:beginNum page="1" footnote="1" endnote="1" pic="1" tbl="1" equation="1"/><hh:refList><hh:fontfaces itemCnt="2"><hh:fontface lang="HANGUL" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="5" proportion="3" contrast="2" strokeVariation="0" armStyle="0" letterform="2" midline="0" xHeight="4"/></hh:font></hh:fontface><hh:fontface lang="LATIN" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="5" proportion="3" contrast="2" strokeVariation="0" armStyle="0" letterform="2" midline="0" xHeight="4"/></hh:font></hh:fontface></hh:fontfaces><hh:borderFills itemCnt="1"><hh:borderFill id="1" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" crooked="0" isCounter="0"/><hh:backSlash type="NONE" crooked="0" isCounter="0"/><hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/><hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/><hh:topBorder type="NONE" width="0.1 mm" color="#000000"/><hh:bottomBorder type="NONE" width="0.1 mm" color="#000000"/><hh:diagonal type="NONE" width="0.1 mm" color="#000000"/></hh:borderFill></hh:borderFills><hh:charProperties itemCnt="4"><hh:charPr id="0" height="1000" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="1"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/></hh:charPr><hh:charPr id="1" height="1400" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="1" bold="1"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/></hh:charPr><hh:charPr id="2" height="1800" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="1" bold="1"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/></hh:charPr><hh:charPr id="3" height="900" textColor="#666666" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="1"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/></hh:charPr></hh:charProperties><hh:tabProperties itemCnt="1"><hh:tabPr id="0" autoTabLeft="0" autoTabRight="0"/></hh:tabProperties><hh:paraProperties itemCnt="3"><hh:paraPr id="0" tabPrIDRef="0" condense="0"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:margin indent="0" left="0" right="0" prev="0" next="0"/><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hh:paraPr><hh:paraPr id="1" tabPrIDRef="0" condense="0"><hh:align horizontal="LEFT" vertical="BASELINE"/><hh:heading type="OUTLINE" idRef="0" level="0"/><hh:margin indent="0" left="0" right="0" prev="400" next="200"/><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hh:paraPr><hh:paraPr id="2" tabPrIDRef="0" condense="0"><hh:align horizontal="CENTER" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:margin indent="0" left="0" right="0" prev="800" next="400"/><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hh:paraPr></hh:paraProperties></hh:refList></hh:head>`;
@@ -2012,7 +2024,7 @@ async function downloadReportHWPX(){
   const blob=await zip.generateAsync({type:'blob',mimeType:'application/hwp+zip'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
-  a.download=`분석보고서_${dateStr}.hwpx`;
+  a.download=`종합정책보고서_${dateStr}.hwpx`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
@@ -2029,7 +2041,7 @@ function downloadReportHTML(){
   let body='';
 
   // Title
-  body+=`<h1 style="text-align:center;font-size:24px;margin-bottom:4px;">${esc(ai.title||'사립대학 재정 건전성 분석보고서')}</h1>\n`;
+  body+=`<h1 style="text-align:center;font-size:24px;margin-bottom:4px;">${esc(ai.title||'종합 정책 분석보고서')}</h1>\n`;
   body+=`<p style="text-align:center;color:#888;font-size:13px;margin-bottom:30px;">작성일: ${dateStr} | AI 분석 보고서</p>\n`;
 
   // Executive summary
