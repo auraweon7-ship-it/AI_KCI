@@ -1785,82 +1785,20 @@ async function generateAnalysisReport(){
   });
 
   const sectionsPerChapter=Math.max(2,Math.round(pageCount/sectionCount*1.2));
-  const minChars=pageCount*600;
 
-  const toolSchema={
-    name:'write_analysis_report',
-    description:'뉴스 데이터 기반 종합 정책 분석보고서를 구조화하여 반환합니다.',
-    input_schema:{
-      type:'object',
-      properties:{
-        title:{type:'string',description:'보고서 제목'},
-        toc:{type:'array',items:{type:'string'},description:'목차 (장 제목 목록)'},
-        chapters:{type:'array',items:{type:'object',properties:{
-          title:{type:'string'},
-          sections:{type:'array',items:{type:'object',properties:{
-            heading:{type:'string'},
-            content:{type:'string',description:`본문 텍스트. 반드시 ${sentencesPerSection}문장(${Math.round(minChars/sectionCount/sectionsPerChapter)}자) 이상 작성. 현황→문제점→근거→시사점 순서로 심층 분석. 각 문장 뒤 (출처명, YYYY.MM.DD) 인용 필수. 1~2줄 요약 금지.`},
-            citations:{type:'array',items:{type:'object',properties:{
-              text:{type:'string'},source:{type:'string'},date:{type:'string'}
-            },required:['text','source','date']}}
-          },required:['heading','content','citations']}}
-        },required:['title','sections']},description:`${sectionCount}개 이상의 장. 각 장은 ${sectionsPerChapter}~${sectionsPerChapter+1}개 세부 절로 구성. 각 절의 content는 반드시 ${sentencesPerSection}문장 이상 심층 분석 (현황→문제점→근거→시사점)`},
-        recommendations:{type:'array',items:{type:'string'},description:`정책 제언 ${Math.max(5,sectionCount)}~${Math.max(8,sectionCount+2)}개. 각 제언은 2~3문장으로 구체적 실행방안 포함`},
-        conclusion:{type:'string',description:`결론 종합 평가. 최소 ${Math.max(5,Math.round(sentencesPerSection*0.8))}문장, 300자 이상. 주요 발견 요약, 정책적 함의, 향후 과제를 포함`},
-        executive_summary:{type:'string',description:`핵심 요약. 최소 ${Math.max(8,Math.round(pageCount*0.8))}문장, 400자 이상. 보고서의 주요 발견, 핵심 수치, 정책 시사점을 포괄하는 상세 요약`},
-        infographic_cards:{type:'array',items:{type:'object',properties:{label:{type:'string'},value:{type:'string'},description:{type:'string'}},required:['label','value','description']},description:'핵심 지표 카드 6개'},
-        references:{type:'array',items:{type:'object',properties:{
-          author:{type:'string'},title:{type:'string'},source:{type:'string'},date:{type:'string'},url:{type:'string'}
-        },required:['author','title','source','date','url']},description:'참고문헌 목록'}
-      },required:['title','toc','chapters','recommendations','conclusion','executive_summary','infographic_cards','references']
-    }
-  };
+  const newsDataStr=JSON.stringify(newsByMajor,null,1);
+  const chapterSectionSchema={type:'array',items:{type:'object',properties:{
+    heading:{type:'string'},
+    content:{type:'string',description:`본문. 반드시 10문장 이상(500자+) 심층 분석. 현황→문제점→근거→시사점. 각 문장 뒤 (출처명, YYYY.MM.DD) 인용.`},
+    citations:{type:'array',items:{type:'object',properties:{text:{type:'string'},source:{type:'string'},date:{type:'string'}},required:['text','source','date']}}
+  },required:['heading','content','citations']}};
+  const chapterSchema={type:'array',items:{type:'object',properties:{title:{type:'string'},sections:chapterSectionSchema},required:['title','sections']}};
 
-  const prompt=`당신은 한국 고등교육 정책 분석 전문 연구자입니다. 아래 뉴스 데이터를 바탕으로 **${pageCount}페이지 분량**의 종합 정책 분석보고서를 작성하세요.
-
-⚠️⚠️⚠️ 최우선 요구사항 — 분량:
-- 총 ${sectionCount}개 장, 각 장 ${sectionsPerChapter}~${sectionsPerChapter+1}개 세부 절
-- 각 절의 content 필드에 반드시 **${sentencesPerSection}문장 이상, 최소 ${Math.round(minChars/sectionCount/sectionsPerChapter)}자 이상** 작성
-- 한 문장은 40~80자 길이의 완전한 서술문이어야 함 (단어 나열이나 키워드 형태 금지)
-- 전체 본문 합계 **최소 ${minChars}자** (이보다 짧으면 실패로 간주)
-- 1~2줄 요약이 아닌, 논문 수준의 심층 분석 서술. 각 절마다 구체적 수치·사례·비교를 반드시 포함
-
-[보고서 구조 — ${sectionCount}개 장 이상]
-1. 서론: 연구 배경과 목적, 분석 방법론, 데이터 범위와 한계 (각 절 ${sentencesPerSection}문장)
-2. 재정 건전성 분석: 등록금 현황·추이, 법인전입금 실태, 적립금 규모와 적정성, 부채비율 변화 (각 절 ${sentencesPerSection}문장)
-3. 교육 투자 분석: 교육비환원율 비교, 장학금 지급 현황, 교원확보율과 교육의 질, 1인당 교육비 추이 (각 절 ${sentencesPerSection}문장)
-4. 학생 경쟁력 분석: 신입생 충원율 위기, 중도탈락률 원인·대응, 졸업생 취업률, 유학생 유치 현황 (각 절 ${sentencesPerSection}문장)
-5. 법인 책무성 분석: 이사회 운영 투명성, 수익용기본재산 관리, 정보공시 실태, 비리사례·개선방안 (각 절 ${sentencesPerSection}문장)
-6. 지속가능성 분석: 학령인구 감소 영향, 대학구조개혁 정책, 지방대학 위기, AI/디지털전환 전략 (각 절 ${sentencesPerSection}문장)
-7. 정책 제언: 단기(1~2년)/중기(3~5년)/장기(5년+) 정책 방안 각 2~3개씩 구체적 제시
-8. 결론: 종합 평가와 향후 전망 (${sentencesPerSection}문장)
-
-[각 절의 content 작성 패턴 — 반드시 준수]
-① 현황 서술 (3~5문장): 최근 동향과 주요 수치를 구체적으로 제시
-② 문제점 분석 (3~5문장): 구조적 원인, 제도적 한계, 이해관계자 갈등 등
-③ 근거·사례 (3~5문장): 특정 대학명, 구체적 금액/비율, 전년 대비 변화율, 수도권 vs 비수도권 비교
-④ 시사점·함의 (2~3문장): 정책적 시사점, 향후 과제
-
-[작성 지침]
-- 각 문장 끝에 반드시 인용: (출처명, YYYY.MM.DD) 형식
-- 한국어 학술 논문체 (경어체, "~것으로 분석된다", "~할 필요가 있다" 등)
-- 뉴스 데이터의 구체적 수치, 대학명, 정책명을 적극 인용하여 분석의 실증적 근거를 확보
-- executive_summary: 전체 보고서의 핵심 발견 ${Math.max(8,Math.round(pageCount*0.8))}문장으로 상세 요약 (최소 400자)
-- infographic_cards: 핵심 지표 6개를 구체적 숫자와 함께 제시
-- conclusion: 최소 ${Math.max(5,Math.round(sentencesPerSection*0.8))}문장의 종합 평가
-- references: 최소 ${Math.max(8,sectionCount)}개 참고문헌
-- write_analysis_report 도구를 호출하여 결과를 반환하세요.
-
-[분석 대상: 총 ${allNews.length}건]
-
-[영역별 뉴스 데이터]
-${JSON.stringify(newsByMajor,null,1)}`;
-
-  try{
+  async function callReportAPI(toolName,schema,promptText,tokens){
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTokens,messages:[{role:'user',content:prompt}],tools:[toolSchema],tool_choice:{type:'tool',name:'write_analysis_report'}})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:tokens,messages:[{role:'user',content:promptText}],tools:[{name:toolName,description:'보고서 데이터 반환',input_schema:schema}],tool_choice:{type:'tool',name:toolName}})
     });
     if(!res.ok){
       const errText=await res.text();
@@ -1869,22 +1807,84 @@ ${JSON.stringify(newsByMajor,null,1)}`;
     const rawText=await res.text();
     let data;
     try{data=JSON.parse(rawText);}catch(parseErr){
-      console.error('Report API 응답 파싱 실패:',parseErr.message);
       const toolMatch=rawText.match(/"type"\s*:\s*"tool_use"[\s\S]*?"input"\s*:\s*(\{[\s\S]+)/);
       if(toolMatch){
-        let inputStr=toolMatch[1];let depth=0,end=-1;
+        let inputStr=toolMatch[1],depth=0,end=-1;
         for(let i=0;i<inputStr.length;i++){if(inputStr[i]==='{')depth++;else if(inputStr[i]==='}'){depth--;if(depth===0){end=i+1;break;}}}
-        if(end>0){try{data={content:[{type:'tool_use',input:JSON.parse(inputStr.substring(0,end))}]};}catch(e2){throw new Error('응답 복구 실패: '+parseErr.message);}}
-        else throw new Error('응답 파싱 실패: '+parseErr.message);
-      }else throw new Error('응답 파싱 실패: '+parseErr.message);
+        if(end>0){try{data={content:[{type:'tool_use',input:JSON.parse(inputStr.substring(0,end))}]};}catch(e2){throw new Error('응답 복구 실패');}}
+        else throw new Error('응답 파싱 실패');
+      }else throw new Error('응답 파싱 실패');
     }
-    if(data.error){
-      if(data.error.type==='authentication_error')localStorage.removeItem('claude_api_key');
-      throw new Error(data.error.message);
-    }
-    const toolBlock=data.content?.find(b=>b.type==='tool_use');
-    if(!toolBlock) throw new Error('AI가 도구 호출을 반환하지 않았습니다.');
-    const ai=toolBlock.input;
+    if(data.error){if(data.error.type==='authentication_error')localStorage.removeItem('claude_api_key');throw new Error(data.error.message);}
+    const tb=data.content?.find(b=>b.type==='tool_use');
+    if(!tb) throw new Error('AI가 도구 호출을 반환하지 않았습니다.');
+    return tb.input;
+  }
+
+  const baseInstruction=`한국 고등교육 정책 분석 전문 연구자로서 뉴스 데이터 기반 종합 정책 분석보고서를 작성합니다.
+[작성 규칙]
+- 각 절의 content는 반드시 10문장(500자) 이상 심층 분석
+- 현황 서술(3~5문장) → 문제점 분석(3~5문장) → 근거·사례(3~5문장) → 시사점(2~3문장)
+- 각 문장 끝에 (출처명, YYYY.MM.DD) 인용
+- 한국어 학술 논문체, 구체적 수치·대학명·정책명 인용
+- 수도권 vs 비수도권, 전년 대비 비교 포함
+
+[뉴스 데이터: 총 ${allNews.length}건]
+${newsDataStr}`;
+
+  try{
+    // ── Phase 1: 구조 + 전반부 (서론, 재정, 교육, 학생) ──
+    document.getElementById('reportLoading').innerHTML=`<span class="spinner"></span>[1/2] 보고서 전반부 생성 중... (약 ${Math.max(20,pageCount*3)}초)`;
+
+    const phase1=await callReportAPI('write_report_part1',{type:'object',properties:{
+      title:{type:'string',description:'보고서 제목'},
+      toc:{type:'array',items:{type:'string'},description:'전체 목차 8개 장 제목'},
+      executive_summary:{type:'string',description:'핵심 요약 8~15문장, 최소 400자'},
+      infographic_cards:{type:'array',items:{type:'object',properties:{label:{type:'string'},value:{type:'string'},description:{type:'string'}},required:['label','value','description']},description:'핵심 지표 카드 6개'},
+      chapters:chapterSchema
+    },required:['title','toc','executive_summary','infographic_cards','chapters']},
+    `${baseInstruction}
+
+이번 호출에서는 보고서의 **전반부 4개 장**만 작성하세요:
+1. 서론: 연구 배경과 목적, 분석 방법론, 데이터 범위 (절 3개, 각 절 10문장+)
+2. 재정 건전성 분석: 등록금 현황, 법인전입금 실태, 적립금 규모, 부채비율 (절 4개, 각 절 10문장+)
+3. 교육 투자 분석: 교육비환원율, 장학금, 교원확보율, 1인당 교육비 (절 4개, 각 절 10문장+)
+4. 학생 경쟁력 분석: 충원율 위기, 중도탈락률, 취업률, 유학생 (절 4개, 각 절 10문장+)
+
+또한 title, toc(전체 8장 목차), executive_summary(400자+), infographic_cards(6개)를 함께 반환.
+각 절의 content는 반드시 500자 이상 작성하세요.`,16000);
+
+    // ── Phase 2: 후반부 (법인, 지속가능성, 제언, 결론) ──
+    document.getElementById('reportLoading').innerHTML=`<span class="spinner"></span>[2/2] 보고서 후반부 생성 중... (약 ${Math.max(20,pageCount*3)}초)`;
+
+    const phase2=await callReportAPI('write_report_part2',{type:'object',properties:{
+      chapters:chapterSchema,
+      recommendations:{type:'array',items:{type:'string'},description:'정책 제언 6~10개, 각 2~3문장'},
+      conclusion:{type:'string',description:'결론 종합 평가 최소 8문장, 400자 이상'},
+      references:{type:'array',items:{type:'object',properties:{author:{type:'string'},title:{type:'string'},source:{type:'string'},date:{type:'string'},url:{type:'string'}},required:['author','title','source','date','url']},description:'참고문헌 10개 이상'}
+    },required:['chapters','recommendations','conclusion','references']},
+    `${baseInstruction}
+
+이번 호출에서는 보고서의 **후반부 4개 장**을 작성하세요:
+5. 법인 책무성 분석: 이사회 투명성, 수익용기본재산, 정보공시, 비리사례 (절 4개, 각 절 10문장+)
+6. 지속가능성 분석: 학령인구 감소, 구조개혁 정책, 지방대학 위기, AI/디지털전환 (절 4개, 각 절 10문장+)
+7. 정책 제언: 단기/중기/장기 방안을 각각 세부 절로 구성 (절 3개, 각 절 10문장+)
+8. 결론: 종합 평가와 향후 전망 (절 2개, 각 절 10문장+)
+
+또한 recommendations(6~10개), conclusion(400자+), references(10개+)를 함께 반환.
+각 절의 content는 반드시 500자 이상 작성하세요.`,16000);
+
+    // ── Merge ──
+    const ai={
+      title:phase1.title||'종합 정책 분석보고서',
+      toc:phase1.toc||[],
+      executive_summary:phase1.executive_summary||'',
+      infographic_cards:phase1.infographic_cards||[],
+      chapters:[...(phase1.chapters||[]),...(phase2.chapters||[])],
+      recommendations:phase2.recommendations||[],
+      conclusion:phase2.conclusion||'',
+      references:phase2.references||[]
+    };
     lastReportData=ai;
 
     // Render report
