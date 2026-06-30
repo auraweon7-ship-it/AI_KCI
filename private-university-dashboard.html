@@ -1716,9 +1716,9 @@ let lastReportData=null;
 
 async function generateAnalysisReport(){
   const pageCount=parseInt(document.getElementById('reportPageCount').value)||10;
-  const sectionCount=Math.min(8,Math.max(5,Math.round(pageCount*0.4)));
-  const sentencesPerSection=Math.min(12,Math.max(5,Math.round(pageCount*0.6)));
-  const maxTokens=Math.min(12000,Math.max(6000,pageCount*500));
+  const sectionCount=Math.min(10,Math.max(5,Math.round(pageCount*0.5)));
+  const sentencesPerSection=Math.min(20,Math.max(8,Math.round(pageCount*1.0)));
+  const maxTokens=Math.min(16000,Math.max(8000,pageCount*800));
 
   // Infographic cards from allNews
   const majorCount={fiscal:0,invest:0,student:0,account:0,sustain:0};
@@ -1767,7 +1767,7 @@ async function generateAnalysisReport(){
 
   document.getElementById('reportGenBtn').style.display='none';
   document.getElementById('reportLoading').style.display='block';
-  document.getElementById('reportLoading').innerHTML=`<span class="spinner"></span>Claude AI가 ${pageCount}페이지 종합 정책 보고서를 작성 중입니다... (약 ${Math.max(30,pageCount*4)}초 소요)`;
+  document.getElementById('reportLoading').innerHTML=`<span class="spinner"></span>Claude AI가 ${pageCount}페이지 종합 정책 보고서를 작성 중입니다... (약 ${Math.max(30,pageCount*6)}초 소요)`;
   document.getElementById('reportBody').style.display='block';
 
   const newsByMajor={};
@@ -1798,15 +1798,15 @@ async function generateAnalysisReport(){
           title:{type:'string'},
           sections:{type:'array',items:{type:'object',properties:{
             heading:{type:'string'},
-            content:{type:'string',description:'본문. 각 문장 뒤에 반드시 (출처명, YYYY.MM.DD) 형식 인용을 포함.'},
+            content:{type:'string',description:`본문 텍스트. 반드시 ${sentencesPerSection}문장(${Math.round(minChars/sectionCount/sectionsPerChapter)}자) 이상 작성. 현황→문제점→근거→시사점 순서로 심층 분석. 각 문장 뒤 (출처명, YYYY.MM.DD) 인용 필수. 1~2줄 요약 금지.`},
             citations:{type:'array',items:{type:'object',properties:{
               text:{type:'string'},source:{type:'string'},date:{type:'string'}
             },required:['text','source','date']}}
           },required:['heading','content','citations']}}
         },required:['title','sections']},description:`${sectionCount}개 이상의 장. 각 장은 ${sectionsPerChapter}~${sectionsPerChapter+1}개 세부 절로 구성. 각 절의 content는 반드시 ${sentencesPerSection}문장 이상 심층 분석 (현황→문제점→근거→시사점)`},
-        recommendations:{type:'array',items:{type:'string'},description:'정책 제언 5~8개'},
-        conclusion:{type:'string',description:'결론 요약 (3~5문장)'},
-        executive_summary:{type:'string',description:'핵심 요약 (5~8문장, 주요 발견과 시사점을 포함하는 상세 요약)'},
+        recommendations:{type:'array',items:{type:'string'},description:`정책 제언 ${Math.max(5,sectionCount)}~${Math.max(8,sectionCount+2)}개. 각 제언은 2~3문장으로 구체적 실행방안 포함`},
+        conclusion:{type:'string',description:`결론 종합 평가. 최소 ${Math.max(5,Math.round(sentencesPerSection*0.8))}문장, 300자 이상. 주요 발견 요약, 정책적 함의, 향후 과제를 포함`},
+        executive_summary:{type:'string',description:`핵심 요약. 최소 ${Math.max(8,Math.round(pageCount*0.8))}문장, 400자 이상. 보고서의 주요 발견, 핵심 수치, 정책 시사점을 포괄하는 상세 요약`},
         infographic_cards:{type:'array',items:{type:'object',properties:{label:{type:'string'},value:{type:'string'},description:{type:'string'}},required:['label','value','description']},description:'핵심 지표 카드 6개'},
         references:{type:'array',items:{type:'object',properties:{
           author:{type:'string'},title:{type:'string'},source:{type:'string'},date:{type:'string'},url:{type:'string'}
@@ -1815,32 +1815,40 @@ async function generateAnalysisReport(){
     }
   };
 
-  const prompt=`당신은 한국 고등교육 정책 분석 전문 연구자입니다. 아래 뉴스 데이터를 바탕으로 **정확히 ${pageCount}페이지 분량**의 종합 정책 분석보고서를 작성하세요.
+  const minChars=pageCount*600;
+  const prompt=`당신은 한국 고등교육 정책 분석 전문 연구자입니다. 아래 뉴스 데이터를 바탕으로 **${pageCount}페이지 분량**의 종합 정책 분석보고서를 작성하세요.
 
-⚠️ 분량 요구사항 (가장 중요):
+⚠️⚠️⚠️ 최우선 요구사항 — 분량:
 - 총 ${sectionCount}개 장, 각 장 ${sectionsPerChapter}~${sectionsPerChapter+1}개 세부 절
-- 각 절의 content는 반드시 **${sentencesPerSection}문장 이상** 작성 (짧은 요약이 아닌 심층 분석)
-- 한 페이지 ≈ 약 500자 기준, 총 ${pageCount*500}자 이상의 본문 분량
-- 목차나 제목만 나열하지 말 것. 모든 절에 실질적 분석 본문을 풍부하게 작성
+- 각 절의 content 필드에 반드시 **${sentencesPerSection}문장 이상, 최소 ${Math.round(minChars/sectionCount/sectionsPerChapter)}자 이상** 작성
+- 한 문장은 40~80자 길이의 완전한 서술문이어야 함 (단어 나열이나 키워드 형태 금지)
+- 전체 본문 합계 **최소 ${minChars}자** (이보다 짧으면 실패로 간주)
+- 1~2줄 요약이 아닌, 논문 수준의 심층 분석 서술. 각 절마다 구체적 수치·사례·비교를 반드시 포함
 
-[보고서 구조 - 반드시 5개 이상 하위 분류]
-1. 서론: 연구 배경, 분석 목적, 연구 방법론, 분석 범위 (${sentencesPerSection}문장 이상)
-2. 재정 건전성 분석: 등록금 현황과 추이, 법인전입금 실태, 적립금 규모, 부채비율 변화 (각 절 ${sentencesPerSection}문장 이상)
-3. 교육 투자 분석: 교육비환원율 비교, 장학금 지급 현황, 교원확보율과 교육의 질, 1인당 교육비 추이 (각 절 ${sentencesPerSection}문장 이상)
-4. 학생 경쟁력 분석: 신입생 충원율 위기, 중도탈락률 원인과 대응, 졸업생 취업률 분석, 유학생 유치 현황 (각 절 ${sentencesPerSection}문장 이상)
-5. 법인 책무성 분석: 이사회 운영 투명성, 수익용기본재산 관리, 정보공시 실태, 비리사례와 개선방안 (각 절 ${sentencesPerSection}문장 이상)
-6. 지속가능성 분석: 학령인구 감소 영향, 대학구조개혁 정책, 지방대학 위기, AI/디지털전환 전략 (각 절 ${sentencesPerSection}문장 이상)
-7. 정책 제언: 단기/중기/장기 정책 방안 각 2~3개씩 구체적으로 제시
-8. 결론: 종합 평가와 향후 전망 (${sentencesPerSection}문장 이상)
+[보고서 구조 — ${sectionCount}개 장 이상]
+1. 서론: 연구 배경과 목적, 분석 방법론, 데이터 범위와 한계 (각 절 ${sentencesPerSection}문장)
+2. 재정 건전성 분석: 등록금 현황·추이, 법인전입금 실태, 적립금 규모와 적정성, 부채비율 변화 (각 절 ${sentencesPerSection}문장)
+3. 교육 투자 분석: 교육비환원율 비교, 장학금 지급 현황, 교원확보율과 교육의 질, 1인당 교육비 추이 (각 절 ${sentencesPerSection}문장)
+4. 학생 경쟁력 분석: 신입생 충원율 위기, 중도탈락률 원인·대응, 졸업생 취업률, 유학생 유치 현황 (각 절 ${sentencesPerSection}문장)
+5. 법인 책무성 분석: 이사회 운영 투명성, 수익용기본재산 관리, 정보공시 실태, 비리사례·개선방안 (각 절 ${sentencesPerSection}문장)
+6. 지속가능성 분석: 학령인구 감소 영향, 대학구조개혁 정책, 지방대학 위기, AI/디지털전환 전략 (각 절 ${sentencesPerSection}문장)
+7. 정책 제언: 단기(1~2년)/중기(3~5년)/장기(5년+) 정책 방안 각 2~3개씩 구체적 제시
+8. 결론: 종합 평가와 향후 전망 (${sentencesPerSection}문장)
+
+[각 절의 content 작성 패턴 — 반드시 준수]
+① 현황 서술 (3~5문장): 최근 동향과 주요 수치를 구체적으로 제시
+② 문제점 분석 (3~5문장): 구조적 원인, 제도적 한계, 이해관계자 갈등 등
+③ 근거·사례 (3~5문장): 특정 대학명, 구체적 금액/비율, 전년 대비 변화율, 수도권 vs 비수도권 비교
+④ 시사점·함의 (2~3문장): 정책적 시사점, 향후 과제
 
 [작성 지침]
-- 각 절의 content에는 현황 서술 → 문제점 분석 → 사례/수치 근거 → 시사점 도출 순으로 서술
 - 각 문장 끝에 반드시 인용: (출처명, YYYY.MM.DD) 형식
 - 한국어 학술 논문체 (경어체, "~것으로 분석된다", "~할 필요가 있다" 등)
-- 뉴스 데이터의 구체적 수치, 대학명, 정책명을 적극 인용
-- 비교 분석(전년 대비, 수도권 vs 비수도권, 국공립 vs 사립) 포함
-- executive_summary는 전체 보고서의 핵심 발견 ${Math.max(5,Math.round(pageCount/2))}문장으로 상세 요약
-- infographic_cards에 핵심 지표 6개를 구체적 숫자와 함께 제시
+- 뉴스 데이터의 구체적 수치, 대학명, 정책명을 적극 인용하여 분석의 실증적 근거를 확보
+- executive_summary: 전체 보고서의 핵심 발견 ${Math.max(8,Math.round(pageCount*0.8))}문장으로 상세 요약 (최소 400자)
+- infographic_cards: 핵심 지표 6개를 구체적 숫자와 함께 제시
+- conclusion: 최소 ${Math.max(5,Math.round(sentencesPerSection*0.8))}문장의 종합 평가
+- references: 최소 ${Math.max(8,sectionCount)}개 참고문헌
 - write_analysis_report 도구를 호출하여 결과를 반환하세요.
 
 [분석 대상: 총 ${allNews.length}건]
