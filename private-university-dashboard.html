@@ -1716,9 +1716,9 @@ let lastReportData=null;
 
 async function generateAnalysisReport(){
   const pageCount=parseInt(document.getElementById('reportPageCount').value)||10;
-  const sectionCount=Math.max(5,Math.round(pageCount*0.7));
-  const sentencesPerSection=Math.max(5,Math.round(pageCount*1.5));
-  const maxTokens=Math.min(16384,Math.max(8192,pageCount*800));
+  const sectionCount=Math.min(8,Math.max(5,Math.round(pageCount*0.4)));
+  const sentencesPerSection=Math.min(12,Math.max(5,Math.round(pageCount*0.6)));
+  const maxTokens=Math.min(12000,Math.max(6000,pageCount*500));
 
   // Infographic cards from allNews
   const majorCount={fiscal:0,invest:0,student:0,account:0,sustain:0};
@@ -1767,7 +1767,7 @@ async function generateAnalysisReport(){
 
   document.getElementById('reportGenBtn').style.display='none';
   document.getElementById('reportLoading').style.display='block';
-  document.getElementById('reportLoading').innerHTML=`<span class="spinner"></span>Claude AI가 ${pageCount}페이지 종합 정책 보고서를 작성 중입니다... (약 ${Math.max(30,pageCount*8)}초 소요)`;
+  document.getElementById('reportLoading').innerHTML=`<span class="spinner"></span>Claude AI가 ${pageCount}페이지 종합 정책 보고서를 작성 중입니다... (약 ${Math.max(30,pageCount*4)}초 소요)`;
   document.getElementById('reportBody').style.display='block';
 
   const newsByMajor={};
