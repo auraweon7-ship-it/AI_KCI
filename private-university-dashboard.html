@@ -992,6 +992,8 @@ function getFiltered(){
   if(showBookmarksOnly){const bm=getBookmarks();f=f.filter(n=>bm.includes(n.link));}
   const sort=document.getElementById('sortBy').value;
   f.sort((a,b)=>sort==='date-desc'?b.dateObj-a.dateObj:a.dateObj-b.dateObj);
+  const maxDisplay=parseInt(document.getElementById('liveSearchCount')?.value||'200',10);
+  if(f.length>maxDisplay) f=f.slice(0,maxDisplay);
   return f;
 }
 
