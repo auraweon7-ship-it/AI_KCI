@@ -583,6 +583,7 @@
     </select>
     <button class="report-gen-btn" id="reportGenBtn" onclick="generateAnalysisReport()">📝 보고서 생성</button>
     <button class="report-hwpx-btn" id="reportHwpxBtn" onclick="downloadReportHWPX()" style="display:none;">📥 HWPX 다운로드</button>
+    <button class="report-hwpx-btn" id="reportHtmlBtn" onclick="downloadReportHTML()" style="display:none;">🌐 HTML 다운로드</button>
   </div>
   <div class="ai-insight-loading" id="reportLoading" style="display:none;"><span class="spinner"></span>Claude AI가 학술 분석보고서를 작성 중입니다... (약 60초 소요)</div>
   <div class="report-body" id="reportBody" style="display:none;">
@@ -1888,6 +1889,7 @@ ${JSON.stringify(newsByMajor,null,1)}`;
 
     document.getElementById('reportLoading').style.display='none';
     document.getElementById('reportHwpxBtn').style.display='inline-block';
+    document.getElementById('reportHtmlBtn').style.display='inline-block';
     document.getElementById('reportGenBtn').style.display='inline-block';
 
   }catch(e){
@@ -1901,94 +1903,231 @@ async function downloadReportHWPX(){
   const ai=lastReportData;
   const now=new Date();
   const dateStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const NS='xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app" xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph" xmlns:hp10="http://www.hancom.co.kr/hwpml/2016/paragraph" xmlns:hs="http://www.hancom.co.kr/hwpml/2011/section" xmlns:hc="http://www.hancom.co.kr/hwpml/2011/core" xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head" xmlns:hhs="http://www.hancom.co.kr/hwpml/2011/history" xmlns:hm="http://www.hancom.co.kr/hwpml/2011/master-page" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf/" xmlns:ooxmlchart="http://www.hancom.co.kr/hwpml/2016/ooxmlchart" xmlns:hwpunitchar="http://www.hancom.co.kr/hwpml/2016/HwpUnitChar" xmlns:epub="http://www.idpf.org/2007/ops" xmlns:config="urn:oasis:names:tc:opendocument:xmlns:config:1.0"';
+  function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-  // Build section XML paragraphs
+  // Build section0.xml paragraphs
   let parasXml='';
-  function addPara(text,fontSize=1000,bold=false,charPrId='0'){
-    const escapedText=(text||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    parasXml+=`<hp:p><hp:run><hp:rPr><hp:sz val="${fontSize}" />${bold?'<hp:bold />':''}</hp:rPr><hp:t>${escapedText}</hp:t></hp:run></hp:p>\n`;
+  let isFirst=true;
+  function addPara(text,charPrId='0',paraPrId='0'){
+    const e=esc(text);
+    if(isFirst){
+      parasXml+=`<hp:p paraPrIDRef="${paraPrId}" styleIDRef="0" pageBreak="0" columnBreak="0" merged="0"><hp:run charPrIDRef="${charPrId}"><hp:secPr textDirection="HORIZONTAL" spaceColumns="1134" tabStop="8000" outlineShapeIDRef="1"><hp:grid lineGrid="0" charGrid="0" wonggojiFormat="0"/><hp:startNum pageStartsOn="BOTH" page="0"/><hp:pagePr landscape="WIDELY" width="59528" height="84186" gutterType="LEFT_ONLY"><hp:margin header="4252" footer="4252" gutter="0" left="8504" right="8504" top="5668" bottom="4252"/></hp:pagePr><hp:pageBorderFill type="BOTH" borderFillIDRef="1" textBorder="PAPER" headerInside="0" footerInside="0" fillArea="PAPER"><hp:offset left="1417" right="1417" top="1417" bottom="1417"/></hp:pageBorderFill></hp:secPr><hp:t>${e}</hp:t></hp:run></hp:p>\n`;
+      isFirst=false;
+    } else {
+      parasXml+=`<hp:p paraPrIDRef="${paraPrId}" styleIDRef="0"><hp:run charPrIDRef="${charPrId}"><hp:t>${e}</hp:t></hp:run></hp:p>\n`;
+    }
   }
+  function addEmpty(){parasXml+=`<hp:p paraPrIDRef="0" styleIDRef="0"><hp:run charPrIDRef="0"><hp:t></hp:t></hp:run></hp:p>\n`;}
 
   // Title
-  addPara(ai.title||'사립대학 재정 건전성 분석보고서',1800,true);
-  addPara(`작성일: ${dateStr} | AI 분석 보고서`,800);
-  addPara('');
+  addPara(ai.title||'사립대학 재정 건전성 분석보고서','2','2');
+  addPara(`작성일: ${dateStr} | AI 분석 보고서`,'3','0');
+  addEmpty();
+
+  // Executive Summary
+  if(ai.executive_summary){
+    addPara('요약','1','1');
+    const sumText=(ai.executive_summary||'').replace(/<[^>]+>/g,'');
+    sumText.split(/\n+/).filter(s=>s.trim()).forEach(line=>addPara(line.trim(),'0','0'));
+    addEmpty();
+  }
 
   // TOC
   if(ai.toc?.length){
-    addPara('목 차',1400,true);
-    ai.toc.forEach((t,i)=>addPara(`${i+1}. ${t}`,1000));
-    addPara('');
+    addPara('목 차','1','1');
+    ai.toc.forEach((t,i)=>addPara(`${i+1}. ${t}`,'0','0'));
+    addEmpty();
   }
 
   // Chapters
   (ai.chapters||[]).forEach((ch,ci)=>{
-    addPara(`제${ci+1}장. ${ch.title}`,1400,true);
+    addPara(`제${ci+1}장. ${ch.title}`,'1','1');
     (ch.sections||[]).forEach(s=>{
-      addPara(s.heading,1100,true);
-      const plainContent=(s.content||'').replace(/<[^>]+>/g,'');
-      addPara(plainContent,1000);
+      if(s.heading) addPara(s.heading,'1','1');
+      const plain=(s.content||'').replace(/<[^>]+>/g,'');
+      plain.split(/\n+/).filter(x=>x.trim()).forEach(line=>addPara(line.trim(),'0','0'));
     });
-    addPara('');
+    addEmpty();
   });
+
+  // Infographic data
+  if(ai.infographic_cards?.length){
+    addPara('핵심 지표','1','1');
+    ai.infographic_cards.forEach(c=>addPara(`${c.label||c.title}: ${c.value} ${c.sub||c.description||''}`,'0','0'));
+    addEmpty();
+  }
 
   // Recommendations
   if(ai.recommendations?.length){
-    addPara('정책 제언',1400,true);
-    ai.recommendations.forEach((r,i)=>addPara(`${i+1}. ${r}`,1000));
-    addPara('');
+    addPara('정책 제언','1','1');
+    ai.recommendations.forEach((r,i)=>addPara(`${i+1}. ${r}`,'0','0'));
+    addEmpty();
   }
 
   // References
   if(ai.references?.length){
-    addPara('참고문헌',1400,true);
-    ai.references.forEach((r,i)=>addPara(`[${i+1}] ${r.author} (${r.date}). "${r.title}". ${r.source}.`,900));
+    addPara('참고문헌','1','1');
+    ai.references.forEach((r,i)=>addPara(`[${i+1}] ${r.author} (${r.date}). "${r.title}". ${r.source}.`,'3','0'));
   }
 
-  const sectionXml=`<?xml version="1.0" encoding="UTF-8"?>
-<hp:sec xmlns:hp="http://www.hancom.co.kr/hwpml/2011/paragraph"
-        xmlns:hp2="http://www.hancom.co.kr/hwpml/2011/paragraph-v2">
-<hp:subList>
-${parasXml}
-</hp:subList>
-</hp:sec>`;
+  // --- Build all HWPX files ---
+  const versionXml='<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hv:HCFVersion xmlns:hv="http://www.hancom.co.kr/hwpml/2011/version" tagetApplication="WORDPROCESSOR" major="5" minor="1" micro="1" buildNumber="0" os="1" xmlVersion="1.5" application="Hancom Office Hangul" appVersion="12, 0, 0, 4426 WIN32LEWindows_10"/>';
 
-  const headerXml=`<?xml version="1.0" encoding="UTF-8"?>
-<hh:head xmlns:hh="http://www.hancom.co.kr/hwpml/2011/head">
-  <hh:beginNum page="1" footnote="1" endnote="1" />
-  <hh:refList>
-    <hh:fontfaces>
-      <hh:fontface lang="hangul"><hh:font face="함초롬돋움" /></hh:fontface>
-      <hh:fontface lang="latin"><hh:font face="함초롬돋움" /></hh:fontface>
-    </hh:fontfaces>
-  </hh:refList>
-</hh:head>`;
+  const manifestXml='<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><odf:manifest xmlns:odf="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"/>';
 
-  const contentHpf=`<?xml version="1.0" encoding="UTF-8"?>
-<hpf:hwpDocInfo xmlns:hpf="http://www.hancom.co.kr/hwpml/2011/content">
-  <hpf:sectionCnt val="1" />
-</hpf:hwpDocInfo>`;
+  const containerXml='<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><ocf:container xmlns:ocf="urn:oasis:names:tc:opendocument:xmlns:container" xmlns:hpf="http://www.hancom.co.kr/schema/2011/hpf"><ocf:rootfiles><ocf:rootfile full-path="Contents/content.hpf" media-type="application/hwpml-package+xml"/><ocf:rootfile full-path="Preview/PrvText.txt" media-type="text/plain"/></ocf:rootfiles></ocf:container>';
 
-  const manifestXml=`<?xml version="1.0" encoding="UTF-8"?>
-<manifest:manifest xmlns:manifest="urn:oasis:names:tc:opendocument:xmlns:manifest:1.0">
-  <manifest:file-entry manifest:full-path="/" manifest:media-type="application/hwp+zip" />
-  <manifest:file-entry manifest:full-path="Contents/content.hpf" manifest:media-type="application/xml" />
-  <manifest:file-entry manifest:full-path="Contents/header.xml" manifest:media-type="application/xml" />
-  <manifest:file-entry manifest:full-path="Contents/section0.xml" manifest:media-type="application/xml" />
-</manifest:manifest>`;
+  const containerRdf='<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"/>';
 
+  const reportTitle=esc(ai.title||'사립대학 재정 건전성 분석보고서');
+  const contentHpf=`<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><opf:package ${NS} version="" unique-identifier="" id=""><opf:metadata><opf:title>${reportTitle}</opf:title><opf:language>ko</opf:language><opf:meta name="creator" content="text">Claude AI</opf:meta><opf:meta name="CreatedDate" content="text">${dateStr}</opf:meta><opf:meta name="ModifiedDate" content="text">${dateStr}</opf:meta></opf:metadata><opf:manifest><opf:item id="header" href="Contents/header.xml" media-type="application/xml"/><opf:item id="section0" href="Contents/section0.xml" media-type="application/xml"/><opf:item id="settings" href="settings.xml" media-type="application/xml"/></opf:manifest><opf:spine><opf:itemref idref="header" linear="yes"/><opf:itemref idref="section0" linear="yes"/></opf:spine></opf:package>`;
+
+  const headerXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hh:head ${NS} version="1.5" secCnt="1"><hh:beginNum page="1" footnote="1" endnote="1" pic="1" tbl="1" equation="1"/><hh:refList><hh:fontfaces itemCnt="2"><hh:fontface lang="HANGUL" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="5" proportion="3" contrast="2" strokeVariation="0" armStyle="0" letterform="2" midline="0" xHeight="4"/></hh:font></hh:fontface><hh:fontface lang="LATIN" fontCnt="1"><hh:font id="0" face="맑은 고딕" type="TTF" isEmbedded="0"><hh:typeInfo familyType="FCAT_GOTHIC" weight="5" proportion="3" contrast="2" strokeVariation="0" armStyle="0" letterform="2" midline="0" xHeight="4"/></hh:font></hh:fontface></hh:fontfaces><hh:borderFills itemCnt="1"><hh:borderFill id="1" threeD="0" shadow="0" centerLine="NONE" breakCellSeparateLine="0"><hh:slash type="NONE" crooked="0" isCounter="0"/><hh:backSlash type="NONE" crooked="0" isCounter="0"/><hh:leftBorder type="NONE" width="0.1 mm" color="#000000"/><hh:rightBorder type="NONE" width="0.1 mm" color="#000000"/><hh:topBorder type="NONE" width="0.1 mm" color="#000000"/><hh:bottomBorder type="NONE" width="0.1 mm" color="#000000"/><hh:diagonal type="NONE" width="0.1 mm" color="#000000"/></hh:borderFill></hh:borderFills><hh:charProperties itemCnt="4"><hh:charPr id="0" height="1000" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="1"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/></hh:charPr><hh:charPr id="1" height="1400" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="1" bold="1"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/></hh:charPr><hh:charPr id="2" height="1800" textColor="#000000" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="1" bold="1"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/></hh:charPr><hh:charPr id="3" height="900" textColor="#666666" shadeColor="none" useFontSpace="0" useKerning="0" symMark="NONE" borderFillIDRef="1"><hh:fontRef hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:ratio hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:spacing hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/><hh:relSz hangul="100" latin="100" hanja="100" japanese="100" other="100" symbol="100" user="100"/><hh:offset hangul="0" latin="0" hanja="0" japanese="0" other="0" symbol="0" user="0"/></hh:charPr></hh:charProperties><hh:tabProperties itemCnt="1"><hh:tabPr id="0" autoTabLeft="0" autoTabRight="0"/></hh:tabProperties><hh:paraProperties itemCnt="3"><hh:paraPr id="0" tabPrIDRef="0" condense="0"><hh:align horizontal="JUSTIFY" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:margin indent="0" left="0" right="0" prev="0" next="0"/><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hh:paraPr><hh:paraPr id="1" tabPrIDRef="0" condense="0"><hh:align horizontal="LEFT" vertical="BASELINE"/><hh:heading type="OUTLINE" idRef="0" level="0"/><hh:margin indent="0" left="0" right="0" prev="400" next="200"/><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hh:paraPr><hh:paraPr id="2" tabPrIDRef="0" condense="0"><hh:align horizontal="CENTER" vertical="BASELINE"/><hh:heading type="NONE" idRef="0" level="0"/><hh:margin indent="0" left="0" right="0" prev="800" next="400"/><hh:lineSpacing type="PERCENT" value="160" unit="HWPUNIT"/></hh:paraPr></hh:paraProperties></hh:refList></hh:head>`;
+
+  const sectionXml=`<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><hs:sec ${NS}>\n${parasXml}</hs:sec>`;
+
+  const settingsXml='<?xml version="1.0" encoding="UTF-8" standalone="yes" ?><ha:HWPApplicationSetting xmlns:ha="http://www.hancom.co.kr/hwpml/2011/app"><ha:CaretPosition list="0" para="0" pos="0"/></ha:HWPApplicationSetting>';
+
+  // Preview text
+  const prvText=(ai.title||'분석보고서')+'\n'+(ai.executive_summary||'').replace(/<[^>]+>/g,'').substring(0,500);
+
+  // --- Assemble ZIP ---
   const zip=new JSZip();
-  zip.file('mimetype','application/hwp+zip');
-  zip.folder('META-INF').file('manifest.xml',manifestXml);
+  zip.file('mimetype','application/hwp+zip',{compression:'STORE'});
+  zip.file('version.xml',versionXml);
+  zip.file('settings.xml',settingsXml);
+  const metaInf=zip.folder('META-INF');
+  metaInf.file('manifest.xml',manifestXml);
+  metaInf.file('container.xml',containerXml);
+  metaInf.file('container.rdf',containerRdf);
   const contents=zip.folder('Contents');
   contents.file('content.hpf',contentHpf);
   contents.file('header.xml',headerXml);
   contents.file('section0.xml',sectionXml);
+  zip.folder('Preview').file('PrvText.txt',prvText);
 
   const blob=await zip.generateAsync({type:'blob',mimeType:'application/hwp+zip'});
   const a=document.createElement('a');
   a.href=URL.createObjectURL(blob);
   a.download=`분석보고서_${dateStr}.hwpx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+function downloadReportHTML(){
+  if(!lastReportData){alert('먼저 보고서를 생성하세요.');return;}
+  const ai=lastReportData;
+  const now=new Date();
+  const dateStr=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  function esc(t){return(t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+  let body='';
+
+  // Title
+  body+=`<h1 style="text-align:center;font-size:24px;margin-bottom:4px;">${esc(ai.title||'사립대학 재정 건전성 분석보고서')}</h1>\n`;
+  body+=`<p style="text-align:center;color:#888;font-size:13px;margin-bottom:30px;">작성일: ${dateStr} | AI 분석 보고서</p>\n`;
+
+  // Executive summary
+  if(ai.executive_summary){
+    body+=`<div style="background:#f0f4ff;border-left:4px solid #3b82f6;padding:16px 20px;margin:20px 0;border-radius:4px;"><h3 style="margin-top:0;color:#1e40af;">요약</h3><p style="margin-bottom:0;line-height:1.8;">${ai.executive_summary}</p></div>\n`;
+  }
+
+  // TOC
+  if(ai.toc?.length){
+    body+=`<div style="background:#fafafa;padding:16px 24px;margin:20px 0;border:1px solid #e5e5e5;border-radius:4px;"><h3 style="margin-top:0;">목 차</h3><ol style="margin-bottom:0;">\n`;
+    ai.toc.forEach(t=>{body+=`<li style="margin:4px 0;">${esc(t)}</li>\n`;});
+    body+=`</ol></div>\n`;
+  }
+
+  // Infographic cards
+  if(ai.infographic_cards?.length){
+    body+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin:24px 0;">\n`;
+    const cardColors=['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899'];
+    ai.infographic_cards.forEach((c,i)=>{
+      const col=cardColors[i%cardColors.length];
+      body+=`<div style="background:${col}11;border:1px solid ${col}44;border-radius:8px;padding:16px;text-align:center;"><div style="font-size:12px;color:#666;margin-bottom:4px;">${esc(c.label||c.title||'')}</div><div style="font-size:24px;font-weight:bold;color:${col};">${esc(String(c.value||''))}</div><div style="font-size:11px;color:#999;margin-top:4px;">${esc(c.sub||c.description||'')}</div></div>\n`;
+    });
+    body+=`</div>\n`;
+  }
+
+  // Chapters
+  (ai.chapters||[]).forEach((ch,ci)=>{
+    body+=`<h2 style="border-bottom:2px solid #333;padding-bottom:6px;margin-top:36px;">제${ci+1}장. ${esc(ch.title)}</h2>\n`;
+    (ch.sections||[]).forEach(s=>{
+      if(s.heading) body+=`<h3 style="color:#1e40af;margin-top:20px;">${esc(s.heading)}</h3>\n`;
+      body+=`<div style="line-height:1.9;text-align:justify;margin-bottom:12px;">${s.content||''}</div>\n`;
+      if(s.table){
+        body+=`<table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:13px;">`;
+        if(s.table.headers?.length){
+          body+=`<thead><tr>${s.table.headers.map(h=>`<th style="border:1px solid #ccc;padding:8px;background:#f5f5f5;text-align:left;">${esc(h)}</th>`).join('')}</tr></thead>`;
+        }
+        if(s.table.rows?.length){
+          body+=`<tbody>${s.table.rows.map(row=>`<tr>${(Array.isArray(row)?row:Object.values(row)).map(cell=>`<td style="border:1px solid #ccc;padding:8px;">${esc(String(cell))}</td>`).join('')}</tr>`).join('')}</tbody>`;
+        }
+        body+=`</table>\n`;
+      }
+    });
+  });
+
+  // Chart data as table
+  if(ai.chart_data){
+    body+=`<h2 style="border-bottom:2px solid #333;padding-bottom:6px;margin-top:36px;">데이터 차트</h2>\n`;
+    if(ai.chart_data.trend){
+      body+=`<h3>영역별 기사 분포</h3><table style="width:100%;border-collapse:collapse;margin:12px 0;font-size:13px;"><thead><tr><th style="border:1px solid #ccc;padding:8px;background:#f5f5f5;">영역</th><th style="border:1px solid #ccc;padding:8px;background:#f5f5f5;">건수</th></tr></thead><tbody>`;
+      const labels=ai.chart_data.trend.labels||[];
+      const values=ai.chart_data.trend.data||ai.chart_data.trend.values||[];
+      labels.forEach((l,i)=>{body+=`<tr><td style="border:1px solid #ccc;padding:8px;">${esc(l)}</td><td style="border:1px solid #ccc;padding:8px;">${values[i]||0}</td></tr>`;});
+      body+=`</tbody></table>\n`;
+    }
+  }
+
+  // Recommendations
+  if(ai.recommendations?.length){
+    body+=`<h2 style="border-bottom:2px solid #333;padding-bottom:6px;margin-top:36px;">정책 제언</h2>\n<ol style="line-height:2;">\n`;
+    ai.recommendations.forEach(r=>{body+=`<li>${esc(r)}</li>\n`;});
+    body+=`</ol>\n`;
+  }
+
+  // References
+  if(ai.references?.length){
+    body+=`<h2 style="border-bottom:2px solid #333;padding-bottom:6px;margin-top:36px;">참고문헌</h2>\n<div style="font-size:13px;color:#555;line-height:2;">\n`;
+    ai.references.forEach((r,i)=>{body+=`<p style="margin:2px 0;text-indent:-2em;padding-left:2em;">[${i+1}] ${esc(r.author)} (${esc(r.date)}). &ldquo;${esc(r.title)}&rdquo;. <em>${esc(r.source)}</em>.</p>\n`;});
+    body+=`</div>\n`;
+  }
+
+  const html=`<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>${esc(ai.title||'분석보고서')}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Noto Serif KR','Batang',Georgia,serif;background:#fff;color:#222;max-width:800px;margin:0 auto;padding:40px 32px;line-height:1.8;font-size:15px;}
+h1{font-size:24px;}h2{font-size:18px;}h3{font-size:15px;}
+table{page-break-inside:avoid;}
+@media print{
+  body{padding:20px;font-size:12px;max-width:100%;}
+  h1{font-size:20px;}h2{font-size:16px;page-break-after:avoid;}h3{font-size:13px;page-break-after:avoid;}
+  div[style*="grid"]{display:block!important;}
+  div[style*="grid"]>div{display:inline-block;width:30%;margin:4px;vertical-align:top;}
+}
+</style>
+</head>
+<body>
+${body}
+<hr style="margin-top:40px;border:none;border-top:1px solid #ccc;">
+<p style="text-align:center;font-size:11px;color:#aaa;margin-top:12px;">본 보고서는 AI(Claude)가 생성한 분석 자료입니다. | ${dateStr}</p>
+</body>
+</html>`;
+
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`분석보고서_${dateStr}.html`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
