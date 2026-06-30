@@ -1111,26 +1111,26 @@ function clearWordCloudSearch(){document.getElementById('searchInput').value='';
 
 function renderMajorChart(f){
   const counts=MAJOR_IDS.map(id=>f.filter(n=>n.major===id).length);
+  if(chartMajorInst){chartMajorInst.data.datasets[0].data=counts;chartMajorInst.update('none');return;}
   const ctx=document.getElementById('chartMajor');
-  if(chartMajorInst)chartMajorInst.destroy();
-  chartMajorInst=new Chart(ctx,{type:'doughnut',data:{labels:MAJOR_NAMES,datasets:[{data:counts,backgroundColor:CHART_COLORS,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#e4e6eb',font:{size:12},padding:12,usePointStyle:true}}}}});
+  chartMajorInst=new Chart(ctx,{type:'doughnut',data:{labels:MAJOR_NAMES,datasets:[{data:counts,backgroundColor:CHART_COLORS,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},plugins:{legend:{display:true,position:'bottom',labels:{color:'#e4e6eb',font:{size:12},padding:12,usePointStyle:true}}}}});
 }
 
 function renderSourceChart(f){
   const sc={};f.forEach(n=>{sc[n.source]=(sc[n.source]||0)+1;});
   const sorted=Object.entries(sc).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  if(chartSourceInst){chartSourceInst.data.labels=sorted.map(s=>s[0]);chartSourceInst.data.datasets[0].data=sorted.map(s=>s[1]);chartSourceInst.update('none');return;}
   const ctx=document.getElementById('chartSource');
-  if(chartSourceInst)chartSourceInst.destroy();
-  chartSourceInst=new Chart(ctx,{type:'bar',data:{labels:sorted.map(s=>s[0]),datasets:[{data:sorted.map(s=>s[1]),backgroundColor:'#6c5ce7',borderRadius:6,barThickness:18}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#e4e6eb',font:{size:11}},grid:{color:'#2d314830'}},y:{ticks:{color:'#e4e6eb',font:{size:12}},grid:{display:false}}}}});
+  chartSourceInst=new Chart(ctx,{type:'bar',data:{labels:sorted.map(s=>s[0]),datasets:[{data:sorted.map(s=>s[1]),backgroundColor:'#6c5ce7',borderRadius:6,barThickness:18}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#e4e6eb',font:{size:11}},grid:{color:'#2d314830'}},y:{ticks:{color:'#e4e6eb',font:{size:12}},grid:{display:false}}}}});
 }
 
 function renderTimelineChart(f){
   const dc={};f.forEach(n=>{const d=n.pubDate.slice(0,10);dc[d]=(dc[d]||0)+1;});
   const sorted=Object.entries(dc).sort((a,b)=>a[0].localeCompare(b[0]));
   const labels=sorted.map(s=>s[0].slice(5));
+  if(chartTimelineInst){chartTimelineInst.data.labels=labels;chartTimelineInst.data.datasets[0].data=sorted.map(s=>s[1]);chartTimelineInst.update('none');return;}
   const ctx=document.getElementById('chartTimeline');
-  if(chartTimelineInst)chartTimelineInst.destroy();
-  chartTimelineInst=new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:sorted.map(s=>s[1]),backgroundColor:'rgba(162,155,254,0.6)',borderColor:'#a29bfe',borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#e4e6eb',font:{size:9},maxRotation:60,minRotation:40},grid:{display:false}},y:{ticks:{color:'#e4e6eb',font:{size:11},stepSize:1},grid:{color:'#2d314830'}}}}});
+  chartTimelineInst=new Chart(ctx,{type:'bar',data:{labels,datasets:[{data:sorted.map(s=>s[1]),backgroundColor:'rgba(162,155,254,0.6)',borderColor:'#a29bfe',borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#e4e6eb',font:{size:9},maxRotation:60,minRotation:40},grid:{display:false}},y:{ticks:{color:'#e4e6eb',font:{size:11},stepSize:1},grid:{color:'#2d314830'}}}}});
 }
 
 // ═══ API Key Modal (통합) ═══
@@ -2194,9 +2194,9 @@ function renderSentimentGauge(f){
     `<span><span class="sentiment-dot" style="background:#10b981"></span>긍정 ${pP}%</span>`+
     `<span><span class="sentiment-dot" style="background:#6b7280"></span>중립 ${pNeu}%</span>`+
     `<span><span class="sentiment-dot" style="background:#ef4444"></span>부정 ${pN}%</span>`;
+  if(chartSentimentInst){chartSentimentInst.data.datasets[0].data=[pos,neu,neg];chartSentimentInst.update('none');return;}
   const ctx=document.getElementById('chartSentiment');
-  if(chartSentimentInst)chartSentimentInst.destroy();
-  chartSentimentInst=new Chart(ctx,{type:'doughnut',data:{labels:['긍정','중립','부정'],datasets:[{data:[pos,neu,neg],backgroundColor:['#10b981','#6b7280','#ef4444'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,rotation:-90,circumference:180,cutout:'70%',plugins:{legend:{display:false}}}});
+  chartSentimentInst=new Chart(ctx,{type:'doughnut',data:{labels:['긍정','중립','부정'],datasets:[{data:[pos,neu,neg],backgroundColor:['#10b981','#6b7280','#ef4444'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},rotation:-90,circumference:180,cutout:'70%',plugins:{legend:{display:false}}}});
 }
 
 // 기간 초기값: 실행하는 월의 1일~말일
