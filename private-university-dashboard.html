@@ -1717,6 +1717,8 @@ let lastReportData=null;
 async function generateAnalysisReport(){
   const pageCount=parseInt(document.getElementById('reportPageCount').value)||10;
   const sectionCount=Math.max(5,Math.round(pageCount*0.7));
+  const sentencesPerSection=Math.max(5,Math.round(pageCount*1.5));
+  const maxTokens=Math.min(16384,Math.max(8192,pageCount*800));
 
   // Infographic cards from allNews
   const majorCount={fiscal:0,invest:0,student:0,account:0,sustain:0};
@@ -1765,7 +1767,7 @@ async function generateAnalysisReport(){
 
   document.getElementById('reportGenBtn').style.display='none';
   document.getElementById('reportLoading').style.display='block';
-  document.getElementById('reportLoading').innerHTML='<span class="spinner"></span>Claude AI가 학술 분석보고서를 작성 중입니다... (약 60초 소요)';
+  document.getElementById('reportLoading').innerHTML=`<span class="spinner"></span>Claude AI가 ${pageCount}페이지 종합 정책 보고서를 작성 중입니다... (약 ${Math.max(30,pageCount*8)}초 소요)`;
   document.getElementById('reportBody').style.display='block';
 
   const newsByMajor={};
@@ -1799,7 +1801,7 @@ async function generateAnalysisReport(){
               text:{type:'string'},source:{type:'string'},date:{type:'string'}
             },required:['text','source','date']}}
           },required:['heading','content','citations']}}
-        },required:['title','sections']},description:`${sectionCount}개 이상의 장. 각 장은 2~3개 세부 절(section)로 구성하고, 각 절의 content는 반드시 3문장 이상 상세히 작성할 것`},
+        },required:['title','sections']},description:`${sectionCount}개 이상의 장. 각 장은 ${sectionsPerChapter}~${sectionsPerChapter+1}개 세부 절로 구성. 각 절의 content는 반드시 ${sentencesPerSection}문장 이상 심층 분석 (현황→문제점→근거→시사점)`},
         recommendations:{type:'array',items:{type:'string'},description:'정책 제언 5~8개'},
         conclusion:{type:'string',description:'결론 요약 (3~5문장)'},
         executive_summary:{type:'string',description:'핵심 요약 (5~8문장, 주요 발견과 시사점을 포함하는 상세 요약)'},
@@ -1811,24 +1813,34 @@ async function generateAnalysisReport(){
     }
   };
 
-  const prompt=`당신은 한국 고등교육 정책 분석 전문 연구자입니다. 아래 뉴스 데이터를 바탕으로 "${pageCount}페이지 분량"의 종합 정책 분석보고서를 작성하세요.
+  const sectionsPerChapter=Math.max(2,Math.round(pageCount/sectionCount*1.2));
 
-[보고서 구조 - 반드시 5개 이상 하위 분류로 나누어 작성]
-1. 서론: 분석 배경과 목적 (2~3단락, 각 단락 3~5문장)
-2. 재정 건전성 분석: 등록금, 법인전입금, 적립금, 부채 현황 (3~4단락)
-3. 교육 투자 분석: 교육비환원율, 장학금, 교원확보율, 1인당 교육비 (3~4단락)
-4. 학생 경쟁력 분석: 충원율, 중도탈락률, 취업률, 유학생 (3~4단락)
-5. 법인 책무성 분석: 이사회, 수익용기본재산, 정보공시, 비리 (3~4단락)
-6. 지속가능성 분석: 학령인구, 구조개혁, 지방대학, AI/디지털전환 (3~4단락)
-7. 정책 제언 및 결론: 구체적 정책 방안 5~8개
+  const prompt=`당신은 한국 고등교육 정책 분석 전문 연구자입니다. 아래 뉴스 데이터를 바탕으로 **정확히 ${pageCount}페이지 분량**의 종합 정책 분석보고서를 작성하세요.
+
+⚠️ 분량 요구사항 (가장 중요):
+- 총 ${sectionCount}개 장, 각 장 ${sectionsPerChapter}~${sectionsPerChapter+1}개 세부 절
+- 각 절의 content는 반드시 **${sentencesPerSection}문장 이상** 작성 (짧은 요약이 아닌 심층 분석)
+- 한 페이지 ≈ 약 500자 기준, 총 ${pageCount*500}자 이상의 본문 분량
+- 목차나 제목만 나열하지 말 것. 모든 절에 실질적 분석 본문을 풍부하게 작성
+
+[보고서 구조 - 반드시 5개 이상 하위 분류]
+1. 서론: 연구 배경, 분석 목적, 연구 방법론, 분석 범위 (${sentencesPerSection}문장 이상)
+2. 재정 건전성 분석: 등록금 현황과 추이, 법인전입금 실태, 적립금 규모, 부채비율 변화 (각 절 ${sentencesPerSection}문장 이상)
+3. 교육 투자 분석: 교육비환원율 비교, 장학금 지급 현황, 교원확보율과 교육의 질, 1인당 교육비 추이 (각 절 ${sentencesPerSection}문장 이상)
+4. 학생 경쟁력 분석: 신입생 충원율 위기, 중도탈락률 원인과 대응, 졸업생 취업률 분석, 유학생 유치 현황 (각 절 ${sentencesPerSection}문장 이상)
+5. 법인 책무성 분석: 이사회 운영 투명성, 수익용기본재산 관리, 정보공시 실태, 비리사례와 개선방안 (각 절 ${sentencesPerSection}문장 이상)
+6. 지속가능성 분석: 학령인구 감소 영향, 대학구조개혁 정책, 지방대학 위기, AI/디지털전환 전략 (각 절 ${sentencesPerSection}문장 이상)
+7. 정책 제언: 단기/중기/장기 정책 방안 각 2~3개씩 구체적으로 제시
+8. 결론: 종합 평가와 향후 전망 (${sentencesPerSection}문장 이상)
 
 [작성 지침]
-- 각 장(chapter)은 2~3개 세부 절(section)로 구성
-- 각 절의 content는 반드시 3~5문장 이상의 실질적 분석 본문 작성 (제목만 쓰지 말 것)
+- 각 절의 content에는 현황 서술 → 문제점 분석 → 사례/수치 근거 → 시사점 도출 순으로 서술
 - 각 문장 끝에 반드시 인용: (출처명, YYYY.MM.DD) 형식
-- 한국어 학술 논문체, 구체적 수치와 데이터 근거 사용
-- executive_summary는 전체 보고서의 핵심 발견과 시사점을 5~8문장으로 요약
-- infographic_cards에 핵심 지표 6개를 숫자 중심으로 제시
+- 한국어 학술 논문체 (경어체, "~것으로 분석된다", "~할 필요가 있다" 등)
+- 뉴스 데이터의 구체적 수치, 대학명, 정책명을 적극 인용
+- 비교 분석(전년 대비, 수도권 vs 비수도권, 국공립 vs 사립) 포함
+- executive_summary는 전체 보고서의 핵심 발견 ${Math.max(5,Math.round(pageCount/2))}문장으로 상세 요약
+- infographic_cards에 핵심 지표 6개를 구체적 숫자와 함께 제시
 - write_analysis_report 도구를 호출하여 결과를 반환하세요.
 
 [분석 대상: 총 ${allNews.length}건]
@@ -1840,7 +1852,7 @@ ${JSON.stringify(newsByMajor,null,1)}`;
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8192,messages:[{role:'user',content:prompt}],tools:[toolSchema],tool_choice:{type:'tool',name:'write_analysis_report'}})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:maxTokens,messages:[{role:'user',content:prompt}],tools:[toolSchema],tool_choice:{type:'tool',name:'write_analysis_report'}})
     });
     if(!res.ok){
       const errText=await res.text();
