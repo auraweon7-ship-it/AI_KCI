@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>사립대학교 권역별 지도</title>
+<style>
+:root {
+  --bg: #0d1117; --bg2: #161b22; --card: #1c2128; --border: #30363d;
+  --accent: #6c5ce7; --accent2: #a29bfe; --text: #e6edf3; --text-dim: #8b949e;
+  --radius: 10px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans KR', -apple-system, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
+
+.header {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 0 1.5rem; height: 52px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+}
+.back-btn {
+  padding: 6px 12px; background: var(--card); border: 1px solid var(--border);
+  border-radius: 7px; color: var(--text-dim); font-size: 0.82rem; cursor: pointer; text-decoration: none;
+  display: flex; align-items: center; gap: 5px;
+}
+.back-btn:hover { border-color: var(--accent); color: var(--accent2); }
+.title { font-size: 1rem; font-weight: 700; }
+.stats { margin-left: auto; font-size: 0.8rem; color: var(--text-dim); }
+
+/* Filter bar */
+.filter-bar {
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+  padding: 8px 1.5rem; display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap;
+}
+.filter-label { font-size: 0.78rem; color: var(--text-dim); font-weight: 700; margin-right: 4px; }
+.filter-chip {
+  padding: 4px 12px; border-radius: 20px; border: 1.5px solid var(--border);
+  background: none; color: var(--text-dim); font-size: 0.78rem; cursor: pointer;
+  transition: all .15s; white-space: nowrap;
+}
+.filter-chip:hover { border-color: var(--accent); color: var(--accent2); }
+.filter-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+/* Main layout */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* Sidebar list */
+.sidebar {
+  width: 280px; min-width: 240px; background: var(--bg2); border-right: 1px solid var(--border);
+  overflow-y: auto; flex-shrink: 0;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.region-group { border-bottom: 1px solid var(--border); }
+.region-header {
+  padding: 10px 16px; background: var(--bg); display: flex; align-items: center;
+  justify-content: space-between; cursor: pointer; position: sticky; top: 0; z-index: 1;
+}
+.region-header:hover { background: var(--card); }
+.region-name { font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.region-badge {
+  font-size: 0.7rem; padding: 2px 7px; border-radius: 10px; font-weight: 600;
+}
+.region-toggle { color: var(--text-dim); font-size: 0.7rem; }
+.univ-list { display: none; }
+.univ-list.open { display: block; }
+.univ-item {
+  padding: 7px 16px 7px 32px; font-size: 0.8rem; color: var(--text-dim);
+  cursor: pointer; display: flex; align-items: center; gap: 8px; border-left: 3px solid transparent;
+  transition: all .1s;
+}
+.univ-item:hover { background: var(--card); color: var(--text); border-left-color: var(--accent); }
+.univ-item.selected { background: var(--card); color: var(--accent2); border-left-color: var(--accent); font-weight: 600; }
+.est-badge {
+  font-size: 0.65rem; padding: 1px 5px; border-radius: 3px; flex-shrink: 0;
+}
+.est-사립 { background: rgba(108,92,231,.2); color: #a29bfe; }
+.est-국립, .est-국립대법인 { background: rgba(63,185,80,.2); color: #3fb950; }
+.est-공립 { background: rgba(88,166,255,.2); color: #58a6ff; }
+.est-특별법법인 { background: rgba(248,180,0,.2); color: #f8b400; }
+
+/* Map */
+#map { flex: 1; }
+.map-placeholder {
+  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 16px; color: var(--text-dim);
+}
+.api-key-box {
+  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 24px; max-width: 480px; width: 90%;
+}
+.api-key-box h3 { font-size: 1rem; margin-bottom: 12px; color: var(--text); }
+.api-key-box p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 12px; }
+.api-input {
+  width: 100%; padding: 9px 12px; background: var(--bg3, #21262d); border: 1.5px solid var(--border);
+  border-radius: 8px; color: var(--text); font-size: 0.88rem; outline: none; margin-bottom: 10px;
+}
+.api-input:focus { border-color: var(--accent); }
+.apply-btn {
+  width: 100%; padding: 9px; background: var(--accent); border: none; border-radius: 8px;
+  color: #fff; font-weight: 700; font-size: 0.9rem; cursor: pointer;
+}
+.apply-btn:hover { opacity: .85; }
+.step-list { margin: 12px 0; padding-left: 1.2rem; }
+.step-list li { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 6px; line-height: 1.5; }
+.step-list li strong { color: var(--accent2); }
+.step-list a { color: var(--accent-blue, #58a6ff); }
+
+/* Info window */
+.gm-info { font-family: 'Noto Sans KR', sans-serif; min-width: 160px; }
+.gm-info .name { font-weight: 700; font-size: 1rem; color: #1a1a2e; margin-bottom: 4px; }
+.gm-info .region { font-size: .82rem; font-weight: 600; margin-bottom: 2px; }
+.gm-info .est { font-size: .78rem; color: #555; margin-top: 2px; }
+.gm-info-table { width: 100%; border-collapse: collapse; margin: 8px 0 4px; font-size: .8rem; }
+.gm-info-table tr td { padding: 3px 4px; color: #333; vertical-align: top; }
+.gm-info-table .gm-label { color: #888; font-weight: 600; white-space: nowrap; padding-right: 8px; }
+.gm-info .links { margin-top: 10px; display: flex; gap: 8px; }
+.gm-info .links a {
+  font-size: .78rem; color: #fff; background: #6c5ce7; text-decoration: none;
+  padding: 4px 10px; border-radius: 6px; font-weight: 600;
+}
+.gm-info .links a:hover { background: #5a4ed1; }
+
+/* Search overlay */
+.map-search {
+  position: absolute; top: 12px; left: 50%; transform: translateX(-50%); z-index: 100;
+  background: white; border-radius: 24px; padding: 8px 16px; display: flex; gap: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.3); width: 320px;
+}
+.map-search input { border: none; outline: none; flex: 1; font-size: .88rem; }
+.map-search button { background: none; border: none; cursor: pointer; color: #6c5ce7; font-size: 1rem; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <a class="back-btn" href="index.html">← 홈</a>
+  <div class="title">🗺 사립대학교 권역별 지도</div>
+  <div class="stats" id="statsText">총 199개 대학교</div>
+</div>
+
+<div class="filter-bar">
+  <span class="filter-label">권역:</span>
+  <button class="filter-chip active" data-region="all" onclick="filterRegion('all',this)">전체</button>
+  <button class="filter-chip" data-region="수도권" onclick="filterRegion('수도권',this)">🏙 수도권</button>
+  <button class="filter-chip" data-region="충청권" onclick="filterRegion('충청권',this)">🌾 충청권</button>
+  <button class="filter-chip" data-region="영남권" onclick="filterRegion('영남권',this)">⛰ 영남권</button>
+  <button class="filter-chip" data-region="호남권" onclick="filterRegion('호남권',this)">🌊 호남권</button>
+  <button class="filter-chip" data-region="강원권" onclick="filterRegion('강원권',this)">🏔 강원권</button>
+  <button class="filter-chip" data-region="제주권" onclick="filterRegion('제주권',this)">🏝 제주권</button>
+  <span class="filter-label" style="margin-left:12px;">설립:</span>
+  <button class="filter-chip active" data-est="all" onclick="filterEst('all',this)">전체</button>
+  <button class="filter-chip" data-est="사립" onclick="filterEst('사립',this)">사립</button>
+  <button class="filter-chip" data-est="국립" onclick="filterEst('국립',this)">국립</button>
+</div>
+
+<div class="main">
+  <div class="sidebar" id="sidebar"></div>
+
+  <div id="mapContainer" style="flex:1;position:relative;">
+    <!-- Map loads here after API key entered -->
+    <div class="map-placeholder" id="mapPlaceholder">
+      <div style="font-size:3rem;">🗺</div>
+      <div class="api-key-box">
+        <h3>🔑 Google Maps API Key 필요</h3>
+        <p>지도를 표시하려면 Google Maps JavaScript API 키가 필요합니다.</p>
+        <ol class="step-list">
+          <li><strong>Google Cloud Console</strong> 접속: <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a></li>
+          <li>프로젝트 생성 또는 선택</li>
+          <li><strong>APIs & Services → Library</strong>에서 다음 API 활성화:
+            <ul style="margin-top:4px;padding-left:1rem;">
+              <li><strong>Maps JavaScript API</strong> (지도 표시)</li>
+              <li><strong>Geocoding API</strong> (주소→좌표, 선택)</li>
+            </ul>
+          </li>
+          <li><strong>Credentials → Create Credentials → API Key</strong></li>
+          <li>API 키 제한 설정: HTTP 리퍼러(웹사이트) 또는 IP 주소로 제한 권장</li>
+        </ol>
+        <input class="api-input" type="text" id="apiKeyInput" placeholder="AIzaSy... (Google Maps API Key)" value="">
+        <button class="apply-btn" onclick="applyApiKey()">🗺 지도 불러오기</button>
+        <p style="font-size:.75rem;color:#666;margin-top:8px;">키는 브라우저 로컬에 저장됩니다. 무료 할당량: 월 $200 크레딧 제공.</p>
+      </div>
+    </div>
+    <div id="map" style="width:100%;height:100%;display:none;"></div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+const UNIVERSITIES = [
+  // 강원
+  {name:'가톨릭관동대학교', region:'강원', gwon:'강원권', est:'사립', lat:37.7553, lng:128.9015},
+  {name:'강원대학교', region:'강원', gwon:'강원권', est:'국립', lat:37.8680, lng:127.7428},
+  {name:'경동대학교', region:'강원', gwon:'강원권', est:'사립', lat:37.9012, lng:128.8156},
+  {name:'국립강릉원주대학교', region:'강원', gwon:'강원권', est:'국립', lat:37.7519, lng:128.8761},
+  {name:'상지대학교', region:'강원', gwon:'강원권', est:'사립', lat:37.3394, lng:127.9250},
+  {name:'연세대학교(미래)_분교', region:'강원', gwon:'강원권', est:'사립', lat:37.3448, lng:127.9468},
+  {name:'춘천교육대학교', region:'강원', gwon:'강원권', est:'국립', lat:37.8728, lng:127.7334},
+  {name:'한라대학교', region:'강원', gwon:'강원권', est:'사립', lat:37.3273, lng:127.9418},
+  {name:'한림대학교', region:'강원', gwon:'강원권', est:'사립', lat:37.8853, lng:127.7266},
+  // 경기
+  {name:'가천대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.4519, lng:127.1276},
+  {name:'가톨릭대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.4862, lng:126.9735},
+  {name:'강남대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.2002, lng:127.0742},
+  {name:'경기대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.2619, lng:126.9992},
+  {name:'단국대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.3215, lng:127.1049},
+  {name:'대진대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.9011, lng:127.0597},
+  {name:'루터대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.3954, lng:127.0540},
+  {name:'명지대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.2223, lng:126.9702},
+  {name:'서울신학대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.5038, lng:126.7662},
+  {name:'서울장신대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.4052, lng:127.1050},
+  {name:'성결대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.3937, lng:126.9241},
+  {name:'수원가톨릭대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.2876, lng:127.0158},
+  {name:'수원대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.2568, lng:126.9767},
+  {name:'신한대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.7256, lng:127.0455},
+  {name:'아신대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.4172, lng:127.2574},
+  {name:'아주대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.2792, lng:127.0449},
+  {name:'안양대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.4007, lng:126.9245},
+  {name:'용인대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.2301, lng:127.1926},
+  {name:'차의과학대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.4823, lng:127.1265},
+  {name:'칼빈대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.2084, lng:127.0238},
+  {name:'평택대학교', region:'경기', gwon:'수도권', est:'사립', lat:36.9924, lng:127.0925},
+  {name:'한경국립대학교', region:'경기', gwon:'수도권', est:'국립', lat:37.0148, lng:126.9712},
+  {name:'한국공학대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.3307, lng:127.0893},
+  {name:'한국항공대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.5991, lng:126.8645},
+  {name:'한세대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.3753, lng:126.9284},
+  {name:'한신대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.0196, lng:127.0657},
+  {name:'한양대학교(ERICA)_분교', region:'경기', gwon:'수도권', est:'사립', lat:37.2958, lng:126.8358},
+  {name:'협성대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.1953, lng:127.0427},
+  {name:'화성의과학대학교', region:'경기', gwon:'수도권', est:'사립', lat:37.1934, lng:126.8273},
+  // 경남
+  {name:'가야대학교', region:'경남', gwon:'영남권', est:'사립', lat:35.5376, lng:128.2152},
+  {name:'경남대학교', region:'경남', gwon:'영남권', est:'사립', lat:35.2253, lng:128.6840},
+  {name:'경상국립대학교', region:'경남', gwon:'영남권', est:'국립', lat:35.1519, lng:128.0991},
+  {name:'국립창원대학교', region:'경남', gwon:'영남권', est:'국립', lat:35.2388, lng:128.6921},
+  {name:'부산장신대학교', region:'경남', gwon:'영남권', est:'사립', lat:35.1951, lng:128.6421},
+  {name:'영산대학교', region:'경남', gwon:'영남권', est:'사립', lat:35.2456, lng:128.8697},
+  {name:'인제대학교', region:'경남', gwon:'영남권', est:'사립', lat:35.2294, lng:128.8832},
+  {name:'진주교육대학교', region:'경남', gwon:'영남권', est:'국립', lat:35.1810, lng:128.0867},
+  {name:'창신대학교', region:'경남', gwon:'영남권', est:'사립', lat:35.2219, lng:128.5734},
+  // 경북
+  {name:'경운대학교', region:'경북', gwon:'영남권', est:'사립', lat:36.0142, lng:128.4107},
+  {name:'경일대학교', region:'경북', gwon:'영남권', est:'사립', lat:36.0201, lng:128.5234},
+  {name:'국립경국대학교', region:'경북', gwon:'영남권', est:'국립', lat:36.5867, lng:128.7329},
+  {name:'국립금오공과대학교', region:'경북', gwon:'영남권', est:'국립', lat:36.1003, lng:128.3461},
+  {name:'김천대학교', region:'경북', gwon:'영남권', est:'사립', lat:36.1198, lng:128.0938},
+  {name:'대구가톨릭대학교', region:'경북', gwon:'영남권', est:'사립', lat:35.9003, lng:128.6052},
+  {name:'대구대학교', region:'경북', gwon:'영남권', est:'사립', lat:35.8849, lng:128.7527},
+  {name:'대구예술대학교', region:'경북', gwon:'영남권', est:'사립', lat:36.0721, lng:128.6521},
+  {name:'대구한의대학교', region:'경북', gwon:'영남권', est:'사립', lat:36.0159, lng:128.9236},
+  {name:'대신대학교', region:'경북', gwon:'영남권', est:'사립', lat:35.8703, lng:128.5968},
+  {name:'동국대학교(WISE)_분교', region:'경북', gwon:'영남권', est:'사립', lat:36.5212, lng:129.3878},
+  {name:'동양대학교', region:'경북', gwon:'영남권', est:'사립', lat:36.8987, lng:128.5141},
+  {name:'신경주대학교', region:'경북', gwon:'영남권', est:'사립', lat:35.8589, lng:129.2125},
+  {name:'영남대학교', region:'경북', gwon:'영남권', est:'사립', lat:35.8365, lng:128.7515},
+  {name:'영남신학대학교', region:'경북', gwon:'영남권', est:'사립', lat:35.8401, lng:128.7381},
+  {name:'위덕대학교', region:'경북', gwon:'영남권', est:'사립', lat:35.9785, lng:129.3726},
+  {name:'포항공과대학교', region:'경북', gwon:'영남권', est:'특별법법인', lat:36.0145, lng:129.3226},
+  {name:'한동대학교', region:'경북', gwon:'영남권', est:'사립', lat:36.1038, lng:129.3803},
+  // 광주
+  {name:'광신대학교', region:'광주', gwon:'호남권', est:'사립', lat:35.1395, lng:126.9154},
+  {name:'광주과학기술원', region:'광주', gwon:'호남권', est:'특별법법인', lat:35.2234, lng:126.8434},
+  {name:'광주교육대학교', region:'광주', gwon:'호남권', est:'국립', lat:35.1561, lng:126.9262},
+  {name:'광주대학교', region:'광주', gwon:'호남권', est:'사립', lat:35.1372, lng:126.9037},
+  {name:'광주여자대학교', region:'광주', gwon:'호남권', est:'사립', lat:35.1823, lng:126.7896},
+  {name:'남부대학교', region:'광주', gwon:'호남권', est:'사립', lat:35.0831, lng:126.8752},
+  {name:'송원대학교', region:'광주', gwon:'호남권', est:'사립', lat:35.1283, lng:126.8568},
+  {name:'전남대학교', region:'광주', gwon:'호남권', est:'국립', lat:35.1762, lng:126.9086},
+  {name:'조선대학교', region:'광주', gwon:'호남권', est:'사립', lat:35.1348, lng:126.9272},
+  {name:'호남대학교', region:'광주', gwon:'호남권', est:'사립', lat:35.1103, lng:126.8478},
+  {name:'호남신학대학교', region:'광주', gwon:'호남권', est:'사립', lat:35.1671, lng:126.9041},
+  // 대구
+  {name:'경북대학교', region:'대구', gwon:'영남권', est:'국립', lat:35.8884, lng:128.6098},
+  {name:'계명대학교', region:'대구', gwon:'영남권', est:'사립', lat:35.8571, lng:128.4943},
+  {name:'대구경북과학기술원', region:'대구', gwon:'영남권', est:'특별법법인', lat:35.9021, lng:128.4368},
+  {name:'대구교육대학교', region:'대구', gwon:'영남권', est:'국립', lat:35.8745, lng:128.6134},
+  // 대전
+  {name:'국립한밭대학교', region:'대전', gwon:'충청권', est:'국립', lat:36.3523, lng:127.3001},
+  {name:'대전대학교', region:'대전', gwon:'충청권', est:'사립', lat:36.3061, lng:127.4238},
+  {name:'대전신학대학교', region:'대전', gwon:'충청권', est:'사립', lat:36.3543, lng:127.3784},
+  {name:'목원대학교', region:'대전', gwon:'충청권', est:'사립', lat:36.3401, lng:127.3678},
+  {name:'배재대학교', region:'대전', gwon:'충청권', est:'사립', lat:36.3181, lng:127.4031},
+  {name:'우송대학교', region:'대전', gwon:'충청권', est:'사립', lat:36.3469, lng:127.4191},
+  {name:'을지대학교', region:'대전', gwon:'충청권', est:'사립', lat:36.3647, lng:127.3511},
+  {name:'충남대학교', region:'대전', gwon:'충청권', est:'국립', lat:36.3681, lng:127.3440},
+  {name:'한국과학기술원', region:'대전', gwon:'충청권', est:'특별법법인', lat:36.3726, lng:127.3605},
+  {name:'한국침례신학대학교', region:'대전', gwon:'충청권', est:'사립', lat:36.3189, lng:127.4289},
+  {name:'한남대학교', region:'대전', gwon:'충청권', est:'사립', lat:36.3293, lng:127.4349},
+  // 부산
+  {name:'경성대학교', region:'부산', gwon:'영남권', est:'사립', lat:35.1376, lng:129.0882},
+  {name:'고신대학교', region:'부산', gwon:'영남권', est:'사립', lat:35.0941, lng:128.9740},
+  {name:'국립부경대학교', region:'부산', gwon:'영남권', est:'국립', lat:35.1346, lng:129.1040},
+  {name:'국립한국해양대학교', region:'부산', gwon:'영남권', est:'국립', lat:35.0782, lng:128.9993},
+  {name:'동명대학교', region:'부산', gwon:'영남권', est:'사립', lat:35.1234, lng:129.1148},
+  {name:'동서대학교', region:'부산', gwon:'영남권', est:'사립', lat:35.1483, lng:128.9744},
+  {name:'동아대학교', region:'부산', gwon:'영남권', est:'사립', lat:35.1009, lng:128.9742},
+  {name:'동의대학교', region:'부산', gwon:'영남권', est:'사립', lat:35.1626, lng:128.9774},
+  {name:'부산가톨릭대학교', region:'부산', gwon:'영남권', est:'사립', lat:35.1754, lng:128.9684},
+  {name:'부산교육대학교', region:'부산', gwon:'영남권', est:'국립', lat:35.1891, lng:129.0765},
+  {name:'부산대학교', region:'부산', gwon:'영남권', est:'국립', lat:35.2320, lng:129.0849},
+  {name:'부산외국어대학교', region:'부산', gwon:'영남권', est:'사립', lat:35.2465, lng:129.0831},
+  {name:'신라대학교', region:'부산', gwon:'영남권', est:'사립', lat:35.1198, lng:128.9938},
+  // 서울
+  {name:'감리교신학대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5768, lng:126.9376},
+  {name:'강서대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5434, lng:126.8302},
+  {name:'건국대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5408, lng:127.0793},
+  {name:'경희대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5972, lng:127.0527},
+  {name:'고려대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5894, lng:127.0324},
+  {name:'광운대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.6194, lng:127.0594},
+  {name:'국민대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.6077, lng:126.9974},
+  {name:'덕성여자대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.6476, lng:127.0128},
+  {name:'동국대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5584, lng:126.9987},
+  {name:'동덕여자대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.6063, lng:127.0264},
+  {name:'삼육대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.6297, lng:127.1002},
+  {name:'상명대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.6022, lng:126.9561},
+  {name:'서강대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5510, lng:126.9406},
+  {name:'서경대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.6091, lng:127.0196},
+  {name:'서울과학기술대학교', region:'서울', gwon:'수도권', est:'국립', lat:37.6326, lng:127.0806},
+  {name:'서울교육대학교', region:'서울', gwon:'수도권', est:'국립', lat:37.4934, lng:127.0178},
+  {name:'서울기독대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5283, lng:126.9942},
+  {name:'서울대학교', region:'서울', gwon:'수도권', est:'국립', lat:37.4602, lng:126.9527},
+  {name:'서울시립대학교', region:'서울', gwon:'수도권', est:'공립', lat:37.5844, lng:127.0569},
+  {name:'서울여자대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.6279, lng:127.0937},
+  {name:'서울한영대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5059, lng:126.8609},
+  {name:'성공회대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5108, lng:126.8298},
+  {name:'성균관대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5880, lng:126.9932},
+  {name:'성신여자대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.6021, lng:127.0163},
+  {name:'세종대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5498, lng:127.0749},
+  {name:'숙명여자대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5460, lng:126.9647},
+  {name:'숭실대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.4963, lng:126.9541},
+  {name:'연세대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5651, lng:126.9386},
+  {name:'이화여자대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5627, lng:126.9467},
+  {name:'장로회신학대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5817, lng:127.0568},
+  {name:'중앙대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5044, lng:126.9564},
+  {name:'총신대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.4875, lng:126.9618},
+  {name:'추계예술대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5720, lng:126.9362},
+  {name:'한국성서대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.6396, lng:127.0802},
+  {name:'한국외국어대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5975, lng:127.0582},
+  {name:'한국체육대학교', region:'서울', gwon:'수도권', est:'국립', lat:37.5344, lng:127.1244},
+  {name:'한성대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5829, lng:127.0107},
+  {name:'한양대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5573, lng:127.0456},
+  {name:'홍익대학교', region:'서울', gwon:'수도권', est:'사립', lat:37.5512, lng:126.9245},
+  // 세종
+  {name:'고려대학교(세종)_분교', region:'세종', gwon:'충청권', est:'사립', lat:36.5983, lng:127.2839},
+  {name:'대전가톨릭대학교', region:'세종', gwon:'충청권', est:'사립', lat:36.5467, lng:127.2213},
+  // 울산
+  {name:'울산과학기술원', region:'울산', gwon:'영남권', est:'특별법법인', lat:35.5837, lng:129.1886},
+  {name:'울산대학교', region:'울산', gwon:'영남권', est:'사립', lat:35.5446, lng:129.2421},
+  // 인천
+  {name:'경인교육대학교', region:'인천', gwon:'수도권', est:'국립', lat:37.4789, lng:126.6472},
+  {name:'인천가톨릭대학교', region:'인천', gwon:'수도권', est:'사립', lat:37.4427, lng:126.6313},
+  {name:'인천대학교', region:'인천', gwon:'수도권', est:'국립대법인', lat:37.3746, lng:126.6328},
+  {name:'인하대학교', region:'인천', gwon:'수도권', est:'사립', lat:37.4499, lng:126.6574},
+  // 전남
+  {name:'광주가톨릭대학교', region:'전남', gwon:'호남권', est:'사립', lat:34.9124, lng:126.8837},
+  {name:'국립목포대학교', region:'전남', gwon:'호남권', est:'국립', lat:34.8293, lng:126.4163},
+  {name:'국립목포해양대학교', region:'전남', gwon:'호남권', est:'국립', lat:34.7886, lng:126.3821},
+  {name:'국립순천대학교', region:'전남', gwon:'호남권', est:'국립', lat:34.9891, lng:127.4890},
+  {name:'동신대학교', region:'전남', gwon:'호남권', est:'사립', lat:34.9893, lng:126.9065},
+  {name:'목포가톨릭대학교', region:'전남', gwon:'호남권', est:'사립', lat:34.8073, lng:126.4019},
+  {name:'세한대학교', region:'전남', gwon:'호남권', est:'사립', lat:34.7348, lng:126.5781},
+  {name:'영산선학대학교', region:'전남', gwon:'호남권', est:'사립', lat:34.8981, lng:127.5123},
+  {name:'초당대학교', region:'전남', gwon:'호남권', est:'사립', lat:34.7419, lng:126.4819},
+  {name:'한국에너지공과대학교', region:'전남', gwon:'호남권', est:'특별법법인', lat:34.9482, lng:126.6371},
+  // 전북
+  {name:'국립군산대학교', region:'전북', gwon:'호남권', est:'국립', lat:35.9793, lng:126.7361},
+  {name:'예수대학교', region:'전북', gwon:'호남권', est:'사립', lat:35.8063, lng:127.1429},
+  {name:'예원예술대학교', region:'전북', gwon:'호남권', est:'사립', lat:35.9389, lng:127.0928},
+  {name:'우석대학교', region:'전북', gwon:'호남권', est:'사립', lat:35.8173, lng:127.0843},
+  {name:'원광대학교', region:'전북', gwon:'호남권', est:'사립', lat:35.9526, lng:126.9662},
+  {name:'전북대학교', region:'전북', gwon:'호남권', est:'국립', lat:35.8472, lng:127.1348},
+  {name:'전주교육대학교', region:'전북', gwon:'호남권', est:'국립', lat:35.8193, lng:127.1094},
+  {name:'전주대학교', region:'전북', gwon:'호남권', est:'사립', lat:35.8136, lng:127.1202},
+  {name:'한일장신대학교', region:'전북', gwon:'호남권', est:'사립', lat:35.8024, lng:127.1293},
+  {name:'호원대학교', region:'전북', gwon:'호남권', est:'사립', lat:35.9892, lng:126.7148},
+  // 제주
+  {name:'제주국제대학교', region:'제주', gwon:'제주권', est:'사립', lat:33.4483, lng:126.5705},
+  {name:'제주대학교', region:'제주', gwon:'제주권', est:'국립', lat:33.4521, lng:126.5783},
+  // 충남
+  {name:'건양대학교', region:'충남', gwon:'충청권', est:'사립', lat:36.3728, lng:127.1024},
+  {name:'공주교육대학교', region:'충남', gwon:'충청권', est:'국립', lat:36.4467, lng:127.1184},
+  {name:'국립공주대학교', region:'충남', gwon:'충청권', est:'국립', lat:36.4752, lng:127.1250},
+  {name:'금강대학교', region:'충남', gwon:'충청권', est:'사립', lat:36.5827, lng:126.9738},
+  {name:'나사렛대학교', region:'충남', gwon:'충청권', est:'사립', lat:36.8196, lng:127.1508},
+  {name:'남서울대학교', region:'충남', gwon:'충청권', est:'사립', lat:36.7673, lng:127.1184},
+  {name:'백석대학교', region:'충남', gwon:'충청권', est:'사립', lat:36.8126, lng:127.1274},
+  {name:'선문대학교', region:'충남', gwon:'충청권', est:'사립', lat:36.8384, lng:127.1062},
+  {name:'순천향대학교', region:'충남', gwon:'충청권', est:'사립', lat:36.7824, lng:126.9181},
+  {name:'중부대학교', region:'충남', gwon:'충청권', est:'사립', lat:36.3127, lng:126.8543},
+  {name:'청운대학교', region:'충남', gwon:'충청권', est:'사립', lat:36.5834, lng:126.4917},
+  {name:'한국기술교육대학교', region:'충남', gwon:'충청권', est:'특별법법인', lat:36.7628, lng:127.2832},
+  {name:'한서대학교', region:'충남', gwon:'충청권', est:'사립', lat:36.5763, lng:126.5073},
+  {name:'호서대학교', region:'충남', gwon:'충청권', est:'사립', lat:36.8212, lng:126.9972},
+  // 충북
+  {name:'가톨릭꽃동네대학교', region:'충북', gwon:'충청권', est:'사립', lat:36.8372, lng:127.5124},
+  {name:'건국대학교(글로컬)_분교', region:'충북', gwon:'충청권', est:'사립', lat:36.9731, lng:127.9281},
+  {name:'국립한국교통대학교', region:'충북', gwon:'충청권', est:'국립', lat:36.9541, lng:127.8721},
+  {name:'극동대학교', region:'충북', gwon:'충청권', est:'사립', lat:36.9528, lng:127.9384},
+  {name:'서원대학교', region:'충북', gwon:'충청권', est:'사립', lat:36.6193, lng:127.4678},
+  {name:'세명대학교', region:'충북', gwon:'충청권', est:'사립', lat:37.0321, lng:128.2173},
+  {name:'유원대학교', region:'충북', gwon:'충청권', est:'사립', lat:36.3726, lng:127.6384},
+  {name:'중원대학교', region:'충북', gwon:'충청권', est:'사립', lat:36.8957, lng:127.9182},
+  {name:'청주교육대학교', region:'충북', gwon:'충청권', est:'국립', lat:36.6528, lng:127.4902},
+  {name:'청주대학교', region:'충북', gwon:'충청권', est:'사립', lat:36.6391, lng:127.5015},
+  {name:'충북대학교', region:'충북', gwon:'충청권', est:'국립', lat:36.6276, lng:127.4572},
+  {name:'한국교원대학교', region:'충북', gwon:'충청권', est:'국립', lat:36.6234, lng:127.2850},
+];
+
+// Professor count data (source: 2025 전임교원 연구실적 학교별자료)
+const PROF_DATA = {"가야대학교":66,"가천대학교":995,"가톨릭관동대학교":355,"가톨릭꽃동네대학교":23,"가톨릭대학교":1283,"감리교신학대학교":24,"강남대학교":206,"강서대학교":54,"강원대학교":1035,"건국대학교(글로컬)_분교":407,"건국대학교":657,"건양대학교":350,"경기대학교":485,"경남대학교":365,"경동대학교":220,"경북대학교":1428,"경상국립대학교":1050,"경성대학교":363,"경운대학교":163,"경인교육대학교":134,"경일대학교":238,"경희대학교":1395,"계명대학교":837,"고려대학교(세종)_분교":257,"고려대학교":1601,"고신대학교":252,"공주교육대학교":86,"광신대학교":50,"광운대학교":307,"광주가톨릭대학교":15,"광주과학기술원":194,"광주교육대학교":72,"광주대학교":200,"광주여자대학교":123,"국립강릉원주대학교":371,"국립경국대학교":292,"국립공주대학교":573,"국립군산대학교":338,"국립금오공과대학교":241,"국립목포대학교":307,"국립목포해양대학교":127,"국립부경대학교":630,"국립순천대학교":314,"국립창원대학교":345,"국립한국교통대학교":325,"국립한국해양대학교":282,"국립한밭대학교":289,"국민대학교":651,"극동대학교":109,"금강대학교":13,"김천대학교":100,"나사렛대학교":157,"남부대학교":108,"남서울대학교":293,"단국대학교":1003,"대구가톨릭대학교":533,"대구경북과학기술원":146,"대구교육대학교":89,"대구대학교":499,"대구예술대학교":17,"대구한의대학교":223,"대신대학교":39,"대전가톨릭대학교":11,"대전대학교":277,"대전신학대학교":7,"대진대학교":231,"덕성여자대학교":197,"동국대학교(WISE)_분교":300,"동국대학교":686,"동덕여자대학교":214,"동명대학교":229,"동서대학교":320,"동신대학교":226,"동아대학교":715,"동양대학교":127,"동의대학교":550,"루터대학교":15,"명지대학교":504,"목원대학교":264,"목포가톨릭대학교":21,"배재대학교":254,"백석대학교":464,"부산가톨릭대학교":123,"부산교육대학교":78,"부산대학교":1442,"부산외국어대학교":214,"부산장신대학교":15,"삼육대학교":190,"상명대학교":432,"상지대학교":244,"서강대학교":410,"서경대학교":250,"서울과학기술대학교":430,"서울교육대학교":105,"서울기독대학교":37,"서울대학교":2369,"서울시립대학교":458,"서울신학대학교":96,"서울여자대학교":224,"서울장신대학교":27,"서울한영대학교":27,"서원대학교":224,"선문대학교":280,"성결대학교":167,"성공회대학교":80,"성균관대학교":1543,"성신여자대학교":324,"세명대학교":231,"세종대학교":590,"세한대학교":111,"송원대학교":92,"수원가톨릭대학교":9,"수원대학교":310,"숙명여자대학교":419,"순천향대학교":942,"숭실대학교":528,"신경주대학교":47,"신라대학교":272,"신한대학교":217,"아신대학교":36,"아주대학교":747,"안양대학교":165,"연세대학교(미래)_분교":410,"연세대학교":1820,"영남대학교":896,"영남신학대학교":24,"영산대학교":189,"영산선학대학교":11,"예수대학교":20,"예원예술대학교":60,"용인대학교":195,"우석대학교":248,"우송대학교":334,"울산과학기술원":313,"울산대학교":1095,"원광대학교":622,"위덕대학교":85,"유원대학교":111,"을지대학교":420,"이화여자대학교":961,"인제대학교":838,"인천가톨릭대학교":47,"인천대학교":497,"인하대학교":886,"장로회신학대학교":78,"전남대학교":1327,"전북대학교":1048,"전주교육대학교":53,"전주대학교":328,"제주국제대학교":33,"제주대학교":648,"조선대학교":741,"중부대학교":350,"중앙대학교":1198,"중원대학교":123,"진주교육대학교":68,"차의과학대학교":502,"창신대학교":73,"청운대학교":154,"청주교육대학교":70,"청주대학교":441,"초당대학교":88,"총신대학교":104,"추계예술대학교":47,"춘천교육대학교":75,"충남대학교":1059,"충북대학교":800,"칼빈대학교":80,"평택대학교":120,"포항공과대학교":284,"한경국립대학교":256,"한국공학대학교":262,"한국과학기술원":716,"한국교원대학교":209,"한국기술교육대학교":184,"한국성서대학교":41,"한국에너지공과대학교":49,"한국외국어대학교":612,"한국체육대학교":118,"한국침례신학대학교":55,"한국항공대학교":168,"한남대학교":385,"한동대학교":146,"한라대학교":109,"한림대학교":705,"한서대학교":229,"한성대학교":282,"한세대학교":100,"한신대학교":175,"한양대학교(ERICA)_분교":415,"한양대학교":1141,"한일장신대학교":37,"협성대학교":128,"호남대학교":243,"호남신학대학교":32,"호서대학교":432,"호원대학교":141,"홍익대학교":725,"화성의과학대학교":31};
+
+// Gwon color map
+const GWON_COLORS = {
+  '수도권': '#6c5ce7',
+  '충청권': '#f39c12',
+  '영남권': '#e74c3c',
+  '호남권': '#27ae60',
+  '강원권': '#2980b9',
+  '제주권': '#16a085',
+};
+const REGION_GWON = {
+  '서울':'수도권','경기':'수도권','인천':'수도권',
+  '대전':'충청권','충남':'충청권','충북':'충청권','세종':'충청권',
+  '부산':'영남권','경남':'영남권','대구':'영남권','경북':'영남권','울산':'영남권',
+  '광주':'호남권','전남':'호남권','전북':'호남권',
+  '강원':'강원권',
+  '제주':'제주권',
+};
+
+// State
+let activeGwon = 'all';
+let activeEst = 'all';
+let map, markers = [], infoWindow;
+
+function getFiltered() {
+  return UNIVERSITIES.filter(u => {
+    if (activeGwon !== 'all' && u.gwon !== activeGwon) return false;
+    if (activeEst !== 'all') {
+      if (activeEst === '국립' && !['국립','국립대법인','특별법법인'].includes(u.est)) return false;
+      if (activeEst === '사립' && u.est !== '사립') return false;
+    }
+    return true;
+  });
+}
+
+// ── SIDEBAR ──
+function buildSidebar() {
+  const filtered = getFiltered();
+  const sidebar = document.getElementById('sidebar');
+
+  // Group by gwon then region
+  const gwonMap = {};
+  filtered.forEach(u => {
+    if (!gwonMap[u.gwon]) gwonMap[u.gwon] = {};
+    if (!gwonMap[u.gwon][u.region]) gwonMap[u.gwon][u.region] = [];
+    gwonMap[u.gwon][u.region].push(u);
+  });
+
+  const gwonOrder = ['수도권','충청권','영남권','호남권','강원권','제주권'];
+  sidebar.innerHTML = '';
+  gwonOrder.forEach(gwon => {
+    if (!gwonMap[gwon]) return;
+    const color = GWON_COLORS[gwon];
+    const totalCount = Object.values(gwonMap[gwon]).flat().length;
+    const gwonEl = document.createElement('div');
+    gwonEl.className = 'region-group';
+    gwonEl.innerHTML = `
+      <div class="region-header" onclick="toggleGroup(this)">
+        <div class="region-name">
+          <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color}"></span>
+          ${gwon}
+          <span class="region-badge" style="background:${color}22;color:${color}">${totalCount}</span>
+        </div>
+        <span class="region-toggle">▾</span>
+      </div>
+      <div class="univ-list open">
+        ${Object.entries(gwonMap[gwon]).sort().map(([region, unis]) => `
+          <div style="padding:6px 16px 2px 20px;font-size:.72rem;color:${color};font-weight:700;letter-spacing:.05em;">${region} (${unis.length})</div>
+          ${unis.map(u => `
+            <div class="univ-item" data-name="${u.name}" onclick="focusUniv('${u.name}')">
+              <span class="est-badge est-${u.est}">${u.est[0]}</span>
+              ${u.name.replace('_분교','<span style="color:#888;font-size:.65rem"> (분교)</span>')}
+            </div>
+          `).join('')}
+        `).join('')}
+      </div>
+    `;
+    sidebar.appendChild(gwonEl);
+  });
+
+  document.getElementById('statsText').textContent = `총 ${filtered.length}개 대학교`;
+}
+
+function toggleGroup(el) {
+  const list = el.nextElementSibling;
+  list.classList.toggle('open');
+  el.querySelector('.region-toggle').textContent = list.classList.contains('open') ? '▾' : '▸';
+}
+
+// ── FILTERS ──
+function filterRegion(gwon, btn) {
+  activeGwon = gwon;
+  document.querySelectorAll('[data-region]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildSidebar();
+  if (map) updateMarkers();
+}
+function filterEst(est, btn) {
+  activeEst = est;
+  document.querySelectorAll('[data-est]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildSidebar();
+  if (map) updateMarkers();
+}
+
+// ── MAPS ──
+function applyApiKey() {
+  const key = document.getElementById('apiKeyInput').value.trim();
+  if (!key) { alert('API 키를 입력하세요'); return; }
+  localStorage.setItem('mapsApiKey', key);
+  loadMap(key);
+}
+
+function loadMap(key) {
+  document.getElementById('mapPlaceholder').style.display = 'none';
+  document.getElementById('map').style.display = 'block';
+  const script = document.createElement('script');
+  script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&language=ko&callback=initMap`;
+  script.async = true;
+  script.onerror = () => {
+    document.getElementById('mapPlaceholder').style.display = 'flex';
+    document.getElementById('map').style.display = 'none';
+    alert('API 키가 올바르지 않거나 Maps JavaScript API가 비활성화되어 있습니다.');
+  };
+  document.head.appendChild(script);
+}
+
+window.initMap = function() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: 36.5, lng: 127.8 },
+    zoom: 7,
+    styles: [
+      {elementType:'geometry', stylers:[{color:'#1d2c4d'}]},
+      {elementType:'labels.text.fill', stylers:[{color:'#8ec3b9'}]},
+      {elementType:'labels.text.stroke', stylers:[{color:'#1a3646'}]},
+      {featureType:'road', elementType:'geometry', stylers:[{color:'#304a7d'}]},
+      {featureType:'water', elementType:'geometry', stylers:[{color:'#0e1626'}]},
+      {featureType:'administrative.country', elementType:'geometry.stroke', stylers:[{color:'#4b6878'}]},
+    ],
+    mapTypeControl: false,
+    streetViewControl: false,
+  });
+  infoWindow = new google.maps.InfoWindow();
+  updateMarkers();
+};
+
+function makeUnivIcon(color, isNational, name) {
+  const iconSize = isNational ? 22 : 18;
+  const fontSize = 10;
+  const label = name.replace('_분교','').replace('(분교)','').replace('대학교','대').replace('대학','대');
+  const labelW = Math.max(label.length * 6.5 + 8, 40);
+  const totalW = Math.max(iconSize + labelW + 4, 60);
+  const totalH = iconSize + 2;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}">
+    <circle cx="${iconSize/2}" cy="${iconSize/2}" r="${iconSize/2 - 1}" fill="${color}" fill-opacity="0.92" stroke="white" stroke-width="1.5"/>
+    <text x="${iconSize/2}" y="${iconSize/2 + 4}" text-anchor="middle" font-size="${iconSize * 0.6}" font-family="Segoe UI Emoji,Apple Color Emoji,sans-serif">🎓</text>
+    <rect x="${iconSize + 2}" y="2" width="${labelW}" height="${iconSize - 4}" rx="3" fill="rgba(0,0,0,0.65)"/>
+    <text x="${iconSize + 2 + labelW/2}" y="${iconSize/2 + 4}" text-anchor="middle" font-size="${fontSize}" font-family="Noto Sans KR,sans-serif" fill="white" font-weight="600">${label}</text>
+  </svg>`;
+  return {
+    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+    scaledSize: new google.maps.Size(totalW, totalH),
+    anchor: new google.maps.Point(iconSize / 2, iconSize / 2),
+  };
+}
+
+function updateMarkers() {
+  markers.forEach(m => m.setMap(null));
+  markers = [];
+  const filtered = getFiltered();
+
+  filtered.forEach(u => {
+    const color = GWON_COLORS[u.gwon] || '#888';
+    const isNational = u.est === '국립' || u.est === '국립대법인' || u.est === '특별법법인';
+    const marker = new google.maps.Marker({
+      position: { lat: u.lat, lng: u.lng },
+      map,
+      title: u.name,
+      icon: makeUnivIcon(color, isNational, u.name),
+    });
+    marker.addListener('click', () => {
+      const searchUrl = `https://search.naver.com/search.naver?query=${encodeURIComponent(u.name)}`;
+      const alrimiUrl = `https://www.academyinfo.go.kr/popup/univInfoPopup.do?univId=${encodeURIComponent(u.name)}`;
+      const profCount = PROF_DATA[u.name];
+      const profText = profCount ? `${profCount.toLocaleString()}명` : '-';
+      const cleanName = u.name.replace('_분교','').replace('(분교)','');
+      infoWindow.setContent(`
+        <div class="gm-info">
+          <div class="name">${cleanName}</div>
+          <div class="region" style="color:${color}">${u.gwon} · ${u.region}</div>
+          <table class="gm-info-table">
+            <tr><td class="gm-label">설립</td><td>${u.est}</td></tr>
+            <tr><td class="gm-label">주소</td><td>${u.region} 소재</td></tr>
+            <tr><td class="gm-label">전임교원</td><td>${profText}</td></tr>
+            <tr><td class="gm-label">학생 현황</td><td><a href="https://www.academyinfo.go.kr" target="_blank" style="color:#6c5ce7">대학알리미 ↗</a></td></tr>
+          </table>
+          <div class="links">
+            <a href="${searchUrl}" target="_blank">🔍 검색</a>
+            <a href="https://www.academyinfo.go.kr" target="_blank">📊 대학알리미</a>
+          </div>
+        </div>
+      `);
+      infoWindow.open(map, marker);
+      // highlight sidebar
+      document.querySelectorAll('.univ-item').forEach(el => el.classList.remove('selected'));
+      const el = document.querySelector(`.univ-item[data-name="${u.name}"]`);
+      if (el) { el.classList.add('selected'); el.scrollIntoView({block:'nearest'}); }
+    });
+    markers.push(marker);
+  });
+}
+
+function focusUniv(name) {
+  const u = UNIVERSITIES.find(x => x.name === name);
+  if (!u || !map) return;
+  map.panTo({ lat: u.lat, lng: u.lng });
+  map.setZoom(13);
+  const marker = markers.find(m => m.getTitle() === name);
+  if (marker) google.maps.event.trigger(marker, 'click');
+  document.querySelectorAll('.univ-item').forEach(el => el.classList.remove('selected'));
+  const el = document.querySelector(`.univ-item[data-name="${name}"]`);
+  if (el) { el.classList.add('selected'); el.scrollIntoView({block:'nearest'}); }
+}
+
+// ── INIT ──
+buildSidebar();
+const savedKey = localStorage.getItem('mapsApiKey');
+if (savedKey) {
+  document.getElementById('apiKeyInput').value = savedKey;
+  loadMap(savedKey);
+}
+</script>
+</body>
+</html>
