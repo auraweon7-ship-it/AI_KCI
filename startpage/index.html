@@ -4827,6 +4827,210 @@ const GWON_META = [
   { id: 'gangwon', name: '강원권', emoji: '🏔', color: '#2980b9', catIds: ['gangwon'], regions: ['강원'] },
   { id: 'jeju',    name: '제주권', emoji: '🏝', color: '#16a085', catIds: ['jeju'],    regions: ['제주'] },
 ];
+
+// ── 전국 대학 명단 (2024 대학알리미 기준, [교명, 국립/사립, 지역]) ──
+const UNIV_DB = [
+  ["가야대학교","사립","경남"],
+  ["가천대학교","사립","경기"],
+  ["가톨릭관동대학교","사립","강원"],
+  ["가톨릭꽃동네대학교","사립","충북"],
+  ["가톨릭대학교","사립","경기"],
+  ["감리교신학대학교","사립","서울"],
+  ["강남대학교","사립","경기"],
+  ["강서대학교","사립","서울"],
+  ["강원대학교","국립","강원"],
+  ["건국대학교(글로컬)","사립","충북"],
+  ["건국대학교","사립","서울"],
+  ["건양대학교","사립","충남"],
+  ["경기대학교","사립","경기"],
+  ["경남대학교","사립","경남"],
+  ["경동대학교","사립","강원"],
+  ["경북대학교","국립","대구"],
+  ["경상국립대학교","국립","경남"],
+  ["경성대학교","사립","부산"],
+  ["경운대학교","사립","경북"],
+  ["경인교육대학교","국립","인천"],
+  ["경일대학교","사립","경북"],
+  ["경희대학교","사립","서울"],
+  ["계명대학교","사립","대구"],
+  ["고려대학교(세종)","사립","세종"],
+  ["고려대학교","사립","서울"],
+  ["고신대학교","사립","부산"],
+  ["공주교육대학교","국립","충남"],
+  ["광신대학교","사립","광주"],
+  ["광운대학교","사립","서울"],
+  ["광주가톨릭대학교","사립","전남"],
+  ["광주과학기술원","국립","광주"],
+  ["광주교육대학교","국립","광주"],
+  ["광주대학교","사립","광주"],
+  ["광주여자대학교","사립","광주"],
+  ["국립강릉원주대학교","국립","강원"],
+  ["국립경국대학교","국립","경북"],
+  ["국립공주대학교","국립","충남"],
+  ["국립군산대학교","국립","전북"],
+  ["국립금오공과대학교","국립","경북"],
+  ["국립목포대학교","국립","전남"],
+  ["국립목포해양대학교","국립","전남"],
+  ["국립부경대학교","국립","부산"],
+  ["국립순천대학교","국립","전남"],
+  ["국립창원대학교","국립","경남"],
+  ["국립한국교통대학교","국립","충북"],
+  ["국립한국해양대학교","국립","부산"],
+  ["국립한밭대학교","국립","대전"],
+  ["국민대학교","사립","서울"],
+  ["극동대학교","사립","충북"],
+  ["금강대학교","사립","충남"],
+  ["김천대학교","사립","경북"],
+  ["나사렛대학교","사립","충남"],
+  ["남부대학교","사립","광주"],
+  ["남서울대학교","사립","충남"],
+  ["단국대학교","사립","경기"],
+  ["대구가톨릭대학교","사립","경북"],
+  ["대구경북과학기술원","국립","대구"],
+  ["대구교육대학교","국립","대구"],
+  ["대구대학교","사립","경북"],
+  ["대구예술대학교","사립","경북"],
+  ["대구한의대학교","사립","경북"],
+  ["대신대학교","사립","경북"],
+  ["대전가톨릭대학교","사립","세종"],
+  ["대전대학교","사립","대전"],
+  ["대전신학대학교","사립","대전"],
+  ["대진대학교","사립","경기"],
+  ["덕성여자대학교","사립","서울"],
+  ["동국대학교(WISE)","사립","경북"],
+  ["동국대학교","사립","서울"],
+  ["동덕여자대학교","사립","서울"],
+  ["동명대학교","사립","부산"],
+  ["동서대학교","사립","부산"],
+  ["동신대학교","사립","전남"],
+  ["동아대학교","사립","부산"],
+  ["동양대학교","사립","경북"],
+  ["동의대학교","사립","부산"],
+  ["루터대학교","사립","경기"],
+  ["명지대학교","사립","경기"],
+  ["목원대학교","사립","대전"],
+  ["목포가톨릭대학교","사립","전남"],
+  ["배재대학교","사립","대전"],
+  ["백석대학교","사립","충남"],
+  ["부산가톨릭대학교","사립","부산"],
+  ["부산교육대학교","국립","부산"],
+  ["부산대학교","국립","부산"],
+  ["부산외국어대학교","사립","부산"],
+  ["부산장신대학교","사립","경남"],
+  ["삼육대학교","사립","서울"],
+  ["상명대학교","사립","서울"],
+  ["상지대학교","사립","강원"],
+  ["서강대학교","사립","서울"],
+  ["서경대학교","사립","서울"],
+  ["서울과학기술대학교","국립","서울"],
+  ["서울교육대학교","국립","서울"],
+  ["서울기독대학교","사립","서울"],
+  ["서울대학교","국립","서울"],
+  ["서울시립대학교","국립","서울"],
+  ["서울신학대학교","사립","경기"],
+  ["서울여자대학교","사립","서울"],
+  ["서울장신대학교","사립","경기"],
+  ["서울한영대학교","사립","서울"],
+  ["서원대학교","사립","충북"],
+  ["선문대학교","사립","충남"],
+  ["성결대학교","사립","경기"],
+  ["성공회대학교","사립","서울"],
+  ["성균관대학교","사립","서울"],
+  ["성신여자대학교","사립","서울"],
+  ["세명대학교","사립","충북"],
+  ["세종대학교","사립","서울"],
+  ["세한대학교","사립","전남"],
+  ["송원대학교","사립","광주"],
+  ["수원가톨릭대학교","사립","경기"],
+  ["수원대학교","사립","경기"],
+  ["숙명여자대학교","사립","서울"],
+  ["순천향대학교","사립","충남"],
+  ["숭실대학교","사립","서울"],
+  ["신경주대학교","사립","경북"],
+  ["신라대학교","사립","부산"],
+  ["신한대학교","사립","경기"],
+  ["아신대학교","사립","경기"],
+  ["아주대학교","사립","경기"],
+  ["안양대학교","사립","경기"],
+  ["연세대학교(미래)","사립","강원"],
+  ["연세대학교","사립","서울"],
+  ["영남대학교","사립","경북"],
+  ["영남신학대학교","사립","경북"],
+  ["영산대학교","사립","경남"],
+  ["영산선학대학교","사립","전남"],
+  ["예수대학교","사립","전북"],
+  ["예원예술대학교","사립","전북"],
+  ["용인대학교","사립","경기"],
+  ["우석대학교","사립","전북"],
+  ["우송대학교","사립","대전"],
+  ["울산과학기술원","국립","울산"],
+  ["울산대학교","사립","울산"],
+  ["원광대학교","사립","전북"],
+  ["위덕대학교","사립","경북"],
+  ["유원대학교","사립","충북"],
+  ["을지대학교","사립","대전"],
+  ["이화여자대학교","사립","서울"],
+  ["인제대학교","사립","경남"],
+  ["인천가톨릭대학교","사립","인천"],
+  ["인천대학교","국립","인천"],
+  ["인하대학교","사립","인천"],
+  ["장로회신학대학교","사립","서울"],
+  ["전남대학교","국립","광주"],
+  ["전북대학교","국립","전북"],
+  ["전주교육대학교","국립","전북"],
+  ["전주대학교","사립","전북"],
+  ["제주국제대학교","사립","제주"],
+  ["제주대학교","국립","제주"],
+  ["조선대학교","사립","광주"],
+  ["중부대학교","사립","충남"],
+  ["중앙대학교","사립","서울"],
+  ["중원대학교","사립","충북"],
+  ["진주교육대학교","국립","경남"],
+  ["차의과학대학교","사립","경기"],
+  ["창신대학교","사립","경남"],
+  ["청운대학교","사립","충남"],
+  ["청주교육대학교","국립","충북"],
+  ["청주대학교","사립","충북"],
+  ["초당대학교","사립","전남"],
+  ["총신대학교","사립","서울"],
+  ["추계예술대학교","사립","서울"],
+  ["춘천교육대학교","국립","강원"],
+  ["충남대학교","국립","대전"],
+  ["충북대학교","국립","충북"],
+  ["칼빈대학교","사립","경기"],
+  ["평택대학교","사립","경기"],
+  ["포항공과대학교","사립","경북"],
+  ["한경국립대학교","국립","경기"],
+  ["한국공학대학교","사립","경기"],
+  ["한국과학기술원","국립","대전"],
+  ["한국교원대학교","국립","충북"],
+  ["한국기술교육대학교","사립","충남"],
+  ["한국성서대학교","사립","서울"],
+  ["한국에너지공과대학교","국립","전남"],
+  ["한국외국어대학교","사립","서울"],
+  ["한국체육대학교","국립","서울"],
+  ["한국침례신학대학교","사립","대전"],
+  ["한국항공대학교","사립","경기"],
+  ["한남대학교","사립","대전"],
+  ["한동대학교","사립","경북"],
+  ["한라대학교","사립","강원"],
+  ["한림대학교","사립","강원"],
+  ["한서대학교","사립","충남"],
+  ["한성대학교","사립","서울"],
+  ["한세대학교","사립","경기"],
+  ["한신대학교","사립","경기"],
+  ["한양대학교(ERICA)","사립","경기"],
+  ["한양대학교","사립","서울"],
+  ["한일장신대학교","사립","전북"],
+  ["협성대학교","사립","경기"],
+  ["호남대학교","사립","광주"],
+  ["호남신학대학교","사립","광주"],
+  ["호서대학교","사립","충남"],
+  ["호원대학교","사립","전북"],
+  ["홍익대학교","사립","서울"],
+  ["화성의과학대학교","사립","경기"]
+];
+
 // desc에 "지역·설립" 형식 담겨있음 → 파싱
 function getRegionFromDesc(desc) {
   if (!desc) return '';
@@ -5553,6 +5757,17 @@ function renderUnivAll() {
 // ── 대학통계 대시보드 (Claude API 기반) ──
 let _univStatsCache = {};   // 대학명 → 데이터 캐시 (세션 내)
 let _univStatsBusy = false;
+let _usEstFilter = 'all';   // all | 국립 | 사립
+function usSetEst(f) { _usEstFilter = f; renderUnivStatsView(); }
+// 지역 → 권역 매핑
+const US_GWON = [
+  { name:'수도권', emoji:'🏙', color:'#6c5ce7', regions:['서울','경기','인천'] },
+  { name:'충청권', emoji:'🌾', color:'#f39c12', regions:['대전','충남','충북','세종'] },
+  { name:'영남권', emoji:'⛰',  color:'#e74c3c', regions:['부산','대구','경남','경북','울산'] },
+  { name:'호남권', emoji:'🌊', color:'#27ae60', regions:['광주','전남','전북'] },
+  { name:'강원권', emoji:'🏔', color:'#2980b9', regions:['강원'] },
+  { name:'제주권', emoji:'🏝', color:'#16a085', regions:['제주'] },
+];
 
 function renderUnivStatsView() {
   const grid = document.getElementById('linksGrid');
@@ -5582,47 +5797,56 @@ function renderUnivStatsView() {
   }
 
   const cur = _univStatsCache._lastUniv || '서울대학교';
-  const clean = n => (n||'').replace('_분교','').replace('(분교)','').trim();
-  const isNat = l => /국립|공립|법인|과학기술원|교육대|카이스트|KAIST|POSTECH/i.test(l.desc||'') || /^(서울대|부산대|경북대|전남대|전북대|충남대|충북대|강원대|경상국립대|제주대|인천대|한국교원대|한국해양대|부경대|공주대|순천대|목포대|안동대|군산대|금오공과대|한밭대|서울과학기술대|서울시립대|창원대|KAIST|GIST|DGIST|UNIST)/.test(clean(l.name));
-
-  // 권역별 대학 목록 (기존 대학 링크 데이터 재사용) — 자동완성용 전체 명단
-  const allNames = [];
-  const chip = (name, neon) => { allNames.push(clean(name)); return `<button onclick="var i=document.getElementById('usUnivInput');i.value='${clean(name)}';usGenerate()"
+  const est = _usEstFilter;
+  // 첨부파일 기반 전국 대학 명단(UNIV_DB) → 필터 적용
+  const filtered = UNIV_DB.filter(u => est === 'all' || u[1] === est);
+  const allNames = filtered.map(u => u[0]);
+  const chip = (name, neon) => `<button onclick="var i=document.getElementById('usUnivInput');i.value='${name}';usGenerate()"
           style="padding:.26rem .6rem;border-radius:14px;border:1px solid ${neon}55;background:${neon}12;
-                 color:var(--text);font-size:.7rem;cursor:pointer;white-space:nowrap">${clean(name)}</button>`; };
+                 color:var(--text);font-size:.7rem;cursor:pointer;white-space:nowrap">${name}</button>`;
 
-  const gwonHtml = GWON_META.map(gwon => {
-    const links = state.links.filter(l => gwon.catIds.includes(l.catId));
-    if (!links.length) return '';
-    const nat = links.filter(isNat).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
-    const prv = links.filter(l=>!isNat(l)).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
-    const col = gwon.color || '#7dd3fc';
+  const gwonHtml = US_GWON.map(gwon => {
+    const us = filtered.filter(u => gwon.regions.includes(u[2]));
+    if (!us.length) return '';
+    const nat = us.filter(u => u[1] === '국립').sort((a,b)=>a[0].localeCompare(b[0],'ko'));
+    const prv = us.filter(u => u[1] === '사립').sort((a,b)=>a[0].localeCompare(b[0],'ko'));
+    const col = gwon.color;
     const sub = (label, arr, c) => arr.length ? `
       <div style="font-size:.66rem;font-weight:700;color:${c};margin:.35rem 0 .25rem">${label} (${arr.length})</div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:.3rem">${arr.map(l=>chip(l.name,c)).join('')}</div>` : '';
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:.3rem">${arr.map(u=>chip(u[0],c)).join('')}</div>` : '';
     return `
-      <div style="border-left:3px solid ${col};padding:.4rem 0 .4rem .7rem;margin-bottom:.6rem">
-        <div style="font-size:.8rem;font-weight:800;color:${col};margin-bottom:.2rem">${gwon.emoji} ${gwon.name} <span style="font-size:.66rem;color:var(--text-dim);font-weight:600">${links.length}개교</span></div>
-        ${sub('🏛 국립·공립', nat, '#7dd3fc')}
+      <div style="border-left:3px solid ${col};padding:.4rem 0 .4rem .7rem;margin-bottom:.6rem;break-inside:avoid">
+        <div style="font-size:.8rem;font-weight:800;color:${col};margin-bottom:.2rem">${gwon.emoji} ${gwon.name} <span style="font-size:.66rem;color:var(--text-dim);font-weight:600">${us.length}개교</span></div>
+        ${sub('🏛 국립', nat, '#7dd3fc')}
         ${sub('🏫 사립', prv, '#f48fb1')}
       </div>`;
   }).join('');
 
+  const natN = UNIV_DB.filter(u=>u[1]==='국립').length, prvN = UNIV_DB.filter(u=>u[1]==='사립').length;
+  const fbtn = (val, label) => `<button onclick="usSetEst('${val}')"
+    style="padding:.32rem .9rem;border-radius:16px;font-size:.74rem;font-weight:700;cursor:pointer;
+    border:1.5px solid ${est===val?'var(--accent2)':'var(--border)'};
+    background:${est===val?'var(--accent2)':'var(--card)'};color:${est===val?'#fff':'var(--text)'}">${label}</button>`;
+
   grid.innerHTML = `
     <div class="ai-view-wrap" style="grid-column:1/-1;padding:0 .3rem">
-      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:.7rem">
-        <input id="usUnivInput" type="text" value="${cur}" list="usUnivList" placeholder="대학명 입력 또는 아래 권역별 목록에서 선택"
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:.6rem">
+        <input id="usUnivInput" type="text" value="${cur}" list="usUnivList" placeholder="대학명 입력 또는 아래 목록에서 선택"
           style="flex:1 1 220px;min-width:180px;padding:.55rem .8rem;background:var(--bg3);border:1.5px solid var(--border);
                  border-radius:8px;color:var(--text);font-size:.85rem;outline:none"
           onkeydown="if(event.key==='Enter')usGenerate()">
         <button id="usGenBtn" onclick="usGenerate()" style="padding:.55rem 1.3rem;background:var(--accent2);border:none;
                 border-radius:8px;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer">📊 대시보드 생성</button>
       </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:.7rem">
+        <span style="font-size:.72rem;color:var(--text-dim);font-weight:700">설립구분</span>
+        ${fbtn('all', `전체 ${UNIV_DB.length}`)}${fbtn('국립', `🏛 국립 ${natN}`)}${fbtn('사립', `🏫 사립 ${prvN}`)}
+      </div>
       <details id="usListWrap" ${_univStatsCache._lastUniv ? '' : 'open'} style="margin-bottom:1rem;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.6rem .8rem">
-        <summary style="cursor:pointer;font-size:.8rem;font-weight:800;color:var(--text);outline:none">🗺 전국 국립·사립 대학 (권역별) — 클릭해 대시보드 생성</summary>
-        <div style="margin-top:.6rem;columns:2;column-gap:1.2rem" class="us-gwon-cols">${gwonHtml}</div>
+        <summary style="cursor:pointer;font-size:.8rem;font-weight:800;color:var(--text);outline:none">🗺 전국 대학 (권역별, ${filtered.length}개교) — 클릭해 대시보드 생성</summary>
+        <div style="margin-top:.6rem;columns:2;column-gap:1.2rem">${gwonHtml}</div>
       </details>
-      <datalist id="usUnivList">${[...new Set(allNames)].map(u => `<option value="${u}">`).join('')}</datalist>
+      <datalist id="usUnivList">${allNames.map(u => `<option value="${u}">`).join('')}</datalist>
       <div id="usResult"></div>
     </div>`;
 
