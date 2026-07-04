@@ -5582,32 +5582,47 @@ function renderUnivStatsView() {
   }
 
   const cur = _univStatsCache._lastUniv || '서울대학교';
-  // 전국 국립·사립·과기원 대학 목록 (자동완성)
-  const NAT = ['서울대학교','부산대학교','경북대학교','전남대학교','전북대학교','충남대학교','충북대학교','강원대학교','경상국립대학교','제주대학교','인천대학교','한국교원대학교','한국해양대학교','부경대학교','공주대학교','순천대학교','목포대학교','안동대학교','군산대학교','금오공과대학교','한밭대학교','서울과학기술대학교','서울시립대학교','창원대학교','한국체육대학교','한국전통문화대학교'];
-  const SCI = ['KAIST','POSTECH','GIST','DGIST','UNIST'];
-  const PRV = ['연세대학교','고려대학교','성균관대학교','한양대학교','중앙대학교','경희대학교','서강대학교','이화여자대학교','한국외국어대학교','건국대학교','동국대학교','홍익대학교','국민대학교','숭실대학교','세종대학교','아주대학교','인하대학교','단국대학교','광운대학교','명지대학교','가톨릭대학교','숙명여자대학교','성신여자대학교','가천대학교','순천향대학교','조선대학교','계명대학교','영남대학교','동아대학교','인제대학교','울산대학교','한림대학교','원광대학교','호서대학교','상명대학교','을지대학교'];
-  const ALL = [...NAT, ...SCI, ...PRV];
-  const chip = p => `<button onclick="document.getElementById('usUnivInput').value='${p}';usGenerate()"
-          style="padding:.28rem .65rem;border-radius:16px;border:1px solid var(--border);background:var(--card);
-                 color:var(--text);font-size:.72rem;cursor:pointer;white-space:nowrap">${p}</button>`;
+  const clean = n => (n||'').replace('_분교','').replace('(분교)','').trim();
+  const isNat = l => /국립|공립|법인|과학기술원|교육대|카이스트|KAIST|POSTECH/i.test(l.desc||'') || /^(서울대|부산대|경북대|전남대|전북대|충남대|충북대|강원대|경상국립대|제주대|인천대|한국교원대|한국해양대|부경대|공주대|순천대|목포대|안동대|군산대|금오공과대|한밭대|서울과학기술대|서울시립대|창원대|KAIST|GIST|DGIST|UNIST)/.test(clean(l.name));
+
+  // 권역별 대학 목록 (기존 대학 링크 데이터 재사용) — 자동완성용 전체 명단
+  const allNames = [];
+  const chip = (name, neon) => { allNames.push(clean(name)); return `<button onclick="var i=document.getElementById('usUnivInput');i.value='${clean(name)}';usGenerate()"
+          style="padding:.26rem .6rem;border-radius:14px;border:1px solid ${neon}55;background:${neon}12;
+                 color:var(--text);font-size:.7rem;cursor:pointer;white-space:nowrap">${clean(name)}</button>`; };
+
+  const gwonHtml = GWON_META.map(gwon => {
+    const links = state.links.filter(l => gwon.catIds.includes(l.catId));
+    if (!links.length) return '';
+    const nat = links.filter(isNat).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+    const prv = links.filter(l=>!isNat(l)).sort((a,b)=>a.name.localeCompare(b.name,'ko'));
+    const col = gwon.color || '#7dd3fc';
+    const sub = (label, arr, c) => arr.length ? `
+      <div style="font-size:.66rem;font-weight:700;color:${c};margin:.35rem 0 .25rem">${label} (${arr.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:.3rem">${arr.map(l=>chip(l.name,c)).join('')}</div>` : '';
+    return `
+      <div style="border-left:3px solid ${col};padding:.4rem 0 .4rem .7rem;margin-bottom:.6rem">
+        <div style="font-size:.8rem;font-weight:800;color:${col};margin-bottom:.2rem">${gwon.emoji} ${gwon.name} <span style="font-size:.66rem;color:var(--text-dim);font-weight:600">${links.length}개교</span></div>
+        ${sub('🏛 국립·공립', nat, '#7dd3fc')}
+        ${sub('🏫 사립', prv, '#f48fb1')}
+      </div>`;
+  }).join('');
 
   grid.innerHTML = `
     <div class="ai-view-wrap" style="grid-column:1/-1;padding:0 .3rem">
       <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:.7rem">
-        <input id="usUnivInput" type="text" value="${cur}" list="usUnivList" placeholder="전국 국립·사립 대학명 입력 (예: 서울대학교)"
+        <input id="usUnivInput" type="text" value="${cur}" list="usUnivList" placeholder="대학명 입력 또는 아래 권역별 목록에서 선택"
           style="flex:1 1 220px;min-width:180px;padding:.55rem .8rem;background:var(--bg3);border:1.5px solid var(--border);
                  border-radius:8px;color:var(--text);font-size:.85rem;outline:none"
           onkeydown="if(event.key==='Enter')usGenerate()">
-        <datalist id="usUnivList">${ALL.map(u => `<option value="${u}">`).join('')}</datalist>
         <button id="usGenBtn" onclick="usGenerate()" style="padding:.55rem 1.3rem;background:var(--accent2);border:none;
                 border-radius:8px;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer">📊 대시보드 생성</button>
       </div>
-      <div style="font-size:.68rem;font-weight:700;color:#7dd3fc;margin:.3rem 0 .3rem">🏛 국립·거점대학</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.5rem">${NAT.slice(0,12).map(chip).join('')}</div>
-      <div style="font-size:.68rem;font-weight:700;color:#a5d6a7;margin:.3rem 0 .3rem">🔬 과학기술원</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.5rem">${SCI.map(chip).join('')}</div>
-      <div style="font-size:.68rem;font-weight:700;color:#f48fb1;margin:.3rem 0 .3rem">🏫 주요 사립대학</div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:1rem">${PRV.slice(0,16).map(chip).join('')}</div>
+      <details id="usListWrap" ${_univStatsCache._lastUniv ? '' : 'open'} style="margin-bottom:1rem;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.6rem .8rem">
+        <summary style="cursor:pointer;font-size:.8rem;font-weight:800;color:var(--text);outline:none">🗺 전국 국립·사립 대학 (권역별) — 클릭해 대시보드 생성</summary>
+        <div style="margin-top:.6rem;columns:2;column-gap:1.2rem" class="us-gwon-cols">${gwonHtml}</div>
+      </details>
+      <datalist id="usUnivList">${[...new Set(allNames)].map(u => `<option value="${u}">`).join('')}</datalist>
       <div id="usResult"></div>
     </div>`;
 
