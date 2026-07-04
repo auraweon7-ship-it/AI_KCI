@@ -1957,6 +1957,26 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
   </div>
 </div>
 
+<div class="modal-overlay" id="ytEditModal">
+  <div class="modal" style="max-width:420px">
+    <h3 style="font-size:.95rem;display:flex;align-items:center;gap:6px;">✏️ 영상 수정
+      <button onclick="closeModal('ytEditModal')" title="닫기" style="margin-left:auto;flex-shrink:0;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-size:1rem;line-height:1;width:28px;height:28px;cursor:pointer">✕</button>
+    </h3>
+    <div class="form-group" style="margin-top:10px">
+      <label style="font-size:.72rem;color:var(--text-dim)">제목</label>
+      <input id="ytEditTitle" type="text" placeholder="영상 제목" style="width:100%;padding:8px 10px;margin-top:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.8rem;outline:none">
+    </div>
+    <div class="form-group" style="margin-top:10px">
+      <label style="font-size:.72rem;color:var(--text-dim)">YouTube URL (또는 영상 ID)</label>
+      <input id="ytEditUrl" type="text" placeholder="https://www.youtube.com/watch?v=..." style="width:100%;padding:8px 10px;margin-top:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.8rem;outline:none" onkeydown="if(event.key==='Enter')ytEditSave()">
+    </div>
+    <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:14px">
+      <button onclick="closeModal('ytEditModal')" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">취소</button>
+      <button onclick="ytEditSave()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">저장</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="lawModal">
   <div class="modal" style="max-width:720px;width:94vw;max-height:88vh;padding:0;overflow:hidden;display:flex;flex-direction:column">
     <div style="display:flex;align-items:center;gap:.5rem;padding:.9rem 1.1rem;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#4fc3f722,transparent)">
@@ -5585,6 +5605,7 @@ const YT_CATS = ['전체', 'AI 기초', 'LLM 개발', 'ML 이론', '생성AI 활
 // YouTube 추천 영상 숨김·제목수정 (하드코딩 배열이라 id 없음 → vid/제목 키로 로컬 오버라이드)
 function ytHiddenSet() { try { return new Set(JSON.parse(localStorage.getItem('yt_hidden') || '[]')); } catch(_) { return new Set(); } }
 function ytTitleOverrides() { try { return JSON.parse(localStorage.getItem('yt_title_ov') || '{}'); } catch(_) { return {}; } }
+function ytVidOverrides() { try { return JSON.parse(localStorage.getItem('yt_vid_ov') || '{}'); } catch(_) { return {}; } }
 function ytHideVideo(key, ev) {
   if (ev) { ev.preventDefault(); ev.stopPropagation(); }
   if (!confirm('이 영상을 목록에서 숨길까요?')) return;
@@ -5593,16 +5614,36 @@ function ytHideVideo(key, ev) {
   renderYouTubeView();
   showToast('영상 숨김 🙈');
 }
+let _ytEditKey = null;
 function ytEditVideo(key, ev) {
   if (ev) { ev.preventDefault(); ev.stopPropagation(); }
-  const ov = ytTitleOverrides();
-  const cur = ov[key] || (YOUTUBE_VIDEOS.find(v => (v.vid || v.title) === key)?.title) || '';
-  const nt = prompt('영상 제목 수정', cur);
-  if (nt == null) return;
-  if (nt.trim()) ov[key] = nt.trim(); else delete ov[key];
-  localStorage.setItem('yt_title_ov', JSON.stringify(ov));
+  _ytEditKey = key;
+  const base = YOUTUBE_VIDEOS.find(v => (v.vid || v.title) === key) || {};
+  const tOv = ytTitleOverrides(), vOv = ytVidOverrides();
+  const curTitle = tOv[key] != null ? tOv[key] : (base.title || '');
+  const curVid = vOv[key] || base.vid || '';
+  document.getElementById('ytEditTitle').value = curTitle;
+  document.getElementById('ytEditUrl').value = curVid ? ('https://www.youtube.com/watch?v=' + curVid) : '';
+  openModal('ytEditModal');
+  setTimeout(() => document.getElementById('ytEditTitle')?.focus(), 50);
+}
+function ytEditSave() {
+  if (!_ytEditKey) return;
+  const key = _ytEditKey;
+  const title = (document.getElementById('ytEditTitle').value || '').trim();
+  const urlRaw = (document.getElementById('ytEditUrl').value || '').trim();
+  // URL 또는 ID에서 vid(11자) 추출
+  let vid = '';
+  const m = urlRaw.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/) || urlRaw.match(/^([\w-]{11})$/);
+  if (m) vid = m[1];
+  const tOv = ytTitleOverrides(), vOv = ytVidOverrides();
+  if (title) tOv[key] = title; else delete tOv[key];
+  if (vid) vOv[key] = vid; else delete vOv[key];
+  localStorage.setItem('yt_title_ov', JSON.stringify(tOv));
+  localStorage.setItem('yt_vid_ov', JSON.stringify(vOv));
+  closeModal('ytEditModal');
   renderYouTubeView();
-  showToast('제목 수정됨 ✏️');
+  showToast('영상 수정됨 ✏️');
 }
 
 function renderYouTubeView() {
@@ -5633,10 +5674,14 @@ function renderYouTubeView() {
 
   function getFiltered() {
     const hidden = ytHiddenSet();
-    const ov = ytTitleOverrides();
+    const tOv = ytTitleOverrides(), vOv = ytVidOverrides();
     const base = ytCat === '전체' ? YOUTUBE_VIDEOS : YOUTUBE_VIDEOS.filter(v => v.cat === ytCat);
     return base.filter(v => !hidden.has(v.vid || v.title))
-      .map(v => ov[v.vid || v.title] ? { ...v, title: ov[v.vid || v.title] } : v);
+      .map(v => {
+        const k = v.vid || v.title;
+        if (!tOv[k] && !vOv[k]) return v;
+        return { ...v, title: tOv[k] || v.title, vid: vOv[k] || v.vid };
+      });
   }
 
   function fmtViews(n) {
