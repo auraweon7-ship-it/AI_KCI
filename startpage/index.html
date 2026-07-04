@@ -711,6 +711,13 @@ body[data-theme="light"] .univ-chip { border-color: rgba(108,92,231,.4); box-sha
   box-shadow: 0 0 14px rgba(64,224,208,.6), inset 0 0 8px rgba(64,224,208,.12);
 }
 body[data-theme="light"] .ai-view-wrap .univ-chip { border-color: #17a2b8; box-shadow: 0 0 6px rgba(23,162,184,.3); }
+/* 전체탭 AI 섹션 칩 — 네온 hover 강화 (인라인 border 청록 위에 hover 글로우) */
+.ai-neon-chip { transition: box-shadow .18s, transform .18s, border-color .18s; }
+.ai-neon-chip:hover {
+  border-color: #40e0d0 !important;
+  box-shadow: 0 0 14px rgba(64,224,208,.6), inset 0 0 8px rgba(64,224,208,.12) !important;
+  transform: translateY(-1px);
+}
 .univ-chip .est-dot {
   width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
 }
@@ -5789,10 +5796,10 @@ function renderLinks() {
           subHead.textContent = gname;
           groupWrap.appendChild(subHead);
           const chipGrid = document.createElement('div');
-          chipGrid.className = 'ai-chip-grid';
+          chipGrid.className = 'ai-chip-grid ai-neon-grid';
           items.forEach(link => {
             const a = document.createElement('a');
-            a.className = 'univ-chip';
+            a.className = 'univ-chip ai-neon-chip';
             a.href = link.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
             a.style.border = `1.5px solid ${neon}`;
             a.style.boxShadow = `0 0 8px ${neon}44, inset 0 0 6px ${neon}0f`;
