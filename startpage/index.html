@@ -5838,6 +5838,14 @@ function renderAPIView() {
   });
 }
 
+// AI 그룹(카테고리)별 외곽선 색 — 그룹명 해시로 팔레트에서 고정 배정
+const AI_GROUP_PALETTE = ['#40e0d0','#ba68c8','#ffd54f','#69f0ae','#ff8a65','#4fc3f7','#f48fb1','#a78bfa','#4dd0e1','#ffb74d','#9ccc65','#e57373','#7986cb','#4db6ac','#f06292','#aed581'];
+function aiGroupColor(g) {
+  let h = 0; const s = String(g || '');
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return AI_GROUP_PALETTE[h % AI_GROUP_PALETTE.length];
+}
+
 function renderAIView() {
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
@@ -5881,15 +5889,18 @@ function renderAIView() {
 
   // AI 에이전트 섹션
   Object.entries(aiGroups).forEach(([gname, items]) => {
+    const col = aiGroupColor(gname);
     const sec = document.createElement('div');
     sec.className = 'univ-region-section';
-    sec.innerHTML = `<h3 class="univ-region-title">${gname}</h3>`;
+    sec.innerHTML = `<h3 class="univ-region-title"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${col};margin-right:6px;vertical-align:middle"></span>${gname}</h3>`;
     const chips = document.createElement('div');
     chips.className = 'ai-chip-grid';
     items.forEach(link => {
       const a = document.createElement('a');
       a.className = 'univ-chip';
       a.href = link.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.style.borderColor = col;
+      a.style.boxShadow = `0 0 8px ${col}40, inset 0 0 5px ${col}0d`;
       a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div><span class="chip-actions"><button class="edit" onclick="openEditLink('${link.id}',event)" title="편집">✏️</button><button class="del" onclick="deleteLink('${link.id}',event)" title="삭제">✕</button></span>`;
       chips.appendChild(a);
     });
@@ -5905,9 +5916,10 @@ function renderAIView() {
 
   // API 섹션
   Object.entries(apiGroups).forEach(([gname, items]) => {
+    const col = aiGroupColor(gname);
     const sec = document.createElement('div');
     sec.className = 'univ-region-section';
-    sec.innerHTML = `<h3 class="univ-region-title">${gname}</h3>`;
+    sec.innerHTML = `<h3 class="univ-region-title"><span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${col};margin-right:6px;vertical-align:middle"></span>${gname}</h3>`;
     const chips = document.createElement('div');
     chips.className = 'ai-chip-grid';
     items.forEach(link => {
@@ -5916,6 +5928,8 @@ function renderAIView() {
       a.href = link.url;
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
+      a.style.borderColor = col;
+      a.style.boxShadow = `0 0 8px ${col}40, inset 0 0 5px ${col}0d`;
       a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div><span class="chip-actions"><button class="edit" onclick="openEditLink('${link.id}',event)" title="편집">✏️</button><button class="del" onclick="deleteLink('${link.id}',event)" title="삭제">✕</button></span>`;
       chips.appendChild(a);
     });
@@ -7039,18 +7053,19 @@ function renderLinks() {
         const groupWrap = document.createElement('div');
         groupWrap.style.cssText = 'grid-column:1/-1;';
         Object.entries(groups).forEach(([gname, items]) => {
+          const col = aiGroupColor(gname);
           const subHead = document.createElement('div');
-          subHead.style.cssText = `font-size:.7rem;font-weight:700;color:${neon};padding:5px 0 2px;border-bottom:1px solid ${neon}33;margin-top:5px;`;
-          subHead.textContent = gname;
+          subHead.style.cssText = `font-size:.7rem;font-weight:700;color:${col};padding:5px 0 2px;border-bottom:1px solid ${col}44;margin-top:5px;`;
+          subHead.innerHTML = `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${col};margin-right:5px;vertical-align:middle"></span>${gname}`;
           groupWrap.appendChild(subHead);
           const chipGrid = document.createElement('div');
-          chipGrid.className = 'ai-chip-grid ai-neon-grid';
+          chipGrid.className = 'ai-chip-grid';
           items.forEach(link => {
             const a = document.createElement('a');
-            a.className = 'univ-chip ai-neon-chip';
+            a.className = 'univ-chip';
             a.href = link.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
-            a.style.border = `1.5px solid ${neon}`;
-            a.style.boxShadow = `0 0 8px ${neon}44, inset 0 0 6px ${neon}0f`;
+            a.style.border = `1.5px solid ${col}`;
+            a.style.boxShadow = `0 0 8px ${col}44, inset 0 0 6px ${col}0f`;
             a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div><span class="chip-actions"><button class="edit" onclick="openEditLink('${link.id}',event)" title="편집">✏️</button><button class="del" onclick="deleteLink('${link.id}',event)" title="삭제">✕</button></span>`;
             chipGrid.appendChild(a);
           });
