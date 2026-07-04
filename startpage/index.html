@@ -1172,7 +1172,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
     <!-- 도서추천 -->
     <div class="rw" id="rwBookRec">
-      <div class="rw-hdr"><span>📚 도서추천</span></div>
+      <div class="rw-hdr"><span>📚 도서추천</span><button class="rw-refresh" onclick="document.getElementById('bookKwd').value='';loadBookRec()" title="설정 키워드로 다시 추천">↻</button></div>
       <div style="display:flex;gap:5px;margin-bottom:7px">
         <input id="bookKwd" placeholder="키워드 입력 (예: 인공지능)" onkeydown="if(event.key==='Enter')loadBookRec()"
           style="flex:1;min-width:0;padding:5px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.72rem;outline:none">
@@ -1860,6 +1860,15 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
     style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;"
     oninput="localStorage.setItem('claude_api_key', this.value.trim()); if(state.activeCat==='univstats') renderUnivStatsView();">
   <p style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">메뉴 <b>📈 대학통계</b> 대시보드는 이 키가 있어야 작동합니다. 키는 이 브라우저에만 저장되며 Anthropic API로만 전송됩니다. <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--accent2)">키 발급 →</a></p>
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+  <div class="settings-title" style="font-size:.9rem;">📚 도서추천 키워드 (최대 3개)</div>
+  <div style="display:flex;gap:6px;margin-top:8px;">
+    <input id="bookKw1" placeholder="키워드1" oninput="saveBookKeywords()" style="flex:1;min-width:0;padding:7px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.76rem;outline:none;">
+    <input id="bookKw2" placeholder="키워드2" oninput="saveBookKeywords()" style="flex:1;min-width:0;padding:7px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.76rem;outline:none;">
+    <input id="bookKw3" placeholder="키워드3" oninput="saveBookKeywords()" style="flex:1;min-width:0;padding:7px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.76rem;outline:none;">
+  </div>
+  <p style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">사이드바 <b>📚 도서추천</b> 위젯이 이 키워드 중 하나로 책 5권을 자동 추천합니다. 위젯에서 직접 키워드 입력도 가능합니다.</p>
 
 
   <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
@@ -7730,15 +7739,28 @@ function handleImport(e) {
 // RIGHT SIDEBAR WIDGETS
 // ══════════════════════════════════════════════
 
+// 설정: 도서추천 키워드 3개 저장
+function saveBookKeywords() {
+  const kws = ['bookKw1','bookKw2','bookKw3']
+    .map(id => (document.getElementById(id)?.value || '').trim())
+    .filter(Boolean);
+  localStorage.setItem('book_keywords', JSON.stringify(kws));
+}
+
 // ── 도서추천 (YES24 검색 스크래핑, 무키 → 표지, 클릭 시 YES24 상품) ──
 async function loadBookRec() {
   const grid = document.getElementById('bookRecGrid');
   if (!grid) return;
   const input = document.getElementById('bookKwd');
   let kwd = (input?.value || '').trim();
-  // 미입력 시 마지막 키워드로 자동 추천
-  if (!kwd) kwd = (localStorage.getItem('book_last_kwd') || '').trim();
-  if (!kwd) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.66rem;padding:6px 0">키워드를 입력하세요</div>'; return; }
+  // 미입력 시: 설정 키워드(3개) 중 무작위 → 없으면 마지막 키워드
+  if (!kwd) {
+    let kws = [];
+    try { kws = JSON.parse(localStorage.getItem('book_keywords') || '[]').filter(Boolean); } catch(_) {}
+    if (kws.length) kwd = kws[Math.floor(Math.random() * kws.length)];
+    else kwd = (localStorage.getItem('book_last_kwd') || '').trim();
+  }
+  if (!kwd) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.66rem;padding:6px 0">설정에서 도서추천 키워드를 등록하거나<br>키워드를 입력하세요</div>'; return; }
   if (input && !input.value.trim()) input.value = kwd;  // 자동 키워드 표시
   localStorage.setItem('book_last_kwd', kwd);
   const kwdNorm = kwd.replace(/\s+/g, '').toLowerCase();
@@ -8718,6 +8740,8 @@ render();
  () => { const p = document.getElementById('profileSel'); if (p) p.value = localStorage.getItem('active_profile') || ''; },
  () => { const k = document.getElementById('kciApiKey'); if (k) k.value = localStorage.getItem('kci_api_key') || ''; },
  () => { const k = document.getElementById('claudeApiKey'); if (k) k.value = localStorage.getItem('claude_api_key') || ''; },
+ () => { let kws=[]; try{kws=JSON.parse(localStorage.getItem('book_keywords')||'[]');}catch(_){} ['bookKw1','bookKw2','bookKw3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=kws[i]||'';}); },
+ () => { try { loadBookRec(); } catch(_){} },
  memoLoad, cvSetOpts, piLoad, timerRender, loadStock,
  () => { rssRenderTabs(); rssLoad(); }, noticeLoad
 ].forEach(fn => { try { fn(); } catch(e) { console.error('위젯 초기화 오류:', fn.name, e); } });
