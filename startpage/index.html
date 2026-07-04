@@ -1994,12 +1994,12 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 <div class="modal-overlay" id="linkModal">
   <div class="modal">
     <h3 id="linkModalTitle">링크 추가</h3>
-    <div class="form-group">
+    <div class="form-group" id="linkCatRow">
       <label>카테고리</label>
       <select id="linkCat" onchange="linkSyncGroupRow()"></select>
     </div>
     <div class="form-group" id="linkGroupRow" style="display:none">
-      <label>AI 하위 그룹</label>
+      <label id="linkGroupLabel">AI 하위 그룹</label>
       <select id="linkGroup"></select>
     </div>
     <div class="form-group">
@@ -5850,7 +5850,7 @@ function renderAIView() {
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
   const addBtn = document.getElementById('addLinkHeaderBtn');
-  if (addBtn) addBtn.style.display = '';
+  if (addBtn) { addBtn.style.display = ''; addBtn.onclick = openAddAiLink; }  // AI 전용 추가
   grid.classList.add('univall-mode');
   title.textContent = '🤖 AI';
 
@@ -6818,6 +6818,7 @@ function renderLinks() {
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
   const addBtn = document.getElementById('addLinkHeaderBtn');
+  if (addBtn) addBtn.onclick = openAddLink;   // 기본 추가(AI 뷰에서 openAddAiLink로 교체)
 
   // 헤더 정렬 셀렉트 — 정렬 가능한 뷰에서만 표시
   const sortSel = document.getElementById('sortSelHeader');
@@ -7321,7 +7322,24 @@ function openAddLink() {
   document.getElementById('linkUrl').value = '';
   document.getElementById('linkDesc').value = '';
   selectedEmoji = '';
+  document.getElementById('linkCatRow').style.display = '';   // 상위 카테고리 표시
+  document.getElementById('linkGroupLabel').textContent = 'AI 하위 그룹';
   populateLinkCatSelect();
+  buildEmojiPicker();
+  openModal('linkModal');
+}
+// AI 전용 링크 추가 — 카테고리 고정(ai), AI 하위 그룹·이름·URL만
+function openAddAiLink() {
+  editingLinkId = null;
+  document.getElementById('linkModalTitle').textContent = '🤖 AI 링크 추가';
+  document.getElementById('linkName').value = '';
+  document.getElementById('linkUrl').value = '';
+  document.getElementById('linkDesc').value = '';
+  selectedEmoji = '';
+  populateLinkCatSelect('ai');                                 // linkCat = ai
+  document.getElementById('linkCatRow').style.display = 'none'; // 상위 카테고리 숨김
+  document.getElementById('linkGroupLabel').textContent = 'AI 카테고리';
+  linkSyncGroupRow();                                          // AI 그룹 표시
   buildEmojiPicker();
   openModal('linkModal');
 }
@@ -7336,6 +7354,8 @@ function openEditLink(id, e) {
   document.getElementById('linkUrl').value = link.url;
   document.getElementById('linkDesc').value = link.desc || '';
   selectedEmoji = link.emoji || '';
+  document.getElementById('linkCatRow').style.display = '';
+  document.getElementById('linkGroupLabel').textContent = 'AI 하위 그룹';
   populateLinkCatSelect(link.catId);
   if (link.catId === 'ai') linkSyncGroupRow(link.group);
   buildEmojiPicker();
