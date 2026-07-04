@@ -868,8 +868,11 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
   .right-sidebar .rw { flex: 1 1 100%; min-width: 0; }
   .clock-time { font-size: 1.5rem; }
   /* 캘린더 셀·통계 도넛 압축 */
-  #schedGrid { gap: 2px; }
-  #schedGrid > div { min-height: 44px !important; }
+  #schedGrid { gap: 2px; width: 100%; }
+  #schedGrid > div { min-height: 44px !important; min-width: 0; overflow: hidden; }
+  /* 캘린더 헤더 컨트롤 줄바꿈 — 좁은 화면서 넘쳐 좁아 보이던 문제 방지 */
+  #schedWidget .news-widget-header { flex-wrap: wrap; row-gap: 5px; }
+  #schedWidget .news-widget-header > span { flex-wrap: wrap; row-gap: 4px; }
   #todoGrid { grid-template-columns: repeat(2, 1fr) !important; }
   #todoDonuts { grid-template-columns: 1fr !important; }
   /* 모달 폭 화면 맞춤 */
@@ -1010,7 +1013,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       </div>
       <!-- 카테고리 필터 + 월별 통계 -->
       <div id="schedFilterBar" style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:6px;"></div>
-      <div id="schedGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;"></div>
+      <div id="schedGrid" style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;"></div>
       <!-- 선택 날짜 일정 패널 (항상 표시) -->
       <div id="schedDayPanel" style="margin-top:8px;padding:10px;background:var(--card);border:1px solid var(--border);border-radius:8px;">
         <div id="schedDayTitle" style="font-size:.76rem;font-weight:700;color:var(--accent2);margin-bottom:6px"></div>
@@ -4015,7 +4018,7 @@ function schedRender() {
   // 비로그인: 빈 캘린더 격자는 표시, 일정 데이터·입력 패널만 숨김
   if (panel) panel.style.display = loggedIn ? '' : 'none';
   if (schedView === 'week') { schedRenderWeek(loggedIn); return; }
-  grid.style.gridTemplateColumns = 'repeat(7,1fr)';  // 월간 복귀
+  grid.style.gridTemplateColumns = 'repeat(7,minmax(0,1fr))';  // 월간 복귀 (셀 넘침 방지)
   title.textContent = `${schedYear}년 ${schedMonth+1}월`;
   const all = loggedIn ? schedGetAll() : {};
   const today = new Date();
