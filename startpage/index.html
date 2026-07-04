@@ -6051,6 +6051,8 @@ async function usGenerate() {
  "rankings": [{"name":"QS 세계대학랭킹","rank":"예: 세계 300위권","year":"2024"},{"name":"THE 아시아대학랭킹","rank":"","year":"2024"}],
  "evaluation": [{"name":"대학기본역량진단","result":"예: 일반재정지원 대학 선정","year":"2021"},{"name":"기관평가인증(한국대학평가원)","result":"인증","year":"2022"},{"name":"글로컬대학30 / RISE 등","result":"해당 여부","year":"2024"}],
  "notableDepts": ["대표·특성화 학과/단과대 5~8개"],
+ "radar": [{"axis":"교육","score":80,"avg":60},{"axis":"연구","score":75,"avg":60},{"axis":"재정","score":70,"avg":60},{"axis":"취업","score":72,"avg":62},{"axis":"국제화","score":65,"avg":55},{"axis":"장학","score":68,"avg":60}],
+ "swot": {"S":["강점 3~4개 (구체적으로)"],"W":["약점 3~4개"],"O":["기회 3~4개 (정책·환경)"],"T":["위협 3~4개 (학령인구·경쟁 등)"]},
  "sources": ["대학알리미","대학재정알리미","대학기본역량진단","기관평가인증"]
 }`;
 
@@ -6122,6 +6124,82 @@ function usBarChart(title, data, color, unit) {
   }).join('');
   return `<div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:.9rem">
     <div style="font-size:.82rem;font-weight:800;color:var(--text);margin-bottom:.7rem">${title}</div>${rows}</div>`;
+}
+
+// ── 대시보드용 SVG 차트 헬퍼 ──
+const US_PAL = ['#4fc3f7','#ba68c8','#ffd54f','#69f0ae','#ff8a65','#f48fb1','#80deea','#a78bfa','#4dd0e1','#ffb74d'];
+function usPanel(title, inner, accent) {
+  return `<div style="background:var(--card);border:1px solid var(--border);border-top:3px solid ${accent||'var(--accent2)'};border-radius:12px;padding:.9rem 1rem;margin-bottom:.9rem;box-shadow:0 2px 10px rgba(0,0,0,.15)">
+    <div style="font-size:.82rem;font-weight:800;color:var(--text);margin-bottom:.6rem">${title}</div>${inner}</div>`;
+}
+// 도넛 차트
+function usDonut(data, unit) {
+  if (!data || !data.length) return '';
+  const tot = data.reduce((s,x)=>s+(+x.value||0),0) || 1;
+  const R=52, r=32, cx=60, cy=60; let a=-Math.PI/2; const segs=[];
+  data.forEach((x,i)=>{
+    const frac=(+x.value||0)/tot, a2=a+frac*2*Math.PI;
+    const lx=cx+R*Math.cos(a), ly=cy+R*Math.sin(a), lx2=cx+R*Math.cos(a2), ly2=cy+R*Math.sin(a2);
+    const ix=cx+r*Math.cos(a2), iy=cy+r*Math.sin(a2), ix2=cx+r*Math.cos(a), iy2=cy+r*Math.sin(a);
+    const large=frac>0.5?1:0;
+    segs.push(`<path d="M${lx} ${ly} A${R} ${R} 0 ${large} 1 ${lx2} ${ly2} L${ix} ${iy} A${r} ${r} 0 ${large} 0 ${ix2} ${iy2} Z" fill="${US_PAL[i%US_PAL.length]}"/>`);
+    a=a2;
+  });
+  const legend=data.map((x,i)=>`<div style="display:flex;align-items:center;gap:5px;font-size:.7rem;color:var(--text-dim);margin:2px 0">
+    <span style="width:9px;height:9px;border-radius:2px;background:${US_PAL[i%US_PAL.length]};flex-shrink:0"></span>
+    <span style="flex:1;color:var(--text)">${x.label}</span><span style="font-weight:700;color:var(--text)">${x.value}${unit||''}</span></div>`).join('');
+  return `<div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <svg viewBox="0 0 120 120" style="width:110px;height:110px;flex-shrink:0">${segs.join('')}
+      <text x="60" y="64" text-anchor="middle" font-size="9" fill="var(--text-muted)">${data.length}개</text></svg>
+    <div style="flex:1;min-width:120px">${legend}</div></div>`;
+}
+// 반원 게이지 (0~max)
+function usGauge(label, value, max, color, unit) {
+  const v=Math.max(0,Math.min(+value||0, max)); const frac=v/max;
+  const a=Math.PI*(1-frac); const cx=50,cy=50,R=40;
+  const ex=cx+R*Math.cos(a), ey=cy-R*Math.sin(a);
+  const large=0;
+  return `<div style="text-align:center;flex:1;min-width:110px">
+    <svg viewBox="0 0 100 58" style="width:100%;max-width:130px">
+      <path d="M10 50 A40 40 0 0 1 90 50" fill="none" stroke="var(--bg3)" stroke-width="9" stroke-linecap="round"/>
+      <path d="M10 50 A40 40 0 ${large} 1 ${ex} ${ey}" fill="none" stroke="${color}" stroke-width="9" stroke-linecap="round"/>
+      <text x="50" y="46" text-anchor="middle" font-size="16" font-weight="800" fill="var(--text)">${value}${unit||''}</text>
+    </svg>
+    <div style="font-size:.7rem;color:var(--text-dim);margin-top:2px">${label}</div></div>`;
+}
+// 라인 차트 (연도별)
+function usLine(data, color, unit) {
+  if (!data || data.length<2) return usBarChartInner(data, color, unit);
+  const W=300,H=110,pad=26; const vals=data.map(d=>+d.value||0);
+  const mn=Math.min(...vals), mx=Math.max(...vals); const rng=(mx-mn)||1;
+  const X=i=>pad+i*(W-2*pad)/(data.length-1);
+  const Y=v=>H-20-((v-mn)/rng)*(H-40);
+  const pts=data.map((d,i)=>`${X(i)},${Y(+d.value||0)}`).join(' ');
+  const dots=data.map((d,i)=>`<circle cx="${X(i)}" cy="${Y(+d.value||0)}" r="3" fill="${color}"/><text x="${X(i)}" y="${Y(+d.value||0)-7}" text-anchor="middle" font-size="8" fill="var(--text)" font-weight="700">${d.value}</text><text x="${X(i)}" y="${H-6}" text-anchor="middle" font-size="8" fill="var(--text-muted)">${d.year||d.label||''}</text>`).join('');
+  const area=`${X(0)},${H-20} ${pts} ${X(data.length-1)},${H-20}`;
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%"><polygon points="${area}" fill="${color}22"/><polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5"/>${dots}</svg>`;
+}
+function usBarChartInner(data,color,unit){ // 데이터 1개 등 fallback
+  if(!data||!data.length) return '';
+  const max=Math.max(...data.map(d=>+d.value||0))||1;
+  return data.map(d=>{const p=Math.max(2,Math.round((+d.value||0)/max*100));return `<div style="display:flex;align-items:center;gap:8px;margin:4px 0"><div style="width:70px;font-size:.7rem;color:var(--text-dim);text-align:right">${d.year||d.label||''}</div><div style="flex:1;background:var(--bg3);border-radius:4px;height:16px;overflow:hidden"><div style="width:${p}%;height:100%;background:${color}"></div></div><div style="width:48px;font-size:.72rem;font-weight:700;color:var(--text)">${d.value}${unit||''}</div></div>`;}).join('');
+}
+// 레이더 차트 (대학 vs 전국평균, score 0~100)
+function usRadar(axes) {
+  if (!axes || axes.length<3) return '';
+  const N=axes.length, cx=110, cy=105, R=78;
+  const pt=(i,val)=>{const ang=-Math.PI/2+i*2*Math.PI/N; const rr=R*Math.max(0,Math.min(val,100))/100; return [cx+rr*Math.cos(ang), cy+rr*Math.sin(ang)];};
+  const grid=[25,50,75,100].map(g=>{const p=axes.map((_,i)=>pt(i,g).join(',')).join(' ');return `<polygon points="${p}" fill="none" stroke="var(--border)" stroke-width="1"/>`;}).join('');
+  const axLines=axes.map((_,i)=>{const[x,y]=pt(i,100);return `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="var(--border)" stroke-width="1"/>`;}).join('');
+  const labels=axes.map((a,i)=>{const[x,y]=pt(i,122);return `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="middle" font-size="8.5" fill="var(--text-dim)">${a.axis}</text>`;}).join('');
+  const uniPoly=axes.map((a,i)=>pt(i,+a.score||0).join(',')).join(' ');
+  const avgPoly=axes.map((a,i)=>pt(i,+a.avg||0).join(',')).join(' ');
+  const hasAvg=axes.some(a=>a.avg!=null);
+  return `<div style="display:flex;flex-direction:column;align-items:center">
+    <svg viewBox="0 0 220 210" style="width:100%;max-width:260px">${grid}${axLines}${labels}
+      ${hasAvg?`<polygon points="${avgPoly}" fill="#8888" fill-opacity=".15" stroke="#999" stroke-width="1.5" stroke-dasharray="3 2"/>`:''}
+      <polygon points="${uniPoly}" fill="#4fc3f7" fill-opacity=".28" stroke="#4fc3f7" stroke-width="2"/></svg>
+    <div style="font-size:.68rem;color:var(--text-dim);margin-top:2px"><span style="color:#4fc3f7;font-weight:700">■</span> 해당 대학 ${hasAvg?'&nbsp;<span style="color:#999">▨</span> 전국평균':''}</div></div>`;
 }
 
 function usRenderDashboard(d) {
@@ -6204,53 +6282,86 @@ function usRenderDashboard(d) {
       ${infoRow('📚','단과대학', b.colleges)}
     </div>` : '';
 
+  const sectionHdr = (icon, t) => `<div style="display:flex;align-items:center;gap:6px;font-size:.92rem;font-weight:800;color:var(--text);margin:1.1rem 0 .6rem"><span>${icon}</span>${t}</div>`;
+
+  // 핵심 게이지 (학생 충원 %)
+  const gauges = (d.studentStatus?.data || []).slice(0,4).map((x,i) =>
+    usGauge(x.label, x.value, 100, US_PAL[i%US_PAL.length], (d.studentStatus.unit||'%'))).join('');
+
+  // SWOT
+  const sw = d.swot || {};
+  const swBox = (title, arr, color, icon) => `
+    <div style="background:${color}14;border:1px solid ${color}55;border-radius:12px;padding:.7rem .9rem">
+      <div style="font-size:.82rem;font-weight:800;color:${color};margin-bottom:.4rem">${icon} ${title}</div>
+      <ul style="margin:0;padding-left:1.1rem;color:var(--text);font-size:.75rem;line-height:1.6">
+        ${(arr||[]).map(x=>`<li>${x}</li>`).join('')}</ul></div>`;
+  const swotBlock = (sw.S||sw.W||sw.O||sw.T) ? `
+    ${sectionHdr('🧭','SWOT 분석')}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:.7rem;margin-bottom:.5rem">
+      ${swBox('Strengths 강점', sw.S, '#22c55e', '💪')}
+      ${swBox('Weaknesses 약점', sw.W, '#ef4444', '⚠️')}
+      ${swBox('Opportunities 기회', sw.O, '#3b82f6', '🚀')}
+      ${swBox('Threats 위협', sw.T, '#f59e0b', '🌩')}
+    </div>` : '';
+
   res.innerHTML = `
-    <div style="display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap;margin-bottom:.35rem">
-      <h2 style="font-size:1.3rem;font-weight:900;color:var(--text);margin:0">🎓 ${d.univ||''}</h2>
-      ${d.type ? `<span style="font-size:.7rem;font-weight:700;color:${typeColor};background:${typeColor}22;padding:.15rem .55rem;border-radius:6px">${d.type}</span>` : ''}
-      <span style="font-size:.66rem;color:var(--text-muted);background:var(--bg3);padding:.15rem .5rem;border-radius:5px">AI 추정 · 참고용</span>
+    <div style="background:linear-gradient(135deg,${typeColor}28,${typeColor}0a);border:1px solid ${typeColor}55;border-radius:16px;padding:1.1rem 1.3rem;margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
+        <h2 style="font-size:1.5rem;font-weight:900;color:var(--text);margin:0">🎓 ${d.univ||''}</h2>
+        ${d.type ? `<span style="font-size:.72rem;font-weight:700;color:#fff;background:${typeColor};padding:.2rem .6rem;border-radius:14px">${d.type}</span>` : ''}
+        <span style="font-size:.64rem;color:var(--text-muted);background:var(--bg3);padding:.2rem .5rem;border-radius:12px;margin-left:auto">AI 종합 · 참고용</span>
+      </div>
+      ${meta ? `<div style="font-size:.76rem;color:var(--text-dim);margin-top:.35rem">${meta}</div>` : ''}
+      ${d.summary ? `<p style="font-size:.82rem;color:var(--text-dim);line-height:1.65;margin:.6rem 0 .5rem">${d.summary}</p>` : ''}
+      ${highlights ? `<div>${highlights}</div>` : ''}
     </div>
-    ${meta ? `<div style="font-size:.74rem;color:var(--text-dim);margin-bottom:.5rem">${meta}</div>` : ''}
-    ${d.summary ? `<p style="font-size:.82rem;color:var(--text-dim);line-height:1.65;margin:0 0 .7rem">${d.summary}</p>` : ''}
-    ${highlights ? `<div style="margin-bottom:.8rem">${highlights}</div>` : ''}
+
     ${basicCard}
 
-    <div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.2rem 0 .6rem">⭐ 대학알리미 주요 공시지표</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:9px;margin-bottom:1.1rem">${kpis}</div>
+    ${(d.radar || gauges) ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem;margin-bottom:.3rem">
+      ${d.radar ? usPanel('🕸 종합 역량 (전국평균 대비)', usRadar(d.radar), '#4fc3f7') : ''}
+      ${gauges ? usPanel('🎯 학생 충원·유지 지표', `<div style="display:flex;flex-wrap:wrap;gap:.5rem;justify-content:space-around">${gauges}</div>`, '#22c55e') : ''}
+    </div>` : ''}
 
-    ${trends.length ? `<div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.3rem 0 .6rem">📈 연도별 추이</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.9rem;margin-bottom:.5rem">${trendCharts}</div>` : ''}
+    ${sectionHdr('⭐','대학알리미 주요 공시지표')}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:9px;margin-bottom:.5rem">${kpis}</div>
 
-    <div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.5rem 0 .6rem">🎓 학생 현황·교육여건</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.9rem">
-      ${d.studentStatus ? usBarChart(d.studentStatus.title || '학생 충원·유지 (%)', d.studentStatus.data, '#4fc3f7', d.studentStatus.unit||'%') : ''}
-      ${d.international ? usBarChart(d.international.title || '국제화 지표', d.international.data, '#9575cd', d.international.unit||'') : ''}
-    </div>
-    ${eduCards ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:9px;margin-bottom:1rem">${eduCards}</div>` : ''}
+    ${trends.length ? sectionHdr('📈','연도별 추이') +
+      `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem">${
+        trends.map((t,i)=>usPanel(t.title||'추이', usLine(t.data, US_PAL[i%US_PAL.length], t.unit), US_PAL[i%US_PAL.length])).join('')
+      }</div>` : ''}
 
-    <div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.5rem 0 .6rem">💰 재정 구조 (대학재정알리미)</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.9rem">
-      ${d.financeIncome ? usBarChart(d.financeIncome.title || '세입 구조 (%)', d.financeIncome.data, '#69f0ae', d.financeIncome.unit||'%') : ''}
-      ${d.financeExpense ? usBarChart(d.financeExpense.title || '세출 구조 (%)', d.financeExpense.data, '#ff8a65', d.financeExpense.unit||'%') : ''}
-    </div>
+    ${(d.financeIncome||d.financeExpense) ? sectionHdr('💰','재정 구조 (대학재정알리미)') +
+      `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem">
+        ${d.financeIncome ? usPanel(d.financeIncome.title||'세입 구조', usDonut(d.financeIncome.data, d.financeIncome.unit||'%'), '#69f0ae') : ''}
+        ${d.financeExpense ? usPanel(d.financeExpense.title||'세출 구조', usDonut(d.financeExpense.data, d.financeExpense.unit||'%'), '#ff8a65') : ''}
+      </div>` : ''}
 
-    <div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.5rem 0 .6rem">🏛 학사·연구 구성</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.9rem">
-      ${d.breakdownStudents ? usBarChart(d.breakdownStudents.title || '계열별 재학생 (%)', d.breakdownStudents.data, '#ba68c8', d.breakdownStudents.unit||'%') : ''}
-      ${d.research ? usBarChart(d.research.title || '연구 지표', d.research.data, '#4dd0e1', d.research.unit||'') : ''}
-    </div>
+    ${(d.breakdownStudents||d.research) ? sectionHdr('🏛','학사·연구 구성') +
+      `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem">
+        ${d.breakdownStudents ? usPanel(d.breakdownStudents.title||'계열별 재학생', usDonut(d.breakdownStudents.data, d.breakdownStudents.unit||'%'), '#ba68c8') : ''}
+        ${d.research ? usPanel(d.research.title||'연구 지표', usBarChartInner(d.research.data, '#4dd0e1', d.research.unit||''), '#4dd0e1') : ''}
+      </div>` : ''}
 
-    ${depts ? `<div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:.9rem">
-      <div style="font-size:.82rem;font-weight:800;color:var(--text);margin-bottom:.6rem">🏫 대표·특성화 학과</div>${depts}</div>` : ''}
+    ${d.international ? sectionHdr('🌏','국제화') +
+      usPanel(d.international.title||'국제화 지표', usBarChartInner(d.international.data, '#9575cd', d.international.unit||''), '#9575cd') : ''}
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.9rem">
+    ${eduCards ? sectionHdr('🏢','교육여건') +
+      `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:9px;margin-bottom:.5rem">${eduCards}</div>` : ''}
+
+    ${swotBlock}
+
+    ${depts ? sectionHdr('🏫','대표·특성화 학과') +
+      `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.8rem 1rem;margin-bottom:.9rem">${depts}</div>` : ''}
+
+    ${(rankRows||evalRows) ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem;margin-top:.6rem">
       ${infoTable('대학 랭킹', '🏆', rankRows)}
       ${infoTable('평가·인증', '🏅', evalRows)}
-    </div>
+    </div>` : ''}
 
-    <div style="font-size:.7rem;color:var(--text-muted);line-height:1.6;margin-top:.4rem">
+    <div style="font-size:.7rem;color:var(--text-muted);line-height:1.6;margin-top:.6rem">
       📌 출처(참고): ${(d.sources||['대학알리미','대학재정알리미']).join(' · ')}<br>
-      ※ 수치는 Claude AI가 추정·종합한 값으로 실제 공시와 다를 수 있습니다. 정확한 데이터는
+      ※ SWOT·수치는 Claude AI가 추정·종합한 값으로 실제 공시와 다를 수 있습니다. 정확한 데이터는
       <a href="https://www.academyinfo.go.kr" target="_blank" style="color:var(--accent2)">대학알리미</a> ·
       <a href="https://uf.academyinfo.go.kr" target="_blank" style="color:var(--accent2)">대학재정알리미</a>에서 확인하세요.
     </div>`;
