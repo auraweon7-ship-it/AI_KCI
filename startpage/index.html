@@ -6226,9 +6226,13 @@ async function usRunCompare() {
   const picks = [..._usComparePick];
   const res = document.getElementById('usResult');
   const btn = document.getElementById('usGenBtn');
-  if (res) res.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)">
-    <div class="skel" style="height:60px;margin-bottom:8px"></div>
-    <div style="margin-top:.8rem;font-size:.82rem">🆚 <b>${picks.join(', ')}</b> 비교 분석 중... (각 대학 대시보드 생성)</div></div>`;
+  if (res) {
+    res.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)">
+      <div class="skel" style="height:60px;margin-bottom:8px"></div>
+      <div style="margin-top:.8rem;font-size:.82rem">🆚 <b>${picks.join(', ')}</b> 비교 분석 중... (각 대학 대시보드 생성)</div></div>`;
+    res.scrollIntoView({ behavior: 'smooth', block: 'center' });   // 분석 시작 즉시 결과 위치로
+  }
+  showToast(`🆚 ${picks.length}개 대학 비교 분석 시작...`);
   if (btn) btn.disabled = true;
   // 각 대학 대시보드 생성(캐시 없으면 Claude 호출)
   for (const univ of picks) {
