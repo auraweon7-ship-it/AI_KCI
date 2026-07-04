@@ -7749,15 +7749,23 @@ function handleImport(e) {
   reader.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
-      // v2 스냅샷: localStorage 전체 복원(설정·API키·키워드 포함) 후 새로고침
+      // v2 스냅샷: localStorage 전체 복원(설정·API키·APP·북마크·키워드 포함) 후 새로고침
       if (data.v === 2 && data.snapshot) {
         if (!confirm('가져오기: 현재 설정을 덮어씁니다. 계속할까요?')) return;
-        Object.entries(data.snapshot).forEach(([k, val]) => {
-          if (k === 'startpage_user' || k === 'cloud_token' || k === 'cloud_token_exp') return;
-          try { localStorage.setItem(k, val); } catch(_) {}
+        // 계정별 키(base__이메일)를 현재 로그인 계정으로 재매핑 (다른 계정/기기 복원 대응)
+        const curEmail = (typeof userEmail === 'function') ? userEmail() : '';
+        const ACCT_BASES = ['api_keys','apps','sched_events','lectures','todo_items'];
+        const entries = Object.entries(data.snapshot).sort((a,b) => (a[0].includes('__')?1:0) - (b[0].includes('__')?1:0));
+        entries.forEach(([k, val]) => {
+          if (k === 'startpage_user' || k === 'cloud_token' || k === 'cloud_token_exp' || val == null) return;
+          let targetKey = k;
+          const m = k.match(/^(.+?)__(.+)$/);
+          if (m && ACCT_BASES.includes(m[1]) && curEmail) targetKey = m[1] + '__' + curEmail;
+          else if (ACCT_BASES.includes(k) && curEmail) targetKey = k + '__' + curEmail;
+          try { localStorage.setItem(targetKey, val); } catch(_) {}
         });
-        showToast('가져오기 완료 — 새로고침합니다', '✅');
-        setTimeout(() => location.reload(), 700);
+        showToast('가져오기 완료 (API·APP·북마크 포함) — 새로고침합니다', '✅');
+        setTimeout(() => location.reload(), 800);
         return;
       }
       // 구버전 형식
