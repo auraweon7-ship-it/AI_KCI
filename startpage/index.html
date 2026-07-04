@@ -6828,6 +6828,8 @@ function renderLinks() {
         card.innerHTML = `
           <div class="card-actions">
             <button class="card-act-btn" onclick="togglePin('${link.id}',event)" title="고정 해제/설정" style="background:var(--bg3);color:var(--text)">📌</button>
+            <button class="card-act-btn edit" onclick="openEditLink('${link.id}',event)" title="편집">✏️</button>
+            <button class="card-act-btn del" onclick="deleteLink('${link.id}',event)" title="삭제">✕</button>
           </div>
           <div class="favicon">${link.emoji || `<img loading="lazy" src="${fv}" width="20" height="20" style="border-radius:6px;" onerror="this.parentElement.textContent='🌐'">`}</div>
           <div class="link-title">${link.name}</div>`;
