@@ -1842,6 +1842,13 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
   <p style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">키 입력 시 연구 키워드 위젯이 실제 KCI 신착 논문을 표시합니다. <a href="https://www.kci.go.kr/kciportal/po/openapi/openApiMainPopup.kci" target="_blank" style="color:var(--accent2)">키 발급 →</a></p>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+  <div class="settings-title" style="font-size:.9rem;">🧠 Claude API 키 (대학통계 대시보드)</div>
+  <input id="claudeApiKey" type="password" placeholder="sk-ant-..." autocomplete="off"
+    style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;"
+    oninput="localStorage.setItem('claude_api_key', this.value.trim()); if(state.activeCat==='univstats') renderUnivStatsView();">
+  <p style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">메뉴 <b>📈 대학통계</b> 대시보드는 이 키가 있어야 작동합니다. 키는 이 브라우저에만 저장되며 Anthropic API로만 전송됩니다. <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--accent2)">키 발급 →</a></p>
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
   <div class="settings-title" style="font-size:.9rem;">🔍 기본 검색 엔진</div>
   <div id="engineSettingList" style="display:flex;flex-direction:column;gap:6px;margin-top:8px;"></div>
 
@@ -1939,6 +1946,7 @@ let state = {
     { id: 'inter',    name: '국제화',      emoji: '🌍' },
     { id: 'ai',       name: 'AI',          emoji: '🤖' },
     { id: 'youtube',  name: 'YouTube',     emoji: '▶️' },
+    { id: 'univstats', name: '대학통계',   emoji: '📈', special: 'univstats' },
     { id: 'mybm',     name: '내 북마크',   emoji: '🔖' },
   ],
   links: [
@@ -5562,6 +5570,216 @@ function renderUnivAll() {
   grid.appendChild(wrap);
 }
 
+// ── 대학통계 대시보드 (Claude API 기반) ──
+let _univStatsCache = {};   // 대학명 → 데이터 캐시 (세션 내)
+let _univStatsBusy = false;
+
+function renderUnivStatsView() {
+  const grid = document.getElementById('linksGrid');
+  const title = document.getElementById('sectionTitle');
+  const addBtn = document.getElementById('addLinkHeaderBtn');
+  if (addBtn) addBtn.style.display = 'none';
+  grid.classList.add('univall-mode');
+  title.textContent = '📈 대학통계 대시보드';
+
+  const key = (localStorage.getItem('claude_api_key') || '').trim();
+
+  // 키 미입력 → 안내
+  if (!key) {
+    grid.innerHTML = `
+      <div style="grid-column:1/-1;max-width:520px;margin:2rem auto;text-align:center;padding:2rem;
+                  background:var(--card);border:1.5px solid var(--border);border-radius:14px">
+        <div style="font-size:2.4rem;margin-bottom:.5rem">🔐</div>
+        <div style="font-size:1.05rem;font-weight:800;color:var(--text);margin-bottom:.4rem">Claude API 키가 필요합니다</div>
+        <p style="font-size:.82rem;color:var(--text-dim);line-height:1.6;margin-bottom:1rem">
+          대학알리미·대학재정알리미·대학평가 정보를 Claude AI로 분석해<br>시각화 대시보드를 생성합니다.<br>
+          <b>설정 → 🧠 Claude API 키</b>를 입력하면 작동합니다.
+        </p>
+        <button onclick="toggleSettings()" style="padding:.6rem 1.4rem;background:var(--accent2);border:none;
+                border-radius:8px;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer">⚙️ 설정 열기</button>
+      </div>`;
+    return;
+  }
+
+  const cur = _univStatsCache._lastUniv || '서울대학교';
+  const preset = ['서울대학교','연세대학교','고려대학교','성균관대학교','한양대학교','KAIST','포항공과대학교','부산대학교','경북대학교','전남대학교'];
+
+  grid.innerHTML = `
+    <div class="ai-view-wrap" style="grid-column:1/-1;padding:0 .3rem">
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:.8rem">
+        <input id="usUnivInput" type="text" value="${cur}" placeholder="대학명 입력 (예: 서울대학교)"
+          style="flex:1 1 200px;min-width:180px;padding:.55rem .8rem;background:var(--bg3);border:1.5px solid var(--border);
+                 border-radius:8px;color:var(--text);font-size:.85rem;outline:none"
+          onkeydown="if(event.key==='Enter')usGenerate()">
+        <button id="usGenBtn" onclick="usGenerate()" style="padding:.55rem 1.3rem;background:var(--accent2);border:none;
+                border-radius:8px;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer">📊 대시보드 생성</button>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:1rem">
+        ${preset.map(p => `<button onclick="document.getElementById('usUnivInput').value='${p}';usGenerate()"
+          style="padding:.3rem .7rem;border-radius:16px;border:1px solid var(--border);background:var(--card);
+                 color:var(--text);font-size:.74rem;cursor:pointer">${p}</button>`).join('')}
+      </div>
+      <div id="usResult"></div>
+    </div>`;
+
+  // 캐시 있으면 즉시 렌더, 없으면 안내
+  const res = document.getElementById('usResult');
+  if (_univStatsCache[cur]) {
+    usRenderDashboard(_univStatsCache[cur]);
+  } else {
+    res.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted);font-size:.85rem">
+      대학명을 입력하고 <b>📊 대시보드 생성</b>을 누르세요.<br>
+      <span style="font-size:.72rem">Claude AI가 대학알리미·재정알리미·대학평가 데이터를 종합해 시각화합니다.</span></div>`;
+  }
+}
+
+async function usGenerate() {
+  if (_univStatsBusy) return;
+  const key = (localStorage.getItem('claude_api_key') || '').trim();
+  if (!key) { renderUnivStatsView(); return; }
+  const input = document.getElementById('usUnivInput');
+  const univ = (input?.value || '').trim();
+  if (!univ) { showToast('대학명을 입력하세요', '⚠️'); return; }
+  const res = document.getElementById('usResult');
+  const btn = document.getElementById('usGenBtn');
+
+  // 캐시 히트
+  if (_univStatsCache[univ]) { _univStatsCache._lastUniv = univ; usRenderDashboard(_univStatsCache[univ]); return; }
+
+  _univStatsBusy = true;
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 분석 중...'; }
+  res.innerHTML = `<div style="text-align:center;padding:2.5rem;color:var(--text-muted)">
+    <div class="skel" style="height:80px;margin-bottom:10px"></div>
+    <div class="skel" style="height:180px;margin-bottom:10px"></div>
+    <div class="skel" style="height:120px"></div>
+    <div style="margin-top:1rem;font-size:.82rem">🧠 Claude가 <b>${univ}</b> 통계를 분석하고 있습니다...</div></div>`;
+
+  const prompt = `당신은 한국 대학 통계 분석가입니다. "${univ}"에 대해 대학알리미(academyinfo.go.kr), 대학재정알리미, 대학기본역량진단·기관평가 정보를 바탕으로 알고 있는 최신 통계를 종합하세요.
+반드시 아래 JSON 스키마만 출력하세요. 코드블록·설명·주석 없이 순수 JSON만. 수치는 추정이라도 현실적 값으로 채우세요.
+{
+ "univ": "정식 대학명",
+ "summary": "2~3문장 요약",
+ "kpis": [{"label":"재학생 수","value":"예: 28,000명","icon":"🎓"},{"label":"전임교원 수","value":"","icon":"👩‍🏫"},{"label":"학생 1인당 교육비","value":"","icon":"💰"},{"label":"신입생 충원율","value":"","icon":"📝"},{"label":"졸업생 취업률","value":"","icon":"💼"},{"label":"전임교원 확보율","value":"","icon":"📐"}],
+ "trends": {"title":"연도별 졸업생 취업률 (%)","unit":"%","data":[{"year":"2019","value":70},{"year":"2020","value":68},{"year":"2021","value":72},{"year":"2022","value":74},{"year":"2023","value":76}]},
+ "finance": {"title":"교비회계 세입 구조 (%)","data":[{"label":"등록금","value":40},{"label":"국고보조금","value":25},{"label":"전입·기부금","value":15},{"label":"교육부대·기타","value":20}]},
+ "breakdown": {"title":"계열별 재학생 비율 (%)","data":[{"label":"인문사회","value":30},{"label":"자연과학","value":18},{"label":"공학","value":30},{"label":"예체능","value":10},{"label":"의약","value":12}]},
+ "evaluation": [{"name":"대학기본역량진단","result":"예: 일반재정지원 대학","year":"2021"},{"name":"기관평가인증","result":"인증","year":"2022"}],
+ "sources": ["대학알리미","대학재정알리미","대학기본역량진단"]
+}`;
+
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-5',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
+    if (!r.ok) {
+      let em = 'API 오류 ' + r.status;
+      try { const ej = await r.json(); if (ej.error?.message) em = ej.error.message; } catch(_) {}
+      throw new Error(em);
+    }
+    const j = await r.json();
+    let txt = (j.content || []).map(c => c.text || '').join('').trim();
+    // JSON 추출 (코드블록/여분 텍스트 제거)
+    const s = txt.indexOf('{'), e = txt.lastIndexOf('}');
+    if (s < 0 || e < 0) throw new Error('응답 파싱 실패');
+    const data = JSON.parse(txt.slice(s, e + 1));
+    _univStatsCache[univ] = data;
+    _univStatsCache._lastUniv = univ;
+    usRenderDashboard(data);
+  } catch (err) {
+    res.innerHTML = `<div style="text-align:center;padding:2rem;color:var(--text-muted)">
+      <div style="font-size:1.6rem;margin-bottom:.4rem">⚠️</div>
+      <div style="font-weight:700;color:var(--text);margin-bottom:.3rem">생성 실패</div>
+      <div style="font-size:.8rem;color:var(--text-dim);word-break:break-all">${(err.message||'알 수 없는 오류').replace(/</g,'&lt;')}</div>
+      <div style="font-size:.72rem;color:var(--text-muted);margin-top:.6rem">API 키·크레딧·모델 접근 권한을 확인하세요.</div></div>`;
+  } finally {
+    _univStatsBusy = false;
+    const b = document.getElementById('usGenBtn');
+    if (b) { b.disabled = false; b.textContent = '📊 대시보드 생성'; }
+  }
+}
+
+function usBarChart(title, data, color, unit) {
+  if (!data || !data.length) return '';
+  const max = Math.max(...data.map(d => +d.value || 0)) || 1;
+  const rows = data.map(d => {
+    const pct = Math.max(2, Math.round((+d.value || 0) / max * 100));
+    const label = d.year || d.label || '';
+    return `<div style="display:flex;align-items:center;gap:8px;margin:5px 0">
+      <div style="width:90px;flex-shrink:0;font-size:.72rem;color:var(--text-dim);text-align:right">${label}</div>
+      <div style="flex:1;background:var(--bg3);border-radius:5px;overflow:hidden;height:20px;position:relative">
+        <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,${color},${color}bb);border-radius:5px;transition:width .5s"></div>
+      </div>
+      <div style="width:54px;flex-shrink:0;font-size:.74rem;font-weight:700;color:var(--text)">${d.value}${unit||''}</div>
+    </div>`;
+  }).join('');
+  return `<div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:.9rem">
+    <div style="font-size:.82rem;font-weight:800;color:var(--text);margin-bottom:.7rem">${title}</div>${rows}</div>`;
+}
+
+function usRenderDashboard(d) {
+  const res = document.getElementById('usResult');
+  if (!res || !d) return;
+  const C = ['#4fc3f7','#ba68c8','#ffd54f','#69f0ae','#ff8a65','#f48fb1','#80deea','#a78bfa'];
+
+  const kpis = (d.kpis || []).map((k, i) => `
+    <div style="background:var(--card);border:1.5px solid ${C[i%C.length]};border-radius:12px;padding:.9rem;
+                box-shadow:0 0 8px ${C[i%C.length]}22">
+      <div style="font-size:1.4rem">${k.icon||'📊'}</div>
+      <div style="font-size:1.15rem;font-weight:800;color:var(--text);margin:.2rem 0;line-height:1.2">${k.value||'-'}</div>
+      <div style="font-size:.72rem;color:var(--text-dim)">${k.label||''}</div>
+    </div>`).join('');
+
+  const evalRows = (d.evaluation || []).map(e => `
+    <tr>
+      <td style="padding:.5rem .6rem;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--text)">${e.name||''}</td>
+      <td style="padding:.5rem .6rem;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--text);font-weight:700">${e.result||e.grade||''}</td>
+      <td style="padding:.5rem .6rem;border-bottom:1px solid var(--border);font-size:.74rem;color:var(--text-dim);text-align:right">${e.year||''}</td>
+    </tr>`).join('');
+
+  res.innerHTML = `
+    <div style="display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem">
+      <h2 style="font-size:1.2rem;font-weight:900;color:var(--text);margin:0">🎓 ${d.univ||''}</h2>
+      <span style="font-size:.68rem;color:var(--text-muted);background:var(--bg3);padding:.15rem .5rem;border-radius:5px">AI 추정 · 참고용</span>
+    </div>
+    ${d.summary ? `<p style="font-size:.82rem;color:var(--text-dim);line-height:1.6;margin:0 0 1rem">${d.summary}</p>` : ''}
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:1rem">${kpis}</div>
+
+    ${d.trends ? usBarChart(d.trends.title || '연도별 추이', d.trends.data, '#4fc3f7', d.trends.unit) : ''}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem">
+      ${d.finance ? usBarChart(d.finance.title || '재정 구조', d.finance.data, '#69f0ae', d.finance.unit||'%') : ''}
+      ${d.breakdown ? usBarChart(d.breakdown.title || '계열별 구성', d.breakdown.data, '#ba68c8', d.breakdown.unit||'%') : ''}
+    </div>
+
+    ${evalRows ? `<div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:.9rem">
+      <div style="font-size:.82rem;font-weight:800;color:var(--text);margin-bottom:.5rem">🏅 대학 평가·인증</div>
+      <table style="width:100%;border-collapse:collapse">
+        <thead><tr>
+          <th style="padding:.4rem .6rem;text-align:left;font-size:.72rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">평가명</th>
+          <th style="padding:.4rem .6rem;text-align:left;font-size:.72rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">결과</th>
+          <th style="padding:.4rem .6rem;text-align:right;font-size:.72rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">연도</th>
+        </tr></thead>
+        <tbody>${evalRows}</tbody>
+      </table></div>` : ''}
+
+    <div style="font-size:.7rem;color:var(--text-muted);line-height:1.6;margin-top:.4rem">
+      📌 출처(참고): ${(d.sources||['대학알리미','대학재정알리미']).join(' · ')}<br>
+      ※ 수치는 Claude AI가 추정·종합한 값으로 실제 공시와 다를 수 있습니다. 정확한 데이터는
+      <a href="https://www.academyinfo.go.kr" target="_blank" style="color:var(--accent2)">대학알리미</a>를 확인하세요.
+    </div>`;
+}
+
 function renderLinks() {
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
@@ -5570,7 +5788,7 @@ function renderLinks() {
   // 헤더 정렬 셀렉트 — 정렬 가능한 뷰에서만 표시
   const sortSel = document.getElementById('sortSelHeader');
   if (sortSel) {
-    const sortable = !['univall','youtube','ai','gov'].includes(state.activeCat);
+    const sortable = !['univall','youtube','ai','gov','univstats'].includes(state.activeCat);
     sortSel.style.display = sortable ? '' : 'none';
     sortSel.value = state.sortMode || 'default';
   }
@@ -5596,6 +5814,12 @@ function renderLinks() {
   // Special: 정부·정책 뷰
   if (state.activeCat === 'gov') {
     renderGovView();
+    return;
+  }
+
+  // Special: 대학통계 대시보드 (Claude API)
+  if (state.activeCat === 'univstats') {
+    renderUnivStatsView();
     return;
   }
 
@@ -7434,6 +7658,7 @@ render();
  () => schedSetView(schedView),
  () => { const p = document.getElementById('profileSel'); if (p) p.value = localStorage.getItem('active_profile') || ''; },
  () => { const k = document.getElementById('kciApiKey'); if (k) k.value = localStorage.getItem('kci_api_key') || ''; },
+ () => { const k = document.getElementById('claudeApiKey'); if (k) k.value = localStorage.getItem('claude_api_key') || ''; },
  memoLoad, cvSetOpts, genLotto, piLoad, timerRender, loadStock,
  () => { rssRenderTabs(); rssLoad(); }, noticeLoad
 ].forEach(fn => { try { fn(); } catch(e) { console.error('위젯 초기화 오류:', fn.name, e); } });
