@@ -8177,30 +8177,32 @@ async function loadYtRec() {
 }
 
 // ── 연구 힐링음악 (30분+ 롱폼 큐레이션 → embed 2x1, 항상 재생) ──
+// embed 허용 확실한 유명 채널(Lofi Girl·Chillhop 등 24h 라이브·롱폼) 우선
 const HEAL_VIDEOS = [
-  'jfKfPfyJRdk', // lofi hip hop radio (라이브, 24h)
+  'jfKfPfyJRdk', // Lofi Girl — lofi hip hop radio (24h 라이브)
+  '4xDzrJKXOOY', // Lofi Girl — synthwave radio (24h)
+  'rUxyKA_-grg', // Lofi Girl — sleep/chill (24h)
+  '28KRPhVzCus', // Chillhop — jazzy/lofi radio
   'YDaHXGWclg0', // 집중 lofi 3시간+
   'TacJb3LerGQ', // 힐링 lofi 3시간+
   'Xc1Le3CSdrM', // 집중 음악 3시간+
-  'HSjLb4RIeLk', // 연구 lofi 3시간+
   'qMwzWk81tVM', // deep focus 4시간+
-  'lTRiuFIWV54', // 1시간 힐링 피아노
-  '77ZozI0rw7w', // relaxing music
-  'DWcJFNfaw9c', // 자연 백색소음
-  '5qap5aO4i9A', // lofi girl (백업)
 ];
 function loadHealMusic() {
   const grid = document.getElementById('healMusicGrid');
   if (!grid) return;
-  // 무작위 2개(중복 없이)
   const pool = [...HEAL_VIDEOS];
   const pick = [];
   while (pick.length < 2 && pool.length) pick.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   grid.innerHTML = pick.map(id => `
-    <div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:5px;overflow:hidden;background:#000">
-      <iframe src="https://www.youtube.com/embed/${id}?rel=0" title="힐링음악" loading="lazy"
-        allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"
-        allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>
+    <div>
+      <div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:5px;overflow:hidden;background:#000">
+        <iframe src="https://www.youtube.com/embed/${id}?rel=0&playsinline=1" title="힐링음악" loading="lazy"
+          allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"
+          allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>
+      </div>
+      <a href="https://www.youtube.com/watch?v=${id}" target="_blank" rel="noopener noreferrer"
+         style="display:block;text-align:center;font-size:.56rem;color:var(--text-muted);text-decoration:none;margin-top:2px">↗ YouTube에서 열기</a>
     </div>`).join('');
 }
 
