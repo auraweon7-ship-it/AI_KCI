@@ -1996,7 +1996,11 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
     <h3 id="linkModalTitle">링크 추가</h3>
     <div class="form-group">
       <label>카테고리</label>
-      <select id="linkCat"></select>
+      <select id="linkCat" onchange="linkSyncGroupRow()"></select>
+    </div>
+    <div class="form-group" id="linkGroupRow" style="display:none">
+      <label>AI 하위 그룹</label>
+      <select id="linkGroup"></select>
     </div>
     <div class="form-group">
       <label>사이트 이름 *</label>
@@ -7318,6 +7322,7 @@ function openEditLink(id, e) {
   document.getElementById('linkDesc').value = link.desc || '';
   selectedEmoji = link.emoji || '';
   populateLinkCatSelect(link.catId);
+  if (link.catId === 'ai') linkSyncGroupRow(link.group);
   buildEmojiPicker();
   openModal('linkModal');
 }
@@ -7326,6 +7331,20 @@ function populateLinkCatSelect(selectedId) {
   const sel = document.getElementById('linkCat');
   const cats = state.categories.filter(c => c.id !== 'all');
   sel.innerHTML = cats.map(c => `<option value="${c.id}"${c.id === (selectedId||state.activeCat)?'selected':''}>${c.emoji} ${c.name}</option>`).join('');
+  linkSyncGroupRow();
+}
+// 카테고리가 'ai'면 AI 하위 그룹 선택 표시
+function linkSyncGroupRow(selectedGroup) {
+  const row = document.getElementById('linkGroupRow');
+  const gsel = document.getElementById('linkGroup');
+  if (!row || !gsel) return;
+  const isAi = document.getElementById('linkCat').value === 'ai';
+  row.style.display = isAi ? '' : 'none';
+  if (!isAi) return;
+  const groups = [...new Set(state.links.filter(l => l.catId === 'ai' && l.group).map(l => l.group))];
+  const cur = selectedGroup || gsel.value || groups[0] || '💬 대화형 AI';
+  gsel.innerHTML = groups.map(g => `<option value="${g.replace(/"/g,'&quot;')}"${g===cur?' selected':''}>${g}</option>`).join('')
+    + `<option value="__new__"${cur==='__new__'?' selected':''}>➕ 새 그룹...</option>`;
 }
 
 function buildEmojiPicker() {
@@ -7347,13 +7366,25 @@ function saveLink() {
   if (!name || !url) { showToast('이름과 URL을 입력하세요', '⚠️'); return; }
   let finalUrl = url;
   if (!/^https?:\/\//i.test(finalUrl)) finalUrl = 'https://' + finalUrl;
+  // AI 카테고리: 하위 그룹 지정
+  let group;
+  if (catId === 'ai') {
+    group = document.getElementById('linkGroup').value;
+    if (group === '__new__') {
+      const ng = (prompt('새 AI 그룹 이름 (이모지 포함 가능, 예: 🧪 AI 실험실)') || '').trim();
+      if (!ng) { showToast('그룹 이름을 입력하세요', '⚠️'); return; }
+      group = ng;
+    }
+  }
 
   if (editingLinkId) {
     const link = state.links.find(l => l.id === editingLinkId);
-    if (link) Object.assign(link, { name, url: finalUrl, desc, catId, emoji: selectedEmoji });
+    if (link) { Object.assign(link, { name, url: finalUrl, desc, catId, emoji: selectedEmoji }); if (catId === 'ai') link.group = group; else delete link.group; }
     showToast('링크 수정됨');
   } else {
-    state.links.push({ id: 'l_' + Date.now(), catId, name, url: finalUrl, desc, emoji: selectedEmoji });
+    const nl = { id: 'l_' + Date.now(), catId, name, url: finalUrl, desc, emoji: selectedEmoji };
+    if (catId === 'ai') nl.group = group;
+    state.links.push(nl);
     showToast('링크 추가됨');
   }
   saveState(); render(); closeModal('linkModal');
