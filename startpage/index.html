@@ -5951,7 +5951,7 @@ async function usGenerate() {
     <div class="skel" style="height:120px"></div>
     <div style="margin-top:1rem;font-size:.82rem">🧠 Claude가 <b>${univ}</b> 통계를 분석하고 있습니다...</div></div>`;
 
-  const prompt = `당신은 한국 대학 통계 전문 분석가입니다. "${univ}"에 대해 대학알리미(academyinfo.go.kr)와 대학재정알리미(uf.academyinfo.go.kr)의 공시항목(학생·교원·교육비·등록금·취업률·중도탈락·장학금·재정·연구비·국제화 등)과 대학기본역량진단·기관평가인증 결과를 바탕으로, 알고 있는 최신(대략 2022~2024) 통계를 최대한 풍부하게 종합하세요.
+  const prompt = `당신은 한국 대학 통계 전문 분석가입니다. "${univ}"에 대해 대학알리미(academyinfo.go.kr)의 전체 공시체계 — ①학생(신입생 경쟁률·충원율·재학생·중도탈락·편입) ②교원(전임교원 확보율·1인당 학생수·강의담당비율) ③교육여건(교지·교사 확보율·실험실습·기숙사 수용률·1인당 도서자료수) ④재정·등록금(평균 등록금·1인당 교육비·1인당 장학금·회계) ⑤연구(연구비·논문·산학) ⑥취업(취업률) ⑦국제화(외국인 학생수·유학생·교환학생) — 와 대학재정알리미(uf.academyinfo.go.kr), 대학기본역량진단·기관평가인증 결과를 바탕으로, 알고 있는 최신(대략 2022~2024) 통계를 대학알리미 공시지표를 빠짐없이 반영하여 최대한 풍부하게 종합하세요.
 반드시 아래 JSON 스키마만 출력하세요. 코드블록·설명·주석 없이 순수 JSON만. 모든 필드를 현실적 값으로 채우고, 수치가 불확실해도 합리적 추정치를 넣으세요. 국립·사립 모두 지원합니다.
 {
  "univ": "정식 대학명",
@@ -5962,19 +5962,29 @@ async function usGenerate() {
  "summary": "이 대학의 위상·규모·특성화·재정·평가 결과를 담은 4~5문장의 풍부한 요약",
  "highlights": ["핵심 특징 배지 문구 5~7개 (예: 'QS 세계랭킹 상위권', '연구중심대학', '의과대학 보유', '글로컬대학30 선정')"],
  "kpis": [
-   {"label":"재학생 수(재적)","value":"예: 28,000명","icon":"🎓"},
-   {"label":"전임교원 수","value":"","icon":"👩‍🏫"},
-   {"label":"전임교원 확보율","value":"","icon":"📐"},
+   {"label":"신입생 경쟁률","value":"예: 12.5:1","icon":"📈"},
+   {"label":"졸업생 취업률","value":"예: 72%","icon":"💼"},
    {"label":"전임교원 1인당 학생수","value":"","icon":"👥"},
-   {"label":"학생 1인당 교육비","value":"","icon":"💰"},
-   {"label":"연평균 등록금","value":"","icon":"🧾"},
-   {"label":"신입생 충원율","value":"","icon":"📝"},
-   {"label":"재학생 충원율","value":"","icon":"📈"},
-   {"label":"졸업생 취업률","value":"","icon":"💼"},
-   {"label":"중도탈락 학생 비율","value":"","icon":"🚪"},
-   {"label":"장학금 총액","value":"","icon":"🎁"},
-   {"label":"외국인 유학생 수","value":"","icon":"🌏"}
+   {"label":"학생 1인당 교육비","value":"예: 22백만원","icon":"💰"},
+   {"label":"학생 1인당 도서자료수","value":"예: 85권","icon":"📚"},
+   {"label":"학생 1인당 연간 장학금","value":"예: 3.2백만원","icon":"🎁"},
+   {"label":"기숙사 수용률","value":"예: 24%","icon":"🏠"},
+   {"label":"외국인 학생 수","value":"예: 2,400명","icon":"🌏"},
+   {"label":"평균 등록금","value":"예: 연 4,200천원","icon":"🧾"},
+   {"label":"전임교원 강의담당 비율","value":"예: 65%","icon":"🧑‍🏫"},
+   {"label":"재학생 수(재적)","value":"","icon":"🎓"},
+   {"label":"전임교원 확보율","value":"","icon":"📐"}
  ],
+ "studentStatus": {"title":"학생 충원·유지 지표 (%)","data":[{"label":"신입생 충원율","value":99},{"label":"재학생 충원율","value":95},{"label":"중도탈락 학생 비율","value":3},{"label":"신입생 등록률","value":97}]},
+ "eduCondition": [
+   {"label":"교사(건물) 확보율","value":"예: 130%","icon":"🏢"},
+   {"label":"교지(부지) 확보율","value":"예: 210%","icon":"📐"},
+   {"label":"실험·실습 기자재 보유","value":"예: 약 4.2만점","icon":"🔬"},
+   {"label":"기숙사 수용 인원","value":"예: 6,800명","icon":"🛏"},
+   {"label":"도서관 소장 도서","value":"예: 약 480만권","icon":"📖"},
+   {"label":"전임교원 1인당 연구비","value":"예: 120백만원","icon":"💵"}
+ ],
+ "international": {"title":"국제화 지표 (명)","data":[{"label":"외국인 학위과정","value":1500},{"label":"외국인 어학연수","value":900},{"label":"교환학생 유치","value":300},{"label":"재학생 해외파견","value":250}]},
  "trends": [
    {"title":"연도별 졸업생 취업률 (%)","unit":"%","data":[{"year":"2019","value":70},{"year":"2020","value":68},{"year":"2021","value":72},{"year":"2022","value":74},{"year":"2023","value":76}]},
    {"title":"연도별 신입생 경쟁률 (:1)","unit":":1","data":[{"year":"2020","value":8},{"year":"2021","value":9},{"year":"2022","value":10},{"year":"2023","value":11},{"year":"2024","value":12}]},
@@ -6002,7 +6012,7 @@ async function usGenerate() {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-5',
-        max_tokens: 5000,
+        max_tokens: 6000,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
@@ -6107,6 +6117,14 @@ function usRenderDashboard(d) {
     `<span style="display:inline-block;background:var(--bg3);border:1px solid var(--border);color:var(--text);
        font-size:.72rem;padding:.2rem .6rem;border-radius:8px;margin:0 4px 5px 0">${x}</span>`).join('');
 
+  // 교육여건 KPI 카드
+  const eduCards = (d.eduCondition || []).map((k,i) => `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.7rem .8rem">
+      <div style="font-size:1.1rem">${k.icon||'📊'}</div>
+      <div style="font-size:.98rem;font-weight:800;color:var(--text);margin:.15rem 0;line-height:1.2">${k.value||'-'}</div>
+      <div style="font-size:.68rem;color:var(--text-dim)">${k.label||''}</div>
+    </div>`).join('');
+
   const meta = [d.estabGroup || d.type, d.gwon, d.region, d.established ? d.established+' 설립' : '', d.financeScale ? '예산 '+d.financeScale : '']
     .filter(Boolean).join(' · ');
 
@@ -6144,10 +6162,18 @@ function usRenderDashboard(d) {
     ${highlights ? `<div style="margin-bottom:.8rem">${highlights}</div>` : ''}
     ${basicCard}
 
+    <div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.2rem 0 .6rem">⭐ 대학알리미 주요 공시지표</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:9px;margin-bottom:1.1rem">${kpis}</div>
 
     ${trends.length ? `<div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.3rem 0 .6rem">📈 연도별 추이</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.9rem;margin-bottom:.5rem">${trendCharts}</div>` : ''}
+
+    <div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.5rem 0 .6rem">🎓 학생 현황·교육여건</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.9rem">
+      ${d.studentStatus ? usBarChart(d.studentStatus.title || '학생 충원·유지 (%)', d.studentStatus.data, '#4fc3f7', d.studentStatus.unit||'%') : ''}
+      ${d.international ? usBarChart(d.international.title || '국제화 지표', d.international.data, '#9575cd', d.international.unit||'') : ''}
+    </div>
+    ${eduCards ? `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:9px;margin-bottom:1rem">${eduCards}</div>` : ''}
 
     <div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.5rem 0 .6rem">💰 재정 구조 (대학재정알리미)</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.9rem">
