@@ -7732,33 +7732,44 @@ function handleImport(e) {
 
 // ── 도서추천 (YES24 검색 스크래핑, 무키 → 표지, 클릭 시 YES24 상품) ──
 async function loadBookRec() {
-  const kwd = (document.getElementById('bookKwd')?.value || '').trim();
   const grid = document.getElementById('bookRecGrid');
   if (!grid) return;
+  const input = document.getElementById('bookKwd');
+  let kwd = (input?.value || '').trim();
+  // 미입력 시 마지막 키워드로 자동 추천
+  if (!kwd) kwd = (localStorage.getItem('book_last_kwd') || '').trim();
   if (!kwd) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.66rem;padding:6px 0">키워드를 입력하세요</div>'; return; }
+  if (input && !input.value.trim()) input.value = kwd;  // 자동 키워드 표시
+  localStorage.setItem('book_last_kwd', kwd);
+  const kwdNorm = kwd.replace(/\s+/g, '').toLowerCase();
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.66rem;padding:10px 0">📚 검색 중...</div>';
   try {
-    const api = `https://www.yes24.com/product/search?query=${encodeURIComponent(kwd)}`;
+    // order=SINDEX_ONLY : 인기도(판매량 반영 종합지수)순
+    const api = `https://www.yes24.com/product/search?query=${encodeURIComponent(kwd)}&domain=BOOK&order=SINDEX_ONLY&page=1`;
     const r = await fetch('/api/proxy?url=' + encodeURIComponent(api));
     if (!r.ok) throw new Error('검색 실패 ' + r.status);
     const html = await r.text();
     // 상품 goodsNo + 제목 추출 (검색결과 항목: <a ... href="/product/goods/NNN" ... >제목</a>)
-    const books = [];
+    const all = [];
     const seen = new Set();
     const re = /href="\/product\/goods\/(\d+)"[^>]*(?:title="([^"]*)")?[^>]*>([^<]{2,}?)<\/a>/g;
     let m;
-    while ((m = re.exec(html)) && books.length < 5) {
+    while ((m = re.exec(html))) {
       const no = m[1];
       if (seen.has(no)) continue;
       const title = (m[2] || m[3] || '').trim().replace(/^\[[^\]]*\]\s*/, '');
       if (!title || /더보기|미리보기|리뷰/.test(title)) continue;
       seen.add(no);
-      books.push({ no, title });
+      all.push({ no, title });
     }
-    // 제목 매칭 실패 대비: goodsNo만이라도 확보
+    // 제목에 키워드 포함하는 책 우선(판매량 순 유지), 5권 부족하면 나머지로 채움
+    const matched = all.filter(b => b.title.replace(/\s+/g, '').toLowerCase().includes(kwdNorm));
+    const rest = all.filter(b => !matched.some(x => x.no === b.no));
+    let books = [...matched, ...rest].slice(0, 5);
+    // 그래도 없으면 goodsNo만이라도
     if (!books.length) {
       const nos = [...new Set((html.match(/\/product\/goods\/(\d+)/g) || []).map(s => s.split('/').pop()))].slice(0, 5);
-      nos.forEach(no => books.push({ no, title: '' }));
+      books = nos.map(no => ({ no, title: '' }));
     }
     if (!books.length) { grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.66rem;padding:6px 0">'${kwd}' 검색 결과 없음</div>`; return; }
     grid.innerHTML = books.slice(0, 5).map(b => {
