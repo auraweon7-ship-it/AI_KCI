@@ -1585,8 +1585,10 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       </select>
       <button onclick="appAdd()" style="padding:7px 16px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.74rem;cursor:pointer;flex-shrink:0;">+ 추가</button>
     </div>
-    <div style="display:flex;justify-content:flex-end;margin-top:12px;">
-      <button onclick="closeModal('appModal')" style="padding:8px 18px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">닫기</button>
+    <div style="display:flex;gap:6px;align-items:center;margin-top:12px;">
+      <button onclick="appImport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.72rem;cursor:pointer">📥 가져오기(JSON)</button>
+      <button onclick="appExport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.72rem;cursor:pointer">📤 내보내기(JSON)</button>
+      <button onclick="closeModal('appModal')" style="margin-left:auto;padding:8px 18px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">닫기</button>
     </div>
   </div>
 </div>
@@ -3224,6 +3226,26 @@ function apiExport() {
   showToast('api-keys.json 다운로드됨 📤');
 }
 
+// ── 공용: JSON 파일 다운로드 / 업로드 ──
+function downloadJson(obj, filename) {
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+function pickJsonFile(cb) {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json,application/json';
+  inp.onchange = e => {
+    const f = e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = ev => { try { cb(JSON.parse(ev.target.result)); } catch(_) { showToast('JSON 형식 오류', '⚠️'); } };
+    rd.readAsText(f);
+  };
+  inp.click();
+}
+
 // ── APP 관리 (로그인 필요, 계정별 저장) ──
 let appSortField = null, appSortAsc = true, appEditIdx = null;
 function appStoreKey() {
@@ -3232,6 +3254,51 @@ function appStoreKey() {
 }
 function appGetAll() { const k = appStoreKey(); return k ? JSON.parse(localStorage.getItem(k) || '[]') : []; }
 function appSaveAll(list) { const k = appStoreKey(); if (k) { localStorage.setItem(k, JSON.stringify(list)); cloudPush('apps'); } }
+function appExport() {
+  const list = appGetAll();
+  if (!list.length) { showToast('내보낼 항목이 없습니다', '⚠️'); return; }
+  downloadJson(list, 'apps.json');
+  showToast('apps.json 다운로드됨 📤');
+}
+function appImport() {
+  pickJsonFile(arr => {
+    if (!Array.isArray(arr)) { showToast('배열 형식이어야 합니다', '⚠️'); return; }
+    const list = appGetAll();
+    const seen = new Set(list.map(x => (x.name||'') + '|' + (x.url||'')));
+    let added = 0;
+    arr.forEach(x => {
+      if (!x || !x.name || !x.url) return;
+      const sig = String(x.name) + '|' + String(x.url);
+      if (seen.has(sig)) return;
+      list.push({ name: String(x.name).slice(0,60), url: String(x.url), rating: +x.rating || 0, created: x.created || Date.now() });
+      seen.add(sig); added++;
+    });
+    appSaveAll(list); appRenderTable();
+    showToast(`APP ${added}건 가져옴 📱`);
+  });
+}
+// ── 내 북마크 내보내기/가져오기 (mybm 카테고리 링크) ──
+function bmExport() {
+  const list = state.links.filter(l => l.catId === 'mybm');
+  if (!list.length) { showToast('내보낼 북마크가 없습니다', '⚠️'); return; }
+  downloadJson(list, 'bookmarks.json');
+  showToast('bookmarks.json 다운로드됨 📤');
+}
+function bmImport() {
+  pickJsonFile(arr => {
+    if (!Array.isArray(arr)) { showToast('배열 형식이어야 합니다', '⚠️'); return; }
+    const seen = new Set(state.links.map(l => l.url));
+    let added = 0;
+    arr.forEach(x => {
+      if (!x || !x.url || !x.name) return;
+      if (seen.has(x.url)) return;
+      state.links.push({ id: 'bm_' + Date.now() + '_' + added, catId: 'mybm', name: String(x.name).slice(0,80), url: String(x.url), desc: x.desc || '', emoji: x.emoji || '🔖' });
+      seen.add(x.url); added++;
+    });
+    saveState(); render();
+    showToast(`북마크 ${added}건 가져옴 🔖`);
+  });
+}
 function openAppManager() {
   const u = (() => { try { return JSON.parse(localStorage.getItem('startpage_user') || 'null'); } catch(_) { return null; } })();
   if (!u?.email) { showToast('로그인 후 사용할 수 있습니다 — G Login 클릭', '🔒'); return; }
@@ -6989,6 +7056,16 @@ function renderLinks() {
     : state.links.filter(l => l.catId === state.activeCat);
 
   grid.innerHTML = '';
+  // 내 북마크: 내보내기/가져오기 버튼 행
+  if (state.activeCat === 'mybm') {
+    const bar = document.createElement('div');
+    bar.style.cssText = 'grid-column:1/-1;display:flex;gap:6px;margin-bottom:8px;';
+    bar.innerHTML = `
+      <button onclick="bmImport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">📥 가져오기(JSON)</button>
+      <button onclick="bmExport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">📤 내보내기(JSON)</button>
+      <span style="margin-left:auto;font-size:.68rem;color:var(--text-dim);align-self:center">${links.length}개 북마크</span>`;
+    grid.appendChild(bar);
+  }
   sortLinks(links).forEach(link => {
     const card = document.createElement('a');
     card.className = 'link-card';
