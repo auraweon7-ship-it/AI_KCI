@@ -3263,27 +3263,34 @@ function appImport() {
     showToast(`APP ${added}건 가져옴 📱`);
   });
 }
-// ── 내 북마크 내보내기/가져오기 (mybm 카테고리 링크) ──
+// ── 내 북마크 내보내기/가져오기 (표준 Netscape 북마크 HTML) ──
 function bmExport() {
   const list = state.links.filter(l => l.catId === 'mybm');
   if (!list.length) { showToast('내보낼 북마크가 없습니다', '⚠️'); return; }
-  downloadJson(list, 'bookmarks.json');
-  showToast('bookmarks.json 다운로드됨 📤');
+  const esc = s => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  const items = list.map(l => `        <DT><A HREF="${esc(l.url)}">${esc(l.name)}</A>`).join('\n');
+  const html = `<!DOCTYPE NETSCAPE-Bookmark-file-1>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
+<TITLE>Bookmarks</TITLE>
+<H1>Bookmarks</H1>
+<DL><p>
+    <DT><H3>내 북마크</H3>
+    <DL><p>
+${items}
+    </DL><p>
+</DL><p>`;
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `bookmarks_${new Date().toISOString().slice(0,10)}.html`;
+  a.click();
+  showToast('bookmarks.html 다운로드됨 📤');
 }
 function bmImport() {
-  pickJsonFile(arr => {
-    if (!Array.isArray(arr)) { showToast('배열 형식이어야 합니다', '⚠️'); return; }
-    const seen = new Set(state.links.map(l => l.url));
-    let added = 0;
-    arr.forEach(x => {
-      if (!x || !x.url || !x.name) return;
-      if (seen.has(x.url)) return;
-      state.links.push({ id: 'bm_' + Date.now() + '_' + added, catId: 'mybm', name: String(x.name).slice(0,80), url: String(x.url), desc: x.desc || '', emoji: x.emoji || '🔖' });
-      seen.add(x.url); added++;
-    });
-    saveState(); render();
-    showToast(`북마크 ${added}건 가져옴 🔖`);
-  });
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.html,.htm';
+  inp.onchange = e => importBookmarks(e);   // 기존 Netscape 북마크 HTML 파서 재사용 → 내 북마크에 저장
+  inp.click();
 }
 function openAppManager() {
   const u = (() => { try { return JSON.parse(localStorage.getItem('startpage_user') || 'null'); } catch(_) { return null; } })();
@@ -7047,8 +7054,8 @@ function renderLinks() {
     const bar = document.createElement('div');
     bar.style.cssText = 'grid-column:1/-1;display:flex;gap:6px;margin-bottom:8px;';
     bar.innerHTML = `
-      <button onclick="bmImport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">📥 가져오기(JSON)</button>
-      <button onclick="bmExport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">📤 내보내기(JSON)</button>
+      <button onclick="bmImport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">📥 가져오기(HTML)</button>
+      <button onclick="bmExport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">📤 내보내기(HTML)</button>
       <span style="margin-left:auto;font-size:.68rem;color:var(--text-dim);align-self:center">${links.length}개 북마크</span>`;
     grid.appendChild(bar);
   }
