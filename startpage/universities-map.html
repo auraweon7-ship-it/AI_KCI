@@ -40,6 +40,13 @@ body { font-family: 'Noto Sans KR', -apple-system, sans-serif; background: var(-
 }
 .sidebar::-webkit-scrollbar { width: 4px; }
 .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+#sidebarToggle {
+  align-self: flex-start; margin: 6px 0 0 -1px; width: 22px; height: 44px;
+  background: var(--bg2); border: 1px solid var(--border); border-left: none;
+  border-radius: 0 8px 8px 0; color: var(--text-dim); cursor: pointer;
+  font-size: .7rem; z-index: 500; flex-shrink: 0;
+}
+#sidebarToggle:hover { background: var(--card); color: var(--text); }
 .region-group { border-bottom: 1px solid var(--border); }
 .region-header {
   padding: 6px 10px; background: var(--bg); display: flex; align-items: center;
@@ -127,6 +134,7 @@ body { font-family: 'Noto Sans KR', -apple-system, sans-serif; background: var(-
 
 <div class="main">
   <div class="sidebar" id="sidebar"></div>
+  <button id="sidebarToggle" onclick="toggleSidebar()" title="대학 목록 숨기기/펼치기">◀</button>
 
   <div id="mapContainer" style="flex:1;position:relative;min-height:0;">
     <div id="map"></div>
@@ -452,6 +460,23 @@ function toggleSub(el) {
   const list = el.nextElementSibling;
   list.classList.toggle('open');
   el.querySelector('.sub-toggle').textContent = list.classList.contains('open') ? '▾' : '▸';
+}
+let _sbCollapsed = false;
+function toggleSidebar() {
+  const sb = document.getElementById('sidebar');
+  const btn = document.getElementById('sidebarToggle');
+  _sbCollapsed = !_sbCollapsed;
+  if (_sbCollapsed) {
+    sb.style.flex = '0 0 0px'; sb.style.width = '0'; sb.style.minWidth = '0';
+    sb.style.borderRight = 'none'; sb.style.overflow = 'hidden';
+  } else {
+    sb.style.flex = ''; sb.style.width = ''; sb.style.minWidth = '';
+    sb.style.borderRight = ''; sb.style.overflow = '';
+  }
+  btn.textContent = _sbCollapsed ? '▶' : '◀';
+  btn.title = _sbCollapsed ? '대학 목록 펼치기' : '대학 목록 숨기기';
+  // Leaflet 지도 크기 재계산
+  setTimeout(() => { try { if (typeof map !== 'undefined' && map && map.invalidateSize) map.invalidateSize(); } catch(_){} }, 260);
 }
 
 // ── FILTERS ──
