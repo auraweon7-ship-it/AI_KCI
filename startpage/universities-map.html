@@ -53,6 +53,9 @@ body { font-family: 'Noto Sans KR', -apple-system, sans-serif; background: var(-
 .region-toggle { color: var(--text-dim); font-size: 0.55rem; }
 .univ-list { display: none; }
 .univ-list.open { display: block; }
+.sub-list { display: none; }
+.sub-list.open { display: block; }
+.sub-header:hover { background: var(--card); }
 .univ-item {
   padding: 3px 8px 3px 20px; font-size: 0.62rem; color: var(--text-dim);
   cursor: pointer; display: flex; align-items: center; gap: 5px; border-left: 3px solid transparent;
@@ -420,13 +423,18 @@ function buildSidebar() {
       </div>
       <div class="univ-list open">
         ${Object.entries(gwonMap[gwon]).sort().map(([region, unis]) => `
-          <div style="padding:6px 16px 2px 20px;font-size:.72rem;color:${color};font-weight:700;letter-spacing:.05em;">${region} (${unis.length})</div>
-          ${unis.map(u => `
-            <div class="univ-item" data-name="${u.name}" onclick="focusUniv('${u.name}')">
-              <span class="est-badge est-${u.est}">${u.est[0]}</span>
-              ${u.name.replace('_분교','<span style="color:#888;font-size:.65rem"> (분교)</span>')}
-            </div>
-          `).join('')}
+          <div class="sub-header" onclick="toggleSub(this)" style="padding:6px 16px 4px 20px;font-size:.72rem;color:${color};font-weight:700;letter-spacing:.05em;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+            <span>${region} (${unis.length})</span>
+            <span class="sub-toggle" style="font-size:.6rem;color:${color};opacity:.7;">▾</span>
+          </div>
+          <div class="sub-list open">
+            ${unis.map(u => `
+              <div class="univ-item" data-name="${u.name}" onclick="focusUniv('${u.name}')">
+                <span class="est-badge est-${u.est}">${u.est[0]}</span>
+                ${u.name.replace('_분교','<span style="color:#888;font-size:.65rem"> (분교)</span>')}
+              </div>
+            `).join('')}
+          </div>
         `).join('')}
       </div>
     `;
@@ -439,6 +447,11 @@ function toggleGroup(el) {
   const list = el.nextElementSibling;
   list.classList.toggle('open');
   el.querySelector('.region-toggle').textContent = list.classList.contains('open') ? '▾' : '▸';
+}
+function toggleSub(el) {
+  const list = el.nextElementSibling;
+  list.classList.toggle('open');
+  el.querySelector('.sub-toggle').textContent = list.classList.contains('open') ? '▾' : '▸';
 }
 
 // ── FILTERS ──
