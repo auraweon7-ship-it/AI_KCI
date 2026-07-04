@@ -6326,15 +6326,81 @@ function usCompareShow() {
     return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.7rem .9rem"><div style="font-size:.74rem;font-weight:800;color:var(--text);margin-bottom:.4rem">${lb}</div>${bars}</div>`;
   }).join('');
 
+  // 재정구조·계열 도넛 비교
+  const finCards = ready.map((u,i) => {
+    const d = _univStatsCache[u];
+    if (!d.financeIncome && !d.breakdownStudents) return '';
+    return `<div style="background:var(--card);border:1px solid ${CC[i%CC.length]}55;border-radius:10px;padding:.7rem .9rem">
+      <div style="font-size:.74rem;font-weight:800;color:${CC[i%CC.length]};margin-bottom:.4rem">${u}</div>
+      ${d.financeIncome ? `<div style="font-size:.62rem;color:var(--text-muted);margin-bottom:2px">세입</div>${usDonut(d.financeIncome.data, d.financeIncome.unit||'%')}` : ''}
+      ${d.breakdownStudents ? `<div style="font-size:.62rem;color:var(--text-muted);margin:.4rem 0 2px">계열</div>${usDonut(d.breakdownStudents.data, d.breakdownStudents.unit||'%')}` : ''}
+    </div>`;
+  }).join('');
+  // 평가·랭킹 비교 표
+  const evalRankRows = ready.map((u,i) => {
+    const d = _univStatsCache[u];
+    const rk = (d.rankings||[]).map(r=>`${r.name} ${r.rank||''}`).slice(0,2).join(' / ') || '-';
+    const ev = (d.evaluation||[]).map(e=>`${e.name} ${e.result||''}`).slice(0,2).join(' / ') || '-';
+    return `<tr>
+      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.72rem;font-weight:700;color:${CC[i%CC.length]};white-space:nowrap">${u}</td>
+      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.68rem;color:var(--text)">${rk}</td>
+      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.68rem;color:var(--text)">${ev}</td>
+    </tr>`;
+  }).join('');
+  // 대학별 요약
+  const summaries = ready.map((u,i) => {
+    const d = _univStatsCache[u];
+    return d.summary ? `<div style="border-left:3px solid ${CC[i%CC.length]};padding:.3rem 0 .3rem .7rem;margin-bottom:.5rem"><b style="color:${CC[i%CC.length]};font-size:.74rem">${u}</b><div style="font-size:.7rem;color:var(--text-dim);line-height:1.5">${d.summary}</div></div>` : '';
+  }).join('');
+
   box.innerHTML = `
     <div style="font-size:1.05rem;font-weight:900;color:var(--text);margin:.3rem 0 .7rem">🆚 ${ready.join(' vs ')} 비교</div>
     <div style="display:flex;flex-wrap:wrap;gap:.7rem;margin-bottom:1rem">${metaCards}</div>
     <div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.4rem 0 .5rem">📋 지표 비교표 <span style="font-size:.64rem;color:var(--text-muted);font-weight:600">· 🥇=최고</span></div>
     <div style="overflow-x:auto;margin-bottom:1rem"><table style="width:100%;border-collapse:collapse;min-width:${140+ready.length*90}px"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
     ${charts ? `<div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.4rem 0 .5rem">📊 핵심 지표 그래프</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.8rem">${charts}</div>` : ''}
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.8rem;margin-bottom:1rem">${charts}</div>` : ''}
+    ${finCards.replace(/^(\s*)$/,'') ? `<div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.4rem 0 .5rem">💰 재정·계열 구조</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.8rem;margin-bottom:1rem">${finCards}</div>` : ''}
+    ${evalRankRows ? `<div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.4rem 0 .5rem">🏅 평가·랭킹</div>
+    <div style="overflow-x:auto;margin-bottom:1rem"><table style="width:100%;border-collapse:collapse;min-width:400px"><thead><tr>
+      <th style="text-align:left;padding:.4rem .5rem;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">대학</th>
+      <th style="text-align:left;padding:.4rem .5rem;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">랭킹</th>
+      <th style="text-align:left;padding:.4rem .5rem;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">평가·인증</th>
+    </tr></thead><tbody>${evalRankRows}</tbody></table></div>` : ''}
+    ${summaries ? `<div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.4rem 0 .5rem">📝 대학별 요약</div><div style="margin-bottom:1rem">${summaries}</div>` : ''}
     ${missing.length ? `<div style="font-size:.66rem;color:var(--text-muted);margin-top:.6rem">※ 미생성: ${missing.join(', ')} — 대시보드 생성 후 다시 비교</div>` : ''}
+    <div id="usCompareAi" style="background:linear-gradient(135deg,#4fc3f722,transparent);border:1px solid #4fc3f755;border-radius:12px;padding:.9rem 1.1rem;margin-top:1rem">
+      <div style="font-size:.86rem;font-weight:800;color:var(--text);margin-bottom:.3rem">🤖 AI 종합 분석</div>
+      <div id="usCompareAiText" style="font-size:.8rem;color:var(--text-dim);line-height:1.6">생성 중...</div></div>
     <div style="font-size:.64rem;color:var(--text-muted);margin-top:.5rem">※ 수치는 Claude AI 추정값 · 지표별 단위 상이(막대는 상대 비교용)</div>`;
+  usCompareAiSummary(ready);
+}
+// 비교 대학 AI 종합 분석 (200자 이내)
+async function usCompareAiSummary(univs) {
+  const el = document.getElementById('usCompareAiText');
+  if (!el) return;
+  const key = (localStorage.getItem('claude_api_key') || '').trim();
+  if (!key) { el.textContent = 'Claude API 키가 필요합니다.'; return; }
+  const brief = univs.map(u => {
+    const d = _univStatsCache[u];
+    const k = (d.kpis||[]).map(x=>`${x.label} ${x.value}`).join(', ');
+    return `${d.univ||u}(${d.estabGroup||d.type||''}): ${k}`;
+  }).join('\n');
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:400, messages:[{ role:'user', content:`다음 대학들의 지표 비교입니다. 강점·차이·특징을 짚어 종합 비교 분석을 한국어 200자 이내로 간결히 작성하세요(서론 없이 분석만).\n\n${brief}` }] }),
+    });
+    if (!r.ok) throw new Error('오류 '+r.status);
+    const j = await r.json();
+    let txt = (j.content||[]).map(c=>c.text||'').join('').trim();
+    if (txt.length > 240) txt = txt.slice(0, 240) + '…';
+    el.innerHTML = usHighlight(txt, '#4fc3f7');
+  } catch (e) {
+    el.textContent = '종합 분석 생성 실패 — ' + (e.message||'');
+  }
 }
 
 function renderUnivStatsView() {
