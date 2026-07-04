@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>사립대학교 권역별 지도</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root {
   --bg: #0d1117; --bg2: #161b22; --card: #1c2128; --border: #30363d;
@@ -13,28 +15,16 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Noto Sans KR', -apple-system, sans-serif; background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; }
 
-.header {
-  background: var(--bg2); border-bottom: 1px solid var(--border);
-  padding: 0 1.5rem; height: 52px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-}
-.back-btn {
-  padding: 6px 12px; background: var(--card); border: 1px solid var(--border);
-  border-radius: 7px; color: var(--text-dim); font-size: 0.82rem; cursor: pointer; text-decoration: none;
-  display: flex; align-items: center; gap: 5px;
-}
-.back-btn:hover { border-color: var(--accent); color: var(--accent2); }
-.title { font-size: 1rem; font-weight: 700; }
-.stats { margin-left: auto; font-size: 0.8rem; color: var(--text-dim); }
 
 /* Filter bar */
 .filter-bar {
   background: var(--bg2); border-bottom: 1px solid var(--border);
-  padding: 8px 1.5rem; display: flex; align-items: center; gap: 8px; flex-shrink: 0; flex-wrap: wrap;
+  padding: 5px 1rem; display: flex; align-items: center; gap: 6px; flex-shrink: 0; flex-wrap: wrap;
 }
-.filter-label { font-size: 0.78rem; color: var(--text-dim); font-weight: 700; margin-right: 4px; }
+.filter-label { font-size: 0.6rem; color: var(--text-dim); font-weight: 700; margin-right: 2px; }
 .filter-chip {
-  padding: 4px 12px; border-radius: 20px; border: 1.5px solid var(--border);
-  background: none; color: var(--text-dim); font-size: 0.78rem; cursor: pointer;
+  padding: 2px 7px; border-radius: 20px; border: 1px solid var(--border);
+  background: none; color: var(--text-dim); font-size: 0.6rem; cursor: pointer;
   transition: all .15s; white-space: nowrap;
 }
 .filter-chip:hover { border-color: var(--accent); color: var(--accent2); }
@@ -45,33 +35,33 @@ body { font-family: 'Noto Sans KR', -apple-system, sans-serif; background: var(-
 
 /* Sidebar list */
 .sidebar {
-  width: 280px; min-width: 240px; background: var(--bg2); border-right: 1px solid var(--border);
+  width: 220px; min-width: 180px; background: var(--bg2); border-right: 1px solid var(--border);
   overflow-y: auto; flex-shrink: 0;
 }
 .sidebar::-webkit-scrollbar { width: 4px; }
 .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 .region-group { border-bottom: 1px solid var(--border); }
 .region-header {
-  padding: 10px 16px; background: var(--bg); display: flex; align-items: center;
+  padding: 6px 10px; background: var(--bg); display: flex; align-items: center;
   justify-content: space-between; cursor: pointer; position: sticky; top: 0; z-index: 1;
 }
 .region-header:hover { background: var(--card); }
-.region-name { font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+.region-name { font-size: 0.65rem; font-weight: 700; display: flex; align-items: center; gap: 5px; }
 .region-badge {
-  font-size: 0.7rem; padding: 2px 7px; border-radius: 10px; font-weight: 600;
+  font-size: 0.55rem; padding: 1px 5px; border-radius: 8px; font-weight: 600;
 }
-.region-toggle { color: var(--text-dim); font-size: 0.7rem; }
+.region-toggle { color: var(--text-dim); font-size: 0.55rem; }
 .univ-list { display: none; }
 .univ-list.open { display: block; }
 .univ-item {
-  padding: 7px 16px 7px 32px; font-size: 0.8rem; color: var(--text-dim);
-  cursor: pointer; display: flex; align-items: center; gap: 8px; border-left: 3px solid transparent;
+  padding: 3px 8px 3px 20px; font-size: 0.62rem; color: var(--text-dim);
+  cursor: pointer; display: flex; align-items: center; gap: 5px; border-left: 3px solid transparent;
   transition: all .1s;
 }
 .univ-item:hover { background: var(--card); color: var(--text); border-left-color: var(--accent); }
 .univ-item.selected { background: var(--card); color: var(--accent2); border-left-color: var(--accent); font-weight: 600; }
 .est-badge {
-  font-size: 0.65rem; padding: 1px 5px; border-radius: 3px; flex-shrink: 0;
+  font-size: 0.5rem; padding: 1px 3px; border-radius: 3px; flex-shrink: 0;
 }
 .est-사립 { background: rgba(108,92,231,.2); color: #a29bfe; }
 .est-국립, .est-국립대법인 { background: rgba(63,185,80,.2); color: #3fb950; }
@@ -79,46 +69,28 @@ body { font-family: 'Noto Sans KR', -apple-system, sans-serif; background: var(-
 .est-특별법법인 { background: rgba(248,180,0,.2); color: #f8b400; }
 
 /* Map */
-#map { flex: 1; }
-.map-placeholder {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 16px; color: var(--text-dim);
-}
-.api-key-box {
-  background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 24px; max-width: 480px; width: 90%;
-}
-.api-key-box h3 { font-size: 1rem; margin-bottom: 12px; color: var(--text); }
-.api-key-box p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; margin-bottom: 12px; }
-.api-input {
-  width: 100%; padding: 9px 12px; background: var(--bg3, #21262d); border: 1.5px solid var(--border);
-  border-radius: 8px; color: var(--text); font-size: 0.88rem; outline: none; margin-bottom: 10px;
-}
-.api-input:focus { border-color: var(--accent); }
-.apply-btn {
-  width: 100%; padding: 9px; background: var(--accent); border: none; border-radius: 8px;
-  color: #fff; font-weight: 700; font-size: 0.9rem; cursor: pointer;
-}
-.apply-btn:hover { opacity: .85; }
-.step-list { margin: 12px 0; padding-left: 1.2rem; }
-.step-list li { font-size: 0.82rem; color: var(--text-dim); margin-bottom: 6px; line-height: 1.5; }
-.step-list li strong { color: var(--accent2); }
-.step-list a { color: var(--accent-blue, #58a6ff); }
+#mapContainer { display: flex; flex-direction: column; }
+#map { flex: 1; min-height: 0; width: 100%; }
 
-/* Info window */
-.gm-info { font-family: 'Noto Sans KR', sans-serif; min-width: 160px; }
-.gm-info .name { font-weight: 700; font-size: 1rem; color: #1a1a2e; margin-bottom: 4px; }
-.gm-info .region { font-size: .82rem; font-weight: 600; margin-bottom: 2px; }
-.gm-info .est { font-size: .78rem; color: #555; margin-top: 2px; }
-.gm-info-table { width: 100%; border-collapse: collapse; margin: 8px 0 4px; font-size: .8rem; }
-.gm-info-table tr td { padding: 3px 4px; color: #333; vertical-align: top; }
-.gm-info-table .gm-label { color: #888; font-weight: 600; white-space: nowrap; padding-right: 8px; }
-.gm-info .links { margin-top: 10px; display: flex; gap: 8px; }
-.gm-info .links a {
-  font-size: .78rem; color: #fff; background: #6c5ce7; text-decoration: none;
-  padding: 4px 10px; border-radius: 6px; font-weight: 600;
+/* Leaflet popup */
+.lf-popup { font-family: 'Noto Sans KR', sans-serif; min-width: 190px; max-width: 240px; }
+.lf-name { font-weight: 800; font-size: .88rem; color: #111; line-height: 1.3; margin-bottom: 4px; }
+.lf-badge {
+  display: inline-block; font-size: .62rem; font-weight: 700; padding: 1px 6px;
+  border-radius: 8px; margin-bottom: 6px; color: #fff;
 }
-.gm-info .links a:hover { background: #5a4ed1; }
+.lf-table { width: 100%; border-collapse: collapse; margin: 4px 0 6px; font-size: .73rem; }
+.lf-table tr { border-bottom: 1px solid #f0f0f0; }
+.lf-table td { padding: 3px; color: #222; vertical-align: middle; }
+.lf-label { color: #666; font-weight: 700; white-space: nowrap; padding-right: 8px; width: 52px; }
+.lf-links { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+.lf-links a {
+  font-size: .67rem; color: #fff; background: #6c5ce7; text-decoration: none;
+  padding: 3px 8px; border-radius: 5px; font-weight: 700; white-space: nowrap;
+}
+.lf-links a:hover { background: #5a4ed1; }
+.lf-links a.sec { background: #00b894; }
+.lf-links a.sec:hover { background: #00997a; }
 
 /* Search overlay */
 .map-search {
@@ -132,13 +104,10 @@ body { font-family: 'Noto Sans KR', -apple-system, sans-serif; background: var(-
 </head>
 <body>
 
-<div class="header">
-  <a class="back-btn" href="index.html">← 홈</a>
-  <div class="title">🗺 사립대학교 권역별 지도</div>
-  <div class="stats" id="statsText">총 199개 대학교</div>
-</div>
 
 <div class="filter-bar">
+  <a href="index.html" title="시작 페이지로 돌아가기"
+     style="display:flex;align-items:center;gap:4px;padding:3px 10px;background:#6c5ce7;border-radius:6px;color:#fff;font-size:.62rem;font-weight:700;text-decoration:none;flex-shrink:0;margin-right:6px;">🏠 홈</a>
   <span class="filter-label">권역:</span>
   <button class="filter-chip active" data-region="all" onclick="filterRegion('all',this)">전체</button>
   <button class="filter-chip" data-region="수도권" onclick="filterRegion('수도권',this)">🏙 수도권</button>
@@ -156,31 +125,8 @@ body { font-family: 'Noto Sans KR', -apple-system, sans-serif; background: var(-
 <div class="main">
   <div class="sidebar" id="sidebar"></div>
 
-  <div id="mapContainer" style="flex:1;position:relative;">
-    <!-- Map loads here after API key entered -->
-    <div class="map-placeholder" id="mapPlaceholder">
-      <div style="font-size:3rem;">🗺</div>
-      <div class="api-key-box">
-        <h3>🔑 Google Maps API Key 필요</h3>
-        <p>지도를 표시하려면 Google Maps JavaScript API 키가 필요합니다.</p>
-        <ol class="step-list">
-          <li><strong>Google Cloud Console</strong> 접속: <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a></li>
-          <li>프로젝트 생성 또는 선택</li>
-          <li><strong>APIs & Services → Library</strong>에서 다음 API 활성화:
-            <ul style="margin-top:4px;padding-left:1rem;">
-              <li><strong>Maps JavaScript API</strong> (지도 표시)</li>
-              <li><strong>Geocoding API</strong> (주소→좌표, 선택)</li>
-            </ul>
-          </li>
-          <li><strong>Credentials → Create Credentials → API Key</strong></li>
-          <li>API 키 제한 설정: HTTP 리퍼러(웹사이트) 또는 IP 주소로 제한 권장</li>
-        </ol>
-        <input class="api-input" type="text" id="apiKeyInput" placeholder="AIzaSy... (Google Maps API Key)" value="">
-        <button class="apply-btn" onclick="applyApiKey()">🗺 지도 불러오기</button>
-        <p style="font-size:.75rem;color:#666;margin-top:8px;">키는 브라우저 로컬에 저장됩니다. 무료 할당량: 월 $200 크레딧 제공.</p>
-      </div>
-    </div>
-    <div id="map" style="width:100%;height:100%;display:none;"></div>
+  <div id="mapContainer" style="flex:1;position:relative;min-height:0;">
+    <div id="map"></div>
   </div>
 </div>
 
@@ -429,7 +375,7 @@ const REGION_GWON = {
 // State
 let activeGwon = 'all';
 let activeEst = 'all';
-let map, markers = [], infoWindow;
+let map, markers = [];
 
 function getFiltered() {
   return UNIVERSITIES.filter(u => {
@@ -487,7 +433,6 @@ function buildSidebar() {
     sidebar.appendChild(gwonEl);
   });
 
-  document.getElementById('statsText').textContent = `총 ${filtered.length}개 대학교`;
 }
 
 function toggleGroup(el) {
@@ -512,109 +457,63 @@ function filterEst(est, btn) {
   if (map) updateMarkers();
 }
 
-// ── MAPS ──
-function applyApiKey() {
-  const key = document.getElementById('apiKeyInput').value.trim();
-  if (!key) { alert('API 키를 입력하세요'); return; }
-  localStorage.setItem('mapsApiKey', key);
-  loadMap(key);
-}
-
-function loadMap(key) {
-  document.getElementById('mapPlaceholder').style.display = 'none';
-  document.getElementById('map').style.display = 'block';
-  const script = document.createElement('script');
-  script.src = `https://maps.googleapis.com/maps/api/js?key=${key}&language=ko&callback=initMap`;
-  script.async = true;
-  script.onerror = () => {
-    document.getElementById('mapPlaceholder').style.display = 'flex';
-    document.getElementById('map').style.display = 'none';
-    alert('API 키가 올바르지 않거나 Maps JavaScript API가 비활성화되어 있습니다.');
-  };
-  document.head.appendChild(script);
-}
-
-window.initMap = function() {
-  map = new google.maps.Map(document.getElementById('map'), {
-    center: { lat: 36.5, lng: 127.8 },
-    zoom: 7,
-    styles: [
-      {elementType:'geometry', stylers:[{color:'#1d2c4d'}]},
-      {elementType:'labels.text.fill', stylers:[{color:'#8ec3b9'}]},
-      {elementType:'labels.text.stroke', stylers:[{color:'#1a3646'}]},
-      {featureType:'road', elementType:'geometry', stylers:[{color:'#304a7d'}]},
-      {featureType:'water', elementType:'geometry', stylers:[{color:'#0e1626'}]},
-      {featureType:'administrative.country', elementType:'geometry.stroke', stylers:[{color:'#4b6878'}]},
-    ],
-    mapTypeControl: false,
-    streetViewControl: false,
-  });
-  infoWindow = new google.maps.InfoWindow();
+// ── MAPS (Leaflet + OpenStreetMap) ──
+function initLeafletMap() {
+  map = L.map('map', { center: [36.5, 127.8], zoom: 7, zoomControl: true });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> © <a href="https://carto.com/">CARTO</a>',
+    subdomains: 'abcd', maxZoom: 19
+  }).addTo(map);
   updateMarkers();
-};
+}
 
 function makeUnivIcon(color, isNational, name) {
-  const iconSize = isNational ? 22 : 18;
-  const fontSize = 10;
   const label = name.replace('_분교','').replace('(분교)','').replace('대학교','대').replace('대학','대');
-  const labelW = Math.max(label.length * 6.5 + 8, 40);
-  const totalW = Math.max(iconSize + labelW + 4, 60);
-  const totalH = iconSize + 2;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}">
-    <circle cx="${iconSize/2}" cy="${iconSize/2}" r="${iconSize/2 - 1}" fill="${color}" fill-opacity="0.92" stroke="white" stroke-width="1.5"/>
-    <text x="${iconSize/2}" y="${iconSize/2 + 4}" text-anchor="middle" font-size="${iconSize * 0.6}" font-family="Segoe UI Emoji,Apple Color Emoji,sans-serif">🎓</text>
-    <rect x="${iconSize + 2}" y="2" width="${labelW}" height="${iconSize - 4}" rx="3" fill="rgba(0,0,0,0.65)"/>
-    <text x="${iconSize + 2 + labelW/2}" y="${iconSize/2 + 4}" text-anchor="middle" font-size="${fontSize}" font-family="Noto Sans KR,sans-serif" fill="white" font-weight="600">${label}</text>
-  </svg>`;
-  return {
-    url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
-    scaledSize: new google.maps.Size(totalW, totalH),
-    anchor: new google.maps.Point(iconSize / 2, iconSize / 2),
-  };
+  const icon = isNational ? '🏛' : '🎓';
+  return L.divIcon({
+    html: `<div style="background:${color};color:#fff;padding:2px 5px;border-radius:8px;font-size:9px;font-weight:700;white-space:nowrap;border:1px solid rgba(255,255,255,0.6);font-family:'Noto Sans KR',sans-serif;box-shadow:0 1px 4px rgba(0,0,0,.4)">${icon} ${label}</div>`,
+    className: '', iconAnchor: [0, 12],
+  });
 }
 
 function updateMarkers() {
-  markers.forEach(m => m.setMap(null));
+  markers.forEach(m => map.removeLayer(m));
   markers = [];
-  const filtered = getFiltered();
-
-  filtered.forEach(u => {
+  getFiltered().forEach(u => {
     const color = GWON_COLORS[u.gwon] || '#888';
     const isNational = u.est === '국립' || u.est === '국립대법인' || u.est === '특별법법인';
-    const marker = new google.maps.Marker({
-      position: { lat: u.lat, lng: u.lng },
-      map,
-      title: u.name,
-      icon: makeUnivIcon(color, isNational, u.name),
-    });
-    marker.addListener('click', () => {
-      const searchUrl = `https://search.naver.com/search.naver?query=${encodeURIComponent(u.name)}`;
-      const alrimiUrl = `https://www.academyinfo.go.kr/popup/univInfoPopup.do?univId=${encodeURIComponent(u.name)}`;
-      const profCount = PROF_DATA[u.name];
-      const profText = profCount ? `${profCount.toLocaleString()}명` : '-';
-      const cleanName = u.name.replace('_분교','').replace('(분교)','');
-      infoWindow.setContent(`
-        <div class="gm-info">
-          <div class="name">${cleanName}</div>
-          <div class="region" style="color:${color}">${u.gwon} · ${u.region}</div>
-          <table class="gm-info-table">
-            <tr><td class="gm-label">설립</td><td>${u.est}</td></tr>
-            <tr><td class="gm-label">주소</td><td>${u.region} 소재</td></tr>
-            <tr><td class="gm-label">전임교원</td><td>${profText}</td></tr>
-            <tr><td class="gm-label">학생 현황</td><td><a href="https://www.academyinfo.go.kr" target="_blank" style="color:#6c5ce7">대학알리미 ↗</a></td></tr>
-          </table>
-          <div class="links">
-            <a href="${searchUrl}" target="_blank">🔍 검색</a>
-            <a href="https://www.academyinfo.go.kr" target="_blank">📊 대학알리미</a>
-          </div>
+    const cleanName = u.name.replace('_분교','').replace('(분교)','');
+    const profText = PROF_DATA[u.name] ? `${PROF_DATA[u.name].toLocaleString()}명` : '-';
+    const searchUrl = `https://search.naver.com/search.naver?query=${encodeURIComponent(cleanName)}`;
+    const alrimiUrl = `https://www.academyinfo.go.kr/popup/univInfoPopup.do?univId=${encodeURIComponent(cleanName)}`;
+    const telUrl = `https://search.naver.com/search.naver?query=${encodeURIComponent(cleanName+' 대표전화')}`;
+    const stuUrl = `https://search.naver.com/search.naver?query=${encodeURIComponent(cleanName+' 재학생수')}`;
+
+    const marker = L.marker([u.lat, u.lng], { icon: makeUnivIcon(color, isNational, u.name) });
+    marker.bindPopup(`
+      <div class="lf-popup">
+        <div class="lf-name">${cleanName}</div>
+        <span class="lf-badge" style="background:${color}">${u.gwon}</span>
+        <table class="lf-table">
+          <tr><td class="lf-label">설립</td><td>${isNational ? '🏛 국립' : '🏢 사립'}</td></tr>
+          <tr><td class="lf-label">소재지</td><td>📍 ${u.region}</td></tr>
+          <tr><td class="lf-label">교수수</td><td>👨‍🏫 ${profText}</td></tr>
+          <tr><td class="lf-label">학생수</td><td><a href="${stuUrl}" target="_blank" style="color:#6c5ce7;font-weight:700">🔍 검색 ↗</a></td></tr>
+          <tr><td class="lf-label">대표전화</td><td><a href="${telUrl}" target="_blank" style="color:#00b894;font-weight:700">📞 검색 ↗</a></td></tr>
+        </table>
+        <div class="lf-links">
+          <a href="${searchUrl}" target="_blank">🔍 검색</a>
+          <a href="${alrimiUrl}" target="_blank" class="sec">📊 대학알리미</a>
         </div>
-      `);
-      infoWindow.open(map, marker);
-      // highlight sidebar
+      </div>
+    `, { maxWidth: 260 });
+    marker.on('click', () => {
       document.querySelectorAll('.univ-item').forEach(el => el.classList.remove('selected'));
       const el = document.querySelector(`.univ-item[data-name="${u.name}"]`);
       if (el) { el.classList.add('selected'); el.scrollIntoView({block:'nearest'}); }
     });
+    marker.univName = u.name;
+    marker.addTo(map);
     markers.push(marker);
   });
 }
@@ -622,10 +521,9 @@ function updateMarkers() {
 function focusUniv(name) {
   const u = UNIVERSITIES.find(x => x.name === name);
   if (!u || !map) return;
-  map.panTo({ lat: u.lat, lng: u.lng });
-  map.setZoom(13);
-  const marker = markers.find(m => m.getTitle() === name);
-  if (marker) google.maps.event.trigger(marker, 'click');
+  map.setView([u.lat, u.lng], 13);
+  const marker = markers.find(m => m.univName === name);
+  if (marker) marker.openPopup();
   document.querySelectorAll('.univ-item').forEach(el => el.classList.remove('selected'));
   const el = document.querySelector(`.univ-item[data-name="${name}"]`);
   if (el) { el.classList.add('selected'); el.scrollIntoView({block:'nearest'}); }
@@ -633,11 +531,20 @@ function focusUniv(name) {
 
 // ── INIT ──
 buildSidebar();
-const savedKey = localStorage.getItem('mapsApiKey');
-if (savedKey) {
-  document.getElementById('apiKeyInput').value = savedKey;
-  loadMap(savedKey);
-}
+// Leaflet 컨테이너 높이 명시 (flex 계산 전 0일 수 있음)
+(function() {
+  const fb = document.querySelector('.filter-bar');
+  const h = window.innerHeight - (fb ? fb.offsetHeight : 0);
+  document.getElementById('mapContainer').style.height = h + 'px';
+  document.getElementById('map').style.height = h + 'px';
+  window.addEventListener('resize', () => {
+    const h2 = window.innerHeight - (fb ? fb.offsetHeight : 0);
+    document.getElementById('mapContainer').style.height = h2 + 'px';
+    document.getElementById('map').style.height = h2 + 'px';
+    if (map) map.invalidateSize();
+  });
+})();
+initLeafletMap();
 </script>
 </body>
 </html>
