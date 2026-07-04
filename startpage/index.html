@@ -779,6 +779,12 @@ body[data-theme="light"] .ai-view-wrap .univ-chip { border-color: #17a2b8; box-s
   background-size: 200% 100%; animation: skel 1.2s infinite; border-radius: 8px;
 }
 @keyframes skel { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+@keyframes usSpin { to { transform: rotate(360deg); } }
+.us-clock { display:inline-block; width:44px; height:44px; position:relative; }
+.us-clock .face { width:100%; height:100%; border:3px solid var(--accent2); border-radius:50%; box-sizing:border-box; box-shadow:0 0 12px rgba(162,155,254,.4); }
+.us-clock .hand { position:absolute; left:50%; bottom:50%; transform-origin:bottom center; background:var(--accent2); border-radius:2px; }
+.us-clock .hand.h { width:3px; height:12px; margin-left:-1.5px; animation:usSpin 3s linear infinite; }
+.us-clock .hand.m { width:2px; height:17px; margin-left:-1px; animation:usSpin 1s linear infinite; }
 
 /* ── 밀도: 컴팩트 ── */
 body[data-density="compact"] .link-card { min-height: 38px; padding: 3px 6px; gap: 2px; }
@@ -6529,7 +6535,11 @@ async function usGenerate() {
     <div class="skel" style="height:80px;margin-bottom:10px"></div>
     <div class="skel" style="height:180px;margin-bottom:10px"></div>
     <div class="skel" style="height:120px"></div>
-    <div style="margin-top:1rem;font-size:.82rem">🧠 Claude가 <b>${univ}</b> 통계를 분석하고 있습니다...</div></div>`;
+    <div style="display:flex;flex-direction:column;align-items:center;gap:.5rem;margin-top:1.4rem">
+      <div class="us-clock"><div class="face"></div><div class="hand h"></div><div class="hand m"></div></div>
+      <div style="font-size:.95rem;font-weight:800;color:var(--text)">⏳ 분석중입니다!</div>
+      <div style="font-size:.78rem">🧠 Claude가 <b>${univ}</b> 통계를 분석하고 있습니다...</div>
+    </div></div>`;
 
   const prompt = `당신은 한국 대학 통계 전문 분석가입니다. "${univ}"에 대해 대학알리미(academyinfo.go.kr)의 전체 공시체계 — ①학생(신입생 경쟁률·충원율·재학생·중도탈락·편입) ②교원(전임교원 확보율·1인당 학생수·강의담당비율) ③교육여건(교지·교사 확보율·실험실습·기숙사 수용률·1인당 도서자료수) ④재정·등록금(평균 등록금·1인당 교육비·1인당 장학금·회계) ⑤연구(연구비·논문·산학) ⑥취업(취업률) ⑦국제화(외국인 학생수·유학생·교환학생) — 와 대학재정알리미(uf.academyinfo.go.kr), 대학기본역량진단·기관평가인증 결과를 바탕으로, 알고 있는 최신(대략 2022~2024) 통계를 대학알리미 공시지표를 빠짐없이 반영하여 최대한 풍부하게 종합하세요.
 반드시 아래 JSON 스키마만 출력하세요. 코드블록·설명·주석 없이 순수 JSON만. 모든 필드를 현실적 값으로 채우고, 수치가 불확실해도 합리적 추정치를 넣으세요. 국립·사립 모두 지원합니다.
