@@ -8211,7 +8211,7 @@ async function loadLegisNews() {
   box.innerHTML = '<div class="skel" style="height:38px"></div><div class="skel" style="height:38px"></div>';
   const rss = 'https://news.google.com/rss/search?q=' + encodeURIComponent('국회 교육위원회 OR 고등교육법 OR 대학 입법') + '&hl=ko&gl=KR&ceid=KR:ko';
   const render = items => {
-    box.innerHTML = items.slice(0, 6).map(it => {
+    box.innerHTML = items.slice(0, 5).map(it => {
       const d = it.pubDate ? new Date(it.pubDate).toLocaleDateString('ko-KR', {month:'short',day:'numeric'}) : '';
       const t = (it.title || '').replace(/</g,'&lt;');
       return `<a href="${it.link}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:block;padding:5px 7px;background:var(--bg3);border-radius:6px">
