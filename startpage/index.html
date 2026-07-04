@@ -1923,12 +1923,7 @@ let state = {
     { id: 'univall',  name: '대학',        emoji: '🎓', pinned: true, special: 'univall' },
     { id: 'gov',      name: '정부·정책',   emoji: '🏛' },
     { id: 'nl',       name: '뉴스·법령',   emoji: '📰', merged: ['news','law'] },
-    { id: 're',       name: '연구·취업·진로', emoji: '🔬', merged: ['research','employ'] },
-    { id: 'fes',      name: '재정·평가·통계', emoji: '📊', merged: ['finance','eval','stat'] },
-    { id: 'univ',     name: '대학협의체',  emoji: '🎓' },
-    { id: 'rank',     name: '대학평가·순위', emoji: '🏆' },
-    { id: 'iah',      name: '기관·입시·채용', emoji: '🏢', merged: ['inst','admis','hire'] },
-    { id: 'inter',    name: '국제화',      emoji: '🌍' },
+    { id: 'uinfo',    name: '대학 행정·평가', emoji: '🏫', merged: ['research','employ','finance','eval','stat','univ','rank','inst','admis','hire','inter'] },
     { id: 'ai',       name: 'AI',          emoji: '🤖' },
     { id: 'youtube',  name: 'YouTube',     emoji: '▶️' },
     { id: 'univstats', name: '대학통계',   emoji: '📈', special: 'univstats' },
@@ -2886,7 +2881,7 @@ function loadState() {
       const defaultCatIds = new Set(state.categories.map(c=>c.id));
       const defaultLinkIds = new Set(state.links.map(l=>l.id));
       // 통합으로 사라진 구 카테고리 — 저장본에서 재추가 금지
-      const OBSOLETE_CATS = new Set(['news','law','research','employ','finance','eval','stat','inst','admis','hire']);
+      const OBSOLETE_CATS = new Set(['news','law','research','employ','finance','eval','stat','inst','admis','hire','re','fes','univ','rank','iah','inter']);
       if (parsed.categories) parsed.categories.filter(c=>!defaultCatIds.has(c.id) && !OBSOLETE_CATS.has(c.id)).forEach(c=>state.categories.push(c));
       if (parsed.links) parsed.links.filter(l=>!defaultLinkIds.has(l.id)).forEach(l=>state.links.push(l));
       if (Array.isArray(parsed.pinned)) state.pinned = parsed.pinned;
@@ -5819,7 +5814,7 @@ function renderLinks() {
     univ:'#69f0ae',
     rank:'#ffd54f', iah:'#4dd0e1',
     inst:'#4dd0e1', admis:'#ba68c8', hire:'#ff8a65',
-    inter:'#9fa8da', ai:'#40e0d0', youtube:'#ff5252', mybm:'#ffd740',
+    inter:'#9fa8da', ai:'#40e0d0', youtube:'#ff5252', mybm:'#ffd740', uinfo:'#7dd3fc',
     sudo:'#a78bfa', chung:'#fbbf24', yeong:'#f87171',
     honam:'#34d399', gangwon:'#60a5fa', jeju:'#2dd4bf',
   };
@@ -5827,6 +5822,7 @@ function renderLinks() {
   const RE_IDS  = ['research','employ'];
   const NL_IDS  = ['news','law'];
   const IAH_IDS = ['inst','admis','hire'];
+  const UINFO_IDS = ['research','employ','finance','eval','stat','univ','rank','inst','admis','hire','inter'];
 
   // ── 전체: 카테고리 섹션별 one-page 렌더링 ──
   if (state.activeCat === 'all') {
@@ -6026,6 +6022,7 @@ function renderLinks() {
         : cat.id === 're'  ? state.links.filter(l => RE_IDS.includes(l.catId))
         : cat.id === 'nl'  ? state.links.filter(l => NL_IDS.includes(l.catId))
         : cat.id === 'iah' ? state.links.filter(l => IAH_IDS.includes(l.catId))
+        : cat.id === 'uinfo' ? state.links.filter(l => UINFO_IDS.includes(l.catId))
         : state.links.filter(l => l.catId === cat.id);
       sortLinks(catLinks).forEach(link => {
         const card = document.createElement('a');
@@ -6070,6 +6067,7 @@ function renderLinks() {
     : state.activeCat === 're'  ? state.links.filter(l => RE_IDS.includes(l.catId))
     : state.activeCat === 'nl'  ? state.links.filter(l => NL_IDS.includes(l.catId))
     : state.activeCat === 'iah' ? state.links.filter(l => IAH_IDS.includes(l.catId))
+    : state.activeCat === 'uinfo' ? state.links.filter(l => UINFO_IDS.includes(l.catId))
     : state.links.filter(l => l.catId === state.activeCat);
 
   grid.innerHTML = '';
