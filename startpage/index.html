@@ -5795,15 +5795,20 @@ function usGroupStats() {
   const gwOrder = ['수도권','충청권','영남권','호남권','강원권','제주권'];
   const maxPer = Math.max(...gwOrder.map(g => S.gwon[g]?.perProf || 0));
   const gwColor = {수도권:'#6c5ce7',충청권:'#f39c12',영남권:'#e74c3c',호남권:'#27ae60',강원권:'#2980b9',제주권:'#16a085'};
+  // 권역별 재학생수 — 대학알리미 공개 재학생(재적, 학부+대학원) 근사값
+  const GW_STUDENTS = {수도권:820000,충청권:300000,영남권:470000,호남권:210000,강원권:95000,제주권:25000};
   const gwRows = gwOrder.filter(g => S.gwon[g]).map(g => {
     const s = S.gwon[g], c = gwColor[g];
     const pct = Math.max(3, Math.round(s.perProf / (maxPer||1) * 100));
+    const stu = GW_STUDENTS[g] || 0;
+    const perFac = stu && s.prof ? (stu/s.prof).toFixed(1) : '-';
     return `<tr>
       <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.76rem;color:${c};font-weight:700;white-space:nowrap">${g}</td>
       <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--text);text-align:right">${fmt(s.n)}</td>
+      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--text);text-align:right">${fmt(stu)}</td>
       <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--text);text-align:right">${fmt(s.prof)}</td>
-      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--text);text-align:right">${s.profAvg}</td>
-      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);width:40%">
+      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.75rem;color:${c};font-weight:700;text-align:right">${perFac}</td>
+      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);width:34%">
         <div style="display:flex;align-items:center;gap:6px">
           <div style="flex:1;background:var(--bg3);border-radius:4px;height:15px;overflow:hidden"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,${c},${c}bb)"></div></div>
           <span style="font-size:.72rem;font-weight:700;color:var(--text);width:34px;text-align:right">${s.perProf}</span>
@@ -5822,17 +5827,19 @@ function usGroupStats() {
       </div>
       <div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.2rem 0 .5rem">🗺 권역별 연구 통계</div>
       <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:.7rem .9rem;overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse;min-width:460px">
+        <table style="width:100%;border-collapse:collapse;min-width:560px">
           <thead><tr>
             <th style="padding:.4rem .5rem;text-align:left;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">권역</th>
             <th style="padding:.4rem .5rem;text-align:right;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">대학</th>
+            <th style="padding:.4rem .5rem;text-align:right;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">재학생</th>
             <th style="padding:.4rem .5rem;text-align:right;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">전임교원</th>
-            <th style="padding:.4rem .5rem;text-align:right;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">1교당</th>
+            <th style="padding:.4rem .5rem;text-align:right;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">교원1인당<br>학생</th>
             <th style="padding:.4rem .5rem;text-align:left;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">1인당 논문</th>
             <th style="padding:.4rem .5rem;text-align:right;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">1인당SCI</th>
           </tr></thead>
           <tbody>${gwRows}</tbody>
         </table>
+        <div style="font-size:.62rem;color:var(--text-muted);margin-top:.4rem">※ 재학생·교원1인당학생 = 대학알리미 공개 재학생(재적) 권역별 근사값 · 전임교원/논문은 199교 실측</div>
       </div>
 
       ${(() => {
