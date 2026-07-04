@@ -7373,7 +7373,34 @@ function showUserUI(user) {
 }
 
 function toggleUserMenu() {
-  document.getElementById('userMenu').classList.toggle('open');
+  const menu = document.getElementById('userMenu');
+  const opening = !menu.classList.contains('open');
+  if (opening) {
+    // 헤더 overflow/스택 컨텍스트에 잘리지 않도록 body로 이동 후 fixed 배치
+    if (menu.parentElement !== document.body) document.body.appendChild(menu);
+    menu.classList.add('open');
+    // 아바타 위치 기준으로 우상단 배치
+    const av = document.getElementById('userAvatar');
+    const r = av ? av.getBoundingClientRect() : { bottom: 46, right: window.innerWidth - 8 };
+    menu.style.position = 'fixed';
+    menu.style.top = (r.bottom + 6) + 'px';
+    menu.style.right = Math.max(8, window.innerWidth - r.right) + 'px';
+    menu.style.left = 'auto';
+    menu.style.zIndex = '4000';
+    setTimeout(() => document.addEventListener('click', _closeUserMenuOutside, true), 0);
+  } else {
+    closeUserMenu();
+  }
+}
+function closeUserMenu() {
+  document.getElementById('userMenu').classList.remove('open');
+  document.removeEventListener('click', _closeUserMenuOutside, true);
+}
+function _closeUserMenuOutside(e) {
+  const menu = document.getElementById('userMenu');
+  const av = document.getElementById('userAvatar');
+  if (menu.contains(e.target) || (av && av.contains(e.target))) return;
+  closeUserMenu();
 }
 
 // ── 사용자 승인(접근제어) ──
