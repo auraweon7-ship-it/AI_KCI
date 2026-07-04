@@ -7630,25 +7630,25 @@ async function loadNews() {
     }
   } catch(_) {}
 
-  // Method 2: allorigins raw → parse XML
-  try {
-    const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(RSS_URL);
-    const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
-    if (res.ok) {
-      const text = await res.text();
-      const xml = new DOMParser().parseFromString(text, 'text/xml');
-      const xmlItems = [...xml.querySelectorAll('item')];
-      if (xmlItems.length) {
-        renderNewsItems(xmlItems.map(el => ({
-          title: el.querySelector('title')?.textContent?.replace(/<!\[CDATA\[|\]\]>/g,'').trim(),
-          link:  el.querySelector('link')?.textContent?.trim(),
-          pubDate: el.querySelector('pubDate')?.textContent,
-          source: el.querySelector('source')?.textContent?.trim(),
-        })));
-        return;
-      }
-    }
-  } catch(_) {}
+  // Method 2·3: 자체 프록시(배포 안정) → allorigins, RSS XML 파싱
+  const parseXml = text => {
+    const xml = new DOMParser().parseFromString(text, 'text/xml');
+    const xmlItems = [...xml.querySelectorAll('item')];
+    if (!xmlItems.length) return false;
+    renderNewsItems(xmlItems.map(el => ({
+      title: el.querySelector('title')?.textContent?.replace(/<!\[CDATA\[|\]\]>/g,'').trim(),
+      link:  el.querySelector('link')?.textContent?.trim(),
+      pubDate: el.querySelector('pubDate')?.textContent,
+      source: el.querySelector('source')?.textContent?.trim(),
+    })));
+    return true;
+  };
+  for (const proxy of ['/api/proxy?url=', 'https://api.allorigins.win/raw?url=']) {
+    try {
+      const res = await fetch(proxy + encodeURIComponent(RSS_URL), { signal: AbortSignal.timeout(9000) });
+      if (res.ok && parseXml(await res.text())) return;
+    } catch(_) {}
+  }
 
   grid.innerHTML = '<div class="news-loading">뉴스를 불러올 수 없습니다. ↻ 버튼으로 재시도하세요.</div>';
 }
