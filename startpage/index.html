@@ -5582,6 +5582,29 @@ YOUTUBE_VIDEOS.sort((a,b) => b.views - a.views);
 
 const YT_CATS = ['전체', 'AI 기초', 'LLM 개발', 'ML 이론', '생성AI 활용', 'AI 교육정책', 'AI 이미지 제작', 'AI 영상 제작', '웹플랫폼 제작', 'AI활용 연구'];
 
+// YouTube 추천 영상 숨김·제목수정 (하드코딩 배열이라 id 없음 → vid/제목 키로 로컬 오버라이드)
+function ytHiddenSet() { try { return new Set(JSON.parse(localStorage.getItem('yt_hidden') || '[]')); } catch(_) { return new Set(); } }
+function ytTitleOverrides() { try { return JSON.parse(localStorage.getItem('yt_title_ov') || '{}'); } catch(_) { return {}; } }
+function ytHideVideo(key, ev) {
+  if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+  if (!confirm('이 영상을 목록에서 숨길까요?')) return;
+  const s = ytHiddenSet(); s.add(key);
+  localStorage.setItem('yt_hidden', JSON.stringify([...s]));
+  renderYouTubeView();
+  showToast('영상 숨김 🙈');
+}
+function ytEditVideo(key, ev) {
+  if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+  const ov = ytTitleOverrides();
+  const cur = ov[key] || (YOUTUBE_VIDEOS.find(v => (v.vid || v.title) === key)?.title) || '';
+  const nt = prompt('영상 제목 수정', cur);
+  if (nt == null) return;
+  if (nt.trim()) ov[key] = nt.trim(); else delete ov[key];
+  localStorage.setItem('yt_title_ov', JSON.stringify(ov));
+  renderYouTubeView();
+  showToast('제목 수정됨 ✏️');
+}
+
 function renderYouTubeView() {
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
@@ -5609,7 +5632,11 @@ function renderYouTubeView() {
   let ytCat = '전체', ytPage = 0;
 
   function getFiltered() {
-    return ytCat === '전체' ? YOUTUBE_VIDEOS : YOUTUBE_VIDEOS.filter(v => v.cat === ytCat);
+    const hidden = ytHiddenSet();
+    const ov = ytTitleOverrides();
+    const base = ytCat === '전체' ? YOUTUBE_VIDEOS : YOUTUBE_VIDEOS.filter(v => v.cat === ytCat);
+    return base.filter(v => !hidden.has(v.vid || v.title))
+      .map(v => ov[v.vid || v.title] ? { ...v, title: ov[v.vid || v.title] } : v);
   }
 
   function fmtViews(n) {
@@ -5646,9 +5673,14 @@ function renderYouTubeView() {
             const thumb = v.vid
               ? `<img src="https://i.ytimg.com/vi/${v.vid}/mqdefault.jpg" loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:2rem;color:#fff">▶️</div>`
               : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff">▶️</div>`;
+            const vkey = (v.vid || v.title).replace(/'/g, "\\'");
             return `
             <a class="yt-card" href="${href}" target="_blank" rel="noopener noreferrer"
-               style="display:block;text-decoration:none;background:${cs.cardBg};border:1.5px solid ${cs.borderColor};border-radius:10px;overflow:hidden">
+               style="display:block;text-decoration:none;background:${cs.cardBg};border:1.5px solid ${cs.borderColor};border-radius:10px;overflow:hidden;position:relative">
+              <div class="yt-card-actions" style="position:absolute;top:5px;right:5px;display:flex;gap:3px;z-index:5">
+                <button class="edit" onclick="ytEditVideo('${vkey}',event)" title="제목 수정" style="width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✏️</button>
+                <button class="del" onclick="ytHideVideo('${vkey}',event)" title="삭제(숨김)" style="width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+              </div>
               <div style="position:relative;padding-top:56.25%;background:linear-gradient(135deg,#1a1a2e,#16213e)">
                 ${thumb}
                 <div style="position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.75);color:#fff;font-size:.6rem;padding:.1rem .35rem;border-radius:3px">▶ 재생</div>
