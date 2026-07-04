@@ -837,6 +837,11 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
   .header-right::-webkit-scrollbar { display: none; }
   .icon-btn { width: 28px; height: 28px; font-size: .82rem; flex-shrink: 0; }
   .header-right > * { flex-shrink: 0; }
+  /* 모바일: 유저 메뉴를 fixed로 — 헤더 overflow:hidden에 잘려 로그아웃 안 되던 문제 수정 */
+  .user-menu {
+    position: fixed !important; top: 50px !important; right: 8px !important; left: auto !important;
+    max-width: calc(100vw - 16px); z-index: 3000;
+  }
   .login-btn { padding: 5px 8px; font-size: .7rem; }
   #hdrDday, #offlineBadge, #newsAlertBadge { display: none !important; }
   .content { padding: .6rem; }
