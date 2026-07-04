@@ -1859,6 +1859,20 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── MODALS ── -->
 <!-- Add/Edit Link Modal -->
+<div class="modal-overlay" id="lawModal">
+  <div class="modal" style="max-width:720px;width:94vw;max-height:88vh;padding:0;overflow:hidden;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:.5rem;padding:.9rem 1.1rem;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#4fc3f722,transparent)">
+      <span style="font-size:1.1rem">⚖️</span>
+      <div style="flex:1">
+        <div style="font-size:.98rem;font-weight:800;color:var(--text)">고등교육 법령 AI 비서</div>
+        <div style="font-size:.68rem;color:var(--text-dim)">국가법령정보 공동활용 API + Claude</div>
+      </div>
+      <button onclick="closeModal('lawModal')" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div id="lawModalBody" style="flex:1;overflow-y:auto;padding:1rem 1.1rem"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="linkModal">
   <div class="modal">
     <h3 id="linkModalTitle">링크 추가</h3>
@@ -6401,50 +6415,40 @@ const LAW_OC = 'aiaura';
 const LAW_CORE = ['고등교육법','고등교육법 시행령','사립학교법','대학설립·운영 규정','평생교육법','학점인정 등에 관한 법률','국립대학의 회계 설치 및 재정운영에 관한 법률','교원지위향상을 위한 특별법','학교보건법','고등교육법 시행규칙'];
 
 function renderLawAIView() {
-  const grid = document.getElementById('linksGrid');
-  const title = document.getElementById('sectionTitle');
-  const addBtn = document.getElementById('addLinkHeaderBtn');
-  if (addBtn) addBtn.style.display = 'none';
-  grid.classList.add('univall-mode');
-  title.textContent = '⚖️ 고등교육 법령 AI';
+  const body = document.getElementById('lawModalBody');
+  if (!body) return;
 
   const key = (localStorage.getItem('claude_api_key') || '').trim();
   if (!key) {
-    grid.innerHTML = `
-      <div style="grid-column:1/-1;max-width:520px;margin:2rem auto;text-align:center;padding:2rem;
-                  background:var(--card);border:1.5px solid var(--border);border-radius:14px">
+    body.innerHTML = `
+      <div style="text-align:center;padding:2rem 1rem">
         <div style="font-size:2.4rem;margin-bottom:.5rem">⚖️</div>
         <div style="font-size:1.05rem;font-weight:800;color:var(--text);margin-bottom:.4rem">Claude API 키가 필요합니다</div>
         <p style="font-size:.82rem;color:var(--text-dim);line-height:1.6;margin-bottom:1rem">
           국가법령정보(국가법령정보 공동활용 API) 검색과 Claude AI를 결합해<br>고등교육 관련 법령 질문에 답하는 AI 비서입니다.<br>
           <b>설정 → 🧠 Claude API 키</b>를 입력하면 작동합니다.</p>
-        <button onclick="toggleSettings()" style="padding:.6rem 1.4rem;background:var(--accent2);border:none;
+        <button onclick="closeModal('lawModal');toggleSettings()" style="padding:.6rem 1.4rem;background:var(--accent2);border:none;
                 border-radius:8px;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer">⚙️ 설정 열기</button>
       </div>`;
     return;
   }
 
   const examples = ['대학 설립 인가 요건은?','사립대학 이사회 구성 규정','등록금심의위원회 근거 법령','전임교원 확보율 기준','대학 학점 인정 기준','대학평의원회 설치 의무'];
-  grid.innerHTML = `
-    <div class="ai-view-wrap" style="grid-column:1/-1;padding:0 .3rem;max-width:900px;margin:0 auto">
-      <div style="background:linear-gradient(135deg,#4fc3f728,#4fc3f70a);border:1px solid #4fc3f755;border-radius:14px;padding:.9rem 1.1rem;margin-bottom:.8rem">
-        <div style="font-size:1.05rem;font-weight:800;color:var(--text)">⚖️ 고등교육 법령 AI 비서</div>
-        <div style="font-size:.74rem;color:var(--text-dim);margin-top:.2rem">국가법령정보 공동활용 API + Claude · 고등교육법·사립학교법 등 관련 법령을 검색·해설합니다</div>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.7rem">
-        ${examples.map(q => `<button onclick="lawAsk('${q}')" style="padding:.3rem .7rem;border-radius:16px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.72rem;cursor:pointer">${q}</button>`).join('')}
-      </div>
-      <div id="lawChatLog" style="display:flex;flex-direction:column;gap:.7rem;margin-bottom:.8rem;min-height:120px"></div>
-      <div style="display:flex;gap:8px;align-items:flex-end;position:sticky;bottom:0;background:var(--bg);padding:.4rem 0">
-        <textarea id="lawChatInput" rows="1" placeholder="고등교육 관련 법령을 질문하세요 (Enter 전송, Shift+Enter 줄바꿈)"
-          style="flex:1;resize:none;padding:.6rem .8rem;background:var(--bg3);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:.85rem;outline:none;max-height:120px"
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();lawSend();}"
-          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
-        <button id="lawSendBtn" onclick="lawSend()" style="padding:.6rem 1.2rem;background:var(--accent2);border:none;border-radius:10px;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;flex-shrink:0">전송</button>
-      </div>
-      <div style="font-size:.66rem;color:var(--text-muted);margin-top:.4rem">※ AI 답변은 참고용입니다. 정확한 법령·조문은 <a href="https://www.law.go.kr" target="_blank" style="color:var(--accent2)">국가법령정보센터</a> 원문을 확인하세요.</div>
-    </div>`;
+  body.innerHTML = `
+    <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.7rem">
+      ${examples.map(q => `<button onclick="lawAsk('${q}')" style="padding:.3rem .7rem;border-radius:16px;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:.72rem;cursor:pointer">${q}</button>`).join('')}
+    </div>
+    <div id="lawChatLog" style="display:flex;flex-direction:column;gap:.7rem;margin-bottom:.8rem;min-height:120px"></div>
+    <div style="display:flex;gap:8px;align-items:flex-end;position:sticky;bottom:0;background:var(--card);padding:.4rem 0">
+      <textarea id="lawChatInput" rows="1" placeholder="고등교육 관련 법령을 질문하세요 (Enter 전송, Shift+Enter 줄바꿈)"
+        style="flex:1;resize:none;padding:.6rem .8rem;background:var(--bg3);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:.85rem;outline:none;max-height:120px"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();lawSend();}"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+      <button id="lawSendBtn" onclick="lawSend()" style="padding:.6rem 1.2rem;background:var(--accent2);border:none;border-radius:10px;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer;flex-shrink:0">전송</button>
+    </div>
+    <div style="font-size:.66rem;color:var(--text-muted);margin-top:.4rem">※ AI 답변은 참고용입니다. 정확한 법령·조문은 <a href="https://www.law.go.kr" target="_blank" style="color:var(--accent2)">국가법령정보센터</a> 원문을 확인하세요.</div>`;
   lawRenderLog();
+  setTimeout(() => document.getElementById('lawChatInput')?.focus(), 50);
 }
 
 function lawRenderLog() {
@@ -6467,8 +6471,8 @@ function lawRenderLog() {
     return `<div style="align-self:flex-start;max-width:90%;background:var(--card);border:1px solid var(--border);padding:.6rem .85rem;border-radius:12px 12px 12px 3px;font-size:.82rem;line-height:1.6;color:var(--text)">
       <div>${m.content}</div>${src}</div>`;
   }).join('') + (_lawBusy ? `<div style="align-self:flex-start;color:var(--text-muted);font-size:.78rem;padding:.4rem .6rem">⚖️ 법령 검색·분석 중...</div>` : '');
-  log.scrollIntoView({block:'end'});
-  log.parentElement?.scrollTo?.(0, log.scrollHeight);
+  const body = document.getElementById('lawModalBody');
+  if (body) body.scrollTop = body.scrollHeight;
 }
 
 function lawAsk(q) {
@@ -6588,11 +6592,6 @@ function renderLinks() {
     return;
   }
 
-  // Special: 고등교육 법령 AI 챗봇
-  if (state.activeCat === 'lawai') {
-    renderLawAIView();
-    return;
-  }
 
   const CAT_NEON = {
     gov:'#4fc3f7', news:'#f48fb1', research:'#ce93d8',
@@ -6974,7 +6973,13 @@ function renderEngineSettings() {
 
 // ── ACTIONS ──
 function selectCat(id) {
+  // 법령 AI는 팝업(모달)으로 — 탭 전환 없이 오버레이
+  if (id === 'lawai') { openLawModal(); return; }
   state.activeCat = id; saveState(); render();
+}
+function openLawModal() {
+  openModal('lawModal');
+  renderLawAIView();
 }
 function selectEngine(id) {
   state.searchEngine = id; saveState();
