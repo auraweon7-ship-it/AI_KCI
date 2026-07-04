@@ -5582,23 +5582,32 @@ function renderUnivStatsView() {
   }
 
   const cur = _univStatsCache._lastUniv || '서울대학교';
-  const preset = ['서울대학교','연세대학교','고려대학교','성균관대학교','한양대학교','KAIST','포항공과대학교','부산대학교','경북대학교','전남대학교'];
+  // 전국 국립·사립·과기원 대학 목록 (자동완성)
+  const NAT = ['서울대학교','부산대학교','경북대학교','전남대학교','전북대학교','충남대학교','충북대학교','강원대학교','경상국립대학교','제주대학교','인천대학교','한국교원대학교','한국해양대학교','부경대학교','공주대학교','순천대학교','목포대학교','안동대학교','군산대학교','금오공과대학교','한밭대학교','서울과학기술대학교','서울시립대학교','창원대학교','한국체육대학교','한국전통문화대학교'];
+  const SCI = ['KAIST','POSTECH','GIST','DGIST','UNIST'];
+  const PRV = ['연세대학교','고려대학교','성균관대학교','한양대학교','중앙대학교','경희대학교','서강대학교','이화여자대학교','한국외국어대학교','건국대학교','동국대학교','홍익대학교','국민대학교','숭실대학교','세종대학교','아주대학교','인하대학교','단국대학교','광운대학교','명지대학교','가톨릭대학교','숙명여자대학교','성신여자대학교','가천대학교','순천향대학교','조선대학교','계명대학교','영남대학교','동아대학교','인제대학교','울산대학교','한림대학교','원광대학교','호서대학교','상명대학교','을지대학교'];
+  const ALL = [...NAT, ...SCI, ...PRV];
+  const chip = p => `<button onclick="document.getElementById('usUnivInput').value='${p}';usGenerate()"
+          style="padding:.28rem .65rem;border-radius:16px;border:1px solid var(--border);background:var(--card);
+                 color:var(--text);font-size:.72rem;cursor:pointer;white-space:nowrap">${p}</button>`;
 
   grid.innerHTML = `
     <div class="ai-view-wrap" style="grid-column:1/-1;padding:0 .3rem">
-      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:.8rem">
-        <input id="usUnivInput" type="text" value="${cur}" placeholder="대학명 입력 (예: 서울대학교)"
-          style="flex:1 1 200px;min-width:180px;padding:.55rem .8rem;background:var(--bg3);border:1.5px solid var(--border);
+      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:.7rem">
+        <input id="usUnivInput" type="text" value="${cur}" list="usUnivList" placeholder="전국 국립·사립 대학명 입력 (예: 서울대학교)"
+          style="flex:1 1 220px;min-width:180px;padding:.55rem .8rem;background:var(--bg3);border:1.5px solid var(--border);
                  border-radius:8px;color:var(--text);font-size:.85rem;outline:none"
           onkeydown="if(event.key==='Enter')usGenerate()">
+        <datalist id="usUnivList">${ALL.map(u => `<option value="${u}">`).join('')}</datalist>
         <button id="usGenBtn" onclick="usGenerate()" style="padding:.55rem 1.3rem;background:var(--accent2);border:none;
                 border-radius:8px;color:#fff;font-size:.85rem;font-weight:700;cursor:pointer">📊 대시보드 생성</button>
       </div>
-      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:1rem">
-        ${preset.map(p => `<button onclick="document.getElementById('usUnivInput').value='${p}';usGenerate()"
-          style="padding:.3rem .7rem;border-radius:16px;border:1px solid var(--border);background:var(--card);
-                 color:var(--text);font-size:.74rem;cursor:pointer">${p}</button>`).join('')}
-      </div>
+      <div style="font-size:.68rem;font-weight:700;color:#7dd3fc;margin:.3rem 0 .3rem">🏛 국립·거점대학</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.5rem">${NAT.slice(0,12).map(chip).join('')}</div>
+      <div style="font-size:.68rem;font-weight:700;color:#a5d6a7;margin:.3rem 0 .3rem">🔬 과학기술원</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.5rem">${SCI.map(chip).join('')}</div>
+      <div style="font-size:.68rem;font-weight:700;color:#f48fb1;margin:.3rem 0 .3rem">🏫 주요 사립대학</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:1rem">${PRV.slice(0,16).map(chip).join('')}</div>
       <div id="usResult"></div>
     </div>`;
 
@@ -5634,17 +5643,43 @@ async function usGenerate() {
     <div class="skel" style="height:120px"></div>
     <div style="margin-top:1rem;font-size:.82rem">🧠 Claude가 <b>${univ}</b> 통계를 분석하고 있습니다...</div></div>`;
 
-  const prompt = `당신은 한국 대학 통계 분석가입니다. "${univ}"에 대해 대학알리미(academyinfo.go.kr), 대학재정알리미, 대학기본역량진단·기관평가 정보를 바탕으로 알고 있는 최신 통계를 종합하세요.
-반드시 아래 JSON 스키마만 출력하세요. 코드블록·설명·주석 없이 순수 JSON만. 수치는 추정이라도 현실적 값으로 채우세요.
+  const prompt = `당신은 한국 대학 통계 전문 분석가입니다. "${univ}"에 대해 대학알리미(academyinfo.go.kr)와 대학재정알리미(uf.academyinfo.go.kr)의 공시항목(학생·교원·교육비·등록금·취업률·중도탈락·장학금·재정·연구비·국제화 등)과 대학기본역량진단·기관평가인증 결과를 바탕으로, 알고 있는 최신(대략 2022~2024) 통계를 최대한 풍부하게 종합하세요.
+반드시 아래 JSON 스키마만 출력하세요. 코드블록·설명·주석 없이 순수 JSON만. 모든 필드를 현실적 값으로 채우고, 수치가 불확실해도 합리적 추정치를 넣으세요. 국립·사립 모두 지원합니다.
 {
  "univ": "정식 대학명",
- "summary": "2~3문장 요약",
- "kpis": [{"label":"재학생 수","value":"예: 28,000명","icon":"🎓"},{"label":"전임교원 수","value":"","icon":"👩‍🏫"},{"label":"학생 1인당 교육비","value":"","icon":"💰"},{"label":"신입생 충원율","value":"","icon":"📝"},{"label":"졸업생 취업률","value":"","icon":"💼"},{"label":"전임교원 확보율","value":"","icon":"📐"}],
- "trends": {"title":"연도별 졸업생 취업률 (%)","unit":"%","data":[{"year":"2019","value":70},{"year":"2020","value":68},{"year":"2021","value":72},{"year":"2022","value":74},{"year":"2023","value":76}]},
- "finance": {"title":"교비회계 세입 구조 (%)","data":[{"label":"등록금","value":40},{"label":"국고보조금","value":25},{"label":"전입·기부금","value":15},{"label":"교육부대·기타","value":20}]},
- "breakdown": {"title":"계열별 재학생 비율 (%)","data":[{"label":"인문사회","value":30},{"label":"자연과학","value":18},{"label":"공학","value":30},{"label":"예체능","value":10},{"label":"의약","value":12}]},
- "evaluation": [{"name":"대학기본역량진단","result":"예: 일반재정지원 대학","year":"2021"},{"name":"기관평가인증","result":"인증","year":"2022"}],
- "sources": ["대학알리미","대학재정알리미","대학기본역량진단"]
+ "type": "국립 또는 사립 또는 국립대법인 또는 과학기술원",
+ "region": "소재지 (예: 서울 관악구)",
+ "established": "설립연도 (예: 1946)",
+ "summary": "이 대학의 위상·규모·특성화·재정·평가 결과를 담은 4~5문장의 풍부한 요약",
+ "highlights": ["핵심 특징 배지 문구 5~7개 (예: 'QS 세계랭킹 상위권', '연구중심대학', '의과대학 보유', '글로컬대학30 선정')"],
+ "kpis": [
+   {"label":"재학생 수(재적)","value":"예: 28,000명","icon":"🎓"},
+   {"label":"전임교원 수","value":"","icon":"👩‍🏫"},
+   {"label":"전임교원 확보율","value":"","icon":"📐"},
+   {"label":"전임교원 1인당 학생수","value":"","icon":"👥"},
+   {"label":"학생 1인당 교육비","value":"","icon":"💰"},
+   {"label":"연평균 등록금","value":"","icon":"🧾"},
+   {"label":"신입생 충원율","value":"","icon":"📝"},
+   {"label":"재학생 충원율","value":"","icon":"📈"},
+   {"label":"졸업생 취업률","value":"","icon":"💼"},
+   {"label":"중도탈락 학생 비율","value":"","icon":"🚪"},
+   {"label":"장학금 총액","value":"","icon":"🎁"},
+   {"label":"외국인 유학생 수","value":"","icon":"🌏"}
+ ],
+ "trends": [
+   {"title":"연도별 졸업생 취업률 (%)","unit":"%","data":[{"year":"2019","value":70},{"year":"2020","value":68},{"year":"2021","value":72},{"year":"2022","value":74},{"year":"2023","value":76}]},
+   {"title":"연도별 신입생 경쟁률 (:1)","unit":":1","data":[{"year":"2020","value":8},{"year":"2021","value":9},{"year":"2022","value":10},{"year":"2023","value":11},{"year":"2024","value":12}]},
+   {"title":"연도별 재학생 수 (명)","unit":"","data":[{"year":"2020","value":27000},{"year":"2021","value":27500},{"year":"2022","value":28000},{"year":"2023","value":28200},{"year":"2024","value":28400}]}
+ ],
+ "financeIncome": {"title":"교비(대학)회계 세입 구조 (%)","data":[{"label":"등록금","value":40},{"label":"국고보조금","value":25},{"label":"전입·기부금","value":15},{"label":"교육부대수입","value":12},{"label":"기타","value":8}]},
+ "financeExpense": {"title":"세출 구조 (%)","data":[{"label":"인건비","value":45},{"label":"관리운영비","value":15},{"label":"연구·학생경비","value":25},{"label":"자산·시설","value":10},{"label":"기타","value":5}]},
+ "financeScale": "연간 총 예산 규모 (예: 약 1조 2,000억 원)",
+ "breakdownStudents": {"title":"계열별 재학생 비율 (%)","data":[{"label":"인문사회","value":30},{"label":"자연과학","value":18},{"label":"공학","value":30},{"label":"예체능","value":10},{"label":"의약","value":12}]},
+ "research": {"title":"연구 지표","data":[{"label":"전임교원 1인당 연구비(백만원)","value":120},{"label":"SCI급 논문(편/년,전임100명당)","value":85},{"label":"기술이전 수입(억원)","value":30}]},
+ "rankings": [{"name":"QS 세계대학랭킹","rank":"예: 세계 300위권","year":"2024"},{"name":"THE 아시아대학랭킹","rank":"","year":"2024"}],
+ "evaluation": [{"name":"대학기본역량진단","result":"예: 일반재정지원 대학 선정","year":"2021"},{"name":"기관평가인증(한국대학평가원)","result":"인증","year":"2022"},{"name":"글로컬대학30 / RISE 등","result":"해당 여부","year":"2024"}],
+ "notableDepts": ["대표·특성화 학과/단과대 5~8개"],
+ "sources": ["대학알리미","대학재정알리미","대학기본역량진단","기관평가인증"]
 }`;
 
   try {
@@ -5658,7 +5693,7 @@ async function usGenerate() {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-5',
-        max_tokens: 2000,
+        max_tokens: 5000,
         messages: [{ role: 'user', content: prompt }],
       }),
     });
@@ -5710,53 +5745,92 @@ function usBarChart(title, data, color, unit) {
 function usRenderDashboard(d) {
   const res = document.getElementById('usResult');
   if (!res || !d) return;
-  const C = ['#4fc3f7','#ba68c8','#ffd54f','#69f0ae','#ff8a65','#f48fb1','#80deea','#a78bfa'];
+  const C = ['#4fc3f7','#ba68c8','#ffd54f','#69f0ae','#ff8a65','#f48fb1','#80deea','#a78bfa','#4dd0e1','#ffb74d','#9ccc65','#e57373'];
+  const typeColor = /국립|법인|과학기술/.test(d.type||'') ? '#7dd3fc' : '#f48fb1';
 
   const kpis = (d.kpis || []).map((k, i) => `
-    <div style="background:var(--card);border:1.5px solid ${C[i%C.length]};border-radius:12px;padding:.9rem;
+    <div style="background:var(--card);border:1.5px solid ${C[i%C.length]};border-radius:12px;padding:.85rem;
                 box-shadow:0 0 8px ${C[i%C.length]}22">
-      <div style="font-size:1.4rem">${k.icon||'📊'}</div>
-      <div style="font-size:1.15rem;font-weight:800;color:var(--text);margin:.2rem 0;line-height:1.2">${k.value||'-'}</div>
-      <div style="font-size:.72rem;color:var(--text-dim)">${k.label||''}</div>
+      <div style="font-size:1.3rem">${k.icon||'📊'}</div>
+      <div style="font-size:1.1rem;font-weight:800;color:var(--text);margin:.2rem 0;line-height:1.2">${k.value||'-'}</div>
+      <div style="font-size:.7rem;color:var(--text-dim)">${k.label||''}</div>
     </div>`).join('');
+
+  const highlights = (d.highlights || []).map(h =>
+    `<span style="display:inline-block;background:${typeColor}22;border:1px solid ${typeColor}66;color:${typeColor};
+       font-size:.7rem;font-weight:600;padding:.2rem .6rem;border-radius:14px;margin:0 4px 5px 0">${h}</span>`).join('');
+
+  // 여러 추이 차트 (배열)
+  const trends = Array.isArray(d.trends) ? d.trends : (d.trends ? [d.trends] : []);
+  const trendCharts = trends.map((t, i) =>
+    usBarChart(t.title || '연도별 추이', t.data, C[i % C.length], t.unit)).join('');
+
+  const rankRows = (d.rankings || []).map(r => `
+    <tr>
+      <td style="padding:.45rem .6rem;border-bottom:1px solid var(--border);font-size:.76rem;color:var(--text)">${r.name||''}</td>
+      <td style="padding:.45rem .6rem;border-bottom:1px solid var(--border);font-size:.76rem;color:var(--text);font-weight:700">${r.rank||''}</td>
+      <td style="padding:.45rem .6rem;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--text-dim);text-align:right">${r.year||''}</td>
+    </tr>`).join('');
 
   const evalRows = (d.evaluation || []).map(e => `
     <tr>
-      <td style="padding:.5rem .6rem;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--text)">${e.name||''}</td>
-      <td style="padding:.5rem .6rem;border-bottom:1px solid var(--border);font-size:.78rem;color:var(--text);font-weight:700">${e.result||e.grade||''}</td>
-      <td style="padding:.5rem .6rem;border-bottom:1px solid var(--border);font-size:.74rem;color:var(--text-dim);text-align:right">${e.year||''}</td>
+      <td style="padding:.45rem .6rem;border-bottom:1px solid var(--border);font-size:.76rem;color:var(--text)">${e.name||''}</td>
+      <td style="padding:.45rem .6rem;border-bottom:1px solid var(--border);font-size:.76rem;color:var(--text);font-weight:700">${e.result||e.grade||''}</td>
+      <td style="padding:.45rem .6rem;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--text-dim);text-align:right">${e.year||''}</td>
     </tr>`).join('');
 
+  const infoTable = (title, icon, rows) => rows ? `
+    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:.9rem">
+      <div style="font-size:.82rem;font-weight:800;color:var(--text);margin-bottom:.5rem">${icon} ${title}</div>
+      <table style="width:100%;border-collapse:collapse"><tbody>${rows}</tbody></table></div>` : '';
+
+  const depts = (d.notableDepts || []).map(x =>
+    `<span style="display:inline-block;background:var(--bg3);border:1px solid var(--border);color:var(--text);
+       font-size:.72rem;padding:.2rem .6rem;border-radius:8px;margin:0 4px 5px 0">${x}</span>`).join('');
+
+  const meta = [d.type, d.region, d.established ? d.established+' 설립' : '', d.financeScale ? '예산 '+d.financeScale : '']
+    .filter(Boolean).join(' · ');
+
   res.innerHTML = `
-    <div style="display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap;margin-bottom:.5rem">
-      <h2 style="font-size:1.2rem;font-weight:900;color:var(--text);margin:0">🎓 ${d.univ||''}</h2>
-      <span style="font-size:.68rem;color:var(--text-muted);background:var(--bg3);padding:.15rem .5rem;border-radius:5px">AI 추정 · 참고용</span>
+    <div style="display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap;margin-bottom:.35rem">
+      <h2 style="font-size:1.3rem;font-weight:900;color:var(--text);margin:0">🎓 ${d.univ||''}</h2>
+      ${d.type ? `<span style="font-size:.7rem;font-weight:700;color:${typeColor};background:${typeColor}22;padding:.15rem .55rem;border-radius:6px">${d.type}</span>` : ''}
+      <span style="font-size:.66rem;color:var(--text-muted);background:var(--bg3);padding:.15rem .5rem;border-radius:5px">AI 추정 · 참고용</span>
     </div>
-    ${d.summary ? `<p style="font-size:.82rem;color:var(--text-dim);line-height:1.6;margin:0 0 1rem">${d.summary}</p>` : ''}
+    ${meta ? `<div style="font-size:.74rem;color:var(--text-dim);margin-bottom:.5rem">${meta}</div>` : ''}
+    ${d.summary ? `<p style="font-size:.82rem;color:var(--text-dim);line-height:1.65;margin:0 0 .7rem">${d.summary}</p>` : ''}
+    ${highlights ? `<div style="margin-bottom:1rem">${highlights}</div>` : ''}
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:1rem">${kpis}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:9px;margin-bottom:1.1rem">${kpis}</div>
 
-    ${d.trends ? usBarChart(d.trends.title || '연도별 추이', d.trends.data, '#4fc3f7', d.trends.unit) : ''}
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:.9rem">
-      ${d.finance ? usBarChart(d.finance.title || '재정 구조', d.finance.data, '#69f0ae', d.finance.unit||'%') : ''}
-      ${d.breakdown ? usBarChart(d.breakdown.title || '계열별 구성', d.breakdown.data, '#ba68c8', d.breakdown.unit||'%') : ''}
+    ${trends.length ? `<div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.3rem 0 .6rem">📈 연도별 추이</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.9rem;margin-bottom:.5rem">${trendCharts}</div>` : ''}
+
+    <div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.5rem 0 .6rem">💰 재정 구조 (대학재정알리미)</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.9rem">
+      ${d.financeIncome ? usBarChart(d.financeIncome.title || '세입 구조 (%)', d.financeIncome.data, '#69f0ae', d.financeIncome.unit||'%') : ''}
+      ${d.financeExpense ? usBarChart(d.financeExpense.title || '세출 구조 (%)', d.financeExpense.data, '#ff8a65', d.financeExpense.unit||'%') : ''}
     </div>
 
-    ${evalRows ? `<div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:.9rem">
-      <div style="font-size:.82rem;font-weight:800;color:var(--text);margin-bottom:.5rem">🏅 대학 평가·인증</div>
-      <table style="width:100%;border-collapse:collapse">
-        <thead><tr>
-          <th style="padding:.4rem .6rem;text-align:left;font-size:.72rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">평가명</th>
-          <th style="padding:.4rem .6rem;text-align:left;font-size:.72rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">결과</th>
-          <th style="padding:.4rem .6rem;text-align:right;font-size:.72rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">연도</th>
-        </tr></thead>
-        <tbody>${evalRows}</tbody>
-      </table></div>` : ''}
+    <div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.5rem 0 .6rem">🏛 학사·연구 구성</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.9rem">
+      ${d.breakdownStudents ? usBarChart(d.breakdownStudents.title || '계열별 재학생 (%)', d.breakdownStudents.data, '#ba68c8', d.breakdownStudents.unit||'%') : ''}
+      ${d.research ? usBarChart(d.research.title || '연구 지표', d.research.data, '#4dd0e1', d.research.unit||'') : ''}
+    </div>
+
+    ${depts ? `<div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:1rem 1.1rem;margin-bottom:.9rem">
+      <div style="font-size:.82rem;font-weight:800;color:var(--text);margin-bottom:.6rem">🏫 대표·특성화 학과</div>${depts}</div>` : ''}
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:.9rem">
+      ${infoTable('대학 랭킹', '🏆', rankRows)}
+      ${infoTable('평가·인증', '🏅', evalRows)}
+    </div>
 
     <div style="font-size:.7rem;color:var(--text-muted);line-height:1.6;margin-top:.4rem">
       📌 출처(참고): ${(d.sources||['대학알리미','대학재정알리미']).join(' · ')}<br>
       ※ 수치는 Claude AI가 추정·종합한 값으로 실제 공시와 다를 수 있습니다. 정확한 데이터는
-      <a href="https://www.academyinfo.go.kr" target="_blank" style="color:var(--accent2)">대학알리미</a>를 확인하세요.
+      <a href="https://www.academyinfo.go.kr" target="_blank" style="color:var(--accent2)">대학알리미</a> ·
+      <a href="https://uf.academyinfo.go.kr" target="_blank" style="color:var(--accent2)">대학재정알리미</a>에서 확인하세요.
     </div>`;
 }
 
