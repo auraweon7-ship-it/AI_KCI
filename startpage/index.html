@@ -906,6 +906,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
     <a href="universities-map.html" class="icon-btn" title="권역별 대학 지도" style="text-decoration:none;">🗺</a>
     <button class="icon-btn" title="다크/라이트 모드" onclick="toggleTheme()">🌙</button>
     <button class="icon-btn" title="설정" onclick="toggleSettings()">⚙️</button>
+    <button class="icon-btn" title="관리자" onclick="openAdminPanel()">🛡</button>
     <!-- Login area -->
     <div id="loginArea">
       <button class="login-btn" onclick="handleLogin()">
@@ -1859,6 +1860,21 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── MODALS ── -->
 <!-- Add/Edit Link Modal -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal" style="max-width:820px;width:94vw;max-height:88vh;padding:0;overflow:hidden;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:.5rem;padding:.9rem 1.1rem;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#ef444422,transparent)">
+      <span style="font-size:1.1rem">🛡</span>
+      <div style="flex:1">
+        <div style="font-size:.98rem;font-weight:800;color:var(--text)">관리자 — 사용자 승인 관리</div>
+        <div style="font-size:.68rem;color:var(--text-dim)">로그인한 사용자를 승인해야 정상 사용 가능</div>
+      </div>
+      <button onclick="adminRefresh()" title="새로고침" style="background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.72rem;padding:.3rem .6rem;cursor:pointer">↻</button>
+      <button onclick="closeModal('adminModal')" style="background:none;border:none;color:var(--text-muted);font-size:1.2rem;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div id="adminBody" style="flex:1;overflow:auto;padding:1rem 1.1rem"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="lawModal">
   <div class="modal" style="max-width:720px;width:94vw;max-height:88vh;padding:0;overflow:hidden;display:flex;flex-direction:column">
     <div style="display:flex;align-items:center;gap:.5rem;padding:.9rem 1.1rem;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#4fc3f722,transparent)">
@@ -3005,6 +3021,7 @@ function apiSaveAll(list) { const k = apiStoreKey(); if (k) { localStorage.setIt
 function openApiManager() {
   const u = (() => { try { return JSON.parse(localStorage.getItem('startpage_user') || 'null'); } catch(_) { return null; } })();
   if (!u?.email) { showToast('로그인 후 사용할 수 있습니다 — G Login 클릭', '🔒'); return; }
+  if (!gateGuard()) return;
   document.getElementById('apiUserEmail').textContent = u.email;
   apiRenderTable();
   openModal('apiModal');
@@ -3164,6 +3181,7 @@ function appSaveAll(list) { const k = appStoreKey(); if (k) { localStorage.setIt
 function openAppManager() {
   const u = (() => { try { return JSON.parse(localStorage.getItem('startpage_user') || 'null'); } catch(_) { return null; } })();
   if (!u?.email) { showToast('로그인 후 사용할 수 있습니다 — G Login 클릭', '🔒'); return; }
+  if (!gateGuard()) return;
   document.getElementById('appUserEmail').textContent = u.email;
   appRenderTable();
   openModal('appModal');
@@ -3987,7 +4005,7 @@ function schedRender() {
   const grid = document.getElementById('schedGrid');
   const title = document.getElementById('schedTitle');
   if (!grid) return;
-  const loggedIn = isLoggedIn();
+  const loggedIn = gateOK();   // 로그인+승인 시에만 일정 데이터 표시
   const panel = document.getElementById('schedDayPanel');
   // 비로그인: 빈 캘린더 격자는 표시, 일정 데이터·입력 패널만 숨김
   if (panel) panel.style.display = loggedIn ? '' : 'none';
@@ -4464,7 +4482,7 @@ function todoDel(id) {
 function todoRenderStats() {
   const wrap = document.getElementById('todoDonuts');
   if (!wrap) return;
-  if (!isLoggedIn()) { wrap.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-size:.66rem;color:var(--text-muted);padding:8px">로그인 후 표시</div>'; return; }
+  if (!gateOK()) { wrap.innerHTML = '<div style="grid-column:1/-1;text-align:center;font-size:.66rem;color:var(--text-muted);padding:8px">로그인·승인 후 표시</div>'; return; }
   const now = new Date();
   const startWeek = new Date(now); startWeek.setDate(now.getDate()-6);
   const key = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -4533,9 +4551,11 @@ function todoRender() {
   const grid = document.getElementById('todoGrid');
   const cnt = document.getElementById('todoCount');
   if (!grid) return;
-  if (!isLoggedIn()) {
+  if (!gateOK()) {
     if (cnt) cnt.textContent = '';
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--text-muted);font-size:.72rem">🔒 로그인 후 이용할 수 있습니다<br><span style="font-size:.66rem">우측 상단 G Login 클릭</span></div>';
+    grid.innerHTML = isLoggedIn()
+      ? '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--text-muted);font-size:.72rem">⏳ 관리자 승인 후 이용할 수 있습니다<br><span style="font-size:.66rem">승인 대기 중</span></div>'
+      : '<div style="grid-column:1/-1;text-align:center;padding:16px;color:var(--text-muted);font-size:.72rem">🔒 로그인 후 이용할 수 있습니다<br><span style="font-size:.66rem">우측 상단 G Login 클릭</span></div>';
     todoRenderStats();
     return;
   }
@@ -6977,6 +6997,8 @@ function renderEngineSettings() {
 
 // ── ACTIONS ──
 function selectCat(id) {
+  // 승인 필요 기능 게이트
+  if (['univstats','lawai','mybm'].includes(id) && !gateGuard()) return;
   // 법령 AI는 팝업(모달)으로 — 탭 전환 없이 오버레이
   if (id === 'lawai') { openLawModal(); return; }
   state.activeCat = id; saveState(); render();
@@ -7299,6 +7321,7 @@ function handleLogin() {
           localStorage.setItem('startpage_user', JSON.stringify(user));
           cloudSetToken(resp.access_token, resp.expires_in);
           showUserUI(user);
+          registerUser();  // 서버 등록 + 승인여부 확인
           loadState();
           mergeGuestState();  // 비로그인 때 추가한 북마크·카테고리 유지
           render(); applySettings();
@@ -7348,8 +7371,114 @@ function toggleUserMenu() {
   document.getElementById('userMenu').classList.toggle('open');
 }
 
+// ── 사용자 승인(접근제어) ──
+function isLoggedIn() { return !!localStorage.getItem('startpage_user'); }
+function isApproved() { return localStorage.getItem('user_admin') === '1' || localStorage.getItem('user_approved') === '1'; }
+function gateOK() { return isLoggedIn() && isApproved(); }
+// 게이트 통과 못하면 안내 + false
+function gateGuard() {
+  if (gateOK()) return true;
+  if (!isLoggedIn()) { showToast('로그인이 필요한 기능입니다', '🔒'); handleLogin(); }
+  else showToast('관리자 승인 후 이용할 수 있습니다 (승인 대기 중)', '⏳');
+  return false;
+}
+// 로그인 직후 서버에 등록 + 승인여부 확인
+async function registerUser() {
+  const token = (typeof cloudToken === 'function') ? cloudToken() : null;
+  const u = JSON.parse(localStorage.getItem('startpage_user') || '{}');
+  if (!token) return;
+  try {
+    const r = await fetch('/api/user/upsert', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: u.name || '' }),
+    });
+    if (!r.ok) return;
+    const j = await r.json();
+    localStorage.setItem('user_approved', j.approved ? '1' : '0');
+    localStorage.setItem('user_admin', j.admin ? '1' : '0');
+    if (!j.approved && !j.admin) showToast('가입 완료 — 관리자 승인 후 전체 기능을 사용할 수 있습니다', 'ℹ️');
+    try { render(); schedRender(); todoRender(); } catch(_) {}
+  } catch(_) {}
+}
+
+// ── 관리자 패널 ──
+let _adminPass = '';
+async function openAdminPanel() {
+  const p = prompt('관리자 비밀번호를 입력하세요');
+  if (p == null) return;
+  _adminPass = p;
+  openModal('adminModal');
+  adminRefresh();
+}
+async function adminRefresh() {
+  const body = document.getElementById('adminBody');
+  if (!body) return;
+  body.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:1.5rem">불러오는 중...</div>';
+  try {
+    const r = await fetch('/api/admin/users', { headers: { 'x-admin-pass': _adminPass } });
+    if (r.status === 401) { body.innerHTML = '<div style="text-align:center;color:#ef4444;padding:1.5rem">비밀번호가 올바르지 않습니다.</div>'; return; }
+    if (!r.ok) throw new Error('서버 오류 ' + r.status);
+    const j = await r.json();
+    adminRenderTable(j.users || []);
+  } catch (e) {
+    body.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:1.5rem">불러오기 실패: ${(e.message||'').replace(/</g,'&lt;')}<br><span style="font-size:.72rem">배포 서버(DB)에서만 동작합니다.</span></div>`;
+  }
+}
+function adminRenderTable(users) {
+  const body = document.getElementById('adminBody');
+  const esc = s => String(s||'').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+  const rows = users.map((u,i) => {
+    const dt = u.created_at ? new Date(u.created_at).toLocaleDateString('ko-KR') : '';
+    const e = esc(u.email);
+    return `<tr>
+      <td style="padding:.45rem .5rem;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--text-muted)">${i+1}</td>
+      <td style="padding:.45rem .5rem;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--text);word-break:break-all">${e}</td>
+      <td style="padding:.45rem .5rem;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--text)"><span id="anm_${i}">${esc(u.name)||'-'}</span></td>
+      <td style="padding:.45rem .5rem;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--text-dim);white-space:nowrap">${dt}</td>
+      <td style="padding:.45rem .5rem;border-bottom:1px solid var(--border);text-align:center">
+        <input type="checkbox" ${u.approved?'checked':''} onchange="adminSetApprove('${e}',this.checked)" title="승인">
+      </td>
+      <td style="padding:.45rem .5rem;border-bottom:1px solid var(--border);text-align:center;white-space:nowrap">
+        <button onclick="adminEditName('${e}',${i})" title="성명 수정" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:.7rem;padding:.15rem .4rem">✏️</button>
+        <button onclick="adminDelete('${e}')" title="삭제" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:.7rem;padding:.15rem .4rem">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+  body.innerHTML = `
+    <div style="font-size:.72rem;color:var(--text-dim);margin-bottom:.5rem">총 ${users.length}명 · 승인 ${users.filter(u=>u.approved).length}명</div>
+    <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:520px">
+      <thead><tr>
+        ${['#','ID(이메일)','성명','가입일','승인','관리'].map(h=>`<th style="padding:.45rem .5rem;text-align:left;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border);white-space:nowrap">${h}</th>`).join('')}
+      </tr></thead>
+      <tbody>${rows || '<tr><td colspan="6" style="padding:1.5rem;text-align:center;color:var(--text-muted)">등록된 사용자가 없습니다.</td></tr>'}</tbody>
+    </table></div>`;
+}
+async function adminApi(method, email, bodyObj) {
+  const r = await fetch('/api/admin/users/' + encodeURIComponent(email), {
+    method, headers: { 'x-admin-pass': _adminPass, 'Content-Type': 'application/json' },
+    body: bodyObj ? JSON.stringify(bodyObj) : undefined,
+  });
+  if (!r.ok) { showToast('작업 실패 ' + r.status, '⚠️'); return false; }
+  return true;
+}
+async function adminSetApprove(email, approved) {
+  if (await adminApi('PUT', email, { approved })) showToast(approved?'승인 완료':'승인 해제');
+}
+async function adminEditName(email, i) {
+  const cur = document.getElementById('anm_'+i)?.textContent || '';
+  const nm = prompt('성명 수정', cur === '-' ? '' : cur);
+  if (nm == null) return;
+  if (await adminApi('PUT', email, { name: nm })) { showToast('성명 수정됨'); adminRefresh(); }
+}
+async function adminDelete(email) {
+  if (!confirm(email + ' 사용자를 삭제할까요?')) return;
+  if (await adminApi('DELETE', email)) { showToast('삭제됨', '🗑'); adminRefresh(); }
+}
+
 function handleLogout() {
   localStorage.removeItem('startpage_user');
+  localStorage.removeItem('user_approved'); localStorage.removeItem('user_admin');
   _cloudToken = null; _cloudTokenExp = 0;
   driveToken = null; driveTokenExp = 0;
   sessionStorage.removeItem('cloud_token'); sessionStorage.removeItem('cloud_token_exp');
@@ -8457,10 +8586,10 @@ try {
   const savedUser = localStorage.getItem('startpage_user');
   if (savedUser) {
     showUserUI(JSON.parse(savedUser));
-    // 로그인 상태면 클라우드 동기화 (GSI 로드 후 백그라운드 pull)
+    // 로그인 상태면 클라우드 동기화 (GSI 로드 후 백그라운드 pull) + 승인여부 재확인
     let _syncTry = 0;
     const _trySync = () => {
-      if (window.google?.accounts?.oauth2) { cloudSilentSync(); }
+      if (window.google?.accounts?.oauth2) { cloudSilentSync(); setTimeout(registerUser, 1200); }
       else if (_syncTry++ < 20) setTimeout(_trySync, 500);
     };
     setTimeout(_trySync, 800);
