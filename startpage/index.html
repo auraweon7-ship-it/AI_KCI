@@ -6019,7 +6019,7 @@ async function usGenerate() {
  "region": "소재지 (예: 서울 관악구)",
  "established": "설립연도 (예: 1946)",
  "basic": {"homepage":"공식 홈페이지 URL(예: https://www.snu.ac.kr)","address":"본부 도로명 주소","phone":"대표전화(예: 02-880-5114)","campuses":"캠퍼스 구성(예: 관악·연건 2캠퍼스)","landArea":"교지 면적(예: 약 4,109천㎡)","totalStudents":"총 재학생 규모(예: 약 28,000명)","colleges":"단과대학/학부 수(예: 16개 단과대학)"},
- "summary": "이 대학의 위상·규모·특성화·재정·평가 결과를 담은 4~5문장의 풍부한 요약",
+ "summary": "이 대학의 위상·규모·특성화·재정·평가 결과를 담은 4~5문장의 풍부한 요약. 핵심 키워드·강점은 **별표 두개**로 감싸 강조하세요(예: **국내 최고**, **연구중심대학**).",
  "highlights": ["핵심 특징 배지 문구 5~7개 (예: 'QS 세계랭킹 상위권', '연구중심대학', '의과대학 보유', '글로컬대학30 선정')"],
  "kpis": [
    {"label":"신입생 경쟁률","value":"예: 12.5:1","icon":"📈"},
@@ -6209,6 +6209,24 @@ function usRadar(axes) {
     <div style="font-size:.68rem;color:var(--text-dim);margin-top:2px"><span style="color:#4fc3f7;font-weight:700">■</span> 해당 대학 ${hasAvg?'&nbsp;<span style="color:#999">▨</span> 전국평균':''}</div></div>`;
 }
 
+// 요약문 핵심어 컬러 강조
+function usHighlight(text, accent) {
+  if (!text) return '';
+  let t = String(text).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // 1) Claude가 **..**로 감싼 강조어
+  t = t.replace(/\*\*(.+?)\*\*/g, `<b style="color:${accent};font-weight:800">$1</b>`);
+  // 2) 숫자+단위 (약 2만여 명, 3,700억 원, 1954년, 45개, 12:1, 76% 등)
+  t = t.replace(/(약\s*)?\d[\d,\.]*\s*(억\s*원|조\s*원|만여?\s*명|천\s*명|억|만|천|개교|개|년|위|%|:1|명|천㎡|㎡|위권)/g,
+    m => `<span style="color:#4dd0e1;font-weight:700">${m}</span>`);
+  // 3) 위상·강점 키워드 — 이미 태그로 감싼 부분 제외(텍스트 노드에만 적용)
+  const KW = ['최고','유일','최초','정평','선정','인증','상위권','최상위','특성화','글로컬','거점','명문','강세','우수','세계랭킹'];
+  const kwRe = new RegExp('(' + KW.map(k=>k.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')).join('|') + ')', 'g');
+  t = t.split(/(<[^>]+>[^<]*<\/[^>]+>)/).map(seg =>
+    /^</.test(seg) ? seg : seg.replace(kwRe, `<b style="color:${accent};font-weight:800">$1</b>`)
+  ).join('');
+  return t;
+}
+
 function usRenderDashboard(d) {
   const res = document.getElementById('usResult');
   if (!res || !d) return;
@@ -6319,7 +6337,7 @@ function usRenderDashboard(d) {
         <span style="font-size:.64rem;color:var(--text-muted);background:var(--bg3);padding:.2rem .5rem;border-radius:12px;margin-left:auto">AI 종합 · 참고용</span>
       </div>
       ${meta ? `<div style="font-size:.76rem;color:var(--text-dim);margin-top:.35rem">${meta}</div>` : ''}
-      ${d.summary ? `<p style="font-size:.82rem;color:var(--text-dim);line-height:1.65;margin:.6rem 0 .5rem">${d.summary}</p>` : ''}
+      ${d.summary ? `<p style="font-size:.82rem;color:var(--text-dim);line-height:1.75;margin:.6rem 0 .5rem">${usHighlight(d.summary, typeColor)}</p>` : ''}
       ${highlights ? `<div>${highlights}</div>` : ''}
     </div>
 
