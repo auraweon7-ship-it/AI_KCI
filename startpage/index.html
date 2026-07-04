@@ -5030,6 +5030,9 @@ const UNIV_DB = [
   ["홍익대학교","사립","서울"],
   ["화성의과학대학교","사립","경기"]
 ];
+// ── 전국 대학 집계 통계 (2024 전임교원 연구실적, 대학알리미 기반) ──
+const UNIV_STATS = {"est": {"국립": {"n": 44, "prof": 20856, "papers": 23430.3, "domestic": 11569.4, "intl": 11860.9, "sci": 11659.2, "books": 1301.5, "profAvg": 474.0, "perProf": 1.123, "perSci": 0.559, "perBooks": 0.062}, "사립": {"n": 155, "prof": 51065, "papers": 45737.7, "domestic": 24356.1, "intl": 21381.6, "sci": 20865.0, "books": 2985.9, "profAvg": 329.5, "perProf": 0.896, "perSci": 0.409, "perBooks": 0.058}}, "gwon": {"강원권": {"n": 9, "prof": 3524, "papers": 2912.9, "domestic": 1665.6, "intl": 1247.3, "sci": 1226.5, "books": 200.8, "profAvg": 391.6, "perProf": 0.827, "perSci": 0.348, "perBooks": 0.057}, "수도권": {"n": 72, "prof": 31821, "papers": 33020.1, "domestic": 14865.2, "intl": 18154.9, "sci": 17758.5, "books": 1874.9, "profAvg": 442.0, "perProf": 1.038, "perSci": 0.558, "perBooks": 0.059}, "영남권": {"n": 46, "prof": 16641, "papers": 15229.2, "domestic": 8218.2, "intl": 7011.0, "sci": 6880.4, "books": 956.9, "profAvg": 361.8, "perProf": 0.915, "perSci": 0.413, "perBooks": 0.058}, "제주권": {"n": 2, "prof": 681, "papers": 696.6, "domestic": 394.7, "intl": 301.9, "sci": 300.8, "books": 61.2, "profAvg": 340.5, "perProf": 1.023, "perSci": 0.442, "perBooks": 0.09}, "충청권": {"n": 39, "prof": 11908, "papers": 10370.0, "domestic": 6387.2, "intl": 3982.8, "sci": 3885.9, "books": 650.4, "profAvg": 305.3, "perProf": 0.871, "perSci": 0.326, "perBooks": 0.055}, "호남권": {"n": 31, "prof": 7346, "papers": 6939.2, "domestic": 4394.6, "intl": 2544.7, "sci": 2472.1, "books": 543.2, "profAvg": 237.0, "perProf": 0.945, "perSci": 0.337, "perBooks": 0.074}}, "total": {"n": 199, "prof": 71921, "papers": 69168.0, "domestic": 35925.5, "intl": 33242.5, "sci": 32524.2, "books": 4287.4, "profAvg": 361.4, "perProf": 0.962, "perSci": 0.452, "perBooks": 0.06}};
+
 
 // desc에 "지역·설립" 형식 담겨있음 → 파싱
 function getRegionFromDesc(desc) {
@@ -5769,6 +5772,71 @@ const US_GWON = [
   { name:'제주권', emoji:'🏝', color:'#16a085', regions:['제주'] },
 ];
 
+// 국립·사립·권역별 집계 통계 카드/표 HTML
+function usGroupStats() {
+  if (typeof UNIV_STATS === 'undefined') return '';
+  const fmt = n => (n||0).toLocaleString('ko-KR');
+  const S = UNIV_STATS;
+  const compareCard = (title, color, s) => `
+    <div style="flex:1 1 220px;background:var(--card);border:1.5px solid ${color};border-radius:12px;padding:.9rem 1rem;box-shadow:0 0 8px ${color}22">
+      <div style="font-size:.9rem;font-weight:800;color:${color};margin-bottom:.5rem">${title}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem .8rem;font-size:.76rem">
+        <div style="color:var(--text-dim)">대학 수</div><div style="font-weight:700;color:var(--text);text-align:right">${fmt(s.n)}개교</div>
+        <div style="color:var(--text-dim)">전임교원</div><div style="font-weight:700;color:var(--text);text-align:right">${fmt(s.prof)}명</div>
+        <div style="color:var(--text-dim)">1교당 교원</div><div style="font-weight:700;color:var(--text);text-align:right">${s.profAvg}명</div>
+        <div style="color:var(--text-dim)">총 논문실적</div><div style="font-weight:700;color:var(--text);text-align:right">${fmt(Math.round(s.papers))}편</div>
+        <div style="color:var(--text-dim)">1인당 논문</div><div style="font-weight:700;color:${color};text-align:right">${s.perProf}편</div>
+        <div style="color:var(--text-dim)">1인당 SCI</div><div style="font-weight:700;color:${color};text-align:right">${s.perSci}편</div>
+        <div style="color:var(--text-dim)">1인당 저·역서</div><div style="font-weight:700;color:var(--text);text-align:right">${s.perBooks}편</div>
+      </div>
+    </div>`;
+
+  // 권역별 표 + 1인당 논문 막대
+  const gwOrder = ['수도권','충청권','영남권','호남권','강원권','제주권'];
+  const maxPer = Math.max(...gwOrder.map(g => S.gwon[g]?.perProf || 0));
+  const gwColor = {수도권:'#6c5ce7',충청권:'#f39c12',영남권:'#e74c3c',호남권:'#27ae60',강원권:'#2980b9',제주권:'#16a085'};
+  const gwRows = gwOrder.filter(g => S.gwon[g]).map(g => {
+    const s = S.gwon[g], c = gwColor[g];
+    const pct = Math.max(3, Math.round(s.perProf / (maxPer||1) * 100));
+    return `<tr>
+      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.76rem;color:${c};font-weight:700;white-space:nowrap">${g}</td>
+      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--text);text-align:right">${fmt(s.n)}</td>
+      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--text);text-align:right">${fmt(s.prof)}</td>
+      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--text);text-align:right">${s.profAvg}</td>
+      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);width:40%">
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="flex:1;background:var(--bg3);border-radius:4px;height:15px;overflow:hidden"><div style="width:${pct}%;height:100%;background:linear-gradient(90deg,${c},${c}bb)"></div></div>
+          <span style="font-size:.72rem;font-weight:700;color:var(--text);width:34px;text-align:right">${s.perProf}</span>
+        </div>
+      </td>
+      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.75rem;color:var(--text);text-align:right">${s.perSci}</td>
+    </tr>`;
+  }).join('');
+
+  return `
+    <div style="margin-bottom:1rem">
+      <div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.2rem 0 .6rem">📊 국립·사립 비교 <span style="font-size:.66rem;color:var(--text-muted);font-weight:600">· 2024 전임교원 연구실적(전국 199교)</span></div>
+      <div style="display:flex;flex-wrap:wrap;gap:.8rem;margin-bottom:1rem">
+        ${compareCard('🏛 국립 (44교)', '#7dd3fc', S.est['국립'])}
+        ${compareCard('🏫 사립 (155교)', '#f48fb1', S.est['사립'])}
+      </div>
+      <div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.2rem 0 .5rem">🗺 권역별 연구 통계</div>
+      <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:.7rem .9rem;overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;min-width:460px">
+          <thead><tr>
+            <th style="padding:.4rem .5rem;text-align:left;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">권역</th>
+            <th style="padding:.4rem .5rem;text-align:right;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">대학</th>
+            <th style="padding:.4rem .5rem;text-align:right;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">전임교원</th>
+            <th style="padding:.4rem .5rem;text-align:right;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">1교당</th>
+            <th style="padding:.4rem .5rem;text-align:left;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">1인당 논문</th>
+            <th style="padding:.4rem .5rem;text-align:right;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">1인당SCI</th>
+          </tr></thead>
+          <tbody>${gwRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+}
+
 function renderUnivStatsView() {
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
@@ -5847,6 +5915,7 @@ function renderUnivStatsView() {
         <div style="margin-top:.6rem;columns:2;column-gap:1.2rem">${gwonHtml}</div>
       </details>
       <datalist id="usUnivList">${allNames.map(u => `<option value="${u}">`).join('')}</datalist>
+      ${_univStatsCache._lastUniv ? '' : usGroupStats()}
       <div id="usResult"></div>
     </div>`;
 
