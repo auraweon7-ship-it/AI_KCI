@@ -690,7 +690,17 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
   box-shadow: 0 0 8px rgba(108,92,231,.14);
   text-decoration: none; color: var(--text); font-size: 0.8rem; font-weight: 400;
   transition: border-color .15s, transform .1s, box-shadow .15s;
+  position: relative;
 }
+.chip-actions { position: absolute; top: -7px; right: -6px; display: none; gap: 2px; z-index: 5; }
+.univ-chip:hover .chip-actions { display: flex; }
+.chip-actions button {
+  width: 17px; height: 17px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--bg2); color: var(--text); font-size: .6rem; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; padding: 0;
+}
+.chip-actions button.del:hover { background: #e74c3c; color: #fff; border-color: #e74c3c; }
+.chip-actions button.edit:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
 .univ-chip:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(108,92,231,.32); }
 body[data-theme="light"] .univ-chip { border-color: rgba(108,92,231,.4); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
 /* AI 뷰 칩 — 네온 외곽선 (청록) */
@@ -5355,7 +5365,7 @@ function renderGovView() {
     a.href = link.url;
     a.target = '_blank';
     a.rel = 'noopener noreferrer';
-    a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div>`;
+    a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div><span class="chip-actions"><button class="edit" onclick="openEditLink('${link.id}',event)" title="편집">✏️</button><button class="del" onclick="deleteLink('${link.id}',event)" title="삭제">✕</button></span>`;
     govGrid.appendChild(a);
   });
 
@@ -5663,10 +5673,10 @@ function renderYouTubeView() {
             <div style="font-size:.75rem;font-weight:700;color:var(--accent2);padding:6px 0 4px;border-bottom:1px solid var(--border);margin-bottom:8px">🔗 내가 추가한 링크 (${userLinks.length})</div>
             <div class="ai-chip-grid">
               ${userLinks.map(l => `
-                <a class="univ-chip" href="${l.url}" target="_blank" rel="noopener" style="position:relative">
+                <a class="univ-chip" href="${l.url}" target="_blank" rel="noopener">
                   <span>${l.emoji||'▶️'}</span>
                   <div class="ai-chip-text"><div class="ai-chip-name">${l.name}</div><div class="ai-chip-desc">${l.desc||''}</div></div>
-                  <button onclick="deleteLink('${l.id}',event)" title="삭제" style="position:absolute;top:2px;right:4px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.6rem">✕</button>
+                  <span class="chip-actions"><button class="edit" onclick="openEditLink('${l.id}',event)" title="편집">✏️</button><button class="del" onclick="deleteLink('${l.id}',event)" title="삭제">✕</button></span>
                 </a>`).join('')}
             </div>
           </div>`;
@@ -5739,7 +5749,7 @@ function renderAPIView() {
       a.href = link.url;
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
-      a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div>`;
+      a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div><span class="chip-actions"><button class="edit" onclick="openEditLink('${link.id}',event)" title="편집">✏️</button><button class="del" onclick="deleteLink('${link.id}',event)" title="삭제">✕</button></span>`;
       chips.appendChild(a);
     });
     sec.appendChild(chips);
@@ -5799,7 +5809,7 @@ function renderAIView() {
       const a = document.createElement('a');
       a.className = 'univ-chip';
       a.href = link.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
-      a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div>`;
+      a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div><span class="chip-actions"><button class="edit" onclick="openEditLink('${link.id}',event)" title="편집">✏️</button><button class="del" onclick="deleteLink('${link.id}',event)" title="삭제">✕</button></span>`;
       chips.appendChild(a);
     });
     sec.appendChild(chips);
@@ -5825,7 +5835,7 @@ function renderAIView() {
       a.href = link.url;
       a.target = '_blank';
       a.rel = 'noopener noreferrer';
-      a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div>`;
+      a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div><span class="chip-actions"><button class="edit" onclick="openEditLink('${link.id}',event)" title="편집">✏️</button><button class="del" onclick="deleteLink('${link.id}',event)" title="삭제">✕</button></span>`;
       chips.appendChild(a);
     });
     sec.appendChild(chips);
@@ -5913,6 +5923,7 @@ function renderUnivAll() {
                 style="border-color:${gwon.color};box-shadow:0 0 6px ${gwon.color}55">
                 <span class="est-dot est-dot-${estKey}"></span>
                 ${l.name.replace('_분교','').replace('(분교)','')}
+                <span class="chip-actions"><button class="edit" onclick="openEditLink('${l.id}',event)" title="편집">✏️</button><button class="del" onclick="deleteLink('${l.id}',event)" title="삭제">✕</button></span>
               </a>`;
             }).join('')}
           </div>
@@ -6959,7 +6970,7 @@ function renderLinks() {
             a.href = link.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
             a.style.border = `1.5px solid ${neon}`;
             a.style.boxShadow = `0 0 8px ${neon}44, inset 0 0 6px ${neon}0f`;
-            a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div>`;
+            a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div><span class="chip-actions"><button class="edit" onclick="openEditLink('${link.id}',event)" title="편집">✏️</button><button class="del" onclick="deleteLink('${link.id}',event)" title="삭제">✕</button></span>`;
             chipGrid.appendChild(a);
           });
           groupWrap.appendChild(chipGrid);
