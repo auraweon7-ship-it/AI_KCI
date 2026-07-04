@@ -6240,9 +6240,8 @@ async function usRunCompare() {
   // 비교 목록에 저장 후 비교표 표시
   localStorage.setItem('univ_compare', JSON.stringify(picks));
   const bar = document.getElementById('usCompareBar'); if (bar) bar.innerHTML = usCompareBar();
-  if (res) res.innerHTML = '';
   usCompareShow();
-  document.getElementById('usCompareResult')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  document.getElementById('usResult')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 // ── 대학 비교 즐겨찾기 (담은 대학 2~3곳 KPI 나란히) ──
@@ -6270,28 +6269,68 @@ function usCompareBar() {
     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:.5rem">
       <span style="font-size:.78rem;font-weight:800;color:var(--text)">🆚 비교 담은 대학 (${list.length})</span>
       ${chips}
-      <button onclick="usCompareShow()" style="margin-left:auto;font-size:.72rem;background:var(--accent);border:none;color:#fff;padding:.3rem .8rem;border-radius:8px;cursor:pointer;font-weight:700">비교 보기</button>
-    </div>
-    <div id="usCompareResult"></div></div>`;
+      <button onclick="usCompareShow();document.getElementById('usResult')?.scrollIntoView({behavior:'smooth',block:'start'})" style="margin-left:auto;font-size:.72rem;background:var(--accent);border:none;color:#fff;padding:.3rem .8rem;border-radius:8px;cursor:pointer;font-weight:700">비교 보기</button>
+    </div></div>`;
 }
 function usCompareShow() {
-  const box = document.getElementById('usCompareResult');
+  // 결과는 TOP10 하단(usResult)에 표시
+  const box = document.getElementById('usResult');
   if (!box) return;
   const list = usCompareList();
   const ready = list.filter(u => _univStatsCache[u]);
   const missing = list.filter(u => !_univStatsCache[u]);
-  if (!ready.length) { box.innerHTML = `<div style="font-size:.72rem;color:var(--text-muted)">먼저 각 대학 대시보드를 생성하세요. (미생성: ${missing.join(', ')})</div>`; return; }
+  if (!ready.length) { box.innerHTML = `<div style="text-align:center;padding:1.5rem;font-size:.78rem;color:var(--text-muted)">먼저 각 대학 대시보드를 생성하세요.<br>(미생성: ${missing.join(', ')})</div>`; return; }
+  const CC = ['#4fc3f7','#f48fb1','#ffd54f','#69f0ae','#ba68c8'];
+  const parseNum = v => { const m = String(v||'').replace(/,/g,'').match(/-?\d+(\.\d+)?/); return m ? parseFloat(m[0]) : null; };
+
+  // 대학별 메타 카드
+  const metaCards = ready.map((u,i) => {
+    const d = _univStatsCache[u];
+    const col = CC[i%CC.length];
+    return `<div style="flex:1 1 150px;background:var(--card);border:1.5px solid ${col};border-radius:12px;padding:.7rem .9rem;box-shadow:0 0 8px ${col}22">
+      <div style="font-size:.92rem;font-weight:800;color:${col};margin-bottom:.25rem">🎓 ${d.univ||u}</div>
+      <div style="font-size:.68rem;color:var(--text-dim);line-height:1.5">${[d.estabGroup||d.type, d.gwon, d.established?d.established+' 설립':'', d.financeScale?'예산 '+d.financeScale:''].filter(Boolean).join(' · ')}</div>
+      ${(d.highlights||[]).slice(0,3).map(h=>`<span style="display:inline-block;font-size:.62rem;background:${col}22;color:${col};padding:.1rem .4rem;border-radius:8px;margin:3px 3px 0 0">${h}</span>`).join('')}
+    </div>`;
+  }).join('');
+
   // KPI 라벨 합집합
   const labels = [];
   ready.forEach(u => (_univStatsCache[u].kpis || []).forEach(k => { if (!labels.includes(k.label)) labels.push(k.label); }));
-  const head = `<th style="text-align:left;padding:.4rem .5rem;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">지표</th>` +
-    ready.map(u => `<th style="text-align:right;padding:.4rem .5rem;font-size:.72rem;color:var(--text);border-bottom:1.5px solid var(--border);white-space:nowrap">${u}</th>`).join('');
-  const rows = labels.map(lb => `<tr>
-    <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--text-dim);white-space:nowrap">${lb}</td>
-    ${ready.map(u => { const k = (_univStatsCache[u].kpis||[]).find(x => x.label === lb); return `<td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.74rem;color:var(--text);text-align:right;font-weight:600">${k ? (k.value||'-') : '-'}</td>`; }).join('')}
-  </tr>`).join('');
-  box.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:${120+ready.length*90}px"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
-    ${missing.length ? `<div style="font-size:.66rem;color:var(--text-muted);margin-top:.4rem">※ 미생성: ${missing.join(', ')} — 대시보드 생성 후 다시 비교</div>` : ''}`;
+  // 비교 표
+  const head = `<th style="text-align:left;padding:.4rem .5rem;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border);position:sticky;left:0;background:var(--bg2)">지표</th>` +
+    ready.map((u,i) => `<th style="text-align:right;padding:.4rem .5rem;font-size:.72rem;color:${CC[i%CC.length]};border-bottom:1.5px solid var(--border);white-space:nowrap;font-weight:700">${u}</th>`).join('');
+  const rows = labels.map(lb => {
+    // 숫자 지표면 최고값 강조
+    const nums = ready.map(u => parseNum((_univStatsCache[u].kpis||[]).find(x=>x.label===lb)?.value));
+    const mx = Math.max(...nums.filter(n=>n!=null));
+    return `<tr>
+      <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--text-dim);white-space:nowrap;position:sticky;left:0;background:var(--bg2)">${lb}</td>
+      ${ready.map((u,i) => { const k=(_univStatsCache[u].kpis||[]).find(x=>x.label===lb); const isMax=nums[i]!=null&&nums[i]===mx&&nums.filter(n=>n===mx).length<ready.length; return `<td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.74rem;text-align:right;font-weight:${isMax?800:600};color:${isMax?CC[i%CC.length]:'var(--text)'}">${k?(k.value||'-'):'-'}${isMax?' 🥇':''}</td>`; }).join('')}
+    </tr>`;
+  }).join('');
+
+  // 숫자형 지표 막대 비교(최대 6개)
+  const numLabels = labels.filter(lb => ready.some(u => parseNum((_univStatsCache[u].kpis||[]).find(x=>x.label===lb)?.value) != null)).slice(0, 6);
+  const charts = numLabels.map(lb => {
+    const data = ready.map((u,i) => ({ label: u, value: parseNum((_univStatsCache[u].kpis||[]).find(x=>x.label===lb)?.value) || 0 }));
+    const max = Math.max(...data.map(d=>d.value)) || 1;
+    const bars = data.map((d,i) => `<div style="display:flex;align-items:center;gap:6px;margin:3px 0">
+      <div style="width:80px;flex-shrink:0;font-size:.66rem;color:var(--text-dim);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.label}</div>
+      <div style="flex:1;background:var(--bg3);border-radius:4px;height:14px;overflow:hidden"><div style="width:${Math.max(3,Math.round(d.value/max*100))}%;height:100%;background:${CC[i%CC.length]}"></div></div>
+      <div style="width:60px;flex-shrink:0;font-size:.68rem;font-weight:700;color:var(--text)">${(_univStatsCache[data[i].label].kpis||[]).find(x=>x.label===lb)?.value||'-'}</div></div>`).join('');
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.7rem .9rem"><div style="font-size:.74rem;font-weight:800;color:var(--text);margin-bottom:.4rem">${lb}</div>${bars}</div>`;
+  }).join('');
+
+  box.innerHTML = `
+    <div style="font-size:1.05rem;font-weight:900;color:var(--text);margin:.3rem 0 .7rem">🆚 ${ready.join(' vs ')} 비교</div>
+    <div style="display:flex;flex-wrap:wrap;gap:.7rem;margin-bottom:1rem">${metaCards}</div>
+    <div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.4rem 0 .5rem">📋 지표 비교표 <span style="font-size:.64rem;color:var(--text-muted);font-weight:600">· 🥇=최고</span></div>
+    <div style="overflow-x:auto;margin-bottom:1rem"><table style="width:100%;border-collapse:collapse;min-width:${140+ready.length*90}px"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+    ${charts ? `<div style="font-size:.9rem;font-weight:800;color:var(--text);margin:.4rem 0 .5rem">📊 핵심 지표 그래프</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:.8rem">${charts}</div>` : ''}
+    ${missing.length ? `<div style="font-size:.66rem;color:var(--text-muted);margin-top:.6rem">※ 미생성: ${missing.join(', ')} — 대시보드 생성 후 다시 비교</div>` : ''}
+    <div style="font-size:.64rem;color:var(--text-muted);margin-top:.5rem">※ 수치는 Claude AI 추정값 · 지표별 단위 상이(막대는 상대 비교용)</div>`;
 }
 
 function renderUnivStatsView() {
