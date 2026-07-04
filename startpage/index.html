@@ -315,14 +315,6 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 }
 .se-go { background: var(--accent); border: none; border-radius: 6px; color: #fff; padding: 6px 12px; cursor: pointer; font-size: 0.82rem; white-space: nowrap; flex-shrink: 0; }
 
-/* 로또 위젯 */
-.lotto-balls { display: flex; gap: 5px; flex-wrap: wrap; margin: 6px 0; }
-.lotto-ball {
-  width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-size: 0.75rem; font-weight: 700; color: #fff;
-}
-.lotto-btn { width: 100%; background: var(--accent); border: none; border-radius: 6px; color: #fff; padding: 6px; cursor: pointer; font-size: 0.82rem; font-weight: 600; }
-
 
 /* ── 타이머/뽀모도로 ── */
 .timer-ring { display:flex; justify-content:center; margin:4px 0; }
@@ -1419,13 +1411,6 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       <div class="imgcalc-result-box" id="imgResult" style="display:none"></div>
     </div>
 
-
-    <!-- 로또 -->
-    <div class="rw" id="rwLotto">
-      <div class="rw-hdr"><span>🎰 로또 번호</span></div>
-      <div class="lotto-balls" id="lottoBalls"></div>
-      <button class="lotto-btn" onclick="genLotto()">🎲 번호 생성</button>
-    </div>
 
   </aside>
 </div>
@@ -7617,19 +7602,6 @@ function piSaveText(i, val) {
   if (notes[i]) { notes[i].text = val; localStorage.setItem('postit_notes', JSON.stringify(notes)); cloudPush('postit_notes'); }
 }
 
-// ── 로또 ──
-function genLotto() {
-  const nums = [];
-  while (nums.length < 6) {
-    const n = Math.floor(Math.random() * 45) + 1;
-    if (!nums.includes(n)) nums.push(n);
-  }
-  nums.sort((a,b) => a-b);
-  const colors = n => n<=10?'#fbc400':n<=20?'#69c8f2':n<=30?'#ff7272':n<=40?'#aaaaaa':'#b0d840';
-  document.getElementById('lottoBalls').innerHTML = nums.map(n =>
-    `<div class="lotto-ball" style="background:${colors(n)}">${n}</div>`
-  ).join('');
-}
 
 // ── INIT ──
 // 로그인 복원을 최우선 실행 — 다른 위젯 오류로 스킵되지 않도록
@@ -7659,7 +7631,7 @@ render();
  () => { const p = document.getElementById('profileSel'); if (p) p.value = localStorage.getItem('active_profile') || ''; },
  () => { const k = document.getElementById('kciApiKey'); if (k) k.value = localStorage.getItem('kci_api_key') || ''; },
  () => { const k = document.getElementById('claudeApiKey'); if (k) k.value = localStorage.getItem('claude_api_key') || ''; },
- memoLoad, cvSetOpts, genLotto, piLoad, timerRender, loadStock,
+ memoLoad, cvSetOpts, piLoad, timerRender, loadStock,
  () => { rssRenderTabs(); rssLoad(); }, noticeLoad
 ].forEach(fn => { try { fn(); } catch(e) { console.error('위젯 초기화 오류:', fn.name, e); } });
 
