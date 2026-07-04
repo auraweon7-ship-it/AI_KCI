@@ -8154,7 +8154,7 @@ async function loadYtRec() {
     // 제목에 주제 포함 우선(조회수순 유지), 4개 부족분은 나머지로 채움
     const matched = all.filter(v => v.title.replace(/\s+/g, '').toLowerCase().includes(tn));
     const rest = all.filter(v => !matched.some(x => x.id === v.id));
-    const vids = [...matched, ...rest].slice(0, 4);
+    const vids = [...matched, ...rest].slice(0, 2);
     if (!vids.length) { grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.66rem;padding:6px 0">'${topic}' 결과 없음</div>`; return; }
     grid.innerHTML = vids.map(v => {
       const t = v.title.replace(/"/g, '&quot;').replace(/</g, '&lt;');
