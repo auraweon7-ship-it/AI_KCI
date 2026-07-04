@@ -1669,16 +1669,29 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
       <div style="font-weight:800;color:var(--accent2);margin:10px 0 4px;">🗂 메뉴·카드</div>
       <div style="color:var(--text-dim);">
-        · <b>전체 탭</b>: 모든 카테고리를 한 페이지로 — 섹션 헤더 클릭 시 접기/펼치기, "전부 열기"로 일괄 오픈<br>
-        · 카드에 마우스 올리면 <b>📌 고정 · ✏️ 편집 · ✕ 삭제</b> 버튼 표시<br>
-        · 카드를 <b>드래그</b>해 순서 변경, 헤더 드롭다운으로 이름/방문순 정렬<br>
-        · "+ 링크 추가" 버튼으로 어느 탭에서든 새 카드 등록
+        · <b>전체 탭</b>: 모든 카테고리를 한 페이지로 — 섹션 헤더 클릭 시 접기/펼치기, "전부 열기"로 일괄 오픈, 네온 외곽선 카드<br>
+        · <b>🏫 대학 행정·평가</b>: 연구·취업·재정·평가·통계·협의체·순위·기관·입시·채용·국제화를 하위 섹션으로 통합<br>
+        · <b>🎓 대학</b>: 권역별 지도 + 대학 목록(지도에서 사이드바·지역별 접기, 대학알리미 바로가기)<br>
+        · 카드 마우스 오버 시 <b>📌 고정 · ✏️ 편집 · ✕ 삭제</b>, <b>드래그</b> 정렬, 헤더 정렬 드롭다운<br>
+        · "+ 링크 추가"로 어느 탭에서든 새 카드 등록
       </div>
 
-      <div style="font-weight:800;color:var(--accent2);margin:10px 0 4px;">🔑 API · 📱 APP 관리 (로그인 필요)</div>
+      <div style="font-weight:800;color:var(--accent2);margin:10px 0 4px;">📈 대학통계 대시보드 (Claude API 키 필요)</div>
       <div style="color:var(--text-dim);">
-        헤더 <b>🔑 API</b>=API 키를 이름·키 테이블로 관리(별표 즐겨찾기·정렬·마스킹·복사·JSON 가져오기/내보내기).<br>
-        헤더 <b>📱 APP</b>=자주 쓰는 앱·서비스를 이름·URL·선호도(⭐1~5)로 관리.
+        전국 국립·사립 199개 대학을 <b>권역별·국립/사립 필터</b>로 선택 → Claude AI가 <b>대학알리미·재정알리미</b> 공시지표(신입생 경쟁률·취업률·교육비·장학금·기숙사수용률 등 10대 지표)를 종합해
+        <b>레이더·도넛·게이지·라인 차트 + SWOT 분석</b> 대시보드 생성. 국립/사립·권역별 <b>연구실적 집계</b>(실측)도 제공.
+      </div>
+
+      <div style="font-weight:800;color:var(--accent2);margin:10px 0 4px;">⚖️ 법령 AI 비서 (팝업, Claude API 키 필요)</div>
+      <div style="color:var(--text-dim);">
+        <b>국가법령정보 공동활용 API + Claude</b>로 고등교육법·사립학교법 등 대학 관련 법령을 검색·해설하는 채팅 팝업. 답변에 근거 조문·참조 법령 링크 표시.
+      </div>
+
+      <div style="font-weight:800;color:var(--accent2);margin:10px 0 4px;">🔑 API · 📱 APP · 🔖 내 북마크 (로그인·승인 필요)</div>
+      <div style="color:var(--text-dim);">
+        헤더 <b>🔑 API</b>=API 키 관리(별표·정렬·마스킹·복사, <b>JSON 파일 가져오기/내보내기</b>).<br>
+        헤더 <b>📱 APP</b>=앱·서비스를 이름·URL·선호도(⭐1~5)로 관리(<b>JSON 가져오기/내보내기</b>).<br>
+        <b>🔖 내 북마크</b>=크롬 등 표준 <b>HTML 북마크 가져오기/내보내기</b>로 이전.
       </div>
 
       <div style="font-weight:800;color:var(--accent2);margin:10px 0 4px;">📅 스케줄 캘린더 (로그인 필요)</div>
@@ -1699,14 +1712,16 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
       <div style="font-weight:800;color:var(--accent2);margin:10px 0 4px;">⚙️ 설정</div>
       <div style="color:var(--text-dim);">
-        다크/자동 다크모드 · 컴팩트 밀도 · 배경 테마 · 사이드바 위젯 표시·폭 조절 ·
-        <b>HTML 북마크 가져오기</b>(크롬 북마크 파일 → 폴더별 자동 분류) · 사용 통계 · KCI OpenAPI 키
+        다크/자동 다크모드 · 컴팩트 밀도 · 배경 테마 · 사이드바 위젯 표시·폭 조절 · HTML 북마크 가져오기 · 사용 통계<br>
+        <b>API 키</b>: KCI OpenAPI · <b>🧠 Claude API</b>(대학통계·법령AI 사용) ·
+        <b>📚 도서추천 키워드(3)</b> · <b>▶️ YouTube 주제(3)</b>
       </div>
 
       <div style="font-weight:800;color:var(--accent2);margin:10px 0 4px;">🧩 사이드바 위젯</div>
       <div style="color:var(--text-dim);">
-        날씨 · 주요 지수(KOSPI/KOSDAQ/S&P500, 1분 갱신) · 환율 · 학술검색(KCI/RISS/KISS/Scholar/DBpia) ·
-        연구재단 신규사업 · 관심 대학(교원 수+공시) · 연구 키워드 뉴스 · D-day · 타이머 · 계산기 · QR(무지개) · 🎙 녹음기
+        📚 <b>도서추천</b>(YES24 판매량순, 키워드/설정 자동) · ▶️ <b>YouTube 추천</b>(조회수순, 위젯 내 재생) ·
+        날씨 · 주요 지수(1분 갱신) · 환율 · 학술검색(KCI/RISS/KISS/Scholar/DBpia) ·
+        연구재단 신규사업 · 관심 대학 · 연구 키워드 뉴스 · D-day · 타이머 · 계산기 · 단위변환 · QR · 🎙 녹음기 · 포스트잇
       </div>
 
       <hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">
@@ -1744,18 +1759,24 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
       <div style="font-weight:800;color:var(--accent2);margin:10px 0 4px;">💾 Google Drive 백업 / 복원</div>
       <div style="color:var(--text-dim);">
-        설정 → <b>☁️ Drive 백업</b>=현재 모든 데이터(API·APP·캘린더·TO-DO·<b>즐겨찾기·북마크</b>·설정 전부)를
-        내 Google Drive 전용 공간에 스냅샷 저장.<br>
-        새 기기에서 로그인 후 <b>☁️ Drive 복원</b> → 계정이 달라도 현재 계정으로 자동 매핑되어 전부 복원.<br>
-        <b>📤 JSON 내보내기 / 📥 가져오기</b>=파일로 수동 백업·이전도 가능.
+        설정 → <b>☁️ Drive 백업</b> 또는 <b>📤 내보내기</b>=현재 <b>모든 데이터·설정</b>(API·APP·캘린더·TO-DO·북마크·API키·도서/유튜브 키워드 등 전부)을 스냅샷 저장.<br>
+        새 기기에서 로그인 후 <b>☁️ Drive 복원 / 📥 가져오기</b> → 계정이 달라도 현재 계정으로 자동 매핑되어 전부 복원.<br>
+        내 북마크는 <b>표준 HTML(Netscape) 형식</b>으로도 내보내기/가져오기 가능(브라우저 호환).
+      </div>
+
+      <div style="font-weight:800;color:var(--accent2);margin:10px 0 4px;">🛡 관리자 승인 (접근제어)</div>
+      <div style="color:var(--text-dim);">
+        보안을 위해 로그인 사용자는 <b>관리자 승인</b> 후 전체 기능 사용 가능.<br>
+        헤더 <b>🛡</b>=관리자 패널(사용자 목록·성명·가입일·승인·수정·삭제).<br>
+        미승인 시 <b>캘린더·TO-DO·대학통계·법령AI·내 북마크·API·APP</b> 사용이 제한됩니다.
       </div>
 
       <div style="font-weight:800;color:var(--accent2);margin:10px 0 4px;">🔒 로그인·데이터 안내</div>
       <div style="color:var(--text-dim);">
-        · 캘린더·TO-DO·API·APP은 <b>로그인해야</b> 표시·저장됩니다 (계정별 분리).<br>
-        · 로컬(localStorage)은 캐시로 유지 → 오프라인에서도 열람 가능.<br>
-        · 한 번 로그인하면 재부팅·재방문 후에도 자동 유지 (로그아웃 전까지).<br>
-        · API 키 등 민감 정보는 본인 계정 공간에만 저장됩니다.
+        · 위 기능은 <b>로그인 + 관리자 승인</b> 후 표시·저장 (계정별 분리).<br>
+        · 로컬(localStorage)은 캐시로 유지 → 오프라인 열람 가능.<br>
+        · 한 번 로그인하면 재방문 후에도 자동 유지 (로그아웃 전까지).<br>
+        · API 키 등 민감 정보는 본인 계정 공간·이 브라우저에만 저장됩니다.
       </div>
     </div>
 
