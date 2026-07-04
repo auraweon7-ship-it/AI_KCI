@@ -1483,14 +1483,9 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
     </div>
 
     <div style="display:flex;gap:6px;margin-top:10px;align-items:center;">
-      <button onclick="apiToggleImport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.72rem;cursor:pointer">📥 붙여넣기 가져오기</button>
+      <button onclick="apiImport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.72rem;cursor:pointer">📥 가져오기(JSON)</button>
       <button onclick="apiExport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.72rem;cursor:pointer">📤 내보내기(JSON)</button>
       <button onclick="closeModal('apiModal')" style="margin-left:auto;padding:8px 18px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">닫기</button>
-    </div>
-    <div id="apiImportBox" style="display:none;margin-top:8px;">
-      <textarea id="apiImportText" placeholder='JSON 배열 붙여넣기: [{"name":"OpenAI","key":"sk-..."}, ...]'
-        style="width:100%;height:90px;padding:8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.7rem;font-family:monospace;outline:none;resize:vertical;"></textarea>
-      <button onclick="apiImport()" style="width:100%;margin-top:6px;padding:8px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.74rem;cursor:pointer">가져오기 (기존에 병합)</button>
     </div>
   </div>
 </div>
@@ -3188,32 +3183,23 @@ async function apiCopy(i) {
   try { await navigator.clipboard.writeText(it.key); showToast(`"${it.name}" 키 복사됨 📋`); }
   catch(_) { showToast('복사 실패 — 직접 선택해 복사하세요', '⚠️'); }
 }
-function apiToggleImport() {
-  const box = document.getElementById('apiImportBox');
-  box.style.display = box.style.display === 'none' ? 'block' : 'none';
-  if (box.style.display === 'block') document.getElementById('apiImportText').focus();
-}
 function apiImport() {
-  const txt = document.getElementById('apiImportText').value.trim();
-  if (!txt) return;
-  let arr;
-  try { arr = JSON.parse(txt); } catch(_) { showToast('JSON 형식 오류', '⚠️'); return; }
-  if (!Array.isArray(arr)) { showToast('배열 형식이어야 합니다', '⚠️'); return; }
-  const list = apiGetAll();
-  const existing = new Set(list.map(x => x.name + '|' + x.key));
-  let added = 0;
-  arr.forEach(x => {
-    if (!x || !x.name || !x.key) return;
-    const sig = String(x.name) + '|' + String(x.key);
-    if (existing.has(sig)) return;
-    list.push({ name: String(x.name).slice(0, 40), key: String(x.key), created: x.created || Date.now() });
-    existing.add(sig); added++;
+  pickJsonFile(arr => {
+    if (!Array.isArray(arr)) { showToast('배열 형식이어야 합니다', '⚠️'); return; }
+    const list = apiGetAll();
+    const existing = new Set(list.map(x => x.name + '|' + x.key));
+    let added = 0;
+    arr.forEach(x => {
+      if (!x || !x.name || !x.key) return;
+      const sig = String(x.name) + '|' + String(x.key);
+      if (existing.has(sig)) return;
+      list.push({ name: String(x.name).slice(0, 40), key: String(x.key), created: x.created || Date.now() });
+      existing.add(sig); added++;
+    });
+    apiSaveAll(list);
+    apiRenderTable();
+    showToast(`API 키 ${added}건 가져옴 🔑`);
   });
-  apiSaveAll(list);
-  document.getElementById('apiImportText').value = '';
-  document.getElementById('apiImportBox').style.display = 'none';
-  apiRenderTable();
-  showToast(`API 키 ${added}건 가져옴 🔑`);
 }
 function apiExport() {
   const list = apiGetAll();
