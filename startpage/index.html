@@ -6490,12 +6490,16 @@ async function lawSearch(query) {
     const j = await r.json();
     let laws = j?.LawSearch?.law || [];
     if (!Array.isArray(laws)) laws = [laws];
-    return laws.slice(0, 5).map(l => ({
-      name: l.법령명한글 || l.법령명 || '',
-      dept: l.소관부처명 || '',
-      enforce: l.시행일자 || '',
-      url: l.법령상세링크 ? ('https://www.law.go.kr' + l.법령상세링크) : 'https://www.law.go.kr',
-    })).filter(l => l.name);
+    return laws.slice(0, 5).map(l => {
+      const nm = l.법령명한글 || l.법령명 || '';
+      return {
+        name: nm,
+        dept: l.소관부처명 || '',
+        enforce: l.시행일자 || '',
+        // 국가법령정보센터 사용자용 본문 URL (DRF API 링크는 OC 인증 필요 → 사용 안 함)
+        url: nm ? ('https://www.law.go.kr/법령/' + encodeURIComponent(nm.replace(/\s/g,''))) : 'https://www.law.go.kr',
+      };
+    }).filter(l => l.name);
   } catch (_) { return []; }
 }
 
