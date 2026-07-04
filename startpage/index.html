@@ -6378,7 +6378,7 @@ function renderUnivStatsView() {
             ${[2,3,4,5].map(n=>`<option value="${n}"${_usCompareCount===n?' selected':''}>${n}개</option>`).join('')}
           </select>
         </label>
-        ${_usCompareMode ? `<span style="font-size:.68rem;color:var(--accent2);font-weight:700">${_usComparePick.length}/${_usCompareCount} 선택 — 대학을 클릭하세요</span>` : ''}
+        ${_usCompareMode ? `<span style="font-size:.68rem;color:var(--accent2);font-weight:700">${_usComparePick.length}/${_usCompareCount} 선택${_usComparePick.length ? ' — ' : ' — 대학을 클릭하세요'}</span>${_usComparePick.map(n=>`<span style="font-size:.66rem;background:var(--accent2);color:#fff;padding:.15rem .5rem;border-radius:10px;font-weight:600">${n}</span>`).join('')}` : ''}
       </div>
       <details id="usListWrap" ${_univStatsCache._lastUniv ? '' : 'open'} style="margin-bottom:1rem;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.6rem .8rem">
         <summary style="cursor:pointer;font-size:.8rem;font-weight:800;color:var(--text);outline:none">🗺 전국 대학 (권역별, ${filtered.length}개교) — 클릭해 대시보드 생성</summary>
