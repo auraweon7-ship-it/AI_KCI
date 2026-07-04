@@ -462,6 +462,31 @@ function toggleSub(el) {
   el.querySelector('.sub-toggle').textContent = list.classList.contains('open') ? '▾' : '▸';
 }
 let _sbCollapsed = false;
+// 대학알리미 검색결과 새 탭 — POST(historyForm) 재현
+function openAlrimi(name) {
+  const fields = {
+    kwd: name, category: 'TOTAL', subCategory: 'ALL', reSrchFlag: 'false',
+    pageNum: '1', pageSize: '3', detailSearch: 'false', srchFd: 'all', sort: 'm',
+    date: 'all', startDate: '', endDate: '', fileExt: 'all', writer: '', year: 'all',
+    callLoc: '', imageRowNo: '0', schlKnd: 'all', schlType: 'all', estType: 'all',
+    schlArea: 'all', schlSize: '', dtSchlKwd: '', dtMjrKwd: '', dtMinRange: '',
+    dtMaxRange: '', moneyUnit: '01', historyEvent: 'Y', preKwd: name,
+  };
+  const f = document.createElement('form');
+  f.method = 'POST';
+  f.action = 'https://www.academyinfo.go.kr/search/search.do';
+  f.target = '_blank';
+  f.style.display = 'none';
+  Object.entries(fields).forEach(([k, v]) => {
+    const i = document.createElement('input');
+    i.type = 'hidden'; i.name = k; i.value = v;
+    f.appendChild(i);
+  });
+  document.body.appendChild(f);
+  f.submit();
+  setTimeout(() => f.remove(), 1000);
+}
+
 function toggleSidebar() {
   const sb = document.getElementById('sidebar');
   const btn = document.getElementById('sidebarToggle');
@@ -523,8 +548,8 @@ function updateMarkers() {
     const cleanName = u.name.replace('_분교','').replace('(분교)','');
     const profText = PROF_DATA[u.name] ? `${PROF_DATA[u.name].toLocaleString()}명` : '-';
     const searchUrl = `https://search.naver.com/search.naver?query=${encodeURIComponent(cleanName)}`;
-    // 대학알리미 딥링크(학교코드) 미공개 → 네이버 '대학명 대학알리미' 검색(첫 결과가 대학알리미 공시)
-    const alrimiUrl = `https://search.naver.com/search.naver?query=${encodeURIComponent(cleanName + ' 대학알리미')}`;
+    // 대학알리미는 검색이 POST(historyForm) 방식 → onclick으로 폼 POST(새 탭)
+    const alrimiArg = cleanName.replace(/'/g, "\\'");
     const telUrl = `https://search.naver.com/search.naver?query=${encodeURIComponent(cleanName+' 대표전화')}`;
     const stuUrl = `https://search.naver.com/search.naver?query=${encodeURIComponent(cleanName+' 재학생수')}`;
 
@@ -542,7 +567,7 @@ function updateMarkers() {
         </table>
         <div class="lf-links">
           <a href="${searchUrl}" target="_blank">🔍 검색</a>
-          <a href="${alrimiUrl}" target="_blank" class="sec">📊 대학알리미</a>
+          <a href="javascript:void(0)" onclick="openAlrimi('${alrimiArg}');return false;" class="sec">📊 대학알리미</a>
         </div>
       </div>
     `, { maxWidth: 260 });
