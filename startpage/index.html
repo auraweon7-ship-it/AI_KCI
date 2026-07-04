@@ -1432,13 +1432,15 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── API 관리 모달 ── -->
 <div class="modal-overlay" id="apiModal">
-  <div class="modal" style="max-width:920px;width:92vw;max-height:82vh;overflow-y:auto;">
+  <div class="modal" style="max-width:920px;width:92vw;max-height:88vh;overflow-y:auto;">
     <h3 style="font-size:.95rem;display:flex;align-items:center;gap:6px;">🔑 API 관리
       <span id="apiUserEmail" style="font-size:.62rem;color:var(--text-dim);font-weight:400;margin-left:auto;"></span>
+      <button onclick="closeModal('apiModal')" title="닫기" style="flex-shrink:0;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-size:1rem;line-height:1;width:28px;height:28px;cursor:pointer;margin-left:6px">✕</button>
     </h3>
     <p style="font-size:.68rem;color:var(--text-dim);margin:6px 0 10px;">API 키는 이 브라우저의 계정별 로컬 저장소에만 저장됩니다. 열 제목 클릭으로 정렬.</p>
 
-    <table style="width:100%;border-collapse:collapse;font-size:.74rem;">
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+    <table style="width:100%;border-collapse:collapse;font-size:.74rem;min-width:520px;">
       <thead>
         <tr style="border-bottom:2px solid var(--border);color:var(--text-dim);">
           <th onclick="apiSort('star')" style="width:32px;padding:6px 4px;cursor:pointer;text-align:center;" title="즐겨찾기순"><span id="apiSortStar">⭐</span></th>
@@ -1450,8 +1452,9 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       </thead>
       <tbody id="apiTableBody"></tbody>
     </table>
+    </div>
 
-    <div style="display:flex;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);">
+    <div style="display:flex;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap;">
       <input id="apiNewName" placeholder="이름 (예: OpenAI)" style="width:130px;flex-shrink:0;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;outline:none;">
       <input id="apiNewKey" placeholder="API 키 입력" style="flex:1;min-width:0;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;outline:none;"
         onkeydown="if(event.key==='Enter')apiAdd()">
@@ -1526,13 +1529,15 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── APP 관리 모달 ── -->
 <div class="modal-overlay" id="appModal">
-  <div class="modal" style="max-width:820px;width:92vw;max-height:82vh;overflow-y:auto;">
+  <div class="modal" style="max-width:820px;width:92vw;max-height:88vh;overflow-y:auto;">
     <h3 style="font-size:.95rem;display:flex;align-items:center;gap:6px;">📱 APP 관리
       <span id="appUserEmail" style="font-size:.62rem;color:var(--text-dim);font-weight:400;margin-left:auto;"></span>
+      <button onclick="closeModal('appModal')" title="닫기" style="flex-shrink:0;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-size:1rem;line-height:1;width:28px;height:28px;cursor:pointer;margin-left:6px">✕</button>
     </h3>
     <p style="font-size:.68rem;color:var(--text-dim);margin:6px 0 10px;">자주 쓰는 앱·서비스를 등록하세요. 별표 클릭으로 선호도(1~5) 설정, 열 제목 클릭으로 정렬.</p>
 
-    <table style="width:100%;border-collapse:collapse;font-size:.74rem;">
+    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch;">
+    <table style="width:100%;border-collapse:collapse;font-size:.74rem;min-width:480px;">
       <thead>
         <tr style="border-bottom:2px solid var(--border);color:var(--text-dim);">
           <th onclick="appSort('name')" style="text-align:left;padding:6px 8px;cursor:pointer;white-space:nowrap;">APP 이름 <span id="appSortName"></span></th>
@@ -1544,6 +1549,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       </thead>
       <tbody id="appTableBody"></tbody>
     </table>
+    </div>
 
     <div style="display:flex;gap:6px;margin-top:12px;padding-top:10px;border-top:1px solid var(--border);flex-wrap:wrap;">
       <input id="appNewName" placeholder="APP 이름" style="width:130px;flex-shrink:0;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;outline:none;">
