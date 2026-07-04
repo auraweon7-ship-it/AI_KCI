@@ -6137,6 +6137,56 @@ function renderLinks() {
   const cat = state.categories.find(c => c.id === state.activeCat);
   title.textContent = cat ? `${cat.emoji || ''} ${cat.name}` : '즐겨찾기';
 
+  // 대학 행정·평가: 하위 카테고리별 섹션 분리
+  if (state.activeCat === 'uinfo') {
+    const groups = [
+      { id:'research', name:'연구', emoji:'🔬' },
+      { id:'employ',   name:'취업·진로', emoji:'💼' },
+      { id:'finance',  name:'재정', emoji:'💰' },
+      { id:'eval',     name:'평가', emoji:'📋' },
+      { id:'stat',     name:'통계', emoji:'📊' },
+      { id:'univ',     name:'대학협의체', emoji:'🤝' },
+      { id:'rank',     name:'대학평가·순위', emoji:'🏆' },
+      { id:'inst',     name:'정책기관', emoji:'🏛' },
+      { id:'admis',    name:'학사·입시', emoji:'📝' },
+      { id:'hire',     name:'채용·인사', emoji:'👔' },
+      { id:'inter',    name:'국제화', emoji:'🌍' },
+    ];
+    grid.innerHTML = '';
+    groups.forEach(g => {
+      const gl = sortLinks(state.links.filter(l => l.catId === g.id));
+      if (!gl.length) return;
+      const neon = CAT_NEON[g.id] || '#7dd3fc';
+      const head = document.createElement('div');
+      head.style.cssText = `grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:5px 10px;border-left:3px solid ${neon};background:${neon}18;border-radius:5px;margin-top:12px;`;
+      head.innerHTML = `<span style="font-size:.82rem;font-weight:800;color:${neon};letter-spacing:.03em">${g.emoji} ${g.name}</span>
+        <span style="font-size:.66rem;color:var(--text-dim)">${gl.length}개</span>
+        <button onclick="openAllInCat('${g.id}',event)" title="이 섹션 링크 전부 새 탭으로" style="margin-left:auto;background:none;border:1px solid ${neon}55;border-radius:5px;color:${neon};font-size:.6rem;padding:1px 7px;cursor:pointer">전부 열기</button>`;
+      grid.appendChild(head);
+      gl.forEach(link => {
+        const card = document.createElement('a');
+        card.className = 'link-card';
+        card.style.border = `1.5px solid ${neon}`;
+        card.style.boxShadow = `0 0 8px ${neon}44, inset 0 0 6px ${neon}11`;
+        card.href = link.url; card.target = '_blank'; card.rel = 'noopener noreferrer';
+        card.dataset.linkId = link.id;
+        const fv = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(link.url)}&sz=32`;
+        card.innerHTML = `
+          <div class="card-actions">
+            <button class="card-act-btn" onclick="togglePin('${link.id}',event)" title="상단 고정" style="background:var(--bg3);color:var(--text)">📌</button>
+            <button class="card-act-btn edit" onclick="openEditLink('${link.id}',event)" title="편집">✏️</button>
+            <button class="card-act-btn del" onclick="deleteLink('${link.id}',event)" title="삭제">✕</button>
+          </div>
+          <div class="favicon">${link.emoji || `<img loading="lazy" src="${fv}" width="28" height="28" style="border-radius:6px;" onerror="this.parentElement.textContent='🌐'">`}</div>
+          <div class="link-title">${link.name}</div>
+          ${link.desc ? `<div class="link-desc">${link.desc}</div>` : ''}`;
+        enableCardDnD(card, link);
+        grid.appendChild(card);
+      });
+    });
+    return;
+  }
+
   const links = state.activeCat === 'fes' ? state.links.filter(l => FES_IDS.includes(l.catId))
     : state.activeCat === 're'  ? state.links.filter(l => RE_IDS.includes(l.catId))
     : state.activeCat === 'nl'  ? state.links.filter(l => NL_IDS.includes(l.catId))
