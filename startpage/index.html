@@ -1861,12 +1861,6 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
     oninput="localStorage.setItem('claude_api_key', this.value.trim()); if(state.activeCat==='univstats') renderUnivStatsView();">
   <p style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">메뉴 <b>📈 대학통계</b> 대시보드는 이 키가 있어야 작동합니다. 키는 이 브라우저에만 저장되며 Anthropic API로만 전송됩니다. <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--accent2)">키 발급 →</a></p>
 
-  <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
-  <div class="settings-title" style="font-size:.9rem;">📚 알라딘 TTB키 (도서추천 위젯)</div>
-  <input id="aladinTtbKey" type="text" placeholder="ttbxxxxxxxx1234" autocomplete="off"
-    style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;"
-    oninput="localStorage.setItem('aladin_ttb_key', this.value.trim());">
-  <p style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">사이드바 <b>📚 도서추천</b> 위젯에서 키워드로 책 표지를 추천합니다. <a href="https://www.aladin.co.kr/ttb/wblog_manage.aspx" target="_blank" style="color:var(--accent2)">키 발급 →</a></p>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
   <div class="settings-title" style="font-size:.9rem;">🔍 기본 검색 엔진</div>
@@ -7736,35 +7730,47 @@ function handleImport(e) {
 // RIGHT SIDEBAR WIDGETS
 // ══════════════════════════════════════════════
 
-// ── 도서추천 (알라딘 TTB OpenAPI → 표지, 클릭 시 알라딘 상품) ──
+// ── 도서추천 (YES24 검색 스크래핑, 무키 → 표지, 클릭 시 YES24 상품) ──
 async function loadBookRec() {
   const kwd = (document.getElementById('bookKwd')?.value || '').trim();
   const grid = document.getElementById('bookRecGrid');
   if (!grid) return;
-  const ttb = (localStorage.getItem('aladin_ttb_key') || '').trim();
-  if (!ttb) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.64rem;padding:6px 2px;line-height:1.5">
-      설정 → <b>📚 알라딘 TTB키</b> 입력 후 이용<br><a href="https://www.aladin.co.kr/ttb/wblog_manage.aspx" target="_blank" style="color:var(--accent2)">키 발급 →</a></div>`;
-    return;
-  }
   if (!kwd) { grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.66rem;padding:6px 0">키워드를 입력하세요</div>'; return; }
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.66rem;padding:10px 0">📚 검색 중...</div>';
   try {
-    const api = `https://www.aladin.co.kr/ttb/api/ItemSearch.aspx?ttbkey=${encodeURIComponent(ttb)}&Query=${encodeURIComponent(kwd)}&QueryType=Keyword&MaxResults=5&start=1&SearchTarget=Book&output=js&Version=20131101&Cover=Big`;
+    const api = `https://www.yes24.com/product/search?query=${encodeURIComponent(kwd)}`;
     const r = await fetch('/api/proxy?url=' + encodeURIComponent(api));
     if (!r.ok) throw new Error('검색 실패 ' + r.status);
-    const j = await r.json();
-    const items = (j.item || []).filter(it => it.cover);
-    if (!items.length) { grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.66rem;padding:6px 0">'${kwd}' 검색 결과 없음</div>`; return; }
-    grid.innerHTML = items.slice(0, 5).map(it => {
-      const title = (it.title || '').replace(/"/g, '&quot;');
-      const cover = (it.cover || '').replace(/^http:/, 'https:');
-      return `<a href="${it.link}" target="_blank" rel="noopener noreferrer" title="${title}${it.author ? ' — ' + it.author : ''}" style="display:block">
-        <img src="${cover}" alt="${title}" loading="lazy" style="width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.3)" onerror="this.style.display='none'">
+    const html = await r.text();
+    // 상품 goodsNo + 제목 추출 (검색결과 항목: <a ... href="/product/goods/NNN" ... >제목</a>)
+    const books = [];
+    const seen = new Set();
+    const re = /href="\/product\/goods\/(\d+)"[^>]*(?:title="([^"]*)")?[^>]*>([^<]{2,}?)<\/a>/g;
+    let m;
+    while ((m = re.exec(html)) && books.length < 5) {
+      const no = m[1];
+      if (seen.has(no)) continue;
+      const title = (m[2] || m[3] || '').trim().replace(/^\[[^\]]*\]\s*/, '');
+      if (!title || /더보기|미리보기|리뷰/.test(title)) continue;
+      seen.add(no);
+      books.push({ no, title });
+    }
+    // 제목 매칭 실패 대비: goodsNo만이라도 확보
+    if (!books.length) {
+      const nos = [...new Set((html.match(/\/product\/goods\/(\d+)/g) || []).map(s => s.split('/').pop()))].slice(0, 5);
+      nos.forEach(no => books.push({ no, title: '' }));
+    }
+    if (!books.length) { grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.66rem;padding:6px 0">'${kwd}' 검색 결과 없음</div>`; return; }
+    grid.innerHTML = books.slice(0, 5).map(b => {
+      const t = b.title.replace(/"/g, '&quot;').replace(/&amp;/g, '&');
+      const cover = `https://image.yes24.com/goods/${b.no}/XL`;
+      const link = `https://www.yes24.com/product/goods/${b.no}`;
+      return `<a href="${link}" target="_blank" rel="noopener noreferrer" title="${t}" style="display:block">
+        <img src="${cover}" alt="${t}" loading="lazy" style="width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.3)" onerror="this.onerror=null;this.src='https://image.yes24.com/goods/${b.no}/L'">
       </a>`;
     }).join('');
   } catch (e) {
-    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.64rem;padding:6px 0">검색 실패 — TTB키·네트워크 확인<br><span style="font-size:.6rem">(배포 서버에서 동작)</span></div>';
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.64rem;padding:6px 0">검색 실패 — 네트워크 확인<br><span style="font-size:.6rem">(배포 서버에서 동작)</span></div>';
   }
 }
 
@@ -8701,7 +8707,6 @@ render();
  () => { const p = document.getElementById('profileSel'); if (p) p.value = localStorage.getItem('active_profile') || ''; },
  () => { const k = document.getElementById('kciApiKey'); if (k) k.value = localStorage.getItem('kci_api_key') || ''; },
  () => { const k = document.getElementById('claudeApiKey'); if (k) k.value = localStorage.getItem('claude_api_key') || ''; },
- () => { const k = document.getElementById('aladinTtbKey'); if (k) k.value = localStorage.getItem('aladin_ttb_key') || ''; },
  memoLoad, cvSetOpts, piLoad, timerRender, loadStock,
  () => { rssRenderTabs(); rssLoad(); }, noticeLoad
 ].forEach(fn => { try { fn(); } catch(e) { console.error('위젯 초기화 오류:', fn.name, e); } });
