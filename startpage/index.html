@@ -1181,6 +1181,18 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       <div class="postit-grid" id="postitGrid"></div>
     </div>
 
+    <!-- 입법·국회 교육위 -->
+    <div class="rw" id="rwLegis">
+      <div class="rw-hdr"><span>🏛 입법·국회 교육위</span><button class="rw-refresh" onclick="loadLegisNews()" title="새로고침">↻</button></div>
+      <div id="legisList" style="display:flex;flex-direction:column;gap:5px;"></div>
+    </div>
+
+    <!-- 오늘의 사자성어 -->
+    <div class="rw" id="rwIdiom">
+      <div class="rw-hdr"><span>📖 오늘의 사자성어</span><button class="rw-refresh" onclick="loadIdiom(true)" title="다른 성어">↻</button></div>
+      <div id="idiomBox"></div>
+    </div>
+
     <!-- 도서추천 -->
     <div class="rw" id="rwBookRec">
       <div class="rw-hdr"><span>📚 도서추천</span><button class="rw-refresh" onclick="document.getElementById('bookKwd').value='';loadBookRec()" title="설정 키워드로 다시 추천">↻</button></div>
@@ -6174,6 +6186,55 @@ function usGroupStats() {
     </div>`;
 }
 
+// ── 대학 비교 즐겨찾기 (담은 대학 2~3곳 KPI 나란히) ──
+function usCompareList() { try { return JSON.parse(localStorage.getItem('univ_compare') || '[]'); } catch(_) { return []; } }
+function usCompareAdd(univ) {
+  if (!univ) return;
+  let list = usCompareList();
+  if (list.includes(univ)) { showToast('이미 비교 목록에 있습니다', 'ℹ️'); return; }
+  if (list.length >= 3) { showToast('최대 3곳까지 비교합니다', '⚠️'); return; }
+  list.push(univ);
+  localStorage.setItem('univ_compare', JSON.stringify(list));
+  const bar = document.getElementById('usCompareBar'); if (bar) bar.innerHTML = usCompareBar();
+  showToast(`⭐ 비교 담기 (${list.length}/3)`);
+}
+function usCompareRemove(univ) {
+  localStorage.setItem('univ_compare', JSON.stringify(usCompareList().filter(u => u !== univ)));
+  const bar = document.getElementById('usCompareBar'); if (bar) bar.innerHTML = usCompareBar();
+}
+function usCompareBar() {
+  const list = usCompareList();
+  if (!list.length) return '';
+  const chips = list.map(u => `<span style="display:inline-flex;align-items:center;gap:4px;font-size:.72rem;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:.2rem .6rem">
+    ${u}<button onclick="usCompareRemove('${u.replace(/'/g,"\\'")}')" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.7rem;padding:0">✕</button></span>`).join('');
+  return `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.6rem .8rem;margin-bottom:1rem">
+    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:.5rem">
+      <span style="font-size:.78rem;font-weight:800;color:var(--text)">🆚 비교 담은 대학 (${list.length})</span>
+      ${chips}
+      <button onclick="usCompareShow()" style="margin-left:auto;font-size:.72rem;background:var(--accent);border:none;color:#fff;padding:.3rem .8rem;border-radius:8px;cursor:pointer;font-weight:700">비교 보기</button>
+    </div>
+    <div id="usCompareResult"></div></div>`;
+}
+function usCompareShow() {
+  const box = document.getElementById('usCompareResult');
+  if (!box) return;
+  const list = usCompareList();
+  const ready = list.filter(u => _univStatsCache[u]);
+  const missing = list.filter(u => !_univStatsCache[u]);
+  if (!ready.length) { box.innerHTML = `<div style="font-size:.72rem;color:var(--text-muted)">먼저 각 대학 대시보드를 생성하세요. (미생성: ${missing.join(', ')})</div>`; return; }
+  // KPI 라벨 합집합
+  const labels = [];
+  ready.forEach(u => (_univStatsCache[u].kpis || []).forEach(k => { if (!labels.includes(k.label)) labels.push(k.label); }));
+  const head = `<th style="text-align:left;padding:.4rem .5rem;font-size:.7rem;color:var(--text-muted);border-bottom:1.5px solid var(--border)">지표</th>` +
+    ready.map(u => `<th style="text-align:right;padding:.4rem .5rem;font-size:.72rem;color:var(--text);border-bottom:1.5px solid var(--border);white-space:nowrap">${u}</th>`).join('');
+  const rows = labels.map(lb => `<tr>
+    <td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.72rem;color:var(--text-dim);white-space:nowrap">${lb}</td>
+    ${ready.map(u => { const k = (_univStatsCache[u].kpis||[]).find(x => x.label === lb); return `<td style="padding:.4rem .5rem;border-bottom:1px solid var(--border);font-size:.74rem;color:var(--text);text-align:right;font-weight:600">${k ? (k.value||'-') : '-'}</td>`; }).join('')}
+  </tr>`).join('');
+  box.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:${120+ready.length*90}px"><thead><tr>${head}</tr></thead><tbody>${rows}</tbody></table></div>
+    ${missing.length ? `<div style="font-size:.66rem;color:var(--text-muted);margin-top:.4rem">※ 미생성: ${missing.join(', ')} — 대시보드 생성 후 다시 비교</div>` : ''}`;
+}
+
 function renderUnivStatsView() {
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
@@ -6252,6 +6313,7 @@ function renderUnivStatsView() {
         <div style="margin-top:.6rem;columns:2;column-gap:1.2rem">${gwonHtml}</div>
       </details>
       <datalist id="usUnivList">${allNames.map(u => `<option value="${u}">`).join('')}</datalist>
+      <div id="usCompareBar">${usCompareBar()}</div>
       ${_univStatsCache._lastUniv ? '' : usGroupStats()}
       <div id="usResult"></div>
     </div>`;
@@ -6611,7 +6673,8 @@ function usRenderDashboard(d) {
       <div style="display:flex;align-items:center;gap:.5rem;flex-wrap:wrap">
         <h2 style="font-size:1.5rem;font-weight:900;color:var(--text);margin:0">🎓 ${d.univ||''}</h2>
         ${d.type ? `<span style="font-size:.72rem;font-weight:700;color:#fff;background:${typeColor};padding:.2rem .6rem;border-radius:14px">${d.type}</span>` : ''}
-        <span style="font-size:.64rem;color:var(--text-muted);background:var(--bg3);padding:.2rem .5rem;border-radius:12px;margin-left:auto">AI 종합 · 참고용</span>
+        <button onclick="usCompareAdd('${(d.univ||'').replace(/'/g,"\\'")}')" style="margin-left:auto;font-size:.66rem;background:var(--accent2);border:none;color:#fff;padding:.28rem .7rem;border-radius:12px;cursor:pointer;font-weight:700">⭐ 비교 담기</button>
+        <span style="font-size:.64rem;color:var(--text-muted);background:var(--bg3);padding:.2rem .5rem;border-radius:12px">AI 종합 · 참고용</span>
       </div>
       ${meta ? `<div style="font-size:.76rem;color:var(--text-dim);margin-top:.35rem">${meta}</div>` : ''}
       ${d.summary ? `<p style="font-size:.82rem;color:var(--text-dim);line-height:1.75;margin:.6rem 0 .5rem">${usHighlight(d.summary, typeColor)}</p>` : ''}
@@ -8105,6 +8168,80 @@ async function loadYtRec() {
   }
 }
 
+// ── 입법·국회 교육위 뉴스 (구글뉴스 RSS, 무키) ──
+async function loadLegisNews() {
+  const box = document.getElementById('legisList');
+  if (!box) return;
+  box.innerHTML = '<div class="skel" style="height:38px"></div><div class="skel" style="height:38px"></div>';
+  const rss = 'https://news.google.com/rss/search?q=' + encodeURIComponent('국회 교육위원회 OR 고등교육법 OR 대학 입법') + '&hl=ko&gl=KR&ceid=KR:ko';
+  const api = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rss);
+  try {
+    const r = await fetch(api);
+    const j = await r.json();
+    if (!j.items || !j.items.length) throw new Error('no items');
+    box.innerHTML = j.items.slice(0, 6).map(it => {
+      const d = it.pubDate ? new Date(it.pubDate).toLocaleDateString('ko-KR', {month:'short',day:'numeric'}) : '';
+      const t = (it.title || '').replace(/</g,'&lt;');
+      return `<a href="${it.link}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:block;padding:5px 7px;background:var(--bg3);border-radius:6px">
+        <div style="font-size:.68rem;color:var(--text);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${t}</div>
+        <div style="font-size:.6rem;color:var(--text-muted);margin-top:2px">${d}</div></a>`;
+    }).join('');
+  } catch (_) {
+    box.innerHTML = '<div style="font-size:.66rem;color:var(--text-muted);text-align:center;padding:8px 0">불러오기 실패</div>';
+  }
+}
+
+// ── 오늘의 사자성어 (무키, 로컬 데이터) ──
+const IDIOMS = [
+  ['敎學相長','교학상장','가르치고 배우며 서로 성장한다'],
+  ['溫故知新','온고지신','옛것을 익히고 새것을 안다'],
+  ['切磋琢磨','절차탁마','학문·덕행을 갈고닦음'],
+  ['螢雪之功','형설지공','고생하며 부지런히 공부한 보람'],
+  ['敎外別傳','교외별전','말·글 밖으로 전하는 깊은 뜻'],
+  ['日就月將','일취월장','날로 달로 나아가 발전함'],
+  ['大器晩成','대기만성','큰 그릇은 늦게 이루어진다'],
+  ['讀書百遍義自見','독서백편의자현','글을 백 번 읽으면 뜻이 저절로 드러난다'],
+  ['不恥下問','불치하문','아랫사람에게 묻기를 부끄러워 않음'],
+  ['靑出於藍','청출어람','제자가 스승보다 나음'],
+  ['三人行必有我師','삼인행필유아사','세 사람이 가면 반드시 스승이 있다'],
+  ['格物致知','격물치지','사물을 궁구하여 앎에 이름'],
+  ['實事求是','실사구시','사실에 근거해 진리를 탐구함'],
+  ['博學多識','박학다식','널리 배워 아는 것이 많음'],
+  ['自强不息','자강불식','스스로 힘써 쉬지 않음'],
+  ['積小成大','적소성대','작은 것이 쌓여 큰 것을 이룸'],
+  ['有備無患','유비무환','미리 준비하면 근심이 없음'],
+  ['過猶不及','과유불급','지나침은 미치지 못함과 같다'],
+  ['他山之石','타산지석','남의 허물도 나를 갈고닦는 거울'],
+  ['苦盡甘來','고진감래','고생 끝에 낙이 온다'],
+  ['始終一貫','시종일관','처음부터 끝까지 한결같음'],
+  ['刮目相對','괄목상대','눈을 비비고 다시 볼 만큼 성장함'],
+  ['一日三省','일일삼성','하루에 세 번 자신을 돌아봄'],
+  ['近墨者黑','근묵자흑','먹을 가까이하면 검어진다(환경의 중요성)'],
+  ['麻中之蓬','마중지봉','좋은 환경에서 바르게 자람'],
+  ['聞一知十','문일지십','하나를 들으면 열을 앎'],
+  ['勤能補拙','근능보졸','부지런함이 부족함을 채운다'],
+  ['心機一轉','심기일전','마음을 새롭게 다잡음'],
+  ['初志一貫','초지일관','처음 뜻을 끝까지 지킴'],
+  ['集思廣益','집사광익','여러 생각을 모아 이로움을 넓힘'],
+];
+function loadIdiom(shuffle) {
+  const box = document.getElementById('idiomBox');
+  if (!box) return;
+  let idx;
+  if (shuffle) idx = Math.floor(Math.random() * IDIOMS.length);
+  else {
+    const d = new Date();
+    idx = (d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % IDIOMS.length;
+  }
+  const [han, kor, mean] = IDIOMS[idx];
+  box.innerHTML = `
+    <div style="text-align:center;padding:6px 4px">
+      <div style="font-size:1.15rem;font-weight:800;color:var(--accent2);letter-spacing:.08em">${han}</div>
+      <div style="font-size:.72rem;color:var(--text);margin-top:3px">${kor}</div>
+      <div style="font-size:.66rem;color:var(--text-dim);line-height:1.4;margin-top:4px">${mean}</div>
+    </div>`;
+}
+
 // ── 도서추천 (YES24 검색 스크래핑, 무키 → 표지, 클릭 시 YES24 상품) ──
 async function loadBookRec() {
   const grid = document.getElementById('bookRecGrid');
@@ -9101,6 +9238,7 @@ render();
  () => { let kws=[]; try{kws=JSON.parse(localStorage.getItem('book_keywords')||'[]');}catch(_){} ['bookKw1','bookKw2','bookKw3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=kws[i]||'';}); },
  () => { let ts=[]; try{ts=JSON.parse(localStorage.getItem('youtube_topics')||'[]');}catch(_){} ['ytTopic1','ytTopic2','ytTopic3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=ts[i]||'';}); },
  () => { try { loadBookRec(); } catch(_){} },
+ loadLegisNews, () => loadIdiom(false),
  () => { try { loadYtRec(); } catch(_){} },
  memoLoad, cvSetOpts, piLoad, timerRender, loadStock,
  () => { rssRenderTabs(); rssLoad(); }, noticeLoad
