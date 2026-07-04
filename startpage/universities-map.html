@@ -130,6 +130,15 @@ body { font-family: 'Noto Sans KR', -apple-system, sans-serif; background: var(-
   <button class="filter-chip active" data-est="all" onclick="filterEst('all',this)">전체</button>
   <button class="filter-chip" data-est="사립" onclick="filterEst('사립',this)">사립</button>
   <button class="filter-chip" data-est="국립" onclick="filterEst('국립',this)">국립</button>
+  <span class="filter-label" style="margin-left:12px;">지표:</span>
+  <button class="filter-chip" id="profModeBtn" onclick="toggleProfMode(this)" title="전임교원 규모 색상 오버레이(실측)">📊 전임교원 규모</button>
+  <span id="profLegend" style="display:none;align-items:center;gap:5px;font-size:.55rem;color:var(--text-dim);margin-left:6px">
+    <span style="width:9px;height:9px;border-radius:2px;background:#60a5fa;display:inline-block"></span>적음
+    <span style="width:9px;height:9px;border-radius:2px;background:#34d399;display:inline-block"></span>
+    <span style="width:9px;height:9px;border-radius:2px;background:#fbbf24;display:inline-block"></span>
+    <span style="width:9px;height:9px;border-radius:2px;background:#f87171;display:inline-block"></span>
+    <span style="width:9px;height:9px;border-radius:2px;background:#dc2626;display:inline-block"></span>많음
+  </span>
 </div>
 
 <div class="main">
@@ -143,6 +152,8 @@ body { font-family: 'Noto Sans KR', -apple-system, sans-serif; background: var(-
 
 <script>
 // ── DATA ──
+const PROF_MAP = {"가야대학교": 66, "가천대학교": 995, "가톨릭관동대학교": 355, "가톨릭꽃동네대학교": 23, "가톨릭대학교": 1283, "감리교신학대학교": 24, "강남대학교": 206, "강서대학교": 54, "강원대학교": 1035, "건국대학교(글로컬)": 407, "건국대학교": 657, "건양대학교": 350, "경기대학교": 485, "경남대학교": 365, "경동대학교": 220, "경북대학교": 1428, "경상국립대학교": 1050, "경성대학교": 363, "경운대학교": 163, "경인교육대학교": 134, "경일대학교": 238, "경희대학교": 1395, "계명대학교": 837, "고려대학교(세종)": 257, "고려대학교": 1601, "고신대학교": 252, "공주교육대학교": 86, "광신대학교": 50, "광운대학교": 307, "광주가톨릭대학교": 15, "광주과학기술원": 194, "광주교육대학교": 72, "광주대학교": 200, "광주여자대학교": 123, "국립강릉원주대학교": 371, "국립경국대학교": 292, "국립공주대학교": 573, "국립군산대학교": 338, "국립금오공과대학교": 241, "국립목포대학교": 307, "국립목포해양대학교": 127, "국립부경대학교": 630, "국립순천대학교": 314, "국립창원대학교": 345, "국립한국교통대학교": 325, "국립한국해양대학교": 282, "국립한밭대학교": 289, "국민대학교": 651, "극동대학교": 109, "금강대학교": 13, "김천대학교": 100, "나사렛대학교": 157, "남부대학교": 108, "남서울대학교": 293, "단국대학교": 1003, "대구가톨릭대학교": 533, "대구경북과학기술원": 146, "대구교육대학교": 89, "대구대학교": 499, "대구예술대학교": 17, "대구한의대학교": 223, "대신대학교": 39, "대전가톨릭대학교": 11, "대전대학교": 277, "대전신학대학교": 7, "대진대학교": 231, "덕성여자대학교": 197, "동국대학교(WISE)": 300, "동국대학교": 686, "동덕여자대학교": 214, "동명대학교": 229, "동서대학교": 320, "동신대학교": 226, "동아대학교": 715, "동양대학교": 127, "동의대학교": 550, "루터대학교": 15, "명지대학교": 504, "목원대학교": 264, "목포가톨릭대학교": 21, "배재대학교": 254, "백석대학교": 464, "부산가톨릭대학교": 123, "부산교육대학교": 78, "부산대학교": 1442, "부산외국어대학교": 214, "부산장신대학교": 15, "삼육대학교": 190, "상명대학교": 432, "상지대학교": 244, "서강대학교": 410, "서경대학교": 250, "서울과학기술대학교": 430, "서울교육대학교": 105, "서울기독대학교": 37, "서울대학교": 2369, "서울시립대학교": 458, "서울신학대학교": 96, "서울여자대학교": 224, "서울장신대학교": 27, "서울한영대학교": 27, "서원대학교": 224, "선문대학교": 280, "성결대학교": 167, "성공회대학교": 80, "성균관대학교": 1543, "성신여자대학교": 324, "세명대학교": 231, "세종대학교": 590, "세한대학교": 111, "송원대학교": 92, "수원가톨릭대학교": 9, "수원대학교": 310, "숙명여자대학교": 419, "순천향대학교": 942, "숭실대학교": 528, "신경주대학교": 47, "신라대학교": 272, "신한대학교": 217, "아신대학교": 36, "아주대학교": 747, "안양대학교": 165, "연세대학교(미래)": 410, "연세대학교": 1820, "영남대학교": 896, "영남신학대학교": 24, "영산대학교": 189, "영산선학대학교": 11, "예수대학교": 20, "예원예술대학교": 60, "용인대학교": 195, "우석대학교": 248, "우송대학교": 334, "울산과학기술원": 313, "울산대학교": 1095, "원광대학교": 622, "위덕대학교": 85, "유원대학교": 111, "을지대학교": 420, "이화여자대학교": 961, "인제대학교": 838, "인천가톨릭대학교": 47, "인천대학교": 497, "인하대학교": 886, "장로회신학대학교": 78, "전남대학교": 1327, "전북대학교": 1048, "전주교육대학교": 53, "전주대학교": 328, "제주국제대학교": 33, "제주대학교": 648, "조선대학교": 741, "중부대학교": 350, "중앙대학교": 1198, "중원대학교": 123, "진주교육대학교": 68, "차의과학대학교": 502, "창신대학교": 73, "청운대학교": 154, "청주교육대학교": 70, "청주대학교": 441, "초당대학교": 88, "총신대학교": 104, "추계예술대학교": 47, "춘천교육대학교": 75, "충남대학교": 1059, "충북대학교": 800, "칼빈대학교": 80, "평택대학교": 120, "포항공과대학교": 284, "한경국립대학교": 256, "한국공학대학교": 262, "한국과학기술원": 716, "한국교원대학교": 209, "한국기술교육대학교": 184, "한국성서대학교": 41, "한국에너지공과대학교": 49, "한국외국어대학교": 612, "한국체육대학교": 118, "한국침례신학대학교": 55, "한국항공대학교": 168, "한남대학교": 385, "한동대학교": 146, "한라대학교": 109, "한림대학교": 705, "한서대학교": 229, "한성대학교": 282, "한세대학교": 100, "한신대학교": 175, "한양대학교(ERICA)": 415, "한양대학교": 1141, "한일장신대학교": 37, "협성대학교": 128, "호남대학교": 243, "호남신학대학교": 32, "호서대학교": 432, "호원대학교": 141, "홍익대학교": 725, "화성의과학대학교": 31};
+
 const UNIVERSITIES = [
   // 강원
   {name:'가톨릭관동대학교', region:'강원', gwon:'강원권', est:'사립', lat:37.7553, lng:128.9015},
@@ -539,11 +550,28 @@ function makeUnivIcon(color, isNational, name) {
   });
 }
 
+// 전임교원 규모 오버레이 (실측 PROF_DATA)
+let profMode = false;
+function profColor(n) {
+  if (!n) return '#6b7280';
+  if (n < 100) return '#60a5fa';
+  if (n < 300) return '#34d399';
+  if (n < 700) return '#fbbf24';
+  if (n < 1200) return '#f87171';
+  return '#dc2626';
+}
+function toggleProfMode(btn) {
+  profMode = !profMode;
+  btn.classList.toggle('active', profMode);
+  document.getElementById('profLegend').style.display = profMode ? 'inline-flex' : 'none';
+  if (map) updateMarkers();
+}
+
 function updateMarkers() {
   markers.forEach(m => map.removeLayer(m));
   markers = [];
   getFiltered().forEach(u => {
-    const color = GWON_COLORS[u.gwon] || '#888';
+    const color = profMode ? profColor(PROF_DATA[u.name]) : (GWON_COLORS[u.gwon] || '#888');
     const isNational = u.est === '국립' || u.est === '국립대법인' || u.est === '특별법법인';
     const cleanName = u.name.replace('_분교','').replace('(분교)','');
     const profText = PROF_DATA[u.name] ? `${PROF_DATA[u.name].toLocaleString()}명` : '-';
