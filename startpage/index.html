@@ -7721,13 +7721,21 @@ async function loadUnivNotice() {
 
 // ── EXPORT / IMPORT ──
 function exportData() {
-  const data = { categories: state.categories, links: state.links, settings: state.settings };
+  // localStorage 전체 스냅샷 — 링크·카테고리·API/APP·캘린더·TODO·북마크·모든 설정(API키·도서/유튜브 키워드 등) 포함
+  const snapshot = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k === 'startpage_user' || k === 'cloud_token' || k === 'cloud_token_exp') continue; // 로그인 토큰 제외
+    snapshot[k] = localStorage.getItem(k);
+  }
+  // 하위호환: categories/links/settings도 함께 포함
+  const data = { v: 2, snapshot, categories: state.categories, links: state.links, settings: state.settings, savedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `startpage_backup_${new Date().toISOString().slice(0,10)}.json`;
   a.click();
-  showToast('데이터 내보내기 완료');
+  showToast('데이터 내보내기 완료 (설정 포함)');
 }
 
 function importData() {
@@ -7741,6 +7749,18 @@ function handleImport(e) {
   reader.onload = ev => {
     try {
       const data = JSON.parse(ev.target.result);
+      // v2 스냅샷: localStorage 전체 복원(설정·API키·키워드 포함) 후 새로고침
+      if (data.v === 2 && data.snapshot) {
+        if (!confirm('가져오기: 현재 설정을 덮어씁니다. 계속할까요?')) return;
+        Object.entries(data.snapshot).forEach(([k, val]) => {
+          if (k === 'startpage_user' || k === 'cloud_token' || k === 'cloud_token_exp') return;
+          try { localStorage.setItem(k, val); } catch(_) {}
+        });
+        showToast('가져오기 완료 — 새로고침합니다', '✅');
+        setTimeout(() => location.reload(), 700);
+        return;
+      }
+      // 구버전 형식
       if (data.categories) state.categories = data.categories;
       if (data.links) state.links = data.links;
       if (data.settings) state.settings = data.settings;
