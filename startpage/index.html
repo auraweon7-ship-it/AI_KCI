@@ -5958,6 +5958,7 @@ async function usGenerate() {
  "type": "국립 또는 사립 또는 국립대법인 또는 과학기술원",
  "region": "소재지 (예: 서울 관악구)",
  "established": "설립연도 (예: 1946)",
+ "basic": {"homepage":"공식 홈페이지 URL(예: https://www.snu.ac.kr)","address":"본부 도로명 주소","phone":"대표전화(예: 02-880-5114)","campuses":"캠퍼스 구성(예: 관악·연건 2캠퍼스)","landArea":"교지 면적(예: 약 4,109천㎡)","totalStudents":"총 재학생 규모(예: 약 28,000명)","colleges":"단과대학/학부 수(예: 16개 단과대학)"},
  "summary": "이 대학의 위상·규모·특성화·재정·평가 결과를 담은 4~5문장의 풍부한 요약",
  "highlights": ["핵심 특징 배지 문구 5~7개 (예: 'QS 세계랭킹 상위권', '연구중심대학', '의과대학 보유', '글로컬대학30 선정')"],
  "kpis": [
@@ -6016,6 +6017,16 @@ async function usGenerate() {
     const s = txt.indexOf('{'), e = txt.lastIndexOf('}');
     if (s < 0 || e < 0) throw new Error('응답 파싱 실패');
     const data = JSON.parse(txt.slice(s, e + 1));
+    // 로컬 명단(UNIV_DB)로 권역·설립구분 보강 (정확도↑)
+    try {
+      const rec = (typeof UNIV_DB !== 'undefined') && UNIV_DB.find(u => u[0] === univ || u[0] === univ.replace('_분교',''));
+      if (rec) {
+        const GWm = {서울:'수도권',경기:'수도권',인천:'수도권',대전:'충청권',충남:'충청권',충북:'충청권',세종:'충청권',부산:'영남권',대구:'영남권',경남:'영남권',경북:'영남권',울산:'영남권',광주:'호남권',전남:'호남권',전북:'호남권',강원:'강원권',제주:'제주권'};
+        data.gwon = GWm[rec[2]] || '';
+        data.estabGroup = rec[1];           // 국립 / 사립
+        if (!data.region) data.region = rec[2];
+      }
+    } catch(_) {}
     _univStatsCache[univ] = data;
     _univStatsCache._lastUniv = univ;
     usRenderDashboard(data);
@@ -6096,8 +6107,31 @@ function usRenderDashboard(d) {
     `<span style="display:inline-block;background:var(--bg3);border:1px solid var(--border);color:var(--text);
        font-size:.72rem;padding:.2rem .6rem;border-radius:8px;margin:0 4px 5px 0">${x}</span>`).join('');
 
-  const meta = [d.type, d.region, d.established ? d.established+' 설립' : '', d.financeScale ? '예산 '+d.financeScale : '']
+  const meta = [d.estabGroup || d.type, d.gwon, d.region, d.established ? d.established+' 설립' : '', d.financeScale ? '예산 '+d.financeScale : '']
     .filter(Boolean).join(' · ');
+
+  // 기본정보 카드
+  const b = d.basic || {};
+  const hp = (b.homepage||'').trim();
+  const hpHost = hp ? hp.replace(/^https?:\/\//,'').replace(/\/$/,'') : '';
+  const infoRow = (icon, label, val, href) => val ? `
+    <div style="display:flex;gap:8px;align-items:flex-start;padding:.35rem 0;font-size:.76rem;border-bottom:1px solid var(--border)">
+      <span style="width:18px;flex-shrink:0">${icon}</span>
+      <span style="width:64px;flex-shrink:0;color:var(--text-muted)">${label}</span>
+      <span style="flex:1;color:var(--text);word-break:break-all">${href ? `<a href="${href}" target="_blank" rel="noopener" style="color:var(--accent2)">${val}</a>` : val}</span>
+    </div>` : '';
+  const basicCard = (b.homepage||b.address||b.phone||b.campuses||b.landArea||b.totalStudents||b.colleges||d.gwon) ? `
+    <div style="background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:.7rem 1rem;margin-bottom:1rem">
+      <div style="font-size:.82rem;font-weight:800;color:var(--text);margin-bottom:.3rem">🏫 기본정보</div>
+      ${infoRow('🌐','홈페이지', hpHost, hp || null)}
+      ${infoRow('📍','위치', b.address)}
+      ${infoRow('🗺','권역', [d.gwon, d.region].filter(Boolean).join(' · '))}
+      ${infoRow('☎️','대표전화', b.phone, b.phone ? 'tel:'+String(b.phone).replace(/[^0-9+]/g,'') : null)}
+      ${infoRow('🏛','캠퍼스', b.campuses)}
+      ${infoRow('📐','교지면적', b.landArea)}
+      ${infoRow('🎓','재학규모', b.totalStudents)}
+      ${infoRow('📚','단과대학', b.colleges)}
+    </div>` : '';
 
   res.innerHTML = `
     <div style="display:flex;align-items:baseline;gap:.5rem;flex-wrap:wrap;margin-bottom:.35rem">
@@ -6107,7 +6141,8 @@ function usRenderDashboard(d) {
     </div>
     ${meta ? `<div style="font-size:.74rem;color:var(--text-dim);margin-bottom:.5rem">${meta}</div>` : ''}
     ${d.summary ? `<p style="font-size:.82rem;color:var(--text-dim);line-height:1.65;margin:0 0 .7rem">${d.summary}</p>` : ''}
-    ${highlights ? `<div style="margin-bottom:1rem">${highlights}</div>` : ''}
+    ${highlights ? `<div style="margin-bottom:.8rem">${highlights}</div>` : ''}
+    ${basicCard}
 
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:9px;margin-bottom:1.1rem">${kpis}</div>
 
