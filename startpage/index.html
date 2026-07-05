@@ -1024,7 +1024,8 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
           <input id="schedSearch" placeholder="🔍 일정 검색" oninput="schedRender()"
             style="width:110px;padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.66rem;outline:none;">
           <button onclick="openLectureManager()" title="강의시간 관리" style="font-size:.66rem;padding:3px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;">📚 강의</button>
-          <button onclick="gcalSync()" title="구글 캘린더 동기화" style="font-size:.66rem;padding:3px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:4px"><span style="color:#4285f4;font-weight:800">G</span> 동기화</button>
+          <button onclick="gcalSync()" title="구글 캘린더에서 가져오기" style="font-size:.72rem;padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:3px"><span style="color:#4285f4;font-weight:800">G</span>⬇</button>
+          <button onclick="gcalPushAll()" title="구글 캘린더로 보내기" style="font-size:.72rem;padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:3px"><span style="color:#4285f4;font-weight:800">G</span>⬆</button>
           <a href="https://calendar.google.com" target="_blank" rel="noopener" title="구글 캘린더 열기" style="font-size:.72rem;text-decoration:none">🗓</a>
         </span>
       </div>
@@ -1737,7 +1738,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
         · <b>분류</b>(강의/특강/회의/투고/연구사업 등) 선택 → 색상 배지, <b>시간·반복·개별 색상·🔔알림</b>(10분 전) 지정<br>
         · 🔍 <b>일정 검색</b> · 상단 <b>카테고리 필터</b> 배지 · <b>일정을 드래그</b>해 다른 날로 이동<br>
         · 📚 <b>강의</b>=학부/대학원·요일·기간 설정 → 매주 자동 표시, 주차별 메모<br>
-        · 🗓=구글 캘린더에 등록 · <b>G 동기화</b>=구글 일정 가져오기 · 체크박스로 <b>TO-DO에 자동 추가</b>
+        · 🗓=구글 캘린더에 등록 · <b>G⬇</b>=구글 일정 가져오기 · <b>G⬆</b>=로컬 일정 구글로 보내기 · 체크박스로 <b>TO-DO에 자동 추가</b>
       </div>
 
       <div style="font-weight:800;color:var(--accent2);margin:10px 0 4px;">✅ TO-DO 리스트 (로그인 필요)</div>
@@ -4847,6 +4848,42 @@ function gcalWriteEvent(ds, ev) {
     });
   }
   gcalWriteClient.requestAccessToken();
+}
+
+// ── 구글 캘린더로 보내기 (전체 일정 쓰기) ──
+async function gcalPushAll() {
+  const u = (() => { try { return JSON.parse(localStorage.getItem('startpage_user') || 'null'); } catch(_) { return null; } })();
+  if (!u?.email) { showToast('로그인 후 사용할 수 있습니다', '🔒'); return; }
+  const all = (typeof schedGetAll === 'function') ? schedGetAll() : {};
+  const entries = [];
+  Object.keys(all).forEach(ds => (all[ds] || []).forEach(ev => entries.push([ds, ev])));
+  if (!entries.length) { showToast('보낼 일정이 없습니다', 'ℹ️'); return; }
+  if (!confirm(`로컬 일정 ${entries.length}건을 구글 캘린더로 보낼까요?`)) return;
+  const send = async token => {
+    let ok = 0;
+    showToast('구글 캘린더로 전송 중...', '📤');
+    for (const [ds, ev] of entries) {
+      const body = { summary: ev.text };
+      if (ev.time) {
+        const [h, m] = ev.time.split(':').map(Number);
+        const eh = String(Math.min(23, h + 1)).padStart(2, '0');
+        body.start = { dateTime: `${ds}T${ev.time}:00`, timeZone: 'Asia/Seoul' };
+        body.end = { dateTime: `${ds}T${eh}:${String(m).padStart(2,'0')}:00`, timeZone: 'Asia/Seoul' };
+      } else { body.start = { date: ds }; body.end = { date: ds }; }
+      if (ev.repeat) body.recurrence = [ev.repeat === 'w' ? 'RRULE:FREQ=WEEKLY' : 'RRULE:FREQ=MONTHLY'];
+      try { const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', { method:'POST', headers:{ Authorization:'Bearer '+token, 'Content-Type':'application/json' }, body: JSON.stringify(body) }); if (r.ok) ok++; } catch(_) {}
+    }
+    showToast(`구글 캘린더로 ${ok}/${entries.length}건 보냄 📤`);
+  };
+  if (gcalToken && Date.now() < gcalTokenExp) { send(gcalToken); return; }
+  if (!window.google || !google.accounts?.oauth2) { showToast('Google 라이브러리 로딩 중', '⏳'); return; }
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID, scope: 'https://www.googleapis.com/auth/calendar.events',
+    hint: userEmail(), prompt: '',
+    error_callback: () => showToast('Google 승인 실패', '⚠️'),
+    callback: resp => { if (!resp.access_token) return; gcalToken = resp.access_token; gcalTokenExp = Date.now() + ((resp.expires_in||3600)-60)*1000; send(gcalToken); },
+  });
+  client.requestAccessToken();
 }
 
 // ── 구글 캘린더 동기화 (읽기) ──
