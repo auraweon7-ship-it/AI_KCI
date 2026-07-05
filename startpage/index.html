@@ -8428,9 +8428,15 @@ async function loadLegisNews() {
   const box = document.getElementById('legisList');
   if (!box) return;
   box.innerHTML = '<div class="skel" style="height:38px"></div><div class="skel" style="height:38px"></div>';
-  const rss = 'https://news.google.com/rss/search?q=' + encodeURIComponent('국회 교육위원회 OR 고등교육법 OR 대학 입법') + '&hl=ko&gl=KR&ceid=KR:ko';
+  // when:30d — 구글뉴스 최근 30일 이내 결과
+  const rss = 'https://news.google.com/rss/search?q=' + encodeURIComponent('(국회 교육위원회 OR 고등교육법 OR 대학 입법) when:30d') + '&hl=ko&gl=KR&ceid=KR:ko';
+  const monthAgo = Date.now() - 31 * 24 * 3600 * 1000;
   const render = items => {
-    box.innerHTML = items.slice(0, 5).map(it => {
+    // pubDate 1개월 이내만
+    const recent = items.filter(it => { const t = it.pubDate ? new Date(it.pubDate).getTime() : NaN; return isNaN(t) || t >= monthAgo; });
+    const list = recent.length ? recent : items;
+    if (!recent.length) { box.innerHTML = '<div style="font-size:.66rem;color:var(--text-muted);text-align:center;padding:8px 0">최근 1개월 이내 소식 없음</div>'; return; }
+    box.innerHTML = list.slice(0, 5).map(it => {
       const d = it.pubDate ? new Date(it.pubDate).toLocaleDateString('ko-KR', {month:'short',day:'numeric'}) : '';
       const t = (it.title || '').replace(/</g,'&lt;');
       return `<a href="${it.link}" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:block;padding:5px 7px;background:var(--bg3);border-radius:6px">
