@@ -8360,27 +8360,61 @@ async function loadYtRec() {
 }
 
 // ── 연구 힐링음악 (30분+ 롱폼 큐레이션 → embed 2x1, 항상 재생) ──
-// embed 허용 확실한 유명 채널(Lofi Girl·Chillhop 등 24h 라이브·롱폼) 우선
+// 30분+ VOD 롱폼 힐링/집중 음악 (라이브 스트림 제외 — 라이브는 embed "스트림 녹화 불가")
+// IFrame Player API로 embed 재생 가능한 것만 골라 표시(비허용 시 다음 후보로 자동 교체)
 const HEAL_VIDEOS = [
-  'jfKfPfyJRdk', // Lofi Girl — lofi hip hop radio (24h 라이브)
-  '4xDzrJKXOOY', // Lofi Girl — synthwave radio (24h)
-  'rUxyKA_-grg', // Lofi Girl — sleep/chill (24h)
-  '28KRPhVzCus', // Chillhop — jazzy/lofi radio
-  'YDaHXGWclg0', // 집중 lofi 3시간+
-  'TacJb3LerGQ', // 힐링 lofi 3시간+
-  'Xc1Le3CSdrM', // 집중 음악 3시간+
-  'qMwzWk81tVM', // deep focus 4시간+
+  'lTRiuFIWV54','77ZozI0rw7w','DWcJFNfaw9c','5qap5aO4i9A','YDaHXGWclg0',
+  'TacJb3LerGQ','Xc1Le3CSdrM','HSjLb4RIeLk','qMwzWk81tVM','v66yDEGA9nk',
 ];
-function loadHealMusic() {
+let _ytApiReady = false;
+function ensureYtApi() {
+  return new Promise(resolve => {
+    if (window.YT && window.YT.Player) { resolve(); return; }
+    window.onYouTubeIframeAPIReady = () => { _ytApiReady = true; resolve(); };
+    if (!document.getElementById('ytApiScript')) {
+      const s = document.createElement('script');
+      s.id = 'ytApiScript'; s.src = 'https://www.youtube.com/iframe_api';
+      document.head.appendChild(s);
+    }
+    setTimeout(resolve, 4000); // 폴백
+  });
+}
+async function loadHealMusic() {
   const grid = document.getElementById('healMusicGrid');
   if (!grid) return;
-  const pool = [...HEAL_VIDEOS];
-  const pick = [];
-  while (pick.length < 2 && pool.length) pick.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
-  grid.innerHTML = pick.map(id => `
+  grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.64rem;padding:8px 0">🎵 재생 가능한 음악 찾는 중...</div>';
+  await ensureYtApi();
+  // 후보 셔플
+  const pool = [...HEAL_VIDEOS].sort(() => Math.random() - 0.5);
+  const ok = [];
+  const test = id => new Promise(res => {
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;left:-9999px;width:200px;height:200px';
+    document.body.appendChild(d);
+    let done = false;
+    const finish = v => { if (done) return; done = true; try { p.destroy(); } catch(_){} d.remove(); res(v); };
+    let p;
+    try {
+      p = new YT.Player(d, { videoId: id, width: 200, height: 200,
+        events: {
+          onReady: () => finish(true),      // 재생 가능(embed 허용)
+          onError: () => finish(false),     // 101/150 = embed 비허용
+        } });
+    } catch(_) { d.remove(); res(false); }
+    setTimeout(() => finish(false), 3500);  // 응답 없으면 실패로
+  });
+  for (const id of pool) {
+    if (ok.length >= 2) break;
+    if (await test(id)) ok.push(id);
+  }
+  if (!ok.length) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.62rem;padding:6px 0">재생 가능한 음악을 찾지 못했습니다 ↻</div>';
+    return;
+  }
+  grid.innerHTML = ok.map(id => `
     <div>
       <div style="position:relative;width:100%;height:210px;border-radius:5px;overflow:hidden;background:#000">
-        <iframe src="https://www.youtube.com/embed/${id}?rel=0&playsinline=1" title="힐링음악" loading="lazy"
+        <iframe src="https://www.youtube.com/embed/${id}?rel=0&playsinline=1&enablejsapi=1" title="힐링음악" loading="lazy"
           allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture"
           allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>
       </div>
