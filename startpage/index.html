@@ -4855,24 +4855,50 @@ async function gcalPushAll() {
   const u = (() => { try { return JSON.parse(localStorage.getItem('startpage_user') || 'null'); } catch(_) { return null; } })();
   if (!u?.email) { showToast('로그인 후 사용할 수 있습니다', '🔒'); return; }
   const all = (typeof schedGetAll === 'function') ? schedGetAll() : {};
-  const entries = [];
-  Object.keys(all).forEach(ds => (all[ds] || []).forEach(ev => entries.push([ds, ev])));
-  if (!entries.length) { showToast('보낼 일정이 없습니다', 'ℹ️'); return; }
-  if (!confirm(`로컬 일정 ${entries.length}건을 구글 캘린더로 보낼까요?`)) return;
+  const bodies = [];
+  // 1) 캘린더 일정
+  Object.keys(all).forEach(ds => (all[ds] || []).forEach(ev => {
+    if (!ev || !ev.text) return;
+    const body = { summary: ev.text };
+    const tm = /^\d{1,2}:\d{2}$/.test(ev.time || '') ? ev.time : null;
+    if (tm) {
+      const [h, m] = tm.split(':').map(Number);
+      const eh = String(Math.min(23, h + 1)).padStart(2, '0');
+      body.start = { dateTime: `${ds}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`, timeZone: 'Asia/Seoul' };
+      body.end = { dateTime: `${ds}T${eh}:${String(m).padStart(2,'0')}:00`, timeZone: 'Asia/Seoul' };
+    } else { body.start = { date: ds }; body.end = { date: ds }; }
+    if (ev.repeat) body.recurrence = [ev.repeat === 'w' ? 'RRULE:FREQ=WEEKLY' : 'RRULE:FREQ=MONTHLY'];
+    bodies.push(body);
+  }));
+  // 2) 강의(주간 반복: 시작일 이후 첫 해당 요일부터 종료일까지)
+  const lecs = (typeof lecGetAll === 'function') ? lecGetAll() : [];
+  lecs.forEach(l => {
+    if (!l || !l.name || l.dow == null || !l.startDate) return;
+    // 시작일 이후(포함) 첫 해당 요일 찾기
+    const sd = new Date(l.startDate + 'T00:00:00');
+    let add = (Number(l.dow) - sd.getDay() + 7) % 7;
+    const first = new Date(sd.getTime() + add * 86400000);
+    const ds = `${first.getFullYear()}-${String(first.getMonth()+1).padStart(2,'0')}-${String(first.getDate()).padStart(2,'0')}`;
+    const body = { summary: `[강의] ${l.name}${l.dept ? ' ('+l.dept+')' : ''}` };
+    const st = /^\d{1,2}:\d{2}$/.test(l.start || '') ? l.start : null;
+    const en = /^\d{1,2}:\d{2}$/.test(l.end || '') ? l.end : null;
+    if (st) {
+      const [eh, em] = (en || st).split(':').map(Number);
+      body.start = { dateTime: `${ds}T${st}:00`, timeZone: 'Asia/Seoul' };
+      body.end = { dateTime: `${ds}T${String(eh).padStart(2,'0')}:${String(em).padStart(2,'0')}:00`, timeZone: 'Asia/Seoul' };
+    } else { body.start = { date: ds }; body.end = { date: ds }; }
+    // 종료일까지 주간 반복 (UNTIL: KST 23:59 → UTC 14:59)
+    let rule = 'RRULE:FREQ=WEEKLY';
+    if (l.endDate) rule += `;UNTIL=${l.endDate.replace(/-/g,'')}T145959Z`;
+    body.recurrence = [rule];
+    bodies.push(body);
+  });
+  if (!bodies.length) { showToast('보낼 일정이 없습니다', 'ℹ️'); return; }
+  if (!confirm(`로컬 일정·강의 ${bodies.length}건을 구글 캘린더로 보낼까요?`)) return;
   const send = async (token, isRetry) => {
     let ok = 0, firstErr = '';
     showToast('구글 캘린더로 전송 중...', '📤');
-    for (const [ds, ev] of entries) {
-      if (!ev || !ev.text) continue;
-      const body = { summary: ev.text };
-      const tm = /^\d{1,2}:\d{2}$/.test(ev.time || '') ? ev.time : null;
-      if (tm) {
-        const [h, m] = tm.split(':').map(Number);
-        const eh = String(Math.min(23, h + 1)).padStart(2, '0');
-        body.start = { dateTime: `${ds}T${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:00`, timeZone: 'Asia/Seoul' };
-        body.end = { dateTime: `${ds}T${eh}:${String(m).padStart(2,'0')}:00`, timeZone: 'Asia/Seoul' };
-      } else { body.start = { date: ds }; body.end = { date: ds }; }
-      if (ev.repeat) body.recurrence = [ev.repeat === 'w' ? 'RRULE:FREQ=WEEKLY' : 'RRULE:FREQ=MONTHLY'];
+    for (const body of bodies) {
       try {
         const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', { method:'POST', headers:{ Authorization:'Bearer '+token, 'Content-Type':'application/json' }, body: JSON.stringify(body) });
         if (r.ok) { ok++; continue; }
@@ -4881,7 +4907,7 @@ async function gcalPushAll() {
         if (!firstErr) { try { const ej = await r.json(); firstErr = `${r.status} ${ej.error?.message || ''}`; } catch(_) { firstErr = String(r.status); } }
       } catch(e) { if (!firstErr) firstErr = e.message || 'network'; }
     }
-    if (ok) showToast(`구글 캘린더로 ${ok}/${entries.length}건 보냄 📤`);
+    if (ok) showToast(`구글 캘린더로 ${ok}/${bodies.length}건 보냄 📤`);
     else showToast(`전송 실패 — ${firstErr || '권한/캘린더 API 확인'}`, '⚠️');
   };
   const requestPush = () => {
