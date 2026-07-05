@@ -4894,13 +4894,32 @@ async function gcalPushAll() {
     bodies.push(body);
   });
   if (!bodies.length) { showToast('보낼 일정이 없습니다', 'ℹ️'); return; }
-  if (!confirm(`로컬 일정·강의 ${bodies.length}건을 구글 캘린더로 보낼까요?`)) return;
+  // 결정론적 event id(내용 해시) → 동일 일정은 중복 추가 없이 덮어쓰기
+  // Google id 규칙: base32hex(0-9,a-v), 소문자, 5~1024자
+  const b32 = '0123456789abcdefghijklmnopqrstuv';
+  const gcalId = (body) => {
+    const s = JSON.stringify([body.summary || '', body.start || '', body.end || '', body.recurrence || '']);
+    let h1 = 0x811c9dc5, h2 = 0x1234567;
+    for (let i = 0; i < s.length; i++) { const c = s.charCodeAt(i); h1 = (h1 ^ c) * 16777619 >>> 0; h2 = ((h2 << 5) - h2 + c) >>> 0; }
+    let out = 'sp';
+    let n = h1; for (let i = 0; i < 7; i++) { out += b32[n & 31]; n = n >>> 5 || (h1 = (h1 * 2654435761) >>> 0); }
+    n = h2; for (let i = 0; i < 7; i++) { out += b32[n & 31]; n = n >>> 5 || (h2 = (h2 * 40503) >>> 0); }
+    return out;
+  };
+  bodies.forEach(b => { b.id = gcalId(b); });
+  if (!confirm(`로컬 일정·강의 ${bodies.length}건을 구글 캘린더로 보낼까요? (동일 일정은 덮어쓰기)`)) return;
   const send = async (token, isRetry) => {
     let ok = 0, firstErr = '';
     showToast('구글 캘린더로 전송 중...', '📤');
+    const hdr = { Authorization:'Bearer '+token, 'Content-Type':'application/json' };
+    const base = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
     for (const body of bodies) {
       try {
-        const r = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', { method:'POST', headers:{ Authorization:'Bearer '+token, 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+        let r = await fetch(base, { method:'POST', headers:hdr, body: JSON.stringify(body) });
+        // 이미 존재(중복): 같은 id로 덮어쓰기(update)
+        if (r.status === 409) {
+          r = await fetch(`${base}/${body.id}`, { method:'PUT', headers:hdr, body: JSON.stringify(body) });
+        }
         if (r.ok) { ok++; continue; }
         // 토큰 만료(401): 재발급 후 1회 재시도
         if (r.status === 401 && !isRetry) { gcalToken = null; gcalTokenExp = 0; return void requestPush(); }
