@@ -7484,7 +7484,7 @@ function renderLinks() {
     : state.links.filter(l => l.catId === state.activeCat);
 
   grid.innerHTML = '';
-  // 내 북마크: 내보내기/가져오기 버튼 행
+  // 내 북마크: 내보내기/가져오기 버튼 + 카테고리(도메인)별 그룹 분류
   if (state.activeCat === 'mybm') {
     const bar = document.createElement('div');
     bar.style.cssText = 'grid-column:1/-1;display:flex;gap:6px;margin-bottom:8px;';
@@ -7493,6 +7493,23 @@ function renderLinks() {
       <button onclick="bmExport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">📤 내보내기(HTML)</button>
       <span style="margin-left:auto;font-size:.68rem;color:var(--text-dim);align-self:center">${links.length}개 북마크</span>`;
     grid.appendChild(bar);
+    // 카테고리별 그룹핑
+    const groups = {};
+    sortLinks(links).forEach(l => { const g = bmCategory(l); (groups[g] = groups[g] || []).push(l); });
+    Object.keys(groups).sort((a,b)=>groups[b].length-groups[a].length).forEach(gname => {
+      const col = aiGroupColor(gname);
+      const head = document.createElement('div');
+      head.style.cssText = `grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:5px 10px;border-left:3px solid ${col};background:${col}18;border-radius:5px;margin-top:10px`;
+      head.innerHTML = `<span style="font-size:.8rem;font-weight:800;color:${col}">${gname}</span><span style="font-size:.66rem;color:var(--text-dim)">${groups[gname].length}개</span>`;
+      grid.appendChild(head);
+      groups[gname].forEach(link => grid.appendChild(bmMakeCard(link, col)));
+    });
+    const addCard = document.createElement('button');
+    addCard.className = 'add-link-card';
+    addCard.onclick = openAddLink;
+    addCard.innerHTML = '<span>+</span><div style="font-size:.75rem;">링크 추가</div>';
+    grid.appendChild(addCard);
+    return;
   }
   sortLinks(links).forEach(link => {
     const card = document.createElement('a');
@@ -7525,6 +7542,50 @@ function renderLinks() {
   addCard.onclick = openAddLink;
   addCard.innerHTML = '<span>+</span><div style="font-size:.75rem;">링크 추가</div>';
   grid.appendChild(addCard);
+}
+
+// 북마크 카테고리(도메인 기반, link.group 우선)
+function bmCategory(link) {
+  if (link.group) return link.group;
+  let h = '';
+  try { h = new URL(link.url).hostname.replace(/^www\./,''); } catch(_) { return '🌐 기타'; }
+  const map = {
+    'youtube.com':'📺 동영상','youtu.be':'📺 동영상','vimeo.com':'📺 동영상',
+    'github.com':'💻 개발','gitlab.com':'💻 개발','stackoverflow.com':'💻 개발',
+    'naver.com':'🟢 네이버','google.com':'🔍 구글','daum.net':'📩 다음',
+    'namu.wiki':'📖 위키','wikipedia.org':'📖 위키',
+    'tistory.com':'✍️ 블로그','brunch.co.kr':'✍️ 블로그','blog.naver.com':'✍️ 블로그','velog.io':'✍️ 블로그','medium.com':'✍️ 블로그',
+    'notion.so':'📝 노트·문서','docs.google.com':'📝 노트·문서',
+    'kci.go.kr':'🎓 학술·연구','riss.kr':'🎓 학술·연구','scholar.google.com':'🎓 학술·연구','dbpia.co.kr':'🎓 학술·연구',
+    'chatgpt.com':'🤖 AI','claude.ai':'🤖 AI','gemini.google.com':'🤖 AI',
+  };
+  for (const k in map) if (h === k || h.endsWith('.'+k)) return map[k];
+  if (/\.ac\.kr$|\.edu$/.test(h)) return '🎓 학술·교육';
+  if (/\.go\.kr$|\.gov$/.test(h)) return '🏛 정부·공공';
+  if (/\.or\.kr$/.test(h)) return '🏢 기관·단체';
+  if (/\.(shop|store)$|shopping|coupang|11st|gmarket/.test(h)) return '🛒 쇼핑';
+  if (/news|press|media|ilbo|times/.test(h)) return '📰 뉴스';
+  const p = h.split('.'); return '🌐 ' + (p.length >= 2 ? p[p.length-2] : h);
+}
+function bmMakeCard(link, col) {
+  const card = document.createElement('a');
+  card.className = 'link-card';
+  card.style.border = `1.5px solid ${col}`;
+  card.style.boxShadow = `0 0 8px ${col}55, inset 0 0 6px ${col}11`;
+  card.href = link.url; card.target = '_blank'; card.rel = 'noopener noreferrer';
+  card.dataset.linkId = link.id;
+  const fv = `https://www.google.com/s2/favicons?domain=${encodeURIComponent(link.url)}&sz=32`;
+  card.innerHTML = `
+    <div class="card-actions">
+      <button class="card-act-btn" onclick="togglePin('${link.id}',event)" title="상단 고정" style="background:var(--bg3);color:var(--text)">📌</button>
+      <button class="card-act-btn edit" onclick="openEditLink('${link.id}',event)" title="편집">✏️</button>
+      <button class="card-act-btn del" onclick="deleteLink('${link.id}',event)" title="삭제">✕</button>
+    </div>
+    <div class="favicon">${link.emoji || `<img loading="lazy" src="${fv}" width="28" height="28" style="border-radius:6px;" onerror="this.parentElement.textContent='🌐'">`}</div>
+    <div class="link-title">${link.name}</div>
+    ${link.desc ? `<div class="link-desc">${link.desc}</div>` : ''}`;
+  enableCardDnD(card, link);
+  return card;
 }
 
 function renderEngineDropdown() {
