@@ -1099,7 +1099,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       <!-- 완료 통계 도넛 차트 (주/월/연 동시) -->
       <div id="todoStats" style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
         <div style="font-size:.72rem;font-weight:700;color:var(--text-dim);margin-bottom:8px;">📊 일정 분류 통계</div>
-        <div id="todoDonuts" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
+        <div id="todoDonuts" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
       </div>
     </div>
 
@@ -1762,7 +1762,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       <div style="color:var(--text-dim);">
         · 할 일 + <b>마감일·우선순위</b>(높음/보통/낮음) 추가 → 추가 시 <b>캘린더에도 자동 등록</b><br>
         · 체크 시 취소선, <b>마감 지난 항목 빨간 강조</b>, 완료 숨김·진행률 바<br>
-        · 하단 <b>도넛 차트</b>(주간/월간/연간 분류 통계) — 항목에 마우스 올리면 상세
+        · 하단 <b>도넛 차트</b>(일일/주간/월간/연간 분류 통계) — 항목에 마우스 올리면 상세
       </div>
 
       <div style="font-weight:800;color:var(--accent2);margin:10px 0 4px;">⚙️ 설정</div>
@@ -4724,14 +4724,16 @@ function todoRenderStats() {
   const now = new Date();
   const startWeek = new Date(now); startWeek.setDate(now.getDate()-6);
   const key = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const today = key(now);
   const wk = key(startWeek), curMonth = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`, curYear = String(now.getFullYear());
   // 일정(캘린더) 기준 분류 집계 — 기간별
   const all = schedGetAll();
-  const inRange = { week: [], month: [], year: [] };
+  const inRange = { day: [], week: [], month: [], year: [] };
   Object.entries(all).forEach(([ds, evs]) => {
     evs.forEach(ev => {
       const cat = ev.cat || '기타';
-      if (ds >= wk && ds <= key(now)) inRange.week.push(cat);
+      if (ds === today) inRange.day.push(cat);
+      if (ds >= wk && ds <= today) inRange.week.push(cat);
       if (ds.startsWith(curMonth)) inRange.month.push(cat);
       if (ds.startsWith(curYear)) inRange.year.push(cat);
     });
@@ -4744,6 +4746,10 @@ function todoRenderStats() {
     if (s > e) return n;
     return n + Math.max(1, Math.floor((new Date(e)-new Date(s))/604800000)+1);
   }, 0);
+  // 일일: 오늘 요일·기간에 해당하는 강의만
+  const dowToday = now.getDay();
+  const lecToday = lecs.filter(l => Number(l.dow) === dowToday && (l.startDate||'') <= today && today <= (l.endDate||'9999')).length;
+  inRange.day.push(...Array(lecToday).fill('강의'));
   inRange.week.push(...Array(countLec(wk, key(now))).fill('강의'));
   inRange.month.push(...Array(countLec(curMonth+'-01', key(new Date(now.getFullYear(), now.getMonth()+1, 0)))).fill('강의'));
   inRange.year.push(...Array(countLec(curYear+'-01-01', curYear+'-12-31')).fill('강의'));
@@ -4783,7 +4789,7 @@ function todoRenderStats() {
       <div style="display:flex;flex-direction:column;gap:2px;margin-top:4px;align-items:flex-start;padding-left:14px">${legend||'<span style="font-size:.58rem;color:var(--text-muted)">없음</span>'}</div>
     </div>`;
   };
-  wrap.innerHTML = donut('주간', inRange.week) + donut('월간', inRange.month) + donut('연간', inRange.year);
+  wrap.innerHTML = donut('일일', inRange.day) + donut('주간', inRange.week) + donut('월간', inRange.month) + donut('연간', inRange.year);
 }
 function todoRender() {
   const grid = document.getElementById('todoGrid');
