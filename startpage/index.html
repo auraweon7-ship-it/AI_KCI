@@ -13430,8 +13430,7 @@ function poemSaveImage(i) {
   });
   const headH = 190;
   const bodyH = wrapped.length * lh + pad*2;
-  const footH = 80;
-  const H = headH + bodyH + footH;
+  const H = headH + bodyH;
   const cv = document.createElement('canvas');
   cv.width = W; cv.height = H;
   const c = cv.getContext('2d');
@@ -13453,10 +13452,6 @@ function poemSaveImage(i) {
   wrapped.forEach(ln => { c.fillText(ln, pad, y); y += lh; });
   // 좌측 강조 바
   c.fillStyle = '#ec4899'; c.fillRect(pad-24, headH+pad-6, 6, wrapped.length*lh);
-  // 푸터
-  c.fillStyle = '#94a3b8';
-  c.font = `24px 'Malgun Gothic',sans-serif`;
-  c.fillText('📜 좋아하는 시 · startgage.up.railway.app', pad, H - 32);
   cv.toBlob(blob => {
     if (!blob) { showToast('이미지 생성 실패', '⚠️'); return; }
     const url = URL.createObjectURL(blob);
