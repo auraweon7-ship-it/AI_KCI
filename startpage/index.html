@@ -8884,6 +8884,31 @@ const QUOTES = [
   ['The mind is not a vessel to be filled but a fire to be kindled.','Plutarch','마음은 채워야 할 그릇이 아니라 지펴야 할 불꽃이다.','心灵不是待填满的容器，而是待点燃的火焰。'],
   ['Fall seven times, stand up eight.','Japanese Proverb','일곱 번 넘어지면 여덟 번 일어나라.','跌倒七次，站起来八次。'],
 ];
+// 중국 고전 명언 [한자, 한어병음, 출처, 한글 번역]
+const CN_QUOTES = [
+  ['学而时习之，不亦说乎。','Xué ér shí xí zhī, bù yì yuè hū.','论语','배우고 때때로 익히면 또한 기쁘지 아니한가.'],
+  ['三人行，必有我师焉。','Sān rén xíng, bì yǒu wǒ shī yān.','论语','세 사람이 길을 가면 반드시 내 스승이 있다.'],
+  ['知之为知之，不知为不知，是知也。','Zhī zhī wéi zhī zhī, bù zhī wéi bù zhī, shì zhì yě.','论语','아는 것을 안다 하고 모르는 것을 모른다 하는 것이 곧 앎이다.'],
+  ['千里之行，始于足下。','Qiān lǐ zhī xíng, shǐ yú zú xià.','老子','천 리 길도 발밑에서 시작된다.'],
+  ['上善若水。','Shàng shàn ruò shuǐ.','老子','최고의 선은 물과 같다.'],
+  ['知人者智，自知者明。','Zhī rén zhě zhì, zì zhī zhě míng.','老子','남을 아는 자는 지혜롭고, 자신을 아는 자는 밝다.'],
+  ['知己知彼，百战不殆。','Zhī jǐ zhī bǐ, bǎi zhàn bù dài.','孙子兵法','나를 알고 적을 알면 백 번 싸워도 위태롭지 않다.'],
+  ['学而不思则罔，思而不学则殆。','Xué ér bù sī zé wǎng, sī ér bù xué zé dài.','论语','배우되 생각하지 않으면 어둡고, 생각하되 배우지 않으면 위태롭다.'],
+  ['己所不欲，勿施于人。','Jǐ suǒ bù yù, wù shī yú rén.','论语','자기가 원하지 않는 것을 남에게 시키지 말라.'],
+  ['天行健，君子以自强不息。','Tiān xíng jiàn, jūnzǐ yǐ zì qiáng bù xī.','周易','하늘의 운행은 굳세니, 군자는 스스로 강해지기를 쉬지 않는다.'],
+  ['温故而知新。','Wēn gù ér zhī xīn.','论语','옛것을 익혀 새것을 안다.'],
+  ['敏而好学，不耻下问。','Mǐn ér hào xué, bù chǐ xià wèn.','论语','민첩하고 배우기를 좋아하며 아랫사람에게 묻기를 부끄러워하지 않는다.'],
+  ['工欲善其事，必先利其器。','Gōng yù shàn qí shì, bì xiān lì qí qì.','论语','장인이 일을 잘하려면 먼저 연장을 벼려야 한다.'],
+  ['学如逆水行舟，不进则退。','Xué rú nì shuǐ xíng zhōu, bù jìn zé tuì.','增广贤文','배움은 물을 거슬러 배를 젓는 것과 같아 나아가지 않으면 물러난다.'],
+  ['有志者事竟成。','Yǒu zhì zhě shì jìng chéng.','后汉书','뜻이 있는 자는 마침내 일을 이룬다.'],
+  ['不积跬步，无以至千里。','Bù jī kuǐ bù, wú yǐ zhì qiān lǐ.','荀子','반걸음을 쌓지 않으면 천 리에 이를 수 없다.'],
+  ['锲而不舍，金石可镂。','Qiè ér bù shě, jīn shí kě lòu.','荀子','새기기를 그치지 않으면 쇠와 돌도 뚫을 수 있다.'],
+  ['业精于勤，荒于嬉。','Yè jīng yú qín, huāng yú xī.','韩愈','학업은 부지런함에서 정밀해지고 놀이에서 황폐해진다.'],
+  ['读书破万卷，下笔如有神。','Dú shū pò wàn juàn, xià bǐ rú yǒu shén.','杜甫','만 권의 책을 읽으면 붓을 들 때 신들린 듯하다.'],
+  ['海内存知己，天涯若比邻。','Hǎi nèi cún zhī jǐ, tiān yá ruò bǐ lín.','王勃','세상에 나를 알아주는 벗이 있으면 하늘 끝도 이웃과 같다.'],
+  ['天生我材必有用。','Tiān shēng wǒ cái bì yǒu yòng.','李白','하늘이 나를 낳았으니 반드시 쓸모가 있다.'],
+  ['塞翁失马，焉知非福。','Sài wēng shī mǎ, yān zhī fēi fú.','淮南子','새옹이 말을 잃은 것이 어찌 복이 아닐 줄 알겠는가.'],
+];
 let _quoteIdx = null;
 function loadQuote(shuffle) {
   const box = document.getElementById('quoteBox');
@@ -8895,12 +8920,23 @@ function loadQuote(shuffle) {
     _quoteIdx = idx;
   } else idx = _quoteIdx;  // 언어 변경 등: 현재 명언 유지
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const [en, src, ko, zh] = QUOTES[idx];
   const lang = document.getElementById('quoteLang')?.value || 'en';
-  const orig = lang === 'zh' ? (zh || en) : en;
+  if (lang === 'zh') {
+    // 중국어: 중국 고전 명언 + 한어병음
+    const [zh, pinyin, src, ko] = CN_QUOTES[idx % CN_QUOTES.length];
+    box.innerHTML = `
+      <div style="padding:6px 4px">
+        <div style="font-size:.86rem;font-weight:600;color:var(--text);line-height:1.55">${esc(zh)}</div>
+        <div style="font-size:.62rem;font-style:italic;color:var(--text-muted);line-height:1.4;margin-top:2px">${esc(pinyin)}</div>
+        <div style="font-size:.66rem;color:var(--accent2);font-weight:700;text-align:right;margin-top:4px">— ${esc(src)}</div>
+        <div style="font-size:.68rem;color:var(--text-dim);line-height:1.55;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)">${esc(ko)}</div>
+      </div>`;
+    return;
+  }
+  const [en, src, ko] = QUOTES[idx];
   box.innerHTML = `
     <div style="padding:6px 4px">
-      <div style="font-size:.76rem;font-style:italic;color:var(--text);line-height:1.6">${lang==='zh'?'':'“'}${esc(orig)}${lang==='zh'?'':'”'}</div>
+      <div style="font-size:.76rem;font-style:italic;color:var(--text);line-height:1.6">“${esc(en)}”</div>
       <div style="font-size:.66rem;color:var(--accent2);font-weight:700;text-align:right;margin-top:4px">— ${esc(src)}</div>
       <div style="font-size:.68rem;color:var(--text-dim);line-height:1.55;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)">${esc(ko)}</div>
     </div>`;
