@@ -1213,6 +1213,12 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       <div id="quoteBox"></div>
     </div>
 
+    <!-- 위대한 한 줄 (책 속 인용) -->
+    <div class="rw" id="rwGreatLine">
+      <div class="rw-hdr"><span>📖 위대한 한 줄</span><button class="rw-refresh" onclick="loadGreatLine(true)" title="다른 문장">↻</button></div>
+      <div id="greatLineBox"></div>
+    </div>
+
     <!-- 도서추천 -->
     <div class="rw" id="rwBookRec">
       <div class="rw-hdr"><span>📚 도서추천</span><button class="rw-refresh" onclick="document.getElementById('bookKwd').value='';loadBookRec()" title="설정 키워드로 다시 추천">↻</button></div>
@@ -8942,6 +8948,50 @@ function loadQuote(shuffle) {
     </div>`;
 }
 
+// ── 위대한 한 줄 (책 속 인용문: 원문 + 한글 번역 + 출처, 무키 로컬 데이터) ──
+// [원문, 한글 번역, 출처(작품 · 저자)]
+const GREAT_LINES = [
+  ['All animals are equal, but some animals are more equal than others.','모든 동물은 평등하다. 그러나 어떤 동물은 다른 동물보다 더 평등하다.','조지 오웰 『동물농장』'],
+  ['It was the best of times, it was the worst of times.','최고의 시절이자 최악의 시절이었다.','찰스 디킨스 『두 도시 이야기』'],
+  ['So we beat on, boats against the current, borne back ceaselessly into the past.','그리하여 우리는 물살을 거스르는 배처럼, 끊임없이 과거로 떠밀려가며 계속 나아간다.','F. 스콧 피츠제럴드 『위대한 개츠비』'],
+  ['All happy families are alike; each unhappy family is unhappy in its own way.','행복한 가정은 모두 비슷하지만, 불행한 가정은 저마다의 이유로 불행하다.','레프 톨스토이 『안나 카레니나』'],
+  ['The only way out of the labyrinth of suffering is to forgive.','고통의 미로에서 벗어나는 유일한 길은 용서하는 것이다.','존 그린 『종이 마을』'],
+  ['Whatever our souls are made of, his and mine are the same.','우리의 영혼이 무엇으로 이루어졌든, 그의 것과 나의 것은 같다.','에밀리 브론테 『폭풍의 언덕』'],
+  ['It is our choices that show what we truly are, far more than our abilities.','우리가 진정 어떤 사람인지 보여주는 것은 능력이 아니라 우리의 선택이다.','J.K. 롤링 『해리 포터』'],
+  ['There is no greater agony than bearing an untold story inside you.','말하지 못한 이야기를 마음속에 품는 것보다 더 큰 고통은 없다.','마야 안젤루 『새장에 갇힌 새가 왜 노래하는지 나는 아네』'],
+  ['We accept the love we think we deserve.','우리는 자신이 받을 자격이 있다고 여기는 만큼의 사랑을 받아들인다.','스티븐 크보스키 『월플라워』'],
+  ['Not all those who wander are lost.','헤매는 자 모두가 길을 잃은 것은 아니다.','J.R.R. 톨킨 『반지의 제왕』'],
+  ['The world breaks everyone, and afterward many are strong at the broken places.','세상은 모두를 부러뜨리지만, 많은 이들은 부러진 그 자리에서 더 강해진다.','어니스트 헤밍웨이 『무기여 잘 있거라』'],
+  ['To live is the rarest thing in the world. Most people exist, that is all.','산다는 것은 세상에서 가장 드문 일이다. 대부분은 그저 존재할 뿐이다.','오스카 와일드 『도리언 그레이의 초상』'],
+  ['Time is the school in which we learn, time is the fire in which we burn.','시간은 우리가 배우는 학교이며, 우리가 타오르는 불꽃이다.','델모어 슈워츠 「캘멀리 우리가 나아가라」'],
+  ['And, when you want something, all the universe conspires in helping you to achieve it.','무언가를 간절히 원하면, 온 우주가 그것을 이루도록 돕는다.','파울로 코엘료 『연금술사』'],
+  ['The answer is never the answer. What’s really interesting is the mystery.','답은 결코 답이 아니다. 정말 흥미로운 것은 그 신비다.','켄 키지'],
+  ['A reader lives a thousand lives before he dies. The man who never reads lives only one.','책 읽는 이는 죽기 전에 천 개의 삶을 산다. 읽지 않는 이는 단 하나의 삶만 산다.','조지 R.R. 마틴 『왕좌의 게임』'],
+  ['We are all in the gutter, but some of us are looking at the stars.','우리는 모두 시궁창에 있지만, 그중 누군가는 별을 바라본다.','오스카 와일드 『윈더미어 부인의 부채』'],
+  ['It does not do to dwell on dreams and forget to live.','꿈에만 머물러 사는 것을 잊어서는 안 된다.','J.K. 롤링 『해리 포터』'],
+  ['Tomorrow is always fresh, with no mistakes in it yet.','내일은 언제나 새롭다. 아직 아무 실수도 담기지 않은 채로.','루시 모드 몽고메리 『빨간 머리 앤』'],
+  ['You never really understand a person until you consider things from his point of view.','상대의 입장에서 생각해 보기 전까지는 결코 그 사람을 이해할 수 없다.','하퍼 리 『앵무새 죽이기』'],
+];
+let _greatIdx = null;
+function loadGreatLine(shuffle) {
+  const box = document.getElementById('greatLineBox');
+  if (!box) return;
+  let idx;
+  if (shuffle || _greatIdx == null) {
+    if (shuffle) idx = Math.floor(Math.random() * GREAT_LINES.length);
+    else { const d = new Date(); idx = (d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % GREAT_LINES.length; }
+    _greatIdx = idx;
+  } else idx = _greatIdx;
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const [orig, ko, src] = GREAT_LINES[idx];
+  box.innerHTML = `
+    <div style="padding:6px 4px">
+      <div style="font-size:.72rem;font-style:italic;color:var(--text);line-height:1.55">“${esc(orig)}”</div>
+      <div style="font-size:.68rem;color:var(--text-dim);line-height:1.55;margin-top:6px">${esc(ko)}</div>
+      <div style="font-size:.63rem;color:var(--accent2);font-weight:700;text-align:right;margin-top:5px;padding-top:5px;border-top:1px dashed var(--border)">— ${esc(src)}</div>
+    </div>`;
+}
+
 // ── 도서추천 (YES24 검색 스크래핑, 무키 → 표지, 클릭 시 YES24 상품) ──
 async function loadBookRec() {
   const grid = document.getElementById('bookRecGrid');
@@ -9989,7 +10039,7 @@ render();
  () => { let kws=[]; try{kws=JSON.parse(localStorage.getItem('book_keywords')||'[]');}catch(_){} ['bookKw1','bookKw2','bookKw3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=kws[i]||'';}); },
  () => { let ts=[]; try{ts=JSON.parse(localStorage.getItem('youtube_topics')||'[]');}catch(_){} ['ytTopic1','ytTopic2','ytTopic3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=ts[i]||'';}); },
  () => { try { loadBookRec(); } catch(_){} },
- loadLegisNews, () => loadIdiom(false), () => loadQuote(false), loadHealMusic,
+ loadLegisNews, () => loadIdiom(false), () => loadQuote(false), () => loadGreatLine(false), loadHealMusic,
  () => { try { loadYtRec(); } catch(_){} },
  memoLoad, cvSetOpts, piLoad, timerRender, loadStock,
  () => { rssRenderTabs(); rssLoad(); }, noticeLoad
