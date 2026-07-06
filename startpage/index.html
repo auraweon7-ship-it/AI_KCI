@@ -1200,6 +1200,12 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       <div id="idiomBox"></div>
     </div>
 
+    <!-- 오늘의 명언 -->
+    <div class="rw" id="rwQuote">
+      <div class="rw-hdr"><span>💬 오늘의 명언</span><button class="rw-refresh" onclick="loadQuote(true)" title="다른 명언">↻</button></div>
+      <div id="quoteBox"></div>
+    </div>
+
     <!-- 도서추천 -->
     <div class="rw" id="rwBookRec">
       <div class="rw-hdr"><span>📚 도서추천</span><button class="rw-refresh" onclick="document.getElementById('bookKwd').value='';loadBookRec()" title="설정 키워드로 다시 추천">↻</button></div>
@@ -8716,6 +8722,59 @@ function loadIdiom(shuffle) {
     </div>`;
 }
 
+// ── 오늘의 명언 (영어 원문 + 출처 + 한글 번역, 무키 로컬 데이터) ──
+// [영어 원문, 출처(인물), 한글 번역]
+const QUOTES = [
+  ['The only way to do great work is to love what you do.','Steve Jobs','위대한 일을 하는 유일한 방법은 자신이 하는 일을 사랑하는 것이다.'],
+  ['Education is the most powerful weapon which you can use to change the world.','Nelson Mandela','교육은 세상을 바꾸는 데 쓸 수 있는 가장 강력한 무기다.'],
+  ['Live as if you were to die tomorrow. Learn as if you were to live forever.','Mahatma Gandhi','내일 죽을 것처럼 살고, 영원히 살 것처럼 배워라.'],
+  ['Success is not final, failure is not fatal: it is the courage to continue that counts.','Winston Churchill','성공은 끝이 아니고 실패는 치명적이지 않다. 중요한 것은 계속해 나가는 용기다.'],
+  ['The future belongs to those who believe in the beauty of their dreams.','Eleanor Roosevelt','미래는 자기 꿈의 아름다움을 믿는 사람들의 것이다.'],
+  ['It always seems impossible until it’s done.','Nelson Mandela','무엇이든 이루어지기 전까지는 늘 불가능해 보인다.'],
+  ['The best way to predict the future is to create it.','Peter Drucker','미래를 예측하는 가장 좋은 방법은 미래를 만드는 것이다.'],
+  ['I have not failed. I’ve just found 10,000 ways that won’t work.','Thomas Edison','나는 실패한 것이 아니다. 그저 작동하지 않는 방법 1만 가지를 발견했을 뿐이다.'],
+  ['Whether you think you can or you think you can’t, you’re right.','Henry Ford','할 수 있다고 믿든 할 수 없다고 믿든, 당신 생각이 옳다.'],
+  ['Genius is one percent inspiration and ninety-nine percent perspiration.','Thomas Edison','천재는 1퍼센트의 영감과 99퍼센트의 노력으로 이루어진다.'],
+  ['An investment in knowledge pays the best interest.','Benjamin Franklin','지식에 대한 투자가 가장 좋은 이자를 낳는다.'],
+  ['Stay hungry, stay foolish.','Steve Jobs','늘 갈망하고, 늘 우직하라.'],
+  ['What we know is a drop, what we don’t know is an ocean.','Isaac Newton','우리가 아는 것은 한 방울이고, 모르는 것은 바다다.'],
+  ['The important thing is not to stop questioning.','Albert Einstein','중요한 것은 질문을 멈추지 않는 것이다.'],
+  ['Imagination is more important than knowledge.','Albert Einstein','상상력이 지식보다 중요하다.'],
+  ['Well done is better than well said.','Benjamin Franklin','잘 말하는 것보다 잘 해내는 것이 낫다.'],
+  ['A person who never made a mistake never tried anything new.','Albert Einstein','한 번도 실수하지 않은 사람은 새로운 것을 시도한 적이 없는 사람이다.'],
+  ['The journey of a thousand miles begins with a single step.','Lao Tzu','천 리 길도 한 걸음에서 시작된다.'],
+  ['Knowing yourself is the beginning of all wisdom.','Aristotle','자신을 아는 것이 모든 지혜의 시작이다.'],
+  ['Quality is not an act, it is a habit.','Aristotle','탁월함은 행위가 아니라 습관이다.'],
+  ['Do what you can, with what you have, where you are.','Theodore Roosevelt','지금 있는 자리에서, 가진 것으로, 할 수 있는 일을 하라.'],
+  ['The only true wisdom is in knowing you know nothing.','Socrates','유일하게 참된 지혜는 자신이 아무것도 모른다는 것을 아는 것이다.'],
+  ['Change your thoughts and you change your world.','Norman Vincent Peale','생각을 바꾸면 세상이 바뀐다.'],
+  ['Try not to become a man of success, but rather try to become a man of value.','Albert Einstein','성공한 사람이 되려 하기보다 가치 있는 사람이 되려고 노력하라.'],
+  ['Learning never exhausts the mind.','Leonardo da Vinci','배움은 결코 마음을 지치게 하지 않는다.'],
+  ['Perseverance is not a long race; it is many short races one after the other.','Walter Elliot','끈기란 하나의 긴 경주가 아니라, 잇따라 이어지는 짧은 경주들이다.'],
+  ['Doubt is the origin of wisdom.','René Descartes','의심은 지혜의 근원이다.'],
+  ['If you want to go fast, go alone. If you want to go far, go together.','African Proverb','빨리 가려면 혼자 가고, 멀리 가려면 함께 가라.'],
+  ['The mind is not a vessel to be filled but a fire to be kindled.','Plutarch','마음은 채워야 할 그릇이 아니라 지펴야 할 불꽃이다.'],
+  ['Fall seven times, stand up eight.','Japanese Proverb','일곱 번 넘어지면 여덟 번 일어나라.'],
+];
+function loadQuote(shuffle) {
+  const box = document.getElementById('quoteBox');
+  if (!box) return;
+  let idx;
+  if (shuffle) idx = Math.floor(Math.random() * QUOTES.length);
+  else {
+    const d = new Date();
+    idx = (d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % QUOTES.length;
+  }
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const [en, src, ko] = QUOTES[idx];
+  box.innerHTML = `
+    <div style="padding:6px 4px">
+      <div style="font-size:.76rem;font-style:italic;color:var(--text);line-height:1.55">“${esc(en)}”</div>
+      <div style="font-size:.66rem;color:var(--accent2);font-weight:700;text-align:right;margin-top:4px">— ${esc(src)}</div>
+      <div style="font-size:.68rem;color:var(--text-dim);line-height:1.55;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)">${esc(ko)}</div>
+    </div>`;
+}
+
 // ── 도서추천 (YES24 검색 스크래핑, 무키 → 표지, 클릭 시 YES24 상품) ──
 async function loadBookRec() {
   const grid = document.getElementById('bookRecGrid');
@@ -9744,7 +9803,7 @@ render();
  () => { let kws=[]; try{kws=JSON.parse(localStorage.getItem('book_keywords')||'[]');}catch(_){} ['bookKw1','bookKw2','bookKw3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=kws[i]||'';}); },
  () => { let ts=[]; try{ts=JSON.parse(localStorage.getItem('youtube_topics')||'[]');}catch(_){} ['ytTopic1','ytTopic2','ytTopic3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=ts[i]||'';}); },
  () => { try { loadBookRec(); } catch(_){} },
- loadLegisNews, () => loadIdiom(false), loadHealMusic,
+ loadLegisNews, () => loadIdiom(false), () => loadQuote(false), loadHealMusic,
  () => { try { loadYtRec(); } catch(_){} },
  memoLoad, cvSetOpts, piLoad, timerRender, loadStock,
  () => { rssRenderTabs(); rssLoad(); }, noticeLoad
