@@ -14045,6 +14045,86 @@ async function musicAutoFill() {
   showToast(`자동 채우기 완료 — ${totalAdded}곡 추가 🎶`);
   renderMusicView();
 }
+// AI 등록 — 장르·곡수 선택 → Claude가 추천 → YouTube 검색으로 videoId 확보 → 등록
+function musicAiOpen() {
+  let ov = document.getElementById('musicAiOverlay');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'musicAiOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  const gOpts = MUSIC_GENRE_ORDER.map(g => `<option value="${g}">${g}</option>`).join('');
+  const nOpts = Array.from({length:20},(_,i)=>i+1).map(n => `<option value="${n}"${n===10?' selected':''}>${n}곡</option>`).join('');
+  const inS = 'width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;outline:none;box-sizing:border-box';
+  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:440px;width:100%;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <h3 style="flex:1;font-size:1.05rem;font-weight:800;color:var(--text);margin:0">🤖 AI 곡 등록</h3>
+      <button onclick="document.getElementById('musicAiOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted)">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <label style="font-size:.68rem;color:var(--text-dim)">장르 <select id="ai_genre" style="${inS}">${gOpts}</select></label>
+      <label style="font-size:.68rem;color:var(--text-dim)">곡 수 <select id="ai_count" style="${inS}">${nOpts}</select></label>
+    </div>
+    <p style="font-size:.66rem;color:var(--text-muted);margin:10px 0 0;line-height:1.5">Claude AI가 장르 대표 인기곡을 추천하고, YouTube에서 영상을 찾아 등록합니다. (설정 → 🧠 Claude API 키 필요)</p>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+      <button onclick="document.getElementById('musicAiOverlay').remove()" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">취소</button>
+      <button id="aiFillBtn" onclick="musicAiFill()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">AI 추천 등록</button>
+    </div>
+  </div>`;
+}
+async function musicAiFill() {
+  const key = (localStorage.getItem('claude_api_key') || '').trim();
+  if (!key) { showToast('설정 → 🧠 Claude API 키를 입력하세요', '🔑'); return; }
+  const genre = document.getElementById('ai_genre').value;
+  const count = parseInt(document.getElementById('ai_count').value, 10) || 10;
+  const btn = document.getElementById('aiFillBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '🤖 추천 받는 중…'; }
+  try {
+    // 1) Claude에 곡 목록 요청 (JSON)
+    const prompt = `"${genre}" 장르의 대표적이고 유명한(조회수·인기 높은) 곡 ${count}곡을 추천해 주세요. 반드시 실제 존재하는 곡만. 아래 JSON 배열 형식으로만 답하세요(설명 없이):\n[{"title":"곡 제목","artist":"가수"}]`;
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:1500, messages:[{ role:'user', content:prompt }] }),
+    });
+    if (!r.ok) { const e = await r.json().catch(()=>({})); showToast('AI 오류: ' + (e.error?.message || r.status), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천 등록';} return; }
+    const data = await r.json();
+    const txt = (data.content && data.content[0] && data.content[0].text) || '';
+    let songs = [];
+    try { songs = JSON.parse(txt.match(/\[[\s\S]*\]/)[0]); } catch(_) { showToast('AI 응답 파싱 실패', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천 등록';} return; }
+    if (!songs.length) { showToast('추천 곡이 없습니다', 'ℹ️'); if(btn){btn.disabled=false;btn.textContent='AI 추천 등록';} return; }
+    // 2) 각 곡 YouTube 검색 → videoId
+    const arr = userMusic();
+    const existIds = new Set(musicAll().map(m => m.id));
+    let added = 0;
+    for (const s of songs) {
+      const title = (s.title||'').trim(), artist = (s.artist||'').trim();
+      if (!title) continue;
+      if (btn) btn.textContent = `🔎 ${added+1}/${songs.length} 검색 중…`;
+      try {
+        const api = `https://www.youtube.com/results?search_query=${encodeURIComponent(artist + ' ' + title + ' official')}`;
+        const yr = await fetch('/api/proxy?url=' + encodeURIComponent(api));
+        if (!yr.ok) continue;
+        const html = await yr.text();
+        const mm = html.match(/"videoId":"([\w-]{11})"/);
+        if (!mm) continue;
+        const id = mm[1];
+        if (existIds.has(id)) continue;
+        existIds.add(id);
+        arr.unshift({ t: title.slice(0,80), artist: (artist||'—').slice(0,50), genre, id });
+        added++;
+      } catch(_) {}
+    }
+    if (added) saveUserMusic(arr);
+    document.getElementById('musicAiOverlay')?.remove();
+    showToast(`AI 등록 완료 — ${genre} ${added}곡 추가 🤖`);
+    renderMusicView();
+  } catch(e) {
+    showToast('AI 등록 실패: ' + (e.message || '오류'), '⚠️');
+    if (btn) { btn.disabled = false; btn.textContent = 'AI 추천 등록'; }
+  }
+}
 // 좋아하는 음악 HTML 내보내기 (music-item 구조 → 가져오기 호환, 클릭 시 embed 재생)
 function musicExportHtml() {
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -14217,7 +14297,8 @@ function renderMusicView() {
       <span style="font-size:.7rem;color:var(--text-dim)">정렬</span>
       ${modeBtn('genre','장르별')}${modeBtn('artist','가수별')}${modeBtn('fav','⭐ 즐겨찾기 '+favCount)}
       <button onclick="musicAddOpen()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:.72rem;cursor:pointer">➕ 곡 등록</button>
-      <button onclick="musicAutoFill()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.72rem;cursor:pointer">🔎 장르 자동채우기(20곡)</button>
+      <button onclick="musicAiOpen()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.72rem;cursor:pointer">🤖 AI 등록</button>
+      <button onclick="musicAutoFill()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">🔎 자동채우기</button>
       <button onclick="document.getElementById('musicImportFile').click()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📥 HTML 가져오기</button>
       <button onclick="musicExportHtml()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📤 HTML 내보내기</button>
       <input type="file" id="musicImportFile" accept=".html,.htm" style="display:none" onchange="musicImportHtml(this)">
