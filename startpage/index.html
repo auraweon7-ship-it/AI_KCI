@@ -4149,7 +4149,7 @@ function isLoggedIn() { try { return !!JSON.parse(localStorage.getItem('startpag
 // ── 클라우드 동기화 (Railway Postgres) ──
 let _cloudToken = null, _cloudTokenExp = 0;
 const CLOUD_BASE_KEYS = ['api_keys', 'apps', 'sched_events', 'lectures', 'todo_items'];  // 계정별(__이메일)
-const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·좋아하는 시·등록/수정/삭제
+const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·좋아하는 시·등록/수정/삭제·감상메모
 const CLOUD_ALL_KEYS = [...CLOUD_BASE_KEYS, ...CLOUD_PLAIN_KEYS];
 function _cloudLocalKey(base) { return CLOUD_PLAIN_KEYS.includes(base) ? base : base + '__' + userEmail(); }
 function cloudSetToken(token, expiresIn) {
@@ -13316,7 +13316,22 @@ function renderPoemsView(keepFocus) {
     </div>`;
   }).join('');
 
+  // 오늘의 시 (날짜 기준 고정 1편)
+  const all = poemAll();
+  let todayHtml = '';
+  if (all.length) {
+    const dd = new Date();
+    const ti = (dd.getFullYear()*372 + dd.getMonth()*31 + dd.getDate()) % all.length;
+    const tp = all[ti];
+    const tprev = esc(tp.b.split('\n').filter(x=>x.trim()).slice(0,2).join(' / ')).slice(0,80);
+    todayHtml = `<div onclick="poemOpenDetail(${ti})" style="cursor:pointer;background:linear-gradient(135deg,var(--accent)22,var(--accent2)18);border:1px solid var(--accent2)55;border-radius:10px;padding:11px 14px;margin-bottom:10px">
+      <div style="font-size:.6rem;color:var(--accent2);font-weight:800;letter-spacing:.05em;margin-bottom:3px">🌅 오늘의 시</div>
+      <div style="font-size:.9rem;font-weight:800;color:var(--text)">${esc(tp.t)} <span style="font-size:.68rem;color:var(--accent2);font-weight:600">· ${esc(tp.poet)}</span></div>
+      <div style="font-size:.66rem;color:var(--text-dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${tprev}</div>
+    </div>`;
+  }
   grid.innerHTML = `<div style="grid-column:1/-1">
+    ${todayHtml}
     <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
       <input id="poemSearchInput" value="${esc(poemState.q)}" oninput="poemOnSearch(this.value)" placeholder="🔍 시·시인·구절 찾기"
         style="flex:1;min-width:140px;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;outline:none">
@@ -13364,12 +13379,93 @@ function poemOpenDetail(i) {
     </div>
     <div style="font-size:.72rem;color:var(--accent2);font-weight:600;margin:4px 0 2px">${esc(p.poet)} <span style="color:var(--text-muted);font-weight:400">· ${esc(p.theme)}</span></div>
     <div style="white-space:pre-wrap;font-size:.86rem;line-height:1.8;color:var(--text);margin:14px 0;padding:14px 0;border-top:1px dashed var(--border);border-bottom:1px dashed var(--border)">${esc(p.b)}</div>
-    <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+    <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap">
       <button id="poemReciteBtn" onclick="poemRecite(${i})" style="padding:6px 14px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.74rem;cursor:pointer">🔊 낭송</button>
+      <button onclick="poemSaveImage(${i})" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">🖼 이미지 저장</button>
       <audio id="poemAudio" style="display:none"></audio>
       <span style="flex:1;font-size:.68rem;color:var(--text-dim);text-align:right">— ${esc(meta)}</span>
     </div>
+    <div style="margin-top:14px">
+      <div style="font-size:.66rem;color:var(--text-dim);font-weight:700;margin-bottom:4px">📝 감상 메모</div>
+      <textarea id="poemNoteBox" oninput="poemSaveNote(${i})" placeholder="이 시에 대한 감상을 남겨보세요…" rows="3"
+        style="width:100%;box-sizing:border-box;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;line-height:1.5;resize:vertical;outline:none;font-family:inherit">${esc(poemNote(p))}</textarea>
+      <div id="poemNoteStat" style="font-size:.6rem;color:var(--text-muted);text-align:right;margin-top:2px"></div>
+    </div>
   </div>`;
+}
+// 감상 메모 (시별, localStorage)
+function poemNotes() { try { return JSON.parse(localStorage.getItem('poem_notes') || '{}'); } catch(_) { return {}; } }
+function poemNote(p) { return poemNotes()[poemKey(p)] || ''; }
+let _poemNoteTimer = null;
+function poemSaveNote(i) {
+  const p = poemAll()[i]; if (!p) return;
+  const box = document.getElementById('poemNoteBox'); if (!box) return;
+  const notes = poemNotes(); const k = poemKey(p);
+  const v = box.value;
+  if (v.trim()) notes[k] = v; else delete notes[k];
+  localStorage.setItem('poem_notes', JSON.stringify(notes));
+  const stat = document.getElementById('poemNoteStat'); if (stat) stat.textContent = '저장됨 ✓';
+  clearTimeout(_poemNoteTimer);
+  _poemNoteTimer = setTimeout(() => { try { cloudPush('poem_notes'); } catch(_){} }, 800);
+}
+// 시 카드 이미지(PNG) 저장 — canvas 렌더
+function poemSaveImage(i) {
+  const p = poemAll()[i]; if (!p) return;
+  const W = 900, pad = 70;
+  const lh = 46, tSize = 46, bSize = 28;
+  // 본문 줄 (자동 줄바꿈 없이 원문 줄, 긴 줄은 wrap)
+  const cvsM = document.createElement('canvas').getContext('2d');
+  cvsM.font = `${bSize}px 'Malgun Gothic',sans-serif`;
+  const rawLines = p.b.split('\n');
+  const wrapped = [];
+  const maxW = W - pad*2;
+  rawLines.forEach(ln => {
+    if (!ln.trim()) { wrapped.push(''); return; }
+    let cur = '';
+    for (const ch of ln) {
+      if (cvsM.measureText(cur + ch).width > maxW) { wrapped.push(cur); cur = ch; }
+      else cur += ch;
+    }
+    wrapped.push(cur);
+  });
+  const headH = 190;
+  const bodyH = wrapped.length * lh + pad*2;
+  const footH = 80;
+  const H = headH + bodyH + footH;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const c = cv.getContext('2d');
+  // 배경
+  c.fillStyle = '#ffffff'; c.fillRect(0,0,W,H);
+  // 헤더 그라데이션
+  const g = c.createLinearGradient(0,0,W,headH);
+  g.addColorStop(0,'#ec4899'); g.addColorStop(1,'#8b5cf6');
+  c.fillStyle = g; c.fillRect(0,0,W,headH);
+  c.fillStyle = '#fff';
+  c.font = `800 ${tSize}px 'Malgun Gothic',sans-serif`;
+  c.fillText(p.t, pad, 92);
+  c.font = `500 ${bSize}px 'Malgun Gothic',sans-serif`;
+  c.globalAlpha = .92; c.fillText('✍️ ' + p.poet + (p.theme ? '  ·  ' + p.theme : ''), pad, 148); c.globalAlpha = 1;
+  // 본문
+  c.fillStyle = '#334155';
+  c.font = `${bSize}px 'Malgun Gothic',sans-serif`;
+  let y = headH + pad + bSize;
+  wrapped.forEach(ln => { c.fillText(ln, pad, y); y += lh; });
+  // 좌측 강조 바
+  c.fillStyle = '#ec4899'; c.fillRect(pad-24, headH+pad-6, 6, wrapped.length*lh);
+  // 푸터
+  c.fillStyle = '#94a3b8';
+  c.font = `24px 'Malgun Gothic',sans-serif`;
+  c.fillText('📜 좋아하는 시 · startgage.up.railway.app', pad, H - 32);
+  cv.toBlob(blob => {
+    if (!blob) { showToast('이미지 생성 실패', '⚠️'); return; }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `${p.t}_${p.poet}.png`.replace(/[\\/:*?"<>|]/g,'_');
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('시 카드 이미지를 저장했습니다 🖼');
+  }, 'image/png');
 }
 // ElevenLabs TTS로 시 낭송
 async function poemRecite(i) {
