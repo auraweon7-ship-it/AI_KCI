@@ -1203,7 +1203,13 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
     <!-- 오늘의 명언 -->
     <div class="rw" id="rwQuote">
-      <div class="rw-hdr"><span>💬 오늘의 명언</span><button class="rw-refresh" onclick="loadQuote(true)" title="다른 명언">↻</button></div>
+      <div class="rw-hdr"><span>💬 오늘의 명언</span>
+        <select id="quoteLang" onchange="loadQuote(false)" title="언어 선택"
+          style="margin-left:auto;font-size:.6rem;padding:2px 4px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);cursor:pointer">
+          <option value="en">영어</option>
+          <option value="zh">중국어</option>
+        </select>
+        <button class="rw-refresh" onclick="loadQuote(true)" title="다른 명언">↻</button></div>
       <div id="quoteBox"></div>
     </div>
 
@@ -8788,54 +8794,57 @@ function loadIdiom(shuffle) {
     </div>`;
 }
 
-// ── 오늘의 명언 (영어 원문 + 출처 + 한글 번역, 무키 로컬 데이터) ──
-// [영어 원문, 출처(인물), 한글 번역]
+// ── 오늘의 명언 (영어/중국어 원문 + 출처 + 한글 번역, 무키 로컬 데이터) ──
+// [영어, 출처(인물), 한글 번역, 중국어]
 const QUOTES = [
-  ['The only way to do great work is to love what you do.','Steve Jobs','위대한 일을 하는 유일한 방법은 자신이 하는 일을 사랑하는 것이다.'],
-  ['Education is the most powerful weapon which you can use to change the world.','Nelson Mandela','교육은 세상을 바꾸는 데 쓸 수 있는 가장 강력한 무기다.'],
-  ['Live as if you were to die tomorrow. Learn as if you were to live forever.','Mahatma Gandhi','내일 죽을 것처럼 살고, 영원히 살 것처럼 배워라.'],
-  ['Success is not final, failure is not fatal: it is the courage to continue that counts.','Winston Churchill','성공은 끝이 아니고 실패는 치명적이지 않다. 중요한 것은 계속해 나가는 용기다.'],
-  ['The future belongs to those who believe in the beauty of their dreams.','Eleanor Roosevelt','미래는 자기 꿈의 아름다움을 믿는 사람들의 것이다.'],
-  ['It always seems impossible until it’s done.','Nelson Mandela','무엇이든 이루어지기 전까지는 늘 불가능해 보인다.'],
-  ['The best way to predict the future is to create it.','Peter Drucker','미래를 예측하는 가장 좋은 방법은 미래를 만드는 것이다.'],
-  ['I have not failed. I’ve just found 10,000 ways that won’t work.','Thomas Edison','나는 실패한 것이 아니다. 그저 작동하지 않는 방법 1만 가지를 발견했을 뿐이다.'],
-  ['Whether you think you can or you think you can’t, you’re right.','Henry Ford','할 수 있다고 믿든 할 수 없다고 믿든, 당신 생각이 옳다.'],
-  ['Genius is one percent inspiration and ninety-nine percent perspiration.','Thomas Edison','천재는 1퍼센트의 영감과 99퍼센트의 노력으로 이루어진다.'],
-  ['An investment in knowledge pays the best interest.','Benjamin Franklin','지식에 대한 투자가 가장 좋은 이자를 낳는다.'],
-  ['Stay hungry, stay foolish.','Steve Jobs','늘 갈망하고, 늘 우직하라.'],
-  ['What we know is a drop, what we don’t know is an ocean.','Isaac Newton','우리가 아는 것은 한 방울이고, 모르는 것은 바다다.'],
-  ['The important thing is not to stop questioning.','Albert Einstein','중요한 것은 질문을 멈추지 않는 것이다.'],
-  ['Imagination is more important than knowledge.','Albert Einstein','상상력이 지식보다 중요하다.'],
-  ['Well done is better than well said.','Benjamin Franklin','잘 말하는 것보다 잘 해내는 것이 낫다.'],
-  ['A person who never made a mistake never tried anything new.','Albert Einstein','한 번도 실수하지 않은 사람은 새로운 것을 시도한 적이 없는 사람이다.'],
-  ['The journey of a thousand miles begins with a single step.','Lao Tzu','천 리 길도 한 걸음에서 시작된다.'],
-  ['Knowing yourself is the beginning of all wisdom.','Aristotle','자신을 아는 것이 모든 지혜의 시작이다.'],
-  ['Quality is not an act, it is a habit.','Aristotle','탁월함은 행위가 아니라 습관이다.'],
-  ['Do what you can, with what you have, where you are.','Theodore Roosevelt','지금 있는 자리에서, 가진 것으로, 할 수 있는 일을 하라.'],
-  ['The only true wisdom is in knowing you know nothing.','Socrates','유일하게 참된 지혜는 자신이 아무것도 모른다는 것을 아는 것이다.'],
-  ['Change your thoughts and you change your world.','Norman Vincent Peale','생각을 바꾸면 세상이 바뀐다.'],
-  ['Try not to become a man of success, but rather try to become a man of value.','Albert Einstein','성공한 사람이 되려 하기보다 가치 있는 사람이 되려고 노력하라.'],
-  ['Learning never exhausts the mind.','Leonardo da Vinci','배움은 결코 마음을 지치게 하지 않는다.'],
-  ['Perseverance is not a long race; it is many short races one after the other.','Walter Elliot','끈기란 하나의 긴 경주가 아니라, 잇따라 이어지는 짧은 경주들이다.'],
-  ['Doubt is the origin of wisdom.','René Descartes','의심은 지혜의 근원이다.'],
-  ['If you want to go fast, go alone. If you want to go far, go together.','African Proverb','빨리 가려면 혼자 가고, 멀리 가려면 함께 가라.'],
-  ['The mind is not a vessel to be filled but a fire to be kindled.','Plutarch','마음은 채워야 할 그릇이 아니라 지펴야 할 불꽃이다.'],
-  ['Fall seven times, stand up eight.','Japanese Proverb','일곱 번 넘어지면 여덟 번 일어나라.'],
+  ['The only way to do great work is to love what you do.','Steve Jobs','위대한 일을 하는 유일한 방법은 자신이 하는 일을 사랑하는 것이다.','成就伟大事业的唯一途径就是热爱自己所做的事。'],
+  ['Education is the most powerful weapon which you can use to change the world.','Nelson Mandela','교육은 세상을 바꾸는 데 쓸 수 있는 가장 강력한 무기다.','教育是你可以用来改变世界的最强大的武器。'],
+  ['Live as if you were to die tomorrow. Learn as if you were to live forever.','Mahatma Gandhi','내일 죽을 것처럼 살고, 영원히 살 것처럼 배워라.','像明天就要死去那样生活，像永远活着那样学习。'],
+  ['Success is not final, failure is not fatal: it is the courage to continue that counts.','Winston Churchill','성공은 끝이 아니고 실패는 치명적이지 않다. 중요한 것은 계속해 나가는 용기다.','成功并非终点，失败也非致命，重要的是继续前行的勇气。'],
+  ['The future belongs to those who believe in the beauty of their dreams.','Eleanor Roosevelt','미래는 자기 꿈의 아름다움을 믿는 사람들의 것이다.','未来属于那些相信自己梦想之美的人。'],
+  ['It always seems impossible until it’s done.','Nelson Mandela','무엇이든 이루어지기 전까지는 늘 불가능해 보인다.','在成功之前，一切看起来都像是不可能的。'],
+  ['The best way to predict the future is to create it.','Peter Drucker','미래를 예측하는 가장 좋은 방법은 미래를 만드는 것이다.','预测未来的最好方法就是去创造它。'],
+  ['I have not failed. I’ve just found 10,000 ways that won’t work.','Thomas Edison','나는 실패한 것이 아니다. 그저 작동하지 않는 방법 1만 가지를 발견했을 뿐이다.','我没有失败，我只是找到了一万种行不通的方法。'],
+  ['Whether you think you can or you think you can’t, you’re right.','Henry Ford','할 수 있다고 믿든 할 수 없다고 믿든, 당신 생각이 옳다.','无论你认为自己行还是不行，你都是对的。'],
+  ['Genius is one percent inspiration and ninety-nine percent perspiration.','Thomas Edison','천재는 1퍼센트의 영감과 99퍼센트의 노력으로 이루어진다.','天才是百分之一的灵感加上百分之九十九的汗水。'],
+  ['An investment in knowledge pays the best interest.','Benjamin Franklin','지식에 대한 투자가 가장 좋은 이자를 낳는다.','对知识的投资回报最丰厚。'],
+  ['Stay hungry, stay foolish.','Steve Jobs','늘 갈망하고, 늘 우직하라.','求知若饥，虚心若愚。'],
+  ['What we know is a drop, what we don’t know is an ocean.','Isaac Newton','우리가 아는 것은 한 방울이고, 모르는 것은 바다다.','我们所知的只是一滴水，未知的却是一片海洋。'],
+  ['The important thing is not to stop questioning.','Albert Einstein','중요한 것은 질문을 멈추지 않는 것이다.','重要的是永远不要停止提问。'],
+  ['Imagination is more important than knowledge.','Albert Einstein','상상력이 지식보다 중요하다.','想象力比知识更重要。'],
+  ['Well done is better than well said.','Benjamin Franklin','잘 말하는 것보다 잘 해내는 것이 낫다.','做得好胜过说得好。'],
+  ['A person who never made a mistake never tried anything new.','Albert Einstein','한 번도 실수하지 않은 사람은 새로운 것을 시도한 적이 없는 사람이다.','从不犯错的人，从未尝试过任何新事物。'],
+  ['The journey of a thousand miles begins with a single step.','Lao Tzu','천 리 길도 한 걸음에서 시작된다.','千里之行，始于足下。'],
+  ['Knowing yourself is the beginning of all wisdom.','Aristotle','자신을 아는 것이 모든 지혜의 시작이다.','认识自己是一切智慧的开端。'],
+  ['Quality is not an act, it is a habit.','Aristotle','탁월함은 행위가 아니라 습관이다.','卓越不是一种行为，而是一种习惯。'],
+  ['Do what you can, with what you have, where you are.','Theodore Roosevelt','지금 있는 자리에서, 가진 것으로, 할 수 있는 일을 하라.','在你所在之处，用你所拥有的，做你能做的。'],
+  ['The only true wisdom is in knowing you know nothing.','Socrates','유일하게 참된 지혜는 자신이 아무것도 모른다는 것을 아는 것이다.','唯一真正的智慧是知道自己一无所知。'],
+  ['Change your thoughts and you change your world.','Norman Vincent Peale','생각을 바꾸면 세상이 바뀐다.','改变你的思想，就能改变你的世界。'],
+  ['Try not to become a man of success, but rather try to become a man of value.','Albert Einstein','성공한 사람이 되려 하기보다 가치 있는 사람이 되려고 노력하라.','不要追求成为成功的人，而要努力成为有价值的人。'],
+  ['Learning never exhausts the mind.','Leonardo da Vinci','배움은 결코 마음을 지치게 하지 않는다.','学习永远不会使心智枯竭。'],
+  ['Perseverance is not a long race; it is many short races one after the other.','Walter Elliot','끈기란 하나의 긴 경주가 아니라, 잇따라 이어지는 짧은 경주들이다.','坚持不是一场长跑，而是一场接一场的短跑。'],
+  ['Doubt is the origin of wisdom.','René Descartes','의심은 지혜의 근원이다.','怀疑是智慧的源头。'],
+  ['If you want to go fast, go alone. If you want to go far, go together.','African Proverb','빨리 가려면 혼자 가고, 멀리 가려면 함께 가라.','想走得快，就独自前行；想走得远，就结伴同行。'],
+  ['The mind is not a vessel to be filled but a fire to be kindled.','Plutarch','마음은 채워야 할 그릇이 아니라 지펴야 할 불꽃이다.','心灵不是待填满的容器，而是待点燃的火焰。'],
+  ['Fall seven times, stand up eight.','Japanese Proverb','일곱 번 넘어지면 여덟 번 일어나라.','跌倒七次，站起来八次。'],
 ];
+let _quoteIdx = null;
 function loadQuote(shuffle) {
   const box = document.getElementById('quoteBox');
   if (!box) return;
   let idx;
-  if (shuffle) idx = Math.floor(Math.random() * QUOTES.length);
-  else {
-    const d = new Date();
-    idx = (d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % QUOTES.length;
-  }
+  if (shuffle || _quoteIdx == null) {
+    if (shuffle) idx = Math.floor(Math.random() * QUOTES.length);
+    else { const d = new Date(); idx = (d.getFullYear() * 372 + d.getMonth() * 31 + d.getDate()) % QUOTES.length; }
+    _quoteIdx = idx;
+  } else idx = _quoteIdx;  // 언어 변경 등: 현재 명언 유지
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  const [en, src, ko] = QUOTES[idx];
+  const [en, src, ko, zh] = QUOTES[idx];
+  const lang = document.getElementById('quoteLang')?.value || 'en';
+  const orig = lang === 'zh' ? (zh || en) : en;
   box.innerHTML = `
     <div style="padding:6px 4px">
-      <div style="font-size:.76rem;font-style:italic;color:var(--text);line-height:1.55">“${esc(en)}”</div>
+      <div style="font-size:.76rem;font-style:italic;color:var(--text);line-height:1.6">${lang==='zh'?'':'“'}${esc(orig)}${lang==='zh'?'':'”'}</div>
       <div style="font-size:.66rem;color:var(--accent2);font-weight:700;text-align:right;margin-top:4px">— ${esc(src)}</div>
       <div style="font-size:.68rem;color:var(--text-dim);line-height:1.55;margin-top:6px;padding-top:6px;border-top:1px dashed var(--border)">${esc(ko)}</div>
     </div>`;
@@ -8902,6 +8911,26 @@ async function loadBookRec() {
 }
 
 // ── 날씨 (IP 자동위치 + Open-Meteo) ──
+// 일주일 날씨 가로 아이콘 표시
+function weekWeatherHTML(daily, WI) {
+  if (!daily || !daily.time) return '';
+  const DOW = ['일','월','화','수','목','금','토'];
+  const cells = daily.time.map((ds, i) => {
+    const dt = new Date(ds + 'T00:00:00');
+    const dow = DOW[dt.getDay()];
+    const isToday = i === 0;
+    const ic = WI[daily.weathercode[i]] || '🌡';
+    const hi = Math.round(daily.temperature_2m_max[i]);
+    const lo = Math.round(daily.temperature_2m_min[i]);
+    return `<div style="flex:1;text-align:center;min-width:0;${isToday?'background:var(--bg3);border-radius:6px;':''}padding:3px 0">
+      <div style="font-size:.58rem;color:${isToday?'var(--accent2)':'var(--text-dim)'};font-weight:${isToday?'700':'400'}">${isToday?'오늘':dow}</div>
+      <div style="font-size:.92rem;line-height:1.3">${ic}</div>
+      <div style="font-size:.54rem;color:var(--text)"><b>${hi}°</b></div>
+      <div style="font-size:.54rem;color:var(--text-muted)">${lo}°</div>
+    </div>`;
+  }).join('');
+  return `<div style="display:flex;gap:1px;margin-top:7px;padding-top:7px;border-top:1px dashed var(--border)">${cells}</div>`;
+}
 async function loadWeather() {
   const el = document.getElementById('weatherBody');
   el.innerHTML = '<div style="font-size:.75rem;color:var(--text-muted)">위치 확인 중...</div>';
@@ -8929,7 +8958,7 @@ async function loadWeather() {
       // 최종 폴백: 서울
       if (!lat) { lat = 37.5665; lon = 126.9780; locName = '서울'; }
     }
-    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weathercode&timezone=auto`);
+    const r = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,apparent_temperature,relative_humidity_2m,wind_speed_10m,weathercode&daily=weathercode,temperature_2m_max,temperature_2m_min&forecast_days=7&timezone=auto`);
     const d = await r.json(); const c = d.current;
     if (!locName) {
       try {
@@ -8954,6 +8983,7 @@ async function loadWeather() {
         <span>습도 ${c.relative_humidity_2m}%</span>
         <span>바람 ${c.wind_speed_10m}m/s</span>
       </div>
+      ${weekWeatherHTML(d.daily, WI)}
       <div style="font-size:.65rem;color:var(--text-muted);margin-top:5px;text-align:right">갱신 ${now}</div>`;
   } catch(e) {
     el.innerHTML = `<div style="font-size:.75rem;color:var(--text-muted)">로드 실패 <button onclick="loadWeather()" style="color:var(--accent2);background:none;border:none;cursor:pointer;text-decoration:underline">재시도</button></div>`;
