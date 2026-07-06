@@ -14000,6 +14000,51 @@ function musicAddSave() {
   document.getElementById('musicAddOverlay')?.remove();
   renderMusicView();
 }
+// 장르별 인기곡 자동 채우기 (YouTube 조회수순 검색 → user_music 병합)
+const MUSIC_QUERY = {
+  'POP':'popular pop songs official music video','ROCK':'best rock songs official music video',
+  'HIPHOP / RAP':'popular hip hop rap official music video','R&B / SOUL':'popular rnb soul official music video',
+  'EDM / DANCE':'best edm dance official music video','JAZZ':'best jazz standards music','CLASSICAL':'famous classical music pieces',
+  'ACOUSTIC / FOLK':'popular acoustic folk official music video','COUNTRY':'popular country songs official music video',
+  'BLUES':'best blues music','LATIN / REGGAE':'popular latin reggae official music video','WORLD MUSIC':'popular world music',
+  'K-POP':'kpop hit songs official mv','J-POP':'jpop hit songs official mv','C-POP':'cpop hit songs official mv',
+  'OST / SOUNDTRACK':'famous movie soundtrack ost','LO-FI / CHILL':'lofi chill beats music','HEALING / MEDITATION':'healing meditation relaxing music',
+};
+async function musicAutoFill() {
+  if (!confirm('전 장르(18개)의 인기곡을 조회수순으로 자동 수집해 추가합니다. 진행할까요?')) return;
+  const arr = userMusic();
+  const existIds = new Set(musicAll().map(m => m.id));
+  let totalAdded = 0;
+  const re = /"videoId":"([\w-]{11})"[\s\S]{0,600}?"title":\{"runs":\[\{"text":"([^"]{2,120})"/g;
+  for (const genre of MUSIC_GENRE_ORDER) {
+    const q = MUSIC_QUERY[genre] || genre;
+    showToast(`🔎 ${genre} 수집 중…`, '⏳');
+    try {
+      const api = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}&sp=CAMSAhAB`; // 조회수순
+      const r = await fetch('/api/proxy?url=' + encodeURIComponent(api));
+      if (!r.ok) continue;
+      const html = await r.text();
+      const seen = new Set(); let m, cnt = 0;
+      re.lastIndex = 0;
+      while ((m = re.exec(html)) && cnt < 20) {
+        const id = m[1];
+        if (seen.has(id) || existIds.has(id)) continue;
+        seen.add(id); existIds.add(id);
+        let title = m[2].replace(/\\u0026/g,'&').replace(/\\"/g,'"').replace(/\\/g,'').trim();
+        // "가수 - 제목" 분리 시도
+        let artist = '', t = title;
+        const dash = title.split(/\s[-–—|]\s/);
+        if (dash.length >= 2) { artist = dash[0].trim(); t = dash.slice(1).join(' - ').replace(/\s*\(.*?official.*?\)/i,'').trim(); }
+        t = t.replace(/\s*[\(\[][^)\]]*(official|mv|m\/v|audio|lyric|video)[^)\]]*[\)\]]/ig,'').trim() || title;
+        arr.unshift({ t: t.slice(0,80), artist: (artist||'—').slice(0,50), genre, id });
+        cnt++; totalAdded++;
+      }
+    } catch(_) {}
+  }
+  saveUserMusic(arr);
+  showToast(`자동 채우기 완료 — ${totalAdded}곡 추가 🎶`);
+  renderMusicView();
+}
 // 좋아하는 음악 HTML 내보내기 (music-item 구조 → 가져오기 호환, 클릭 시 embed 재생)
 function musicExportHtml() {
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -14172,6 +14217,7 @@ function renderMusicView() {
       <span style="font-size:.7rem;color:var(--text-dim)">정렬</span>
       ${modeBtn('genre','장르별')}${modeBtn('artist','가수별')}${modeBtn('fav','⭐ 즐겨찾기 '+favCount)}
       <button onclick="musicAddOpen()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:.72rem;cursor:pointer">➕ 곡 등록</button>
+      <button onclick="musicAutoFill()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.72rem;cursor:pointer">🔎 장르 자동채우기(20곡)</button>
       <button onclick="document.getElementById('musicImportFile').click()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📥 HTML 가져오기</button>
       <button onclick="musicExportHtml()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📤 HTML 내보내기</button>
       <input type="file" id="musicImportFile" accept=".html,.htm" style="display:none" onchange="musicImportHtml(this)">
