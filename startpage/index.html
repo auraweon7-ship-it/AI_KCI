@@ -2150,6 +2150,7 @@ let state = {
     { id: 'lawai',    name: '법령 AI',     emoji: '⚖️', special: 'lawai' },
     { id: 'mybm',     name: '내 북마크',   emoji: '🔖' },
     { id: 'poems',    name: '좋아하는 시', emoji: '📜', special: 'poems' },
+    { id: 'music',    name: '좋아하는 음악', emoji: '🎶', special: 'music' },
   ],
   links: [
     // ── 정부·정책 ──
@@ -5218,8 +5219,8 @@ function renderCats() {
   // remove old tabs
   bar.querySelectorAll('.cat-tab').forEach(el => el.remove());
   state.categories.forEach(cat => {
-    // 좋아하는 시·내 북마크: 로그인 전에는 메뉴 숨김
-    if ((cat.id === 'poems' || cat.id === 'mybm') && !isLoggedIn()) return;
+    // 좋아하는 시·좋아하는 음악·내 북마크: 로그인 전에는 메뉴 숨김
+    if ((cat.id === 'poems' || cat.id === 'music' || cat.id === 'mybm') && !isLoggedIn()) return;
     const btn = document.createElement('button');
     btn.className = 'cat-tab' + (state.activeCat === cat.id ? ' active' : '');
     btn.innerHTML = `${cat.emoji || ''} ${cat.name}${cat.pinned ? '' : ` <span class="cat-del" onclick="deleteCat('${cat.id}',event)">✕</span>`}`;
@@ -7299,6 +7300,13 @@ function renderLinks() {
   if (state.activeCat === 'poems') {
     if (!isLoggedIn()) { state.activeCat = 'all'; saveState(); render(); return; }
     renderPoemsView();
+    return;
+  }
+
+  // Special: 좋아하는 음악
+  if (state.activeCat === 'music') {
+    if (!isLoggedIn()) { state.activeCat = 'all'; saveState(); render(); return; }
+    renderMusicView();
     return;
   }
 
@@ -13794,10 +13802,103 @@ function poemImportHtml(input) {
   reader.readAsText(file, 'utf-8');
 }
 
+// ── 좋아하는 음악 (장르별, embed 재생, 로그인·승인 필요) ──
+// [제목, 가수, 장르, YouTube videoId]  (모두 embed 허용 공식 MV)
+const MUSIC = [
+  ['Gangnam Style','PSY','K-POP','9bZkp7q19f0'],
+  ['Dynamite','BTS','K-POP','gdZLi9oWNZg'],
+  ['DDU-DU DDU-DU','BLACKPINK','K-POP','IHNzOHi8sJs'],
+  ['Butter','BTS','K-POP','WMweEpGlu_U'],
+  ['Boy With Luv','BTS','K-POP','kTJczUoc26U'],
+  ['Kill This Love','BLACKPINK','K-POP','ArmDp-zijuc'],
+  ['How You Like That','BLACKPINK','K-POP','32si5cfrCNc'],
+  ['Shape of You','Ed Sheeran','POP','JGwWNGJdvx8'],
+  ['Uptown Funk','Mark Ronson','POP','OPf0YbXqDm0'],
+  ['Roar','Katy Perry','POP','CevxZvSJLk8'],
+  ['Sugar','Maroon 5','POP','09R8_2nJtjg'],
+  ['Hello','Adele','POP','YQHsXMglC9A'],
+  ['Sorry','Justin Bieber','POP','fRh_vgS2dFE'],
+  ['Despacito','Luis Fonsi','POP','kJQP7kiw5Fk'],
+  ['Lose Yourself','Eminem','힙합','_Yhyp-_hX2s'],
+  ['Rap God','Eminem','힙합','XbGs_qK2PQA'],
+  ['In Da Club','50 Cent','힙합','5qm8PH4xAss'],
+  ['HUMBLE.','Kendrick Lamar','힙합','tvTRZJ-4EyI'],
+  ['Without Me','Eminem','힙합','YVkUvmDQ3HY'],
+  ['Bohemian Rhapsody','Queen','락','fJ9rUzIMcZQ'],
+  ["Sweet Child O' Mine",'Guns N\' Roses','락','1w7OgIMMRc4'],
+  ['Smells Like Teen Spirit','Nirvana','락','hTWKbfoikeg'],
+  ['Thunderstruck','AC/DC','락','v2AC41dglnM'],
+  ['Numb','Linkin Park','락','kXYiU_JCYtU'],
+  ['Faded','Alan Walker','EDM','60ItHLz5WEA'],
+  ['Wake Me Up','Avicii','EDM','IcrbM1l_BoI'],
+  ['Alone','Marshmello','EDM','ALZHF5UqnU4'],
+  ['Animals','Martin Garrix','EDM','gCYcHz2k5x0'],
+  ['Closer','The Chainsmokers','EDM','PT2_F-1esPk'],
+  ['Levels','Avicii','EDM','RBumgq5yVrA'],
+  ['Perfect','Ed Sheeran','발라드','2Vv-BfVoq4g'],
+  ['Thinking Out Loud','Ed Sheeran','발라드','lp-EO5I60KA'],
+  ['All of Me','John Legend','발라드','450p7goxZqg'],
+  ['See You Again','Wiz Khalifa','발라드','RgKAFK5djSk'],
+  ['Counting Stars','OneRepublic','팝록','hT_nvWreIhg'],
+];
+const MUSIC_GENRE_ORDER = ['K-POP','POP','힙합','락','EDM','발라드','팝록'];
+let musicState = { mode: 'genre', cat: 'all' };
+function musicSetMode(m) { musicState.mode = m; musicState.cat = 'all'; renderMusicView(); }
+function musicSetCat(c) { musicState.cat = c; renderMusicView(); }
+function musicPlay(id, el) {
+  el.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1&rel=0&playsinline=1" title="music"
+    allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen
+    style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
+}
+function renderMusicView() {
+  const grid = document.getElementById('linksGrid');
+  const title = document.getElementById('sectionTitle');
+  if (title) title.textContent = '🎶 좋아하는 음악';
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // 정렬 기준(장르/가수) 칩
+  const keyOf = m => musicState.mode === 'genre' ? m[2] : m[1];
+  const cnt = {}; MUSIC.forEach(m => cnt[keyOf(m)] = (cnt[keyOf(m)]||0)+1);
+  let cats;
+  if (musicState.mode === 'genre') cats = MUSIC_GENRE_ORDER.filter(g => cnt[g]).map(g => [g, cnt[g]]);
+  else cats = Object.keys(cnt).sort((a,b)=>a.localeCompare(b,'ko')).map(a => [a, cnt[a]]);
+  const chip = (val, label, n) => {
+    const on = musicState.cat === val;
+    const jv = (val+'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<button onclick="musicSetCat('${jv}')" style="padding:3px 10px;border-radius:14px;border:1px solid ${on?'var(--accent)':'var(--border)'};background:${on?'var(--accent)':'var(--bg3)'};color:${on?'#fff':'var(--text-dim)'};font-size:.68rem;cursor:pointer;white-space:nowrap">${esc(label)} ${n}</button>`;
+  };
+  const chips = chip('all', '전체', MUSIC.length) + cats.map(([v,n]) => chip(v, v, n)).join('');
+  // 필터 + 정렬
+  let list = MUSIC.slice();
+  if (musicState.cat !== 'all') list = list.filter(m => keyOf(m) === musicState.cat);
+  if (musicState.mode === 'genre') list.sort((a,b) => (MUSIC_GENRE_ORDER.indexOf(a[2])-MUSIC_GENRE_ORDER.indexOf(b[2])) || a[1].localeCompare(b[1],'ko'));
+  else list.sort((a,b) => a[1].localeCompare(b[1],'ko') || a[0].localeCompare(b[0]));
+  const cards = list.map(([t, artist, genre, id]) => `
+    <div style="display:block">
+      <div class="yt-thumb" onclick="musicPlay('${id}',this)" title="${esc(t)} - ${esc(artist)}"
+           style="position:relative;width:100%;aspect-ratio:16/9;border-radius:6px;overflow:hidden;background:#000;cursor:pointer">
+        <img src="https://i.ytimg.com/vi/${id}/mqdefault.jpg" alt="${esc(t)}" loading="lazy" style="width:100%;height:100%;object-fit:cover" onerror="this.style.opacity=.3">
+        <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="width:34px;height:34px;background:rgba(0,0,0,.7);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem">▶</span></div>
+        <span style="position:absolute;top:4px;left:4px;background:rgba(139,92,246,.85);color:#fff;font-size:.54rem;padding:1px 6px;border-radius:6px">${esc(genre)}</span>
+      </div>
+      <div style="font-size:.7rem;font-weight:700;color:var(--text);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t)}</div>
+      <div style="font-size:.62rem;color:var(--accent2)">${esc(artist)}</div>
+    </div>`).join('');
+  grid.innerHTML = `<div style="grid-column:1/-1">
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+      <span style="font-size:.7rem;color:var(--text-dim)">정렬</span>
+      <button onclick="musicSetMode('genre')" style="padding:5px 12px;border-radius:6px;border:1px solid ${musicState.mode==='genre'?'var(--accent)':'var(--border)'};background:${musicState.mode==='genre'?'var(--accent)':'var(--bg3)'};color:${musicState.mode==='genre'?'#fff':'var(--text-dim)'};font-size:.72rem;cursor:pointer">장르별</button>
+      <button onclick="musicSetMode('artist')" style="padding:5px 12px;border-radius:6px;border:1px solid ${musicState.mode==='artist'?'var(--accent)':'var(--border)'};background:${musicState.mode==='artist'?'var(--accent)':'var(--bg3)'};color:${musicState.mode==='artist'?'#fff':'var(--text-dim)'};font-size:.72rem;cursor:pointer">가수별</button>
+      <span style="margin-left:auto;font-size:.66rem;color:var(--text-muted)">${list.length}곡</span>
+    </div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;max-height:96px;overflow-y:auto">${chips}</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">${cards}</div>
+  </div>`;
+}
+
 // ── ACTIONS ──
 function selectCat(id) {
   // 승인 필요 기능 게이트
-  if (['univstats','lawai','mybm','poems'].includes(id) && !gateGuard()) return;
+  if (['univstats','lawai','mybm','poems','music'].includes(id) && !gateGuard()) return;
   // 법령 AI는 팝업(모달)으로 — 탭 전환 없이 오버레이
   if (id === 'lawai') { openLawModal(); return; }
   state.activeCat = id; saveState(); render();
