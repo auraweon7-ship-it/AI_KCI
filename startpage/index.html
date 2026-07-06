@@ -4150,7 +4150,7 @@ function isLoggedIn() { try { return !!JSON.parse(localStorage.getItem('startpag
 // ── 클라우드 동기화 (Railway Postgres) ──
 let _cloudToken = null, _cloudTokenExp = 0;
 const CLOUD_BASE_KEYS = ['api_keys', 'apps', 'sched_events', 'lectures', 'todo_items'];  // 계정별(__이메일)
-const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·좋아하는 시·등록/수정/삭제·감상메모
+const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·좋아하는 시·감상메모·좋아하는 음악
 const CLOUD_ALL_KEYS = [...CLOUD_BASE_KEYS, ...CLOUD_PLAIN_KEYS];
 function _cloudLocalKey(base) { return CLOUD_PLAIN_KEYS.includes(base) ? base : base + '__' + userEmail(); }
 function cloudSetToken(token, expiresIn) {
@@ -13889,14 +13889,126 @@ function musicPlay(id, el) {
     allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen
     style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
 }
+// 내장 MUSIC(배열) → 객체 + 사용자 등록/수정/삭제 오버레이
+function musicKey(m) { return m.artist + '|' + m.t; }
+function userMusic() { try { return JSON.parse(localStorage.getItem('user_music') || '[]'); } catch(_) { return []; } }
+function saveUserMusic(a) { localStorage.setItem('user_music', JSON.stringify(a)); try { cloudPush('user_music'); } catch(_) {} }
+function musicHidden() { try { return JSON.parse(localStorage.getItem('music_hidden') || '[]'); } catch(_) { return []; } }
+function saveMusicHidden(a) { localStorage.setItem('music_hidden', JSON.stringify(a)); try { cloudPush('music_hidden'); } catch(_) {} }
+function musicOverrides() { try { return JSON.parse(localStorage.getItem('music_over') || '{}'); } catch(_) { return {}; } }
+function saveMusicOverrides(o) { localStorage.setItem('music_over', JSON.stringify(o)); try { cloudPush('music_over'); } catch(_) {} }
+function musicFavs() { try { return JSON.parse(localStorage.getItem('music_favs') || '[]'); } catch(_) { return []; } }
+function musicIsFav(m) { return musicFavs().includes(musicKey(m)); }
+function musicAll() {
+  const hid = new Set(musicHidden());
+  const ov = musicOverrides();
+  const users = userMusic().map(m => ({ ...m, u: true }));
+  const builtin = MUSIC.map(a => ({ t: a[0], artist: a[1], genre: a[2], id: a[3] }))
+    .filter(m => !hid.has(musicKey(m)))
+    .map(m => { const o = ov[musicKey(m)]; return o ? { ...m, ...o, ok: musicKey(m) } : m; });
+  return users.concat(builtin);
+}
+function musicToggleFav(k, ev) {
+  if (ev) ev.stopPropagation();
+  const f = musicFavs(); const at = f.indexOf(k);
+  if (at >= 0) f.splice(at, 1); else f.push(k);
+  localStorage.setItem('music_favs', JSON.stringify(f));
+  try { cloudPush('music_favs'); } catch(_) {}
+  renderMusicView();
+}
+function musicEdit(k, ev) { if (ev) ev.stopPropagation(); musicAddOpen(k); }
+function musicDelete(k, ev) {
+  if (ev) ev.stopPropagation();
+  const m = musicAll().find(x => musicKey(x) === k); if (!m) return;
+  if (!confirm(`'${m.t} - ${m.artist}'를 삭제할까요?`)) return;
+  if (m.u) {
+    saveUserMusic(userMusic().filter(x => !(x.t === m.t && x.artist === m.artist && x.id === m.id)));
+  } else {
+    const key = m.ok || musicKey(m);
+    const hid = musicHidden(); if (!hid.includes(key)) hid.push(key); saveMusicHidden(hid);
+    const ov = musicOverrides(); if (ov[key]) { delete ov[key]; saveMusicOverrides(ov); }
+  }
+  // 즐겨찾기에서도 제거
+  const f = musicFavs().filter(x => x !== k); localStorage.setItem('music_favs', JSON.stringify(f)); try { cloudPush('music_favs'); } catch(_){}
+  showToast('삭제되었습니다');
+  renderMusicView();
+}
+// YouTube URL/ID 추출
+function ytExtractId(s) {
+  s = (s || '').trim();
+  if (/^[\w-]{11}$/.test(s)) return s;
+  const m = s.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([\w-]{11})/);
+  return m ? m[1] : '';
+}
+let _musicEditKey = null;
+function musicAddOpen(editKey) {
+  _musicEditKey = editKey || null;
+  const cur = editKey ? musicAll().find(x => musicKey(x) === editKey) : null;
+  let ov = document.getElementById('musicAddOverlay');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'musicAddOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const genres = Array.from(new Set(MUSIC_GENRE_ORDER.concat(musicAll().map(m => m.genre))));
+  const opts = genres.map(g => `<option value="${esc(g)}"${cur&&cur.genre===g?' selected':''}>${esc(g)}</option>`).join('');
+  const inS = 'width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;outline:none;box-sizing:border-box';
+  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:480px;width:100%;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <h3 style="flex:1;font-size:1.05rem;font-weight:800;color:var(--text);margin:0">${cur?'✏️ 곡 수정':'➕ 곡 등록'}</h3>
+      <button onclick="document.getElementById('musicAddOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted)">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <input id="mf_t" placeholder="곡 제목 *" value="${cur?esc(cur.t):''}" style="${inS}">
+      <input id="mf_artist" placeholder="가수 *" value="${cur?esc(cur.artist):''}" style="${inS}">
+      <select id="mf_genre" style="${inS}">${opts}</select>
+      <input id="mf_url" placeholder="YouTube 링크 또는 영상 ID *" value="${cur?esc(cur.id):''}" style="${inS}">
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+      <button onclick="document.getElementById('musicAddOverlay').remove()" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">취소</button>
+      <button onclick="musicAddSave()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">${cur?'저장':'등록'}</button>
+    </div>
+  </div>`;
+  setTimeout(() => document.getElementById('mf_t')?.focus(), 50);
+}
+function musicAddSave() {
+  const g = id => (document.getElementById(id)?.value || '').trim();
+  const t = g('mf_t'), artist = g('mf_artist'), genre = g('mf_genre') || 'POP';
+  const vid = ytExtractId(g('mf_url'));
+  if (!t || !artist || !vid) { showToast('제목·가수·유효한 YouTube 링크가 필요합니다', '⚠️'); return; }
+  const data = { t, artist, genre, id: vid };
+  if (_musicEditKey) {
+    const cur = musicAll().find(x => musicKey(x) === _musicEditKey);
+    if (cur && cur.u) {
+      const arr = userMusic();
+      const at = arr.findIndex(x => x.t === cur.t && x.artist === cur.artist && x.id === cur.id);
+      if (at >= 0) arr[at] = data; else arr.unshift(data);
+      saveUserMusic(arr);
+    } else if (cur) {
+      const key = cur.ok || musicKey(cur);
+      const ov = musicOverrides(); ov[key] = data; saveMusicOverrides(ov);
+    }
+    showToast('곡이 수정되었습니다 ✏️');
+  } else {
+    const arr = userMusic(); arr.unshift(data); saveUserMusic(arr);
+    showToast('곡이 등록되었습니다 🎶');
+  }
+  _musicEditKey = null;
+  document.getElementById('musicAddOverlay')?.remove();
+  renderMusicView();
+}
 function renderMusicView() {
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
   if (title) title.textContent = '🎶 좋아하는 음악';
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const all = musicAll();
+  const favCount = musicFavs().length;
   // 정렬 기준(장르/가수) 칩
-  const keyOf = m => musicState.mode === 'genre' ? m[2] : m[1];
-  const cnt = {}; MUSIC.forEach(m => cnt[keyOf(m)] = (cnt[keyOf(m)]||0)+1);
+  const keyOf = m => musicState.mode === 'genre' ? m.genre : m.artist;
+  const cnt = {}; all.forEach(m => cnt[keyOf(m)] = (cnt[keyOf(m)]||0)+1);
   let cats;
   if (musicState.mode === 'genre') cats = MUSIC_GENRE_ORDER.filter(g => cnt[g]).map(g => [g, cnt[g]]);
   else cats = Object.keys(cnt).sort((a,b)=>a.localeCompare(b,'ko')).map(a => [a, cnt[a]]);
@@ -13905,32 +14017,42 @@ function renderMusicView() {
     const jv = (val+'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     return `<button onclick="musicSetCat('${jv}')" style="padding:3px 10px;border-radius:14px;border:1px solid ${on?'var(--accent)':'var(--border)'};background:${on?'var(--accent)':'var(--bg3)'};color:${on?'#fff':'var(--text-dim)'};font-size:.68rem;cursor:pointer;white-space:nowrap">${esc(label)} ${n}</button>`;
   };
-  const chips = chip('all', '전체', MUSIC.length) + cats.map(([v,n]) => chip(v, v, n)).join('');
+  const chips = (musicState.mode==='fav') ? '' : chip('all', '전체', all.length) + cats.map(([v,n]) => chip(v, v, n)).join('');
   // 필터 + 정렬
-  let list = MUSIC.slice();
-  if (musicState.cat !== 'all') list = list.filter(m => keyOf(m) === musicState.cat);
-  if (musicState.mode === 'genre') list.sort((a,b) => (MUSIC_GENRE_ORDER.indexOf(a[2])-MUSIC_GENRE_ORDER.indexOf(b[2])) || a[1].localeCompare(b[1],'ko'));
-  else list.sort((a,b) => a[1].localeCompare(b[1],'ko') || a[0].localeCompare(b[0]));
-  const cards = list.map(([t, artist, genre, id]) => `
-    <div style="display:block">
-      <div class="yt-thumb" onclick="musicPlay('${id}',this)" title="${esc(t)} - ${esc(artist)}"
+  let list = all.slice();
+  if (musicState.mode === 'fav') list = list.filter(m => musicIsFav(m));
+  else if (musicState.cat !== 'all') list = list.filter(m => keyOf(m) === musicState.cat);
+  if (musicState.mode === 'artist') list.sort((a,b) => a.artist.localeCompare(b.artist,'ko') || a.t.localeCompare(b.t));
+  else list.sort((a,b) => (MUSIC_GENRE_ORDER.indexOf(a.genre)-MUSIC_GENRE_ORDER.indexOf(b.genre)) || a.artist.localeCompare(b.artist,'ko'));
+  const cards = list.map(m => {
+    const k = musicKey(m); const kj = k.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const fav = musicIsFav(m);
+    return `<div style="display:block;position:relative">
+      <div class="yt-thumb" onclick="musicPlay('${m.id}',this)" title="${esc(m.t)} - ${esc(m.artist)}"
            style="position:relative;width:100%;aspect-ratio:16/9;border-radius:6px;overflow:hidden;background:#000;cursor:pointer">
-        <img src="https://i.ytimg.com/vi/${id}/mqdefault.jpg" alt="${esc(t)}" loading="lazy" style="width:100%;height:100%;object-fit:cover" onerror="this.style.opacity=.3">
+        <img src="https://i.ytimg.com/vi/${m.id}/mqdefault.jpg" alt="${esc(m.t)}" loading="lazy" style="width:100%;height:100%;object-fit:cover" onerror="this.style.opacity=.3">
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="width:34px;height:34px;background:rgba(0,0,0,.7);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem">▶</span></div>
-        <span style="position:absolute;top:4px;left:4px;background:rgba(139,92,246,.85);color:#fff;font-size:.54rem;padding:1px 6px;border-radius:6px">${esc(genre)}</span>
+        <span style="position:absolute;top:4px;left:4px;background:rgba(139,92,246,.85);color:#fff;font-size:.54rem;padding:1px 6px;border-radius:6px">${esc(m.genre)}${m.u?' ●':''}</span>
+        <div style="position:absolute;top:3px;right:3px;display:flex;gap:2px">
+          <button onclick="event.stopPropagation();musicToggleFav('${kj}',event)" title="즐겨찾기" style="background:rgba(0,0,0,.55);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:.68rem;line-height:1;padding:2px 3px">${fav?'⭐':'☆'}</button>
+          <button onclick="event.stopPropagation();musicEdit('${kj}',event)" title="수정" style="background:rgba(0,0,0,.55);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:.62rem;line-height:1;padding:2px 3px">✏️</button>
+          <button onclick="event.stopPropagation();musicDelete('${kj}',event)" title="삭제" style="background:rgba(0,0,0,.55);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:.62rem;line-height:1;padding:2px 3px">✕</button>
+        </div>
       </div>
-      <div style="font-size:.7rem;font-weight:700;color:var(--text);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(t)}</div>
-      <div style="font-size:.62rem;color:var(--accent2)">${esc(artist)}</div>
-    </div>`).join('');
+      <div style="font-size:.7rem;font-weight:700;color:var(--text);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.t)}</div>
+      <div style="font-size:.62rem;color:var(--accent2)">${esc(m.artist)}</div>
+    </div>`;
+  }).join('');
+  const modeBtn = (mode, label) => `<button onclick="musicSetMode('${mode}')" style="padding:5px 12px;border-radius:6px;border:1px solid ${musicState.mode===mode?'var(--accent)':'var(--border)'};background:${musicState.mode===mode?'var(--accent)':'var(--bg3)'};color:${musicState.mode===mode?'#fff':'var(--text-dim)'};font-size:.72rem;cursor:pointer">${label}</button>`;
   grid.innerHTML = `<div style="grid-column:1/-1">
-    <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px">
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
       <span style="font-size:.7rem;color:var(--text-dim)">정렬</span>
-      <button onclick="musicSetMode('genre')" style="padding:5px 12px;border-radius:6px;border:1px solid ${musicState.mode==='genre'?'var(--accent)':'var(--border)'};background:${musicState.mode==='genre'?'var(--accent)':'var(--bg3)'};color:${musicState.mode==='genre'?'#fff':'var(--text-dim)'};font-size:.72rem;cursor:pointer">장르별</button>
-      <button onclick="musicSetMode('artist')" style="padding:5px 12px;border-radius:6px;border:1px solid ${musicState.mode==='artist'?'var(--accent)':'var(--border)'};background:${musicState.mode==='artist'?'var(--accent)':'var(--bg3)'};color:${musicState.mode==='artist'?'#fff':'var(--text-dim)'};font-size:.72rem;cursor:pointer">가수별</button>
+      ${modeBtn('genre','장르별')}${modeBtn('artist','가수별')}${modeBtn('fav','⭐ 즐겨찾기 '+favCount)}
+      <button onclick="musicAddOpen()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:.72rem;cursor:pointer">➕ 곡 등록</button>
       <span style="margin-left:auto;font-size:.66rem;color:var(--text-muted)">${list.length}곡</span>
     </div>
-    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;max-height:96px;overflow-y:auto">${chips}</div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">${cards}</div>
+    ${chips ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;max-height:96px;overflow-y:auto">${chips}</div>` : ''}
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">${cards || '<div style="color:var(--text-muted);font-size:.72rem;padding:12px">곡이 없습니다.</div>'}</div>
   </div>`;
 }
 
