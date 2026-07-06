@@ -1972,6 +1972,16 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
   <p style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">메뉴 <b>📈 대학통계</b> 대시보드는 이 키가 있어야 작동합니다. 키는 이 브라우저에만 저장되며 Anthropic API로만 전송됩니다. <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--accent2)">키 발급 →</a></p>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+  <div class="settings-title" style="font-size:.9rem;">🎙 ElevenLabs API (시 낭송)</div>
+  <input id="elevenApiKey" type="password" placeholder="ElevenLabs API 키" autocomplete="off"
+    style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;"
+    oninput="localStorage.setItem('eleven_api_key', this.value.trim());">
+  <input id="elevenVoiceId" type="text" placeholder="한국어 Voice ID (예: 21m00Tcm4TlvDq8ikWAM)" autocomplete="off"
+    style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;"
+    oninput="localStorage.setItem('eleven_voice_id', this.value.trim());">
+  <p style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">메뉴 <b>📜 좋아하는 시</b> 전문 팝업의 <b>🔊 낭송</b> 버튼에 사용됩니다. 한국어 지원 Voice의 ID를 입력하세요. 키·ID는 이 브라우저에만 저장됩니다. <a href="https://elevenlabs.io/app/voice-library" target="_blank" style="color:var(--accent2)">Voice 찾기 →</a> · <a href="https://elevenlabs.io/app/settings/api-keys" target="_blank" style="color:var(--accent2)">키 발급 →</a></p>
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
   <div class="settings-title" style="font-size:.9rem;">📚 도서추천 키워드 (최대 3개)</div>
   <div style="display:flex;gap:6px;margin-top:8px;">
     <input id="bookKw1" placeholder="키워드1" oninput="saveBookKeywords()" style="flex:1;min-width:0;padding:7px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.76rem;outline:none;">
@@ -10928,8 +10938,51 @@ function poemOpenDetail(i) {
     </div>
     <div style="font-size:.72rem;color:var(--accent2);font-weight:600;margin:4px 0 2px">${esc(p.poet)} <span style="color:var(--text-muted);font-weight:400">· ${esc(p.theme)}</span></div>
     <div style="white-space:pre-wrap;font-size:.86rem;line-height:1.8;color:var(--text);margin:14px 0;padding:14px 0;border-top:1px dashed var(--border);border-bottom:1px dashed var(--border)">${esc(p.b)}</div>
-    <div style="font-size:.68rem;color:var(--text-dim);text-align:right">— ${esc(meta)}</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+      <button id="poemReciteBtn" onclick="poemRecite(${i})" style="padding:6px 14px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.74rem;cursor:pointer">🔊 낭송</button>
+      <audio id="poemAudio" style="display:none"></audio>
+      <span style="flex:1;font-size:.68rem;color:var(--text-dim);text-align:right">— ${esc(meta)}</span>
+    </div>
   </div>`;
+}
+// ElevenLabs TTS로 시 낭송
+async function poemRecite(i) {
+  const p = POEMS[i]; if (!p) return;
+  const key = (localStorage.getItem('eleven_api_key') || '').trim();
+  const voice = (localStorage.getItem('eleven_voice_id') || '').trim();
+  const btn = document.getElementById('poemReciteBtn');
+  const audio = document.getElementById('poemAudio');
+  if (!key || !voice) { showToast('설정 → 🎙 ElevenLabs API 키·Voice ID를 입력하세요', '🔑'); return; }
+  if (!btn || !audio) return;
+  // 재생 중이면 정지
+  if (btn.dataset.playing === '1') { audio.pause(); audio.currentTime = 0; btn.dataset.playing = '0'; btn.textContent = '🔊 낭송'; return; }
+  // 이미 생성된 오디오 재사용
+  if (audio.dataset.forIdx === String(i) && audio.src) { audio.play(); btn.dataset.playing = '1'; btn.textContent = '⏹ 정지'; return; }
+  btn.disabled = true; btn.textContent = '⏳ 생성 중...';
+  try {
+    const text = `${p.t}. ${p.poet} 시.\n\n${p.b}`;
+    const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voice)}`, {
+      method: 'POST',
+      headers: { 'xi-api-key': key, 'Content-Type': 'application/json', 'Accept': 'audio/mpeg' },
+      body: JSON.stringify({ text, model_id: 'eleven_multilingual_v2', voice_settings: { stability: 0.5, similarity_boost: 0.75 } }),
+    });
+    if (!r.ok) {
+      let msg = 'HTTP ' + r.status;
+      try { const e = await r.json(); msg = e.detail?.message || e.detail?.status || msg; } catch(_) {}
+      showToast('낭송 실패: ' + msg, '⚠️');
+      btn.disabled = false; btn.textContent = '🔊 낭송'; return;
+    }
+    const blob = await r.blob();
+    if (audio.dataset.url) URL.revokeObjectURL(audio.dataset.url);
+    const url = URL.createObjectURL(blob);
+    audio.src = url; audio.dataset.url = url; audio.dataset.forIdx = String(i);
+    audio.onended = () => { const b = document.getElementById('poemReciteBtn'); if (b) { b.dataset.playing = '0'; b.textContent = '🔊 낭송'; } };
+    audio.play();
+    btn.disabled = false; btn.dataset.playing = '1'; btn.textContent = '⏹ 정지';
+  } catch(e) {
+    showToast('낭송 실패: ' + (e.message || '네트워크 오류'), '⚠️');
+    btn.disabled = false; btn.textContent = '🔊 낭송';
+  }
 }
 
 // ── ACTIONS ──
@@ -13240,6 +13293,7 @@ render();
  () => { const p = document.getElementById('profileSel'); if (p) p.value = localStorage.getItem('active_profile') || ''; },
  () => { const k = document.getElementById('kciApiKey'); if (k) k.value = localStorage.getItem('kci_api_key') || ''; },
  () => { const k = document.getElementById('claudeApiKey'); if (k) k.value = localStorage.getItem('claude_api_key') || ''; },
+ () => { const k = document.getElementById('elevenApiKey'); if (k) k.value = localStorage.getItem('eleven_api_key') || ''; const v = document.getElementById('elevenVoiceId'); if (v) v.value = localStorage.getItem('eleven_voice_id') || ''; },
  () => { let kws=[]; try{kws=JSON.parse(localStorage.getItem('book_keywords')||'[]');}catch(_){} ['bookKw1','bookKw2','bookKw3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=kws[i]||'';}); },
  () => { let ts=[]; try{ts=JSON.parse(localStorage.getItem('youtube_topics')||'[]');}catch(_){} ['ytTopic1','ytTopic2','ytTopic3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=ts[i]||'';}); },
  () => { try { loadBookRec(); } catch(_){} },
