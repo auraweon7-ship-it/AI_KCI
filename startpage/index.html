@@ -13510,7 +13510,8 @@ function poemExportHtml() {
   const themes = Object.keys(tc).sort((a,b)=>a.localeCompare(b,'ko'));
   const catBtns = `<button class="cat-btn active" data-cat="__all">전체 ${list.length}</button>` +
     themes.map(t => `<button class="cat-btn" data-cat="${attr(t)}">${esc(t)} ${tc[t]}</button>`).join('');
-  const items = list.map((p, i) => `      <div class="poem-item" id="poem-${i}" data-theme="${attr(p.theme)}" data-poet="${attr(p.poet)}" data-title="${attr(p.t)}">
+  // 우측 상세용 숨김 poem-item (가져오기 호환) + 좌측 목록 li
+  const items = list.map((p, i) => `      <div class="poem-item${i===0?' active':''}" id="poem-${i}" data-theme="${attr(p.theme)}" data-poet="${attr(p.poet)}" data-title="${attr(p.t)}">
         <div class="poem-header">
           <div class="poem-title">${esc(p.t)}</div>
           <div class="poem-meta"><span>✍️ ${esc(p.poet)}</span></div>
@@ -13520,75 +13521,109 @@ function poemExportHtml() {
           <div class="poem-content">${esc(p.b)}</div>
         </div>
       </div>`).join('\n');
-  const tocItems = list.map((p, i) => `<li data-theme="${attr(p.theme)}"><a href="#poem-${i}">${esc(p.t)} <span class="toc-poet">${esc(p.poet)}</span></a></li>`).join('');
+  const navItems = list.map((p, i) => `<li class="nav-item${i===0?' active':''}" data-idx="${i}" data-theme="${attr(p.theme)}" data-title="${attr(p.t)}" data-poet="${attr(p.poet)}"><span class="nav-t">${esc(p.t)}</span><span class="nav-p">${esc(p.poet)}</span></li>`).join('\n');
   const d = new Date();
   const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>좋아하는 시 목록</title>
+  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>좋아하는 시</title>
 <style>
-body{font-family:'Malgun Gothic',sans-serif;max-width:820px;margin:0 auto;padding:20px;color:#1e293b;background:#fff}
-h1{font-size:1.6em;margin:0 0 4px}.sub{color:#64748b;font-size:.85em;margin-bottom:18px}
-.controls{position:sticky;top:0;background:#fff;padding:12px 0;border-bottom:2px solid #ec4899;z-index:10;margin-bottom:18px}
+*{box-sizing:border-box}
+body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;margin:0;color:#1e293b;background:#f1f5f9}
+.hero{background:linear-gradient(135deg,#ec4899 0%,#8b5cf6 60%,#6366f1 100%);color:#fff;padding:54px 24px 46px;text-align:center}
+.hero h1{font-size:2.5em;margin:0 0 10px;font-weight:800;letter-spacing:-.02em}
+.hero p{font-size:1.05em;opacity:.92;margin:0}
+.hero .badge{display:inline-block;margin-top:16px;background:rgba(255,255,255,.2);padding:6px 16px;border-radius:999px;font-size:.85em}
+.wrap{max-width:1100px;margin:0 auto;padding:22px}
+.controls{position:sticky;top:0;background:#f1f5f9;padding:14px 0;z-index:20;border-bottom:2px solid #e2e8f0;margin-bottom:18px}
 .cat-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
-.cat-btn{padding:5px 12px;border-radius:999px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;font-size:.82em;cursor:pointer}
+.cat-btn{padding:5px 12px;border-radius:999px;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:.82em;cursor:pointer}
 .cat-btn.active{background:#8b5cf6;color:#fff;border-color:#8b5cf6}
 .tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.tools select,.tools input{padding:6px 10px;border:1px solid #e2e8f0;border-radius:6px;font-size:.85em}
+.tools select,.tools input{padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:.85em;background:#fff}
 .tools input{flex:1;min-width:160px}
-.toc{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 18px;margin-bottom:24px}
-.toc h2{font-size:1em;margin:0 0 8px;color:#7e22ce}
-.toc ol{margin:0;padding-left:20px;columns:2;column-gap:24px}
-.toc li{margin:2px 0;font-size:.86em;break-inside:avoid}
-.toc a{color:#334155;text-decoration:none}.toc a:hover{color:#ec4899}
-.toc-poet{color:#94a3b8;font-size:.9em}
-.poem-item{border:1px solid #e2e8f0;border-radius:10px;margin-bottom:25px;overflow:hidden;scroll-margin-top:120px}
-.poem-header{background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;padding:18px 22px}
-.poem-title{font-size:1.4em;font-weight:700;margin-bottom:6px}.poem-meta{font-size:.95em;opacity:.9}
-.poem-body{padding:20px 22px}.category-badge{display:inline-block;background:#f3e8ff;color:#7e22ce;padding:4px 12px;border-radius:999px;font-size:.85em;font-weight:600;margin-bottom:12px}
-.poem-content{white-space:pre-wrap;line-height:1.8;background:#f8fafc;border-left:4px solid #ec4899;padding:15px 18px;border-radius:6px}
+.layout{display:flex;gap:20px;align-items:flex-start}
+.sidebar{flex:0 0 300px;max-height:78vh;overflow-y:auto;background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:8px}
+.nav-item{display:flex;flex-direction:column;gap:1px;padding:9px 12px;border-radius:8px;cursor:pointer;border-left:3px solid transparent}
+.nav-item:hover{background:#f8fafc}
+.nav-item.active{background:#faf5ff;border-left-color:#ec4899}
+.nav-t{font-size:.88em;font-weight:600;color:#1e293b}
+.nav-p{font-size:.72em;color:#94a3b8}
+.detail{flex:1;min-width:0;position:sticky;top:96px}
+.poem-item{background:#fff;border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;display:none}
+.poem-item.active{display:block}
+.poem-header{background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;padding:24px 28px}
+.poem-title{font-size:1.7em;font-weight:800;margin-bottom:8px}.poem-meta{font-size:1em;opacity:.92}
+.poem-body{padding:24px 28px}.category-badge{display:inline-block;background:#f3e8ff;color:#7e22ce;padding:5px 14px;border-radius:999px;font-size:.85em;font-weight:600;margin-bottom:16px}
+.poem-content{white-space:pre-wrap;line-height:2;font-size:1.08em;color:#334155;padding:18px 20px;background:#f8fafc;border-left:4px solid #ec4899;border-radius:8px}
+.count{color:#64748b;font-size:.82em}
+.footer{text-align:center;color:#94a3b8;font-size:.8em;line-height:1.9;padding:30px 20px;border-top:1px solid #e2e8f0;margin-top:30px}
+.footer a{color:#8b5cf6;text-decoration:none}
 .hide{display:none!important}
+@media(max-width:760px){.layout{flex-direction:column}.sidebar{flex:none;width:100%;max-height:40vh}.detail{position:static}.hero h1{font-size:1.9em}}
 </style></head>
 <body>
-<h1>📜 좋아하는 시</h1><div class="sub">총 ${list.length}편 · 내보낸 날짜 ${ds}</div>
-<div class="controls">
-  <div class="cat-bar" id="catBar">${catBtns}</div>
-  <div class="tools">
-    <input id="q" type="text" placeholder="🔍 제목·시인 찾기">
-    <label>정렬 <select id="sort">
-      <option value="default">기본순</option>
-      <option value="title">제목 가나다</option>
-      <option value="poet">시인 가나다</option>
-    </select></label>
-    <span id="count" style="color:#64748b;font-size:.82em"></span>
+<div class="hero">
+  <h1>📜 좋아하는 시</h1>
+  <p>마음에 담아 둔 한국 현대시 모음</p>
+  <div class="badge">총 ${list.length}편 · ${ds}</div>
+</div>
+<div class="wrap">
+  <div class="controls">
+    <div class="cat-bar" id="catBar">${catBtns}</div>
+    <div class="tools">
+      <input id="q" type="text" placeholder="🔍 제목·시인 찾기">
+      <label>정렬 <select id="sort">
+        <option value="default">기본순</option>
+        <option value="title">제목 가나다</option>
+        <option value="poet">시인 가나다</option>
+      </select></label>
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+  <div class="layout">
+    <ul class="sidebar" id="nav" style="list-style:none;margin:0">
+${navItems}
+    </ul>
+    <div class="detail" id="detail">
+${items}
+    </div>
   </div>
 </div>
-<div class="toc"><h2>📑 목차</h2><ol id="toc">${tocItems}</ol></div>
-<div id="list">
-${items}
+<div class="footer">
+  <div>Copyright 2026 ⓒ <a href="https://startgage.up.railway.app">startgage.up.railway.app</a>, All Rights Reserved. | 박정원(한국외국어대학교)</div>
+  <div>AI 뉴스레터 빌더: <a href="https://kletter.kr/" target="_blank" rel="noopener">kletter.kr</a> · AI 강의콘텐츠 빌더: <a href="https://kteacher.kr/" target="_blank" rel="noopener">kteacher.kr</a></div>
 </div>
 <script>
 (function(){
-  var listEl=document.getElementById('list');
-  var items=Array.prototype.slice.call(listEl.querySelectorAll('.poem-item'));
-  var toc=document.getElementById('toc');
-  var tocLis=Array.prototype.slice.call(toc.querySelectorAll('li'));
+  var nav=document.getElementById('nav');
+  var navItems=Array.prototype.slice.call(nav.querySelectorAll('.nav-item'));
+  var origNav=navItems.slice();
+  var poems=Array.prototype.slice.call(document.querySelectorAll('.poem-item'));
   var cat='__all', q='', sort='default';
-  var orig=items.slice();
+  function select(idx){
+    poems.forEach(function(p){p.classList.toggle('active', p.id==='poem-'+idx);});
+    navItems.forEach(function(li){li.classList.toggle('active', li.dataset.idx===String(idx));});
+  }
   function apply(){
-    // 정렬
-    var arr=orig.slice();
+    var arr=origNav.slice();
     if(sort==='title') arr.sort(function(a,b){return a.dataset.title.localeCompare(b.dataset.title,'ko');});
     else if(sort==='poet') arr.sort(function(a,b){return a.dataset.poet.localeCompare(b.dataset.poet,'ko');});
-    arr.forEach(function(el){listEl.appendChild(el);});
-    // 필터
-    var ql=q.trim().toLowerCase(), n=0;
-    items.forEach(function(el){
-      var okCat=(cat==='__all'||el.dataset.theme===cat);
-      var okQ=!ql||(el.dataset.title+' '+el.dataset.poet).toLowerCase().indexOf(ql)>=0;
-      var show=okCat&&okQ; el.classList.toggle('hide',!show); if(show)n++;
+    arr.forEach(function(li){nav.appendChild(li);});
+    var ql=q.trim().toLowerCase(), n=0, firstVisible=null;
+    navItems.forEach(function(li){
+      var okCat=(cat==='__all'||li.dataset.theme===cat);
+      var okQ=!ql||(li.dataset.title+' '+li.dataset.poet).toLowerCase().indexOf(ql)>=0;
+      var show=okCat&&okQ; li.classList.toggle('hide',!show); if(show){n++; if(!firstVisible)firstVisible=li;}
     });
-    tocLis.forEach(function(li){var a=li.querySelector('a');var okc=(cat==='__all'||li.dataset.theme===cat);li.classList.toggle('hide',!okc);});
     document.getElementById('count').textContent=n+'편';
+    // 현재 선택이 숨겨졌으면 첫 항목 선택
+    var active=nav.querySelector('.nav-item.active:not(.hide)');
+    if(!active&&firstVisible) select(firstVisible.dataset.idx);
   }
+  nav.addEventListener('click',function(e){
+    var li=e.target.closest('.nav-item'); if(!li)return;
+    select(li.dataset.idx);
+    document.getElementById('detail').scrollIntoView({behavior:'smooth',block:'nearest'});
+  });
   document.getElementById('catBar').addEventListener('click',function(e){
     var b=e.target.closest('.cat-btn'); if(!b)return;
     document.querySelectorAll('.cat-btn').forEach(function(x){x.classList.remove('active');});
