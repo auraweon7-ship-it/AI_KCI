@@ -13606,6 +13606,10 @@ function poemExportHtml() {
   const themes = Object.keys(tc).sort((a,b)=>a.localeCompare(b,'ko'));
   const catBtns = `<button class="cat-btn active" data-cat="__all">전체 ${list.length}</button>` +
     themes.map(t => `<button class="cat-btn" data-cat="${attr(t)}">${esc(t)} ${tc[t]}</button>`).join('');
+  // 시인 목록(가나다순)
+  const pc = {}; list.forEach(p => pc[p.poet] = (pc[p.poet]||0)+1);
+  const poets = Object.keys(pc).sort((a,b)=>a.localeCompare(b,'ko'));
+  const poetBtns = poets.map(pn => `<button class="poet-btn" data-poet="${attr(pn)}">${esc(pn)} ${pc[pn]}</button>`).join('');
   // 우측 상세용 숨김 poem-item (가져오기 호환) + 좌측 목록 li
   const items = list.map((p, i) => `      <div class="poem-item${i===0?' active':''}" id="poem-${i}" data-theme="${attr(p.theme)}" data-poet="${attr(p.poet)}" data-title="${attr(p.t)}">
         <div class="poem-header">
@@ -13633,6 +13637,11 @@ body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;margin:0;color
 .cat-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
 .cat-btn{padding:5px 12px;border-radius:999px;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:.82em;cursor:pointer}
 .cat-btn.active{background:#8b5cf6;color:#fff;border-color:#8b5cf6}
+.poet-wrap{margin-bottom:10px}
+.poet-wrap summary{cursor:pointer;font-size:.8em;color:#7e22ce;font-weight:600;padding:2px 0;user-select:none}
+.poet-bar{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;max-height:150px;overflow-y:auto}
+.poet-btn{padding:4px 10px;border-radius:999px;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:.78em;cursor:pointer}
+.poet-btn.active{background:#ec4899;color:#fff;border-color:#ec4899}
 .tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .tools select,.tools input{padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:.85em;background:#fff}
 .tools input{flex:1;min-width:160px}
@@ -13660,11 +13669,15 @@ body{font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;margin:0;color
 <div class="hero">
   <h1>📜 좋아하는 시</h1>
   <p>마음에 담아 둔 한국 현대시 모음</p>
+  <p style="font-size:.82em;opacity:.8;margin-top:6px">무단 공유, 무단 배포를 금지합니다</p>
   <div class="badge">총 ${list.length}편 · ${ds}</div>
 </div>
 <div class="wrap">
   <div class="controls">
     <div class="cat-bar" id="catBar">${catBtns}</div>
+    <details class="poet-wrap"><summary>✍️ 시인 목록 (가나다순 · ${poets.length}명)</summary>
+      <div class="poet-bar" id="poetBar">${poetBtns}</div>
+    </details>
     <div class="tools">
       <input id="q" type="text" placeholder="🔍 제목·시인 찾기">
       <label>정렬 <select id="sort">
@@ -13694,7 +13707,7 @@ ${items}
   var navItems=Array.prototype.slice.call(nav.querySelectorAll('.nav-item'));
   var origNav=navItems.slice();
   var poems=Array.prototype.slice.call(document.querySelectorAll('.poem-item'));
-  var cat='__all', q='', sort='default';
+  var cat='__all', q='', sort='default', poet='__all';
   function select(idx){
     poems.forEach(function(p){p.classList.toggle('active', p.id==='poem-'+idx);});
     navItems.forEach(function(li){li.classList.toggle('active', li.dataset.idx===String(idx));});
@@ -13707,8 +13720,9 @@ ${items}
     var ql=q.trim().toLowerCase(), n=0, firstVisible=null;
     navItems.forEach(function(li){
       var okCat=(cat==='__all'||li.dataset.theme===cat);
+      var okPoet=(poet==='__all'||li.dataset.poet===poet);
       var okQ=!ql||(li.dataset.title+' '+li.dataset.poet).toLowerCase().indexOf(ql)>=0;
-      var show=okCat&&okQ; li.classList.toggle('hide',!show); if(show){n++; if(!firstVisible)firstVisible=li;}
+      var show=okCat&&okPoet&&okQ; li.classList.toggle('hide',!show); if(show){n++; if(!firstVisible)firstVisible=li;}
     });
     document.getElementById('count').textContent=n+'편';
     // 현재 선택이 숨겨졌으면 첫 항목 선택
@@ -13719,6 +13733,13 @@ ${items}
     var li=e.target.closest('.nav-item'); if(!li)return;
     select(li.dataset.idx);
     document.getElementById('detail').scrollIntoView({behavior:'smooth',block:'nearest'});
+  });
+  var pb=document.getElementById('poetBar');
+  if(pb) pb.addEventListener('click',function(e){
+    var b=e.target.closest('.poet-btn'); if(!b)return;
+    if(poet===b.dataset.poet){ poet='__all'; b.classList.remove('active'); }
+    else { document.querySelectorAll('.poet-btn').forEach(function(x){x.classList.remove('active');}); b.classList.add('active'); poet=b.dataset.poet; }
+    apply();
   });
   document.getElementById('catBar').addEventListener('click',function(e){
     var b=e.target.closest('.cat-btn'); if(!b)return;
