@@ -5218,8 +5218,8 @@ function renderCats() {
   // remove old tabs
   bar.querySelectorAll('.cat-tab').forEach(el => el.remove());
   state.categories.forEach(cat => {
-    // 좋아하는 시: 로그인 전에는 메뉴 숨김
-    if (cat.id === 'poems' && !isLoggedIn()) return;
+    // 좋아하는 시·내 북마크: 로그인 전에는 메뉴 숨김
+    if ((cat.id === 'poems' || cat.id === 'mybm') && !isLoggedIn()) return;
     const btn = document.createElement('button');
     btn.className = 'cat-tab' + (state.activeCat === cat.id ? ' active' : '');
     btn.innerHTML = `${cat.emoji || ''} ${cat.name}${cat.pinned ? '' : ` <span class="cat-del" onclick="deleteCat('${cat.id}',event)">✕</span>`}`;
@@ -7626,6 +7626,7 @@ function renderLinks() {
   grid.innerHTML = '';
   // 내 북마크: 내보내기/가져오기 버튼 + 카테고리(도메인)별 그룹 분류
   if (state.activeCat === 'mybm') {
+    if (!isLoggedIn()) { state.activeCat = 'all'; saveState(); render(); return; }
     const bar = document.createElement('div');
     bar.style.cssText = 'grid-column:1/-1;display:flex;gap:6px;margin-bottom:8px;';
     bar.innerHTML = `
