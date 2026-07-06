@@ -1774,7 +1774,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
         헤더 <b>🔑 API</b>=API 키 관리(별표·정렬·마스킹·복사, <b>JSON 파일 가져오기/내보내기</b>).<br>
         헤더 <b>📱 APP</b>=앱·서비스를 이름·URL·선호도(⭐1~5)로 관리(<b>JSON 가져오기/내보내기</b>).<br>
         <b>🔖 내 북마크</b>=크롬 등 표준 <b>HTML 북마크 가져오기/내보내기</b>로 이전. 카드는 <b>도메인 기준 대분류 10개</b>(동영상·개발·AI·학술·정부·블로그·포털·쇼핑·뉴스·기타)로 자동 분류, <b>그룹별 외곽선 색</b> 구분.<br>
-        <b>📜 좋아하는 시</b>=한국 현대시 120편을 <b>주제별·시인별</b>로 분류, <b>찾기</b>(시·시인·구절)와 <b>⭐ 즐겨찾기</b> 제공. 카드 클릭 시 전문 보기.
+        <b>📜 좋아하는 시</b>=한국 현대시 120여 편을 <b>주제별·시인별</b>로 분류, <b>찾기</b>(시·시인·구절)·<b>⭐ 즐겨찾기</b>·<b>➕ 시 등록</b>(내 시 추가·삭제) 제공. 카드 클릭 시 전문 보기 + <b>🔊 낭송</b>(ElevenLabs).
       </div>
 
       <div style="font-weight:800;color:var(--accent2);margin:10px 0 4px;">📅 스케줄 캘린더 (로그인 필요)</div>
@@ -4149,7 +4149,7 @@ function isLoggedIn() { try { return !!JSON.parse(localStorage.getItem('startpag
 // ── 클라우드 동기화 (Railway Postgres) ──
 let _cloudToken = null, _cloudTokenExp = 0;
 const CLOUD_BASE_KEYS = ['api_keys', 'apps', 'sched_events', 'lectures', 'todo_items'];  // 계정별(__이메일)
-const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'poem_favs'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·좋아하는 시
+const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'poem_favs', 'user_poems'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·좋아하는 시·등록 시
 const CLOUD_ALL_KEYS = [...CLOUD_BASE_KEYS, ...CLOUD_PLAIN_KEYS];
 function _cloudLocalKey(base) { return CLOUD_PLAIN_KEYS.includes(base) ? base : base + '__' + userEmail(); }
 function cloudSetToken(token, expiresIn) {
@@ -10830,12 +10830,16 @@ const POEMS=[{t:`선녀와 나뭇꾼`,poet:`최연숙`,book:`선녀와 나뭇꾼
 식을 떄까지.`}];
 // ── 좋아하는 시 (한국현대시 모음, 로그인·승인 필요) ──
 let poemState = { mode: 'theme', cat: 'all', q: '' };
+// 사용자가 등록한 시 (localStorage) — 기본 POEMS 앞에 병합
+function userPoems() { try { return JSON.parse(localStorage.getItem('user_poems') || '[]'); } catch(_) { return []; } }
+function saveUserPoems(arr) { localStorage.setItem('user_poems', JSON.stringify(arr)); try { cloudPush('user_poems'); } catch(_) {} }
+function poemAll() { return userPoems().map(p => ({ ...p, u: true })).concat(POEMS); }
 function poemKey(p) { return p.poet + '|' + p.t; }
 function poemFavs() { try { return JSON.parse(localStorage.getItem('poem_favs') || '[]'); } catch(_) { return []; } }
 function poemIsFav(p) { return poemFavs().includes(poemKey(p)); }
 function poemToggleFav(i, ev) {
   if (ev) ev.stopPropagation();
-  const p = POEMS[i]; if (!p) return;
+  const p = poemAll()[i]; if (!p) return;
   const f = poemFavs(); const k = poemKey(p); const at = f.indexOf(k);
   if (at >= 0) f.splice(at, 1); else f.push(k);
   localStorage.setItem('poem_favs', JSON.stringify(f));
@@ -10849,7 +10853,7 @@ const POEM_THEME_ORDER = ['사랑·연인','이별·슬픔','고향·가족','�
 
 function poemFiltered() {
   const q = (poemState.q || '').trim().toLowerCase();
-  let list = POEMS.map((p, i) => ({ p, i }));
+  let list = poemAll().map((p, i) => ({ p, i }));
   if (q) list = list.filter(({p}) => (p.t + ' ' + p.poet + ' ' + p.book + ' ' + p.b).toLowerCase().includes(q));
   if (poemState.mode === 'fav') list = list.filter(({p}) => poemIsFav(p));
   else if (poemState.cat !== 'all') {
@@ -10869,12 +10873,12 @@ function renderPoemsView(keepFocus) {
   // 카테고리 칩
   let chips = '';
   if (poemState.mode !== 'fav') {
-    let cats;
+    let cats; const src = poemAll();
     if (poemState.mode === 'theme') {
-      const cnt = {}; POEMS.forEach(p => cnt[p.theme] = (cnt[p.theme]||0)+1);
+      const cnt = {}; src.forEach(p => cnt[p.theme] = (cnt[p.theme]||0)+1);
       cats = POEM_THEME_ORDER.filter(t => cnt[t]).map(t => [t, cnt[t]]);
     } else {
-      const cnt = {}; POEMS.forEach(p => cnt[p.poet] = (cnt[p.poet]||0)+1);
+      const cnt = {}; src.forEach(p => cnt[p.poet] = (cnt[p.poet]||0)+1);
       cats = Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
     }
     const chip = (val, label, n) => {
@@ -10883,7 +10887,7 @@ function renderPoemsView(keepFocus) {
       return `<button onclick="poemSetCat('${jv}')"
         style="padding:3px 10px;border-radius:14px;border:1px solid ${on?'var(--accent)':'var(--border)'};background:${on?'var(--accent)':'var(--bg3)'};color:${on?'#fff':'var(--text-dim)'};font-size:.68rem;cursor:pointer;white-space:nowrap">${esc(label)} ${n}</button>`;
     };
-    chips = chip('all', '전체', POEMS.length) + cats.map(([v,n]) => chip(v, v, n)).join('');
+    chips = chip('all', '전체', poemAll().length) + cats.map(([v,n]) => chip(v, v, n)).join('');
   }
 
   const list = poemFiltered();
@@ -10892,7 +10896,7 @@ function renderPoemsView(keepFocus) {
     const preview = esc(p.b.split('\n').filter(x=>x.trim()).slice(0,2).join(' / ')).slice(0, 70);
     return `<div onclick="poemOpenDetail(${i})" style="cursor:pointer;background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 2px 10px rgba(0,0,0,.15)'" onmouseout="this.style.boxShadow='none'">
       <div style="display:flex;align-items:flex-start;gap:6px">
-        <div style="flex:1;min-width:0;font-size:.82rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.t)}</div>
+        <div style="flex:1;min-width:0;font-size:.82rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.u?'<span style="color:var(--accent);font-size:.6rem;vertical-align:middle">●</span> ':''}${esc(p.t)}</div>
         <button onclick="poemToggleFav(${i},event)" title="즐겨찾기" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:.9rem;line-height:1">${fav?'⭐':'☆'}</button>
       </div>
       <div style="font-size:.66rem;color:var(--accent2);font-weight:600">${esc(p.poet)} · <span style="color:var(--text-muted);font-weight:400">${esc(p.theme)}</span></div>
@@ -10908,6 +10912,7 @@ function renderPoemsView(keepFocus) {
         <button onclick="poemSetMode('theme')" style="padding:5px 10px;border-radius:6px;border:1px solid ${poemState.mode==='theme'?'var(--accent)':'var(--border)'};background:${poemState.mode==='theme'?'var(--accent)':'var(--bg3)'};color:${poemState.mode==='theme'?'#fff':'var(--text-dim)'};font-size:.7rem;cursor:pointer">주제별</button>
         <button onclick="poemSetMode('poet')" style="padding:5px 10px;border-radius:6px;border:1px solid ${poemState.mode==='poet'?'var(--accent)':'var(--border)'};background:${poemState.mode==='poet'?'var(--accent)':'var(--bg3)'};color:${poemState.mode==='poet'?'#fff':'var(--text-dim)'};font-size:.7rem;cursor:pointer">시인별</button>
         <button onclick="poemSetMode('fav')" style="padding:5px 10px;border-radius:6px;border:1px solid ${poemState.mode==='fav'?'var(--accent)':'var(--border)'};background:${poemState.mode==='fav'?'var(--accent)':'var(--bg3)'};color:${poemState.mode==='fav'?'#fff':'var(--text-dim)'};font-size:.7rem;cursor:pointer">⭐ 즐겨찾기 ${favCount}</button>
+        <button onclick="poemAddOpen()" style="padding:5px 10px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:.7rem;cursor:pointer">➕ 시 등록</button>
       </div>
     </div>
     ${chips ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;max-height:96px;overflow-y:auto">${chips}</div>` : ''}
@@ -10922,7 +10927,7 @@ function renderPoemsView(keepFocus) {
 }
 
 function poemOpenDetail(i) {
-  const p = POEMS[i]; if (!p) return;
+  const p = poemAll()[i]; if (!p) return;
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const fav = poemIsFav(p);
   let ov = document.getElementById('poemDetailOverlay');
@@ -10938,6 +10943,7 @@ function poemOpenDetail(i) {
     <div style="display:flex;align-items:flex-start;gap:10px">
       <h3 style="flex:1;font-size:1.15rem;font-weight:800;color:var(--text);margin:0">${esc(p.t)}</h3>
       <button onclick="poemToggleFav(${i});poemOpenDetail(${i})" title="즐겨찾기" style="background:none;border:none;cursor:pointer;font-size:1.3rem;line-height:1">${fav?'⭐':'☆'}</button>
+      ${p.u ? `<button onclick="poemDelete(${i})" title="삭제" style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--danger,#e74c3c);line-height:1">🗑</button>` : ''}
       <button onclick="document.getElementById('poemDetailOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted);line-height:1">✕</button>
     </div>
     <div style="font-size:.72rem;color:var(--accent2);font-weight:600;margin:4px 0 2px">${esc(p.poet)} <span style="color:var(--text-muted);font-weight:400">· ${esc(p.theme)}</span></div>
@@ -10951,7 +10957,7 @@ function poemOpenDetail(i) {
 }
 // ElevenLabs TTS로 시 낭송
 async function poemRecite(i) {
-  const p = POEMS[i]; if (!p) return;
+  const p = poemAll()[i]; if (!p) return;
   const key = (localStorage.getItem('eleven_api_key') || '').trim();
   const voice = (localStorage.getItem('eleven_voice_id') || '').trim();
   const btn = document.getElementById('poemReciteBtn');
@@ -10987,6 +10993,63 @@ async function poemRecite(i) {
     showToast('낭송 실패: ' + (e.message || '네트워크 오류'), '⚠️');
     btn.disabled = false; btn.textContent = '🔊 낭송';
   }
+}
+
+// 시 등록 폼
+function poemAddOpen() {
+  let ov = document.getElementById('poemAddOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'poemAddOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  const opts = POEM_THEME_ORDER.map(t => `<option value="${t}">${t}</option>`).join('');
+  const inS = 'width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;outline:none;box-sizing:border-box';
+  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:520px;width:100%;max-height:86vh;overflow-y:auto;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <h3 style="flex:1;font-size:1.05rem;font-weight:800;color:var(--text);margin:0">➕ 시 등록</h3>
+      <button onclick="document.getElementById('poemAddOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted)">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <input id="pf_t" placeholder="제목 *" style="${inS}">
+      <div style="display:flex;gap:8px">
+        <input id="pf_poet" placeholder="시인 *" style="${inS}">
+        <select id="pf_theme" style="${inS}">${opts}</select>
+      </div>
+      <div style="display:flex;gap:8px">
+        <input id="pf_book" placeholder="시집·출처 (선택)" style="${inS}">
+        <input id="pf_year" placeholder="연도 (선택)" style="${inS};max-width:120px">
+      </div>
+      <textarea id="pf_b" placeholder="시 본문 * (줄바꿈 그대로 저장)" rows="10" style="${inS};resize:vertical;line-height:1.6;font-family:inherit"></textarea>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+      <button onclick="document.getElementById('poemAddOverlay').remove()" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">취소</button>
+      <button onclick="poemAddSave()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">등록</button>
+    </div>
+  </div>`;
+  setTimeout(() => document.getElementById('pf_t')?.focus(), 50);
+}
+function poemAddSave() {
+  const g = id => (document.getElementById(id)?.value || '').trim();
+  const t = g('pf_t'), poet = g('pf_poet'), b = document.getElementById('pf_b')?.value.replace(/\r/g,'').trim() || '';
+  if (!t || !poet || !b) { showToast('제목·시인·본문은 필수입니다', '⚠️'); return; }
+  const arr = userPoems();
+  arr.unshift({ t, poet, book: g('pf_book') || t, year: g('pf_year'), theme: g('pf_theme') || '기타', b });
+  saveUserPoems(arr);
+  document.getElementById('poemAddOverlay')?.remove();
+  showToast('시가 등록되었습니다 📜');
+  renderPoemsView();
+}
+function poemDelete(i) {
+  const p = poemAll()[i]; if (!p || !p.u) return;
+  if (!confirm(`'${p.t}'를 삭제할까요?`)) return;
+  const arr = userPoems().filter(x => !(x.t === p.t && x.poet === p.poet && x.b === p.b));
+  saveUserPoems(arr);
+  document.getElementById('poemDetailOverlay')?.remove();
+  showToast('삭제되었습니다');
+  renderPoemsView();
 }
 
 // ── ACTIONS ──
