@@ -12759,6 +12759,12 @@ function poemFiltered() {
     if (poemState.mode === 'theme') list = list.filter(({p}) => p.theme === poemState.cat);
     else list = list.filter(({p}) => p.poet === poemState.cat);
   }
+  // 헤더 정렬 필터 적용
+  const sm = state.sortMode || 'default';
+  if (sm === 'name') list.sort((a,b) => a.p.t.localeCompare(b.p.t, 'ko'));
+  else if (sm === 'nameDesc') list.sort((a,b) => b.p.t.localeCompare(a.p.t, 'ko'));
+  else if (sm === 'recent') list.reverse();  // 등록 시가 앞(최근)이므로 역순=오래된순 토글
+  // visits/default: 기본 순서(등록 시 먼저)
   return list;
 }
 
