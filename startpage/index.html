@@ -13325,6 +13325,9 @@ function renderPoemsView(keepFocus) {
         <button onclick="poemSetMode('poet')" style="padding:5px 10px;border-radius:6px;border:1px solid ${poemState.mode==='poet'?'var(--accent)':'var(--border)'};background:${poemState.mode==='poet'?'var(--accent)':'var(--bg3)'};color:${poemState.mode==='poet'?'#fff':'var(--text-dim)'};font-size:.7rem;cursor:pointer">시인별</button>
         <button onclick="poemSetMode('fav')" style="padding:5px 10px;border-radius:6px;border:1px solid ${poemState.mode==='fav'?'var(--accent)':'var(--border)'};background:${poemState.mode==='fav'?'var(--accent)':'var(--bg3)'};color:${poemState.mode==='fav'?'#fff':'var(--text-dim)'};font-size:.7rem;cursor:pointer">⭐ 즐겨찾기 ${favCount}</button>
         <button onclick="poemAddOpen()" style="padding:5px 10px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:.7rem;cursor:pointer">➕ 시 등록</button>
+        <button onclick="document.getElementById('poemImportFile').click()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.7rem;cursor:pointer">📥 HTML 가져오기</button>
+        <button onclick="poemExportHtml()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.7rem;cursor:pointer">📤 HTML 내보내기</button>
+        <input type="file" id="poemImportFile" accept=".html,.htm" style="display:none" onchange="poemImportHtml(this)">
       </div>
     </div>
     ${chips ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;max-height:96px;overflow-y:auto">${chips}</div>` : ''}
@@ -13495,6 +13498,79 @@ function poemDelete(i, ev) {
   document.getElementById('poemDetailOverlay')?.remove();
   showToast('삭제되었습니다');
   renderPoemsView();
+}
+
+// 좋아하는 시 HTML 내보내기 (poem-item 구조 → 가져오기와 호환)
+function poemExportHtml() {
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const list = poemAll();
+  const items = list.map(p => `        <div class="poem-item">
+          <div class="poem-header">
+            <div class="poem-title">${esc(p.t)}</div>
+            <div class="poem-meta"><span>✍️ ${esc(p.poet)}</span></div>
+          </div>
+          <div class="poem-body">
+            <div class="category-badge">${esc(p.theme)}</div>
+            <div class="poem-content">${esc(p.b)}</div>
+          </div>
+        </div>`).join('\n');
+  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>좋아하는 시 목록</title>
+<style>body{font-family:sans-serif;max-width:800px;margin:0 auto;padding:20px}
+.poem-item{border:1px solid #e2e8f0;border-radius:10px;margin-bottom:25px;overflow:hidden}
+.poem-header{background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;padding:18px 22px}
+.poem-title{font-size:1.4em;font-weight:700;margin-bottom:6px}.poem-meta{font-size:.95em;opacity:.9}
+.poem-body{padding:20px 22px}.category-badge{display:inline-block;background:#f3e8ff;color:#7e22ce;padding:4px 12px;border-radius:999px;font-size:.85em;font-weight:600;margin-bottom:12px}
+.poem-content{white-space:pre-wrap;line-height:1.8;background:#f8fafc;border-left:4px solid #ec4899;padding:15px 18px;border-radius:6px}</style></head>
+<body><div class="header"><h1>📜 좋아하는 시 (${list.length}편)</h1></div>
+${items}
+</body></html>`;
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const d = new Date();
+  const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  a.href = url; a.download = `좋아하는시_${ds}.html`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast(`${list.length}편을 HTML로 내보냈습니다 📤`);
+}
+// 좋아하는 시 HTML 가져오기 (poem-item 구조 파싱 → user_poems 추가, 중복 생략)
+function poemImportHtml(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const doc = new DOMParser().parseFromString(String(reader.result), 'text/html');
+      const items = doc.querySelectorAll('.poem-item');
+      if (!items.length) { showToast('시 항목을 찾지 못했습니다', '⚠️'); input.value = ''; return; }
+      const norm = x => (x || '').replace(/\s+/g,'').toLowerCase();
+      const exist = new Set(poemAll().map(p => norm(p.t) + '|' + norm(p.poet)));
+      const arr = userPoems();
+      let added = 0, skip = 0;
+      items.forEach(it => {
+        const t = (it.querySelector('.poem-title')?.textContent || '').trim();
+        let poet = (it.querySelector('.poem-meta')?.textContent || '').replace(/[✍️\s]+/g,' ').trim();
+        poet = poet.split(/[·|]/)[0].trim() || '미상';
+        const theme = (it.querySelector('.category-badge')?.textContent || '기타').trim();
+        let b = it.querySelector('.poem-content')?.textContent || '';
+        b = b.split('\n').map(l => l.replace(/​/g,'').trimEnd()).filter(l => l.trim()).join('\n').trim();
+        if (!t || !b) return;
+        const k = norm(t) + '|' + norm(poet);
+        if (exist.has(k)) { skip++; return; }
+        exist.add(k);
+        arr.unshift({ t, poet, book: t, year: '', theme: theme || '기타', b });
+        added++;
+      });
+      if (added) saveUserPoems(arr);
+      showToast(`가져오기 완료 — 추가 ${added}편, 중복 생략 ${skip}편 📥`);
+      renderPoemsView();
+    } catch(e) {
+      showToast('가져오기 실패: ' + (e.message || '파싱 오류'), '⚠️');
+    }
+    input.value = '';
+  };
+  reader.readAsText(file, 'utf-8');
 }
 
 // ── ACTIONS ──
