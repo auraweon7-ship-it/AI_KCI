@@ -1245,6 +1245,17 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
     <div class="rw" id="rwFX">
       <div class="rw-hdr"><span>💱 환율</span><button class="rw-refresh" onclick="loadFX()" title="새로고침">↻</button></div>
       <div id="fxBody"><div class="skel" style="height:30px"></div></div>
+      <div id="fxCalc" style="margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);">
+        <div style="font-size:.66rem;color:var(--text-muted);margin-bottom:4px;">🧮 환율 계산기</div>
+        <div style="display:flex;gap:4px;align-items:center;">
+          <input id="fxAmt" type="number" value="1" min="0" step="any" oninput="fxCalc()"
+            style="width:0;flex:1;min-width:0;padding:5px 6px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:.72rem;">
+          <select id="fxFrom" onchange="fxCalc()" style="padding:5px 4px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:.7rem;"></select>
+          <span style="font-size:.7rem;color:var(--text-muted);">→</span>
+          <select id="fxTo" onchange="fxCalc()" style="padding:5px 4px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:.7rem;"></select>
+        </div>
+        <div id="fxCalcOut" style="margin-top:6px;font-size:.82rem;font-weight:700;color:var(--accent2);text-align:right;">—</div>
+      </div>
     </div>
 
     <!-- 연구재단 신규사업 RSS -->
@@ -8820,6 +8831,7 @@ async function loadFX() {
     const d = await (await fetch('https://open.er-api.com/v6/latest/USD')).json();
     if (!d.rates) throw new Error('no rates');
     const krw = d.rates.KRW, jpy = d.rates.JPY, eur = d.rates.EUR, cny = d.rates.CNY;
+    fxSetRates(d.rates);
     const eurKrw = krw / eur;
     const updTime = new Date(d.time_last_update_utc).toLocaleDateString('ko-KR');
     el.innerHTML = `<div class="fx-grid">
@@ -8834,6 +8846,7 @@ async function loadFX() {
     // fallback: Frankfurter
     try {
       const d2 = await (await fetch('https://api.frankfurter.app/latest?from=USD&to=KRW,JPY,EUR,CNY')).json();
+      fxSetRates(d2.rates);
       el.innerHTML = `<div class="fx-grid">
         <div class="fx-item"><div class="fx-pair">USD → KRW</div><div class="fx-rate">₩${Math.round(d2.rates.KRW).toLocaleString()}</div></div>
         <div class="fx-item"><div class="fx-pair">USD → JPY</div><div class="fx-rate">¥${d2.rates.JPY.toFixed(2)}</div></div>
@@ -8845,6 +8858,37 @@ async function loadFX() {
       el.innerHTML = '<div style="font-size:.75rem;color:var(--text-muted)">환율 로드 실패 <button onclick="loadFX()" style="color:var(--accent2);background:none;border:none;cursor:pointer;text-decoration:underline">재시도</button></div>';
     }
   }
+}
+
+// ── 환율 계산기 ──
+// USD 기준 rates(예: {KRW, JPY, EUR, CNY, ...}) 저장 후 통화 간 환산
+let fxRates = null;
+const FX_CCY = ['KRW', 'USD', 'JPY', 'EUR', 'CNY', 'GBP', 'AUD', 'CAD', 'HKD'];
+const FX_SYM = { KRW:'₩', USD:'$', JPY:'¥', EUR:'€', CNY:'¥', GBP:'£', AUD:'A$', CAD:'C$', HKD:'HK$' };
+function fxSetRates(rates) {
+  if (!rates) return;
+  fxRates = Object.assign({ USD: 1 }, rates);
+  const from = document.getElementById('fxFrom'), to = document.getElementById('fxTo');
+  if (from && !from.options.length) {
+    const opts = FX_CCY.filter(c => c === 'USD' || fxRates[c] != null)
+      .map(c => `<option value="${c}">${c}</option>`).join('');
+    from.innerHTML = opts; to.innerHTML = opts;
+    from.value = 'USD'; to.value = 'KRW';
+  }
+  fxCalc();
+}
+function fxCalc() {
+  const out = document.getElementById('fxCalcOut');
+  if (!out) return;
+  if (!fxRates) { out.textContent = '환율 로딩 중…'; return; }
+  const amt = parseFloat(document.getElementById('fxAmt').value);
+  const from = document.getElementById('fxFrom').value, to = document.getElementById('fxTo').value;
+  if (!isFinite(amt) || !fxRates[from] || !fxRates[to]) { out.textContent = '—'; return; }
+  // USD 기준: from→USD→to
+  const usd = amt / fxRates[from];
+  const res = usd * fxRates[to];
+  const dec = (to === 'KRW' || to === 'JPY') ? 0 : 2;
+  out.textContent = `${(FX_SYM[to] || '')}${res.toLocaleString('ko-KR', { minimumFractionDigits: dec, maximumFractionDigits: dec })}`;
 }
 
 // ── 연구재단 신규사업 (nrf.re.kr 페이지 파싱) ──
