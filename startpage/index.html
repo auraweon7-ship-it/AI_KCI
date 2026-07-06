@@ -13289,7 +13289,7 @@ function renderPoemsView(keepFocus) {
       cats = POEM_THEME_ORDER.filter(t => cnt[t]).map(t => [t, cnt[t]]);
     } else {
       const cnt = {}; src.forEach(p => cnt[p.poet] = (cnt[p.poet]||0)+1);
-      cats = Object.entries(cnt).sort((a,b)=>b[1]-a[1]);
+      cats = Object.entries(cnt).sort((a,b)=>a[0].localeCompare(b[0],'ko'));
     }
     const chip = (val, label, n) => {
       const on = poemState.cat === val;
