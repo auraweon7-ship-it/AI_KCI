@@ -5218,6 +5218,8 @@ function renderCats() {
   // remove old tabs
   bar.querySelectorAll('.cat-tab').forEach(el => el.remove());
   state.categories.forEach(cat => {
+    // 좋아하는 시: 로그인 전에는 메뉴 숨김
+    if (cat.id === 'poems' && !isLoggedIn()) return;
     const btn = document.createElement('button');
     btn.className = 'cat-tab' + (state.activeCat === cat.id ? ' active' : '');
     btn.innerHTML = `${cat.emoji || ''} ${cat.name}${cat.pinned ? '' : ` <span class="cat-del" onclick="deleteCat('${cat.id}',event)">✕</span>`}`;
@@ -7295,6 +7297,7 @@ function renderLinks() {
 
   // Special: 좋아하는 시
   if (state.activeCat === 'poems') {
+    if (!isLoggedIn()) { state.activeCat = 'all'; saveState(); render(); return; }
     renderPoemsView();
     return;
   }
