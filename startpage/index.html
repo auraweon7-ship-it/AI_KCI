@@ -4149,7 +4149,7 @@ function isLoggedIn() { try { return !!JSON.parse(localStorage.getItem('startpag
 // ── 클라우드 동기화 (Railway Postgres) ──
 let _cloudToken = null, _cloudTokenExp = 0;
 const CLOUD_BASE_KEYS = ['api_keys', 'apps', 'sched_events', 'lectures', 'todo_items'];  // 계정별(__이메일)
-const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'poem_favs', 'user_poems'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·좋아하는 시·등록 시
+const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·좋아하는 시·등록/수정/삭제
 const CLOUD_ALL_KEYS = [...CLOUD_BASE_KEYS, ...CLOUD_PLAIN_KEYS];
 function _cloudLocalKey(base) { return CLOUD_PLAIN_KEYS.includes(base) ? base : base + '__' + userEmail(); }
 function cloudSetToken(token, expiresIn) {
@@ -13224,7 +13224,20 @@ let poemState = { mode: 'theme', cat: 'all', q: '' };
 // 사용자가 등록한 시 (localStorage) — 기본 POEMS 앞에 병합
 function userPoems() { try { return JSON.parse(localStorage.getItem('user_poems') || '[]'); } catch(_) { return []; } }
 function saveUserPoems(arr) { localStorage.setItem('user_poems', JSON.stringify(arr)); try { cloudPush('user_poems'); } catch(_) {} }
-function poemAll() { return userPoems().map(p => ({ ...p, u: true })).concat(POEMS); }
+// 내장 시 오버레이: 숨김(삭제) 키 목록 + 수정본(원본키→수정 데이터)
+function poemHidden() { try { return JSON.parse(localStorage.getItem('poem_hidden') || '[]'); } catch(_) { return []; } }
+function savePoemHidden(a) { localStorage.setItem('poem_hidden', JSON.stringify(a)); try { cloudPush('poem_hidden'); } catch(_) {} }
+function poemOverrides() { try { return JSON.parse(localStorage.getItem('poem_over') || '{}'); } catch(_) { return {}; } }
+function savePoemOverrides(o) { localStorage.setItem('poem_over', JSON.stringify(o)); try { cloudPush('poem_over'); } catch(_) {} }
+function poemAll() {
+  const hid = new Set(poemHidden());
+  const ov = poemOverrides();
+  const users = userPoems().map(p => ({ ...p, u: true }));
+  const builtin = POEMS
+    .filter(p => !hid.has(poemKey(p)))
+    .map(p => { const o = ov[poemKey(p)]; return o ? { ...p, ...o, ok: poemKey(p) } : p; });
+  return users.concat(builtin);
+}
 function poemKey(p) { return p.poet + '|' + p.t; }
 function poemFavs() { try { return JSON.parse(localStorage.getItem('poem_favs') || '[]'); } catch(_) { return []; } }
 function poemIsFav(p) { return poemFavs().includes(poemKey(p)); }
@@ -13295,6 +13308,8 @@ function renderPoemsView(keepFocus) {
       <div style="display:flex;align-items:flex-start;gap:6px">
         <div style="flex:1;min-width:0;font-size:.82rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.u?'<span style="color:var(--accent);font-size:.6rem;vertical-align:middle">●</span> ':''}${esc(p.t)}</div>
         <button onclick="poemToggleFav(${i},event)" title="즐겨찾기" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:.9rem;line-height:1">${fav?'⭐':'☆'}</button>
+        <button onclick="poemEdit(${i},event)" title="수정" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:.78rem;line-height:1">✏️</button>
+        <button onclick="poemDelete(${i},event)" title="삭제" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:.78rem;line-height:1;color:var(--danger,#e74c3c)">✕</button>
       </div>
       <div style="font-size:.66rem;color:var(--accent2);font-weight:600">${esc(p.poet)} · <span style="color:var(--text-muted);font-weight:400">${esc(p.theme)}</span></div>
       <div style="font-size:.64rem;color:var(--text-dim);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${preview}</div>
@@ -13340,7 +13355,8 @@ function poemOpenDetail(i) {
     <div style="display:flex;align-items:flex-start;gap:10px">
       <h3 style="flex:1;font-size:1.15rem;font-weight:800;color:var(--text);margin:0">${esc(p.t)}</h3>
       <button onclick="poemToggleFav(${i});poemOpenDetail(${i})" title="즐겨찾기" style="background:none;border:none;cursor:pointer;font-size:1.3rem;line-height:1">${fav?'⭐':'☆'}</button>
-      ${p.u ? `<button onclick="poemDelete(${i})" title="삭제" style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--danger,#e74c3c);line-height:1">🗑</button>` : ''}
+      <button onclick="poemEdit(${i})" title="수정" style="background:none;border:none;cursor:pointer;font-size:1rem;line-height:1">✏️</button>
+      <button onclick="poemDelete(${i})" title="삭제" style="background:none;border:none;cursor:pointer;font-size:1rem;color:var(--danger,#e74c3c);line-height:1">🗑</button>
       <button onclick="document.getElementById('poemDetailOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted);line-height:1">✕</button>
     </div>
     <div style="font-size:.72rem;color:var(--accent2);font-weight:600;margin:4px 0 2px">${esc(p.poet)} <span style="color:var(--text-muted);font-weight:400">· ${esc(p.theme)}</span></div>
@@ -13392,8 +13408,11 @@ async function poemRecite(i) {
   }
 }
 
-// 시 등록 폼
-function poemAddOpen() {
+// 시 등록/수정 폼 (editIdx: poemAll 인덱스, null이면 신규)
+let _poemEditIdx = null;
+function poemAddOpen(editIdx) {
+  _poemEditIdx = (typeof editIdx === 'number') ? editIdx : null;
+  const cur = _poemEditIdx != null ? poemAll()[_poemEditIdx] : null;
   let ov = document.getElementById('poemAddOverlay');
   if (!ov) {
     ov = document.createElement('div');
@@ -13402,48 +13421,77 @@ function poemAddOpen() {
     ov.onclick = e => { if (e.target === ov) ov.remove(); };
     document.body.appendChild(ov);
   }
-  const opts = POEM_THEME_ORDER.map(t => `<option value="${t}">${t}</option>`).join('');
+  const themes = Array.from(new Set(POEM_THEME_ORDER.concat(poemAll().map(p => p.theme))));
+  const curTheme = cur ? cur.theme : '';
+  const opts = themes.map(t => `<option value="${t}"${t===curTheme?' selected':''}>${t}</option>`).join('');
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const inS = 'width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;outline:none;box-sizing:border-box';
   ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:520px;width:100%;max-height:86vh;overflow-y:auto;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-      <h3 style="flex:1;font-size:1.05rem;font-weight:800;color:var(--text);margin:0">➕ 시 등록</h3>
+      <h3 style="flex:1;font-size:1.05rem;font-weight:800;color:var(--text);margin:0">${cur ? '✏️ 시 수정' : '➕ 시 등록'}</h3>
       <button onclick="document.getElementById('poemAddOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted)">✕</button>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px">
-      <input id="pf_t" placeholder="제목 *" style="${inS}">
+      <input id="pf_t" placeholder="제목 *" value="${cur?esc(cur.t):''}" style="${inS}">
       <div style="display:flex;gap:8px">
-        <input id="pf_poet" placeholder="시인 *" style="${inS}">
+        <input id="pf_poet" placeholder="시인 *" value="${cur?esc(cur.poet):''}" style="${inS}">
         <select id="pf_theme" style="${inS}">${opts}</select>
       </div>
       <div style="display:flex;gap:8px">
-        <input id="pf_book" placeholder="시집·출처 (선택)" style="${inS}">
-        <input id="pf_year" placeholder="연도 (선택)" style="${inS};max-width:120px">
+        <input id="pf_book" placeholder="시집·출처 (선택)" value="${cur?esc(cur.book):''}" style="${inS}">
+        <input id="pf_year" placeholder="연도 (선택)" value="${cur?esc(cur.year):''}" style="${inS};max-width:120px">
       </div>
-      <textarea id="pf_b" placeholder="시 본문 * (줄바꿈 그대로 저장)" rows="10" style="${inS};resize:vertical;line-height:1.6;font-family:inherit"></textarea>
+      <textarea id="pf_b" placeholder="시 본문 * (줄바꿈 그대로 저장)" rows="10" style="${inS};resize:vertical;line-height:1.6;font-family:inherit">${cur?esc(cur.b):''}</textarea>
     </div>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
       <button onclick="document.getElementById('poemAddOverlay').remove()" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">취소</button>
-      <button onclick="poemAddSave()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">등록</button>
+      <button onclick="poemAddSave()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">${cur ? '저장' : '등록'}</button>
     </div>
   </div>`;
   setTimeout(() => document.getElementById('pf_t')?.focus(), 50);
 }
+function poemEdit(i, ev) { if (ev) ev.stopPropagation(); poemAddOpen(i); }
 function poemAddSave() {
   const g = id => (document.getElementById(id)?.value || '').trim();
   const t = g('pf_t'), poet = g('pf_poet'), b = document.getElementById('pf_b')?.value.replace(/\r/g,'').trim() || '';
   if (!t || !poet || !b) { showToast('제목·시인·본문은 필수입니다', '⚠️'); return; }
-  const arr = userPoems();
-  arr.unshift({ t, poet, book: g('pf_book') || t, year: g('pf_year'), theme: g('pf_theme') || '기타', b });
-  saveUserPoems(arr);
+  const data = { t, poet, book: g('pf_book') || t, year: g('pf_year'), theme: g('pf_theme') || '기타', b };
+  if (_poemEditIdx != null) {
+    const cur = poemAll()[_poemEditIdx];
+    if (cur && cur.u) {
+      // 사용자 시 수정: user_poems에서 매칭 항목 교체
+      const arr = userPoems();
+      const at = arr.findIndex(x => x.t === cur.t && x.poet === cur.poet && x.b === cur.b);
+      if (at >= 0) arr[at] = data; else arr.unshift(data);
+      saveUserPoems(arr);
+    } else if (cur) {
+      // 내장 시 수정: 원본키 오버라이드로 저장
+      const key = cur.ok || poemKey(cur);
+      const ov = poemOverrides(); ov[key] = data; savePoemOverrides(ov);
+    }
+    showToast('시가 수정되었습니다 ✏️');
+  } else {
+    const arr = userPoems(); arr.unshift(data); saveUserPoems(arr);
+    showToast('시가 등록되었습니다 📜');
+  }
+  _poemEditIdx = null;
   document.getElementById('poemAddOverlay')?.remove();
-  showToast('시가 등록되었습니다 📜');
   renderPoemsView();
 }
-function poemDelete(i) {
-  const p = poemAll()[i]; if (!p || !p.u) return;
+function poemDelete(i, ev) {
+  if (ev) ev.stopPropagation();
+  const p = poemAll()[i]; if (!p) return;
   if (!confirm(`'${p.t}'를 삭제할까요?`)) return;
-  const arr = userPoems().filter(x => !(x.t === p.t && x.poet === p.poet && x.b === p.b));
-  saveUserPoems(arr);
+  if (p.u) {
+    // 사용자 시: user_poems에서 제거
+    const arr = userPoems().filter(x => !(x.t === p.t && x.poet === p.poet && x.b === p.b));
+    saveUserPoems(arr);
+  } else {
+    // 내장 시: 숨김 목록에 추가 + 오버라이드 제거
+    const key = p.ok || poemKey(p);
+    const hid = poemHidden(); if (!hid.includes(key)) hid.push(key); savePoemHidden(hid);
+    const ov = poemOverrides(); if (ov[key]) { delete ov[key]; savePoemOverrides(ov); }
+  }
   document.getElementById('poemDetailOverlay')?.remove();
   showToast('삭제되었습니다');
   renderPoemsView();
