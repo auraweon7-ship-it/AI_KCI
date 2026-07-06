@@ -13805,43 +13805,82 @@ function poemImportHtml(input) {
 // ── 좋아하는 음악 (장르별, embed 재생, 로그인·승인 필요) ──
 // [제목, 가수, 장르, YouTube videoId]  (모두 embed 허용 공식 MV)
 const MUSIC = [
-  ['Gangnam Style','PSY','K-POP','9bZkp7q19f0'],
-  ['Dynamite','BTS','K-POP','gdZLi9oWNZg'],
-  ['DDU-DU DDU-DU','BLACKPINK','K-POP','IHNzOHi8sJs'],
-  ['Butter','BTS','K-POP','WMweEpGlu_U'],
-  ['Boy With Luv','BTS','K-POP','kTJczUoc26U'],
-  ['Kill This Love','BLACKPINK','K-POP','ArmDp-zijuc'],
-  ['How You Like That','BLACKPINK','K-POP','32si5cfrCNc'],
+  // POP
   ['Shape of You','Ed Sheeran','POP','JGwWNGJdvx8'],
   ['Uptown Funk','Mark Ronson','POP','OPf0YbXqDm0'],
   ['Roar','Katy Perry','POP','CevxZvSJLk8'],
   ['Sugar','Maroon 5','POP','09R8_2nJtjg'],
   ['Hello','Adele','POP','YQHsXMglC9A'],
   ['Sorry','Justin Bieber','POP','fRh_vgS2dFE'],
-  ['Despacito','Luis Fonsi','POP','kJQP7kiw5Fk'],
-  ['Lose Yourself','Eminem','힙합','_Yhyp-_hX2s'],
-  ['Rap God','Eminem','힙합','XbGs_qK2PQA'],
-  ['In Da Club','50 Cent','힙합','5qm8PH4xAss'],
-  ['HUMBLE.','Kendrick Lamar','힙합','tvTRZJ-4EyI'],
-  ['Without Me','Eminem','힙합','YVkUvmDQ3HY'],
-  ['Bohemian Rhapsody','Queen','락','fJ9rUzIMcZQ'],
-  ["Sweet Child O' Mine",'Guns N\' Roses','락','1w7OgIMMRc4'],
-  ['Smells Like Teen Spirit','Nirvana','락','hTWKbfoikeg'],
-  ['Thunderstruck','AC/DC','락','v2AC41dglnM'],
-  ['Numb','Linkin Park','락','kXYiU_JCYtU'],
-  ['Faded','Alan Walker','EDM','60ItHLz5WEA'],
-  ['Wake Me Up','Avicii','EDM','IcrbM1l_BoI'],
-  ['Alone','Marshmello','EDM','ALZHF5UqnU4'],
-  ['Animals','Martin Garrix','EDM','gCYcHz2k5x0'],
-  ['Closer','The Chainsmokers','EDM','PT2_F-1esPk'],
-  ['Levels','Avicii','EDM','RBumgq5yVrA'],
-  ['Perfect','Ed Sheeran','발라드','2Vv-BfVoq4g'],
-  ['Thinking Out Loud','Ed Sheeran','발라드','lp-EO5I60KA'],
-  ['All of Me','John Legend','발라드','450p7goxZqg'],
-  ['See You Again','Wiz Khalifa','발라드','RgKAFK5djSk'],
-  ['Counting Stars','OneRepublic','팝록','hT_nvWreIhg'],
+  ['Counting Stars','OneRepublic','POP','hT_nvWreIhg'],
+  // ROCK
+  ['Bohemian Rhapsody','Queen','ROCK','fJ9rUzIMcZQ'],
+  ["Sweet Child O' Mine",'Guns N\' Roses','ROCK','1w7OgIMMRc4'],
+  ['Smells Like Teen Spirit','Nirvana','ROCK','hTWKbfoikeg'],
+  ['Thunderstruck','AC/DC','ROCK','v2AC41dglnM'],
+  ['Numb','Linkin Park','ROCK','kXYiU_JCYtU'],
+  // HIPHOP / RAP
+  ['Lose Yourself','Eminem','HIPHOP / RAP','_Yhyp-_hX2s'],
+  ['Rap God','Eminem','HIPHOP / RAP','XbGs_qK2PQA'],
+  ['In Da Club','50 Cent','HIPHOP / RAP','5qm8PH4xAss'],
+  ['HUMBLE.','Kendrick Lamar','HIPHOP / RAP','tvTRZJ-4EyI'],
+  ['Without Me','Eminem','HIPHOP / RAP','YVkUvmDQ3HY'],
+  // R&B / SOUL
+  ['Blinding Lights','The Weeknd','R&B / SOUL','4NRXx6U8ABQ'],
+  ["That's What I Like",'Bruno Mars','R&B / SOUL','PMivT7MJ41M'],
+  ['Halo','Beyoncé','R&B / SOUL','bnVUHWCynig'],
+  // EDM / DANCE
+  ['Faded','Alan Walker','EDM / DANCE','60ItHLz5WEA'],
+  ['Wake Me Up','Avicii','EDM / DANCE','IcrbM1l_BoI'],
+  ['Alone','Marshmello','EDM / DANCE','ALZHF5UqnU4'],
+  ['Animals','Martin Garrix','EDM / DANCE','gCYcHz2k5x0'],
+  ['Closer','The Chainsmokers','EDM / DANCE','PT2_F-1esPk'],
+  // JAZZ
+  ['What a Wonderful World','Louis Armstrong','JAZZ','Ah1u4Yd4KWM'],
+  ['Feeling Good','Nina Simone','JAZZ','C-K3S6vBUt8'],
+  ['So What','Miles Davis','JAZZ','BfmXfSyXwuA'],
+  // CLASSICAL
+  ['Clair de Lune','Debussy','CLASSICAL','nS9GvQfKh0M'],
+  ['Canon in D','Pachelbel','CLASSICAL','jdWHwNZgz5w'],
+  ['Nocturne op.9 No.2','Chopin','CLASSICAL','9E6b3swbnWg'],
+  // ACOUSTIC / FOLK
+  ['Perfect','Ed Sheeran','ACOUSTIC / FOLK','2Vv-BfVoq4g'],
+  ['Thinking Out Loud','Ed Sheeran','ACOUSTIC / FOLK','lp-EO5I60KA'],
+  ['All of Me','John Legend','ACOUSTIC / FOLK','450p7goxZqg'],
+  // COUNTRY
+  ['Love Story','Taylor Swift','COUNTRY','8xg3vE8Ie_E'],
+  ['Take Me Home, Country Roads','John Denver','COUNTRY','1vrEljMfXYo'],
+  // BLUES
+  ['The Thrill Is Gone','B.B. King','BLUES','oica5jG7FpU'],
+  ['Still Got the Blues','Gary Moore','BLUES','A-ff__U-Cbc'],
+  // LATIN / REGGAE
+  ['Despacito','Luis Fonsi','LATIN / REGGAE','kJQP7kiw5Fk'],
+  ['Waka Waka','Shakira','LATIN / REGGAE','pRpeEdMmmQ0'],
+  ['Three Little Birds','Bob Marley','LATIN / REGGAE','zaGUr6wzyT8'],
+  // WORLD MUSIC
+  ['Djobi Djoba','Gipsy Kings','WORLD MUSIC','sxWLba3554s'],
+  // K-POP
+  ['Gangnam Style','PSY','K-POP','9bZkp7q19f0'],
+  ['Dynamite','BTS','K-POP','gdZLi9oWNZg'],
+  ['DDU-DU DDU-DU','BLACKPINK','K-POP','IHNzOHi8sJs'],
+  ['Butter','BTS','K-POP','WMweEpGlu_U'],
+  ['How You Like That','BLACKPINK','K-POP','32si5cfrCNc'],
+  // J-POP
+  ['Idol','YOASOBI','J-POP','dy90tA3TT1c'],
+  ['夜に駆ける','YOASOBI','J-POP','x8VYWazR5mE'],
+  ['Lemon','Kenshi Yonezu','J-POP','a51Vac8Mc3o'],
+  // C-POP
+  ['告白氣球','Jay Chou','C-POP','bu7nU9Mhpyo'],
+  // OST / SOUNDTRACK
+  ['Let It Go','Idina Menzel','OST / SOUNDTRACK','L0MK7qz13bU'],
+  ['My Heart Will Go On','Celine Dion','OST / SOUNDTRACK','bo_efYhYU2A'],
+  ['Shallow','Lady Gaga','OST / SOUNDTRACK','bEsuChD8O_4'],
+  // LO-FI / CHILL
+  ['lofi hip hop mix','Lofi','LO-FI / CHILL','TURbeWK2wwg'],
+  // HEALING / MEDITATION
+  ['Relaxing Piano','Healing','HEALING / MEDITATION','lFcSrYw-ARY'],
 ];
-const MUSIC_GENRE_ORDER = ['K-POP','POP','힙합','락','EDM','발라드','팝록'];
+const MUSIC_GENRE_ORDER = ['POP','ROCK','HIPHOP / RAP','R&B / SOUL','EDM / DANCE','JAZZ','CLASSICAL','ACOUSTIC / FOLK','COUNTRY','BLUES','LATIN / REGGAE','WORLD MUSIC','K-POP','J-POP','C-POP','OST / SOUNDTRACK','LO-FI / CHILL','HEALING / MEDITATION'];
 let musicState = { mode: 'genre', cat: 'all' };
 function musicSetMode(m) { musicState.mode = m; musicState.cat = 'all'; renderMusicView(); }
 function musicSetCat(c) { musicState.cat = c; renderMusicView(); }
