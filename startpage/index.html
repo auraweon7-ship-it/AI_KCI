@@ -8824,14 +8824,15 @@ async function loadWeather() {
 }
 
 // ── 환율 (open.er-api.com 무료 CORS) ──
-// 원화 1,000원 기준 → 달러·엔·위안·유로 (rates는 USD 기준)
+// 외화 1단위 → 원화 (rates는 USD 기준)
 function fxGridHTML(krw, jpy, eur, cny) {
-  const usd = 1000 / krw, y = 1000 * jpy / krw, e = 1000 * eur / krw, c = 1000 * cny / krw;
+  const usd = krw, y = krw / jpy, e = krw / eur, c = krw / cny;  // 1 USD·100 JPY·1 EUR·1 CNY 당 원화
+  const w = v => '₩' + Math.round(v).toLocaleString();
   return `<div class="fx-grid">
-      <div class="fx-item"><div class="fx-pair">₩1,000 → USD</div><div class="fx-rate">$${usd.toFixed(2)}</div></div>
-      <div class="fx-item"><div class="fx-pair">₩1,000 → JPY</div><div class="fx-rate">¥${y.toFixed(1)}</div></div>
-      <div class="fx-item"><div class="fx-pair">₩1,000 → CNY</div><div class="fx-rate">¥${c.toFixed(2)}</div></div>
-      <div class="fx-item"><div class="fx-pair">₩1,000 → EUR</div><div class="fx-rate">€${e.toFixed(2)}</div></div>
+      <div class="fx-item"><div class="fx-pair">$1 (USD)</div><div class="fx-rate">${w(usd)}</div></div>
+      <div class="fx-item"><div class="fx-pair">¥100 (JPY)</div><div class="fx-rate">${w(y * 100)}</div></div>
+      <div class="fx-item"><div class="fx-pair">¥1 (CNY)</div><div class="fx-rate">${w(c)}</div></div>
+      <div class="fx-item"><div class="fx-pair">€1 (EUR)</div><div class="fx-rate">${w(e)}</div></div>
     </div>`;
 }
 async function loadFX() {
@@ -8844,14 +8845,14 @@ async function loadFX() {
     fxSetRates(d.rates);
     const updTime = new Date(d.time_last_update_utc).toLocaleDateString('ko-KR');
     el.innerHTML = fxGridHTML(krw, jpy, eur, cny) +
-      `<div style="font-size:.65rem;color:var(--text-muted);margin-top:5px;text-align:right">기준: ${updTime} · 1,000원당</div>`;
+      `<div style="font-size:.65rem;color:var(--text-muted);margin-top:5px;text-align:right">기준: ${updTime} · 외화→원화</div>`;
   } catch(e) {
     // fallback: Frankfurter
     try {
       const d2 = await (await fetch('https://api.frankfurter.app/latest?from=USD&to=KRW,JPY,EUR,CNY')).json();
       fxSetRates(d2.rates);
       el.innerHTML = fxGridHTML(d2.rates.KRW, d2.rates.JPY, d2.rates.EUR, d2.rates.CNY) +
-        `<div style="font-size:.65rem;color:var(--text-muted);margin-top:5px;text-align:right">기준: ${d2.date} · 1,000원당</div>`;
+        `<div style="font-size:.65rem;color:var(--text-muted);margin-top:5px;text-align:right">기준: ${d2.date} · 외화→원화</div>`;
     } catch(_) {
       el.innerHTML = '<div style="font-size:.75rem;color:var(--text-muted)">환율 로드 실패 <button onclick="loadFX()" style="color:var(--accent2);background:none;border:none;cursor:pointer;text-decoration:underline">재시도</button></div>';
     }
