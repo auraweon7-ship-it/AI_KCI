@@ -9717,8 +9717,6 @@ function piLoad() {
     return;
   }
   grid.innerHTML = notes.map((n, i) => {
-    const urls = (n.text.match(/https?:\/\/[^\s"']+/g) || []).slice(0, 2);
-    const linkRow = urls.map(u => `<a href="${u}" target="_blank" rel="noopener" style="font-size:.58rem;color:#1a5;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">🔗 ${u.replace(/^https?:\/\//,'').slice(0,30)}</a>`).join('');
     // 날짜 패턴 감지 → 일정 등록 버튼 (YYYY-MM-DD 또는 M/D)
     const dm = n.text.match(/(\d{4})-(\d{1,2})-(\d{1,2})/) || n.text.match(/(\d{1,2})\/(\d{1,2})/);
     let calBtn = '';
@@ -9733,7 +9731,7 @@ function piLoad() {
     <div class="postit-note" style="background:${n.color}">
       <button class="postit-del" onclick="piDel(${i})" title="삭제">✕</button>
       <textarea class="postit-text" data-idx="${i}" onblur="piSaveText(${i},this.value);piLoad()">${n.text}</textarea>
-      ${linkRow}${calBtn}
+      ${calBtn}
       <div class="postit-time">${n.time}</div>
     </div>`;
   }).join('');
