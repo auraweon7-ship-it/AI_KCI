@@ -13881,9 +13881,10 @@ const MUSIC = [
   ['Relaxing Piano','Healing','HEALING / MEDITATION','lFcSrYw-ARY'],
 ];
 const MUSIC_GENRE_ORDER = ['POP','ROCK','HIPHOP / RAP','R&B / SOUL','EDM / DANCE','JAZZ','CLASSICAL','ACOUSTIC / FOLK','COUNTRY','BLUES','LATIN / REGGAE','WORLD MUSIC','K-POP','J-POP','C-POP','OST / SOUNDTRACK','LO-FI / CHILL','HEALING / MEDITATION'];
-let musicState = { mode: 'genre', cat: 'all' };
-function musicSetMode(m) { musicState.mode = m; musicState.cat = 'all'; renderMusicView(); }
-function musicSetCat(c) { musicState.cat = c; renderMusicView(); }
+let musicState = { mode: 'genre', cat: 'all', page: 1 };
+function musicSetMode(m) { musicState.mode = m; musicState.cat = 'all'; musicState.page = 1; renderMusicView(); }
+function musicSetCat(c) { musicState.cat = c; musicState.page = 1; renderMusicView(); }
+function musicSetPage(p) { musicState.page = p; renderMusicView(); document.getElementById('linksGrid')?.scrollIntoView({behavior:'smooth',block:'start'}); }
 function musicPlay(id, el) {
   el.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1&rel=0&playsinline=1" title="music"
     allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen
@@ -13999,6 +14000,122 @@ function musicAddSave() {
   document.getElementById('musicAddOverlay')?.remove();
   renderMusicView();
 }
+// 좋아하는 음악 HTML 내보내기 (music-item 구조 → 가져오기 호환, 클릭 시 embed 재생)
+function musicExportHtml() {
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const attr = s => esc(s).replace(/"/g,'&quot;');
+  const list = musicAll();
+  const tc = {}; list.forEach(m => tc[m.genre] = (tc[m.genre]||0)+1);
+  const genres = MUSIC_GENRE_ORDER.filter(g => tc[g]).concat(Object.keys(tc).filter(g => MUSIC_GENRE_ORDER.indexOf(g)<0));
+  const catBtns = `<button class="cat-btn active" data-cat="__all">전체 ${list.length}</button>` +
+    genres.map(g => `<button class="cat-btn" data-cat="${attr(g)}">${esc(g)} ${tc[g]}</button>`).join('');
+  const cards = list.map((m,i) => `      <div class="music-item" data-genre="${attr(m.genre)}" data-artist="${attr(m.artist)}" data-title="${attr(m.t)}" data-id="${attr(m.id)}">
+        <div class="thumb" onclick="play(this,'${attr(m.id)}')"><img src="https://i.ytimg.com/vi/${attr(m.id)}/mqdefault.jpg" loading="lazy"><span class="pl">▶</span><span class="g">${esc(m.genre)}</span></div>
+        <div class="mt">${esc(m.t)}</div><div class="ma">${esc(m.artist)}</div>
+      </div>`).join('\n');
+  const d = new Date();
+  const ds = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>좋아하는 음악</title>
+<style>
+*{box-sizing:border-box}body{font-family:'Malgun Gothic',sans-serif;margin:0;color:#1e293b;background:#f1f5f9}
+.hero{background:linear-gradient(135deg,#8b5cf6,#ec4899 60%,#6366f1);color:#fff;padding:50px 24px 42px;text-align:center}
+.hero h1{font-size:2.4em;margin:0 0 10px;font-weight:800}.hero p{margin:0;opacity:.92}
+.hero .badge{display:inline-block;margin-top:14px;background:rgba(255,255,255,.2);padding:6px 16px;border-radius:999px;font-size:.85em}
+.wrap{max-width:1150px;margin:0 auto;padding:22px}
+.controls{position:sticky;top:0;background:#f1f5f9;padding:14px 0;z-index:20;border-bottom:2px solid #e2e8f0;margin-bottom:18px}
+.cat-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.cat-btn{padding:5px 12px;border-radius:999px;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:.82em;cursor:pointer}
+.cat-btn.active{background:#8b5cf6;color:#fff;border-color:#8b5cf6}
+.tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.tools select,.tools input{padding:7px 10px;border:1px solid #e2e8f0;border-radius:7px;font-size:.85em;background:#fff}.tools input{flex:1;min-width:160px}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.music-item .thumb{position:relative;width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#000;cursor:pointer}
+.music-item .thumb img{width:100%;height:100%;object-fit:cover}
+.music-item .pl{position:absolute;inset:0;margin:auto;width:38px;height:38px;background:rgba(0,0,0,.65);border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.9em}
+.music-item .g{position:absolute;top:5px;left:5px;background:rgba(139,92,246,.85);color:#fff;font-size:.6em;padding:2px 7px;border-radius:6px}
+.music-item .mt{font-weight:700;font-size:.9em;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.music-item .ma{font-size:.78em;color:#8b5cf6}
+.count{color:#64748b;font-size:.82em}.hide{display:none!important}
+.footer{text-align:center;color:#94a3b8;font-size:.8em;line-height:1.9;padding:30px 20px;border-top:1px solid #e2e8f0;margin-top:30px}.footer a{color:#8b5cf6;text-decoration:none}
+@media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:560px){.grid{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:1.8em}}
+</style></head>
+<body>
+<div class="hero"><h1>🎶 좋아하는 음악</h1><p>마음에 담아 둔 음악 모음</p><p style="font-size:.82em;opacity:.8;margin-top:6px">무단 공유, 무단 배포를 금지합니다</p><div class="badge">총 ${list.length}곡 · ${ds}</div></div>
+<div class="wrap">
+  <div class="controls">
+    <div class="cat-bar" id="catBar">${catBtns}</div>
+    <div class="tools"><input id="q" type="text" placeholder="🔍 곡·가수 찾기">
+      <label>정렬 <select id="sort"><option value="genre">장르순</option><option value="artist">가수 가나다</option><option value="title">제목 가나다</option></select></label>
+      <span class="count" id="count"></span></div>
+  </div>
+  <div class="grid" id="grid">
+${cards}
+  </div>
+</div>
+<div class="footer"><div>Copyright 2026 ⓒ <a href="https://startgage.up.railway.app">startgage.up.railway.app</a>, All Rights Reserved. | 박정원(한국외국어대학교)</div>
+<div>AI 뉴스레터 빌더: <a href="https://kletter.kr/" target="_blank" rel="noopener">kletter.kr</a> · AI 강의콘텐츠 빌더: <a href="https://kteacher.kr/" target="_blank" rel="noopener">kteacher.kr</a></div></div>
+<script>
+function play(el,id){el.innerHTML='<iframe src="https://www.youtube.com/embed/'+id+'?autoplay=1&rel=0" allow="autoplay;encrypted-media" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>';}
+(function(){
+  var grid=document.getElementById('grid');
+  var items=Array.prototype.slice.call(grid.querySelectorAll('.music-item'));
+  var orig=items.slice(), cat='__all', q='', sort='genre';
+  var GO=${JSON.stringify(MUSIC_GENRE_ORDER)};
+  function apply(){
+    var arr=orig.slice();
+    if(sort==='artist') arr.sort(function(a,b){return a.dataset.artist.localeCompare(b.dataset.artist,'ko');});
+    else if(sort==='title') arr.sort(function(a,b){return a.dataset.title.localeCompare(b.dataset.title,'ko');});
+    else arr.sort(function(a,b){return (GO.indexOf(a.dataset.genre)-GO.indexOf(b.dataset.genre))||a.dataset.artist.localeCompare(b.dataset.artist,'ko');});
+    arr.forEach(function(el){grid.appendChild(el);});
+    var ql=q.trim().toLowerCase(),n=0;
+    items.forEach(function(el){var okc=(cat==='__all'||el.dataset.genre===cat);var okq=!ql||(el.dataset.title+' '+el.dataset.artist).toLowerCase().indexOf(ql)>=0;var show=okc&&okq;el.classList.toggle('hide',!show);if(show)n++;});
+    document.getElementById('count').textContent=n+'곡';
+  }
+  document.getElementById('catBar').addEventListener('click',function(e){var b=e.target.closest('.cat-btn');if(!b)return;document.querySelectorAll('.cat-btn').forEach(function(x){x.classList.remove('active');});b.classList.add('active');cat=b.dataset.cat;apply();});
+  document.getElementById('q').addEventListener('input',function(e){q=e.target.value;apply();});
+  document.getElementById('sort').addEventListener('change',function(e){sort=e.target.value;apply();});
+  apply();
+})();
+<\/script>
+</body></html>`;
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = `좋아하는음악_${ds}.html`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast(`${list.length}곡을 HTML로 내보냈습니다 📤`);
+}
+// 좋아하는 음악 HTML 가져오기 (music-item 파싱 → user_music, 중복 생략)
+function musicImportHtml(input) {
+  const file = input.files && input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const doc = new DOMParser().parseFromString(String(reader.result), 'text/html');
+      const items = doc.querySelectorAll('.music-item');
+      if (!items.length) { showToast('음악 항목을 찾지 못했습니다', '⚠️'); input.value=''; return; }
+      const norm = x => (x||'').replace(/\s+/g,'').toLowerCase();
+      const exist = new Set(musicAll().map(m => norm(m.artist)+'|'+norm(m.t)));
+      const arr = userMusic(); let added=0, skip=0;
+      items.forEach(it => {
+        const t = (it.getAttribute('data-title') || it.querySelector('.mt')?.textContent || '').trim();
+        const artist = (it.getAttribute('data-artist') || it.querySelector('.ma')?.textContent || '').trim();
+        const genre = (it.getAttribute('data-genre') || 'POP').trim();
+        const id = ytExtractId(it.getAttribute('data-id') || '');
+        if (!t || !artist || !id) return;
+        const k = norm(artist)+'|'+norm(t);
+        if (exist.has(k)) { skip++; return; }
+        exist.add(k); arr.unshift({ t, artist, genre, id }); added++;
+      });
+      if (added) saveUserMusic(arr);
+      showToast(`가져오기 완료 — 추가 ${added}곡, 중복 생략 ${skip}곡 📥`);
+      renderMusicView();
+    } catch(e) { showToast('가져오기 실패: ' + (e.message||'파싱 오류'), '⚠️'); }
+    input.value = '';
+  };
+  reader.readAsText(file, 'utf-8');
+}
 function renderMusicView() {
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
@@ -14024,7 +14141,13 @@ function renderMusicView() {
   else if (musicState.cat !== 'all') list = list.filter(m => keyOf(m) === musicState.cat);
   if (musicState.mode === 'artist') list.sort((a,b) => a.artist.localeCompare(b.artist,'ko') || a.t.localeCompare(b.t));
   else list.sort((a,b) => (MUSIC_GENRE_ORDER.indexOf(a.genre)-MUSIC_GENRE_ORDER.indexOf(b.genre)) || a.artist.localeCompare(b.artist,'ko'));
-  const cards = list.map(m => {
+  // 페이지네이션 (5열 × 10행 = 50곡/페이지)
+  const PER = 50;
+  const totalPages = Math.max(1, Math.ceil(list.length / PER));
+  if (musicState.page > totalPages) musicState.page = totalPages;
+  const pg = musicState.page;
+  const pageList = list.slice((pg-1)*PER, pg*PER);
+  const cards = pageList.map(m => {
     const k = musicKey(m); const kj = k.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const fav = musicIsFav(m);
     return `<div style="display:block;position:relative">
@@ -14049,10 +14172,19 @@ function renderMusicView() {
       <span style="font-size:.7rem;color:var(--text-dim)">정렬</span>
       ${modeBtn('genre','장르별')}${modeBtn('artist','가수별')}${modeBtn('fav','⭐ 즐겨찾기 '+favCount)}
       <button onclick="musicAddOpen()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:.72rem;cursor:pointer">➕ 곡 등록</button>
+      <button onclick="document.getElementById('musicImportFile').click()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📥 HTML 가져오기</button>
+      <button onclick="musicExportHtml()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📤 HTML 내보내기</button>
+      <input type="file" id="musicImportFile" accept=".html,.htm" style="display:none" onchange="musicImportHtml(this)">
       <span style="margin-left:auto;font-size:.66rem;color:var(--text-muted)">${list.length}곡</span>
     </div>
     ${chips ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;max-height:96px;overflow-y:auto">${chips}</div>` : ''}
     <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">${cards || '<div style="color:var(--text-muted);font-size:.72rem;padding:12px">곡이 없습니다.</div>'}</div>
+    ${totalPages>1 ? `<div style="display:flex;justify-content:center;align-items:center;gap:4px;margin-top:14px;flex-wrap:wrap">
+      <button onclick="musicSetPage(${Math.max(1,pg-1)})" ${pg===1?'disabled':''} style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:.7rem;cursor:${pg===1?'default':'pointer'};opacity:${pg===1?.4:1}">‹ 이전</button>
+      ${Array.from({length:totalPages},(_,x)=>x+1).map(pn=>`<button onclick="musicSetPage(${pn})" style="min-width:28px;padding:4px 8px;border-radius:6px;border:1px solid ${pn===pg?'var(--accent)':'var(--border)'};background:${pn===pg?'var(--accent)':'var(--bg3)'};color:${pn===pg?'#fff':'var(--text-dim)'};font-size:.7rem;cursor:pointer">${pn}</button>`).join('')}
+      <button onclick="musicSetPage(${Math.min(totalPages,pg+1)})" ${pg===totalPages?'disabled':''} style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:.7rem;cursor:${pg===totalPages?'default':'pointer'};opacity:${pg===totalPages?.4:1}">다음 ›</button>
+      <span style="font-size:.64rem;color:var(--text-muted);margin-left:6px">${pg}/${totalPages} 페이지</span>
+    </div>` : ''}
   </div>`;
 }
 
