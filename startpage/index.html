@@ -1228,8 +1228,16 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       </div>
       <div style="display:flex;align-items:center;gap:6px;margin:9px 0 6px">
         <span style="font-size:.68rem;font-weight:700;color:var(--accent2)">🎵 오늘의 음악</span>
-        <span style="font-size:.58rem;color:var(--text-muted)">인기·조회수 TOP</span>
-        <button class="rw-refresh" onclick="loadHealMusic()" title="다른 음악" style="margin-left:auto">↻</button>
+        <select id="musicGenre" onchange="loadHealMusic()" title="장르 선택"
+          style="margin-left:auto;font-size:.6rem;padding:2px 4px;background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text);cursor:pointer">
+          <option value="자동">자동</option>
+          <option value="K-POP">K-POP</option>
+          <option value="POP">POP</option>
+          <option value="힙합">힙합</option>
+          <option value="락">락</option>
+          <option value="EDM">EDM</option>
+        </select>
+        <button class="rw-refresh" onclick="loadHealMusic()" title="다른 음악">↻</button>
       </div>
       <div id="healMusicGrid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;">
         <div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.64rem;padding:6px 0">음악 불러오는 중...</div>
@@ -8559,23 +8567,55 @@ async function loadYtRec() {
 // ── 오늘의 음악 (세계 조회수 최상위 유명곡 → embed 2x1, 항상 재생) ──
 // 장르 무관 초인기 뮤직비디오 풀 (셔플 → embed 허용 2곡 자동 선별)
 // IFrame Player API로 embed 재생 가능한 것만 골라 표시(비허용 시 다음 후보로 자동 교체)
-const HEAL_VIDEOS = [
-  'kJQP7kiw5Fk', // Luis Fonsi - Despacito
-  '9bZkp7q19f0', // PSY - Gangnam Style
-  'JGwWNGJdvx8', // Ed Sheeran - Shape of You
-  'RgKAFK5djSk', // Wiz Khalifa - See You Again
-  'OPf0YbXqDm0', // Mark Ronson - Uptown Funk
-  'fRh_vgS2dFE', // Justin Bieber - Sorry
-  'kffacxfA7G4', // Justin Bieber - Baby
-  '2Vv-BfVoq4g', // Ed Sheeran - Perfect
-  'CevxZvSJLk8', // Katy Perry - Roar
-  'hT_nvWreIhg', // OneRepublic - Counting Stars
-  'YQHsXMglC9A', // Adele - Hello
-  '60ItHLz5WEA', // Alan Walker - Faded
-  'dQw4w9WgXcQ', // Rick Astley - Never Gonna Give You Up
-  'fJ9rUzIMcZQ', // Queen - Bohemian Rhapsody
-  'JRfuAukYTKg', // Taylor Swift - Blank Space
-];
+// 장르별 초인기 뮤직비디오 풀 (모두 embed 허용 Vevo 계열)
+const GENRE_VIDEOS = {
+  'K-POP': [
+    '9bZkp7q19f0', // PSY - Gangnam Style
+    'gdZLi9oWNZg', // BTS - Dynamite
+    'IHNzOHi8sJs', // BLACKPINK - DDU-DU DDU-DU
+    'WMweEpGlu_U', // BTS - Butter
+    'kTJczUoc26U', // BTS - Boy With Luv
+    'ArmDp-zijuc', // BLACKPINK - Kill This Love
+    '32si5cfrCNc', // BLACKPINK - How You Like That
+    'gdZLi9oWNZg',
+  ],
+  'POP': [
+    'JGwWNGJdvx8', // Ed Sheeran - Shape of You
+    'OPf0YbXqDm0', // Mark Ronson - Uptown Funk
+    'CevxZvSJLk8', // Katy Perry - Roar
+    '09R8_2nJtjg', // Maroon 5 - Sugar
+    'YQHsXMglC9A', // Adele - Hello
+    'fRh_vgS2dFE', // Justin Bieber - Sorry
+    '2Vv-BfVoq4g', // Ed Sheeran - Perfect
+    'kJQP7kiw5Fk', // Luis Fonsi - Despacito
+  ],
+  '힙합': [
+    '_Yhyp-_hX2s', // Eminem - Lose Yourself
+    'XbGs_qK2PQA', // Eminem - Rap God
+    '5qm8PH4xAss', // 50 Cent - In Da Club
+    'tvTRZJ-4EyI', // Kendrick Lamar - HUMBLE.
+    'uelHwf8o7_U', // Eminem - Love The Way You Lie
+    'YVkUvmDQ3HY', // Eminem - Without Me
+  ],
+  '락': [
+    'fJ9rUzIMcZQ', // Queen - Bohemian Rhapsody
+    '1w7OgIMMRc4', // Guns N' Roses - Sweet Child O' Mine
+    'hTWKbfoikeg', // Nirvana - Smells Like Teen Spirit
+    'v2AC41dglnM', // AC/DC - Thunderstruck
+    'kXYiU_JCYtU', // Linkin Park - Numb
+    'CD-E-LDc384', // Eagles - Hotel California
+  ],
+  'EDM': [
+    '60ItHLz5WEA', // Alan Walker - Faded
+    'IcrbM1l_BoI', // Avicii - Wake Me Up
+    'ALZHF5UqnU4', // Marshmello - Alone
+    'gCYcHz2k5x0', // Martin Garrix - Animals
+    'PT2_F-1esPk', // The Chainsmokers - Closer
+    'RBumgq5yVrA', // Avicii - Levels
+  ],
+};
+// 자동 = 전 장르 통합
+const HEAL_VIDEOS = [].concat(...Object.values(GENRE_VIDEOS));
 let _ytApiReady = false;
 function ensureYtApi() {
   return new Promise(resolve => {
@@ -8594,8 +8634,11 @@ async function loadHealMusic() {
   if (!grid) return;
   grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);font-size:.64rem;padding:8px 0">🎵 재생 가능한 음악 찾는 중...</div>';
   await ensureYtApi();
-  // 후보 셔플
-  const pool = [...HEAL_VIDEOS].sort(() => Math.random() - 0.5);
+  // 선택 장르 풀 (자동=전체)
+  const genre = document.getElementById('musicGenre')?.value || '자동';
+  const src = (genre !== '자동' && GENRE_VIDEOS[genre]) ? GENRE_VIDEOS[genre] : HEAL_VIDEOS;
+  // 중복 제거 + 셔플
+  const pool = [...new Set(src)].sort(() => Math.random() - 0.5);
   const ok = [];
   const test = id => new Promise(res => {
     const d = document.createElement('div');
