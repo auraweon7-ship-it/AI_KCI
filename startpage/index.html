@@ -13885,6 +13885,7 @@ function renderPoemsView(keepFocus) {
         <button onclick="poemAddOpen()" style="padding:5px 10px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:.7rem;cursor:pointer">➕ 시 등록</button>
         <button onclick="document.getElementById('poemImportFile').click()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.7rem;cursor:pointer">📥 HTML 가져오기</button>
         <button onclick="poemExportHtml()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.7rem;cursor:pointer">📤 HTML 내보내기</button>
+        <button onclick="poemShare()" style="padding:5px 10px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.7rem;cursor:pointer">🔗 SHARE</button>
         <input type="file" id="poemImportFile" accept=".html,.htm" style="display:none" onchange="poemImportHtml(this)">
       </div>
     </div>
@@ -14135,7 +14136,7 @@ function poemDelete(i, ev) {
 }
 
 // 좋아하는 시 HTML 내보내기 (카테고리 필터 + 목차 + 정렬, poem-item 구조 → 가져오기와 호환)
-function poemExportHtml() {
+function poemExportHtml(returnOnly) {
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const attr = s => esc(s).replace(/"/g,'&quot;');
   const list = poemAll();
@@ -14290,6 +14291,7 @@ ${items}
 })();
 <\/script>
 </body></html>`;
+  if (returnOnly) return html;
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -14297,6 +14299,20 @@ ${items}
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   showToast(`${list.length}편을 HTML로 내보냈습니다 📤`);
+}
+// 좋아하는 시 공유 링크 생성 (서버에 HTML 저장 → /s/:id)
+async function poemShare() {
+  const html = poemExportHtml(true);
+  showToast('공유 링크 생성 중…', '🔗');
+  try {
+    const r = await fetch('/api/share', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: '좋아하는 시', html }),
+    });
+    if (!r.ok) { const e = await r.json().catch(()=>({})); showToast('공유 실패: ' + (e.error || r.status), '⚠️'); return; }
+    const d = await r.json();
+    shareShowLink(location.origin + d.url, '📜 좋아하는 시');
+  } catch(e) { showToast('공유 실패: ' + (e.message || '네트워크'), '⚠️'); }
 }
 // 좋아하는 시 HTML 가져오기 (poem-item 구조 파싱 → user_poems 추가, 중복 생략)
 function poemImportHtml(input) {
