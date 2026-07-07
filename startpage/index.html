@@ -4058,7 +4058,7 @@ function renderWatchUnivs() {
     const prof = PROF_DATA[name];
     const alrimi = 'https://www.academyinfo.go.kr/search/search.do?kword=' + encodeURIComponent(name);
     return `<div style="display:flex;align-items:center;gap:6px;font-size:.7rem;padding:4px 6px;background:var(--bg);border-radius:6px;">
-      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</span>
+      <a href="${alrimi}" target="_blank" rel="noopener" title="대학알리미 검색 결과 보기" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);text-decoration:none;cursor:pointer">${name}</a>
       ${prof ? `<span style="color:var(--accent2);flex-shrink:0">교원 ${prof.toLocaleString()}</span>` : ''}
       <a href="${alrimi}" target="_blank" rel="noopener" style="color:var(--text-dim);text-decoration:none;flex-shrink:0" title="대학알리미">📊</a>
       <button onclick="delWatchUniv(${i})" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.65rem;flex-shrink:0">✕</button>
