@@ -15812,11 +15812,21 @@ function musicPlay(id, el) {
   // 그 자리에서 embed 재생. 모바일은 인라인 자동재생을 위해 playsinline + mute(음소거 후 사용자가 해제) 사용
   const isMobile = ('ontouchstart' in window) || window.matchMedia('(max-width:960px)').matches;
   const params = isMobile
-    ? 'autoplay=1&playsinline=1&rel=0'          // 모바일: 소리와 함께 재생(음소거 해제)
+    ? 'autoplay=1&mute=1&playsinline=1&rel=0'   // 모바일: 한 번 탭으로 재생(정책상 무음 자동재생) → 스피커 아이콘 탭 시 소리
     : 'autoplay=1&rel=0&playsinline=1';
-  el.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?${params}" title="music"
+  el.innerHTML = `<iframe id="mplay_${id}" src="https://www.youtube.com/embed/${id}?${params}&enablejsapi=1" title="music"
     allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen
     style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
+  // 모바일: 재생 시작 후 음소거 해제 시도(브라우저가 허용하면 소리도 나옴)
+  if (isMobile) {
+    setTimeout(() => {
+      const f = document.getElementById('mplay_' + id);
+      if (f && f.contentWindow) {
+        f.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+        f.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+      }
+    }, 900);
+  }
 }
 // 내장 MUSIC(배열) → 객체 + 사용자 등록/수정/삭제 오버레이
 function musicKey(m) { return m.artist + '|' + m.t; }
