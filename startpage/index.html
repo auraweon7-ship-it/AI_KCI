@@ -925,7 +925,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v2.4</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v2.5</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3867,7 +3867,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v2.4 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v2.5 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7735,8 +7735,10 @@ function renderLinks() {
             ${[10,20,30,50,70,100].map(c => `<option value="${c}"${String(c)===savedCount?' selected':''}>${c}개</option>`).join('')}
           </select>
         </label>
+        <label style="font-size:.7rem;color:var(--text-dim);display:inline-flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="naIntl"${localStorage.getItem('news_analysis_intl')==='1'?' checked':''} style="cursor:pointer">🌐 영문 뉴스 포함</label>
         <button id="naRunBtn" onclick="newsAnalyze()" style="padding:7px 16px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.76rem;cursor:pointer">분석 실행</button>
         <button onclick="newsAnalysisExport()" style="padding:7px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:.76rem;cursor:pointer">📤 HTML 내보내기</button>
+        <button onclick="newsAnalysisShare()" style="padding:7px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:.76rem;cursor:pointer">🔗 공유 링크</button>
       </div>
       <div id="naResult" style="font-size:.78rem;color:var(--text-dim);line-height:1.7">키워드(최대 5개)·기간을 정하고 <b>분석 실행</b>을 누르면, 해당 기간의 뉴스를 수집해 주요 이슈·동향을 분석합니다. (설정 → 🧠 Claude API 키 필요)</div>`;
     grid.appendChild(panel);
@@ -16931,7 +16933,8 @@ async function newsAnalyze() {
   const key = (localStorage.getItem('claude_api_key') || '').trim();
   if (!key) { showToast('설정 → 🧠 Claude API 키를 입력하세요', '🔑'); return; }
   const kws = [1,2,3,4,5].map(n => (document.getElementById('naKw'+n)?.value || '').trim()).filter(Boolean);
-  try { localStorage.setItem('news_analysis_kws', JSON.stringify(kws)); localStorage.setItem('news_analysis_count', document.getElementById('naCount')?.value || '50'); } catch(_) {}   // 키워드·건수 저장
+  const intl = !!document.getElementById('naIntl')?.checked;   // 영문 뉴스 포함 여부
+  try { localStorage.setItem('news_analysis_kws', JSON.stringify(kws)); localStorage.setItem('news_analysis_count', document.getElementById('naCount')?.value || '50'); localStorage.setItem('news_analysis_intl', intl?'1':'0'); } catch(_) {}   // 키워드·건수·영문옵션 저장
   const kw = kws.length ? kws.join(' OR ') : '고등교육';
   const kwDisplay = kws.length ? kws.join(', ') : '고등교육';
   const days = document.getElementById('naPeriod')?.value || '7';
@@ -16943,8 +16946,9 @@ async function newsAnalyze() {
     // 1) 구글뉴스 RSS로 기간 내 뉴스 수집 — 키워드별 피드 병렬 수집 후 병합·중복제거(최대한 많은 건수)
     const CAP = Math.max(10, Math.min(100, parseInt(document.getElementById('naCount')?.value || '50', 10) || 50));  // 분석 건수(사용자 설정 10~100)
     const queries = kws.length ? kws : ['고등교육'];  // 키워드별 개별 피드
-    const parseFeed = async (q) => {
-      const rss = `https://news.google.com/rss/search?q=${encodeURIComponent(q + ' when:' + days + 'd')}&hl=ko&gl=KR&ceid=KR:ko`;
+    const parseFeed = async (q, loc) => {
+      const l = loc || {hl:'ko',gl:'KR',ceid:'KR:ko'};
+      const rss = `https://news.google.com/rss/search?q=${encodeURIComponent(q + ' when:' + days + 'd')}&hl=${l.hl}&gl=${l.gl}&ceid=${encodeURIComponent(l.ceid)}`;
       try {
         const r = await fetch('/api/proxy?url=' + encodeURIComponent(rss));
         if (!r.ok) return [];
@@ -16953,10 +16957,17 @@ async function newsAnalyze() {
           title: (it.querySelector('title')?.textContent || '').trim(),
           date: (it.querySelector('pubDate')?.textContent || '').trim(),
           link: (it.querySelector('link')?.textContent || '').trim(),
+          intl: !!loc,
         })).filter(x => x.title);
       } catch(_) { return []; }
     };
-    const feeds = await Promise.all(queries.map(parseFeed));
+    // 국문 피드 + (옵션)영문 피드(higher education 등 교육 키워드 영문화)
+    const feedJobs = queries.map(q => parseFeed(q));
+    if (intl) {
+      const enMap = { '고등교육 정책':'higher education policy','대학 재정':'university funding','대학 혁신':'university innovation','지역대학 위기':'regional university decline','대학 취업률':'graduate employment rate' };
+      queries.forEach(q => feedJobs.push(parseFeed(enMap[q] || (q + ' higher education'), {hl:'en-US',gl:'US',ceid:'US:en'})));
+    }
+    const feeds = await Promise.all(feedJobs);
     const seen = new Set();
     let items = [];
     const maxLen = Math.max(0, ...feeds.map(f => f.length));
@@ -16990,13 +17001,18 @@ async function newsAnalyze() {
     const data = await cr.json();
     let txt = (data.content || []).filter(c => c.type==='text').map(c => c.text).join('').replace(/```json/gi,'').replace(/```/g,'').trim();
     let J = naParseJSON(txt);
-    // 키워드 빈도(클라이언트 계산)
+    // 클라이언트 계산: 키워드 빈도·시계열 추이·키워드 네트워크
     const kwFreq = naKeywordFreq(items.map(x => x.title), kws);
+    const timeSeries = naTimeSeries(items, +days);
+    const network = naKeywordNetwork(items.map(x => x.title), kws);
+    const sentiment = J.sentiment || null;
+    const sentHistory = naPushSentHistory(kwDisplay, sentiment);   // 감성 트렌드 히스토리 누적·반환
     _naLast = {
       kw: kwDisplay, label, count: items.length, at: new Date().toLocaleString('ko-KR'),
+      intl,
       summary: naCompleteSentences(J.summary || ''),
       issues: Array.isArray(J.issues) ? J.issues.slice(0,6) : [],
-      sentiment: J.sentiment || null,
+      sentiment,
       categories: Array.isArray(J.categories) ? J.categories.slice(0,8) : [],
       keyPlayers: Array.isArray(J.keyPlayers) ? J.keyPlayers.slice(0,6) : [],
       insights: Array.isArray(J.insights) ? J.insights.slice(0,6) : [],
@@ -17004,6 +17020,7 @@ async function newsAnalyze() {
       outlook: J.outlook || '',
       recommendation: J.recommendation || '',
       keywords: kwFreq,
+      timeSeries, network, sentHistory,
       items,
     };
     if (out) out.innerHTML = buildNewsViz(_naLast, false);
@@ -17064,6 +17081,56 @@ function naKeywordFreq(titles, exclude) {
     });
   });
   return Object.entries(cnt).filter(x => x[1] >= 2).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([word,n]) => ({ word, n }));
+}
+// 뉴스 pubDate → 날짜별 건수 시계열(기간 길이에 맞춰 일/주 단위 버킷)
+function naTimeSeries(items, days) {
+  const bucketDay = days <= 30 ? 1 : (days <= 90 ? 7 : (days <= 180 ? 14 : 30));  // 버킷 크기(일)
+  const map = {};
+  items.forEach(x => {
+    const t = new Date(x.date || 0); if (isNaN(t)) return;
+    const key = Math.floor(t.getTime() / 86400000 / bucketDay) * bucketDay;  // 버킷 인덱스(일 단위)
+    map[key] = (map[key] || 0) + 1;
+  });
+  const keys = Object.keys(map).map(Number).sort((a,b)=>a-b);
+  if (!keys.length) return { points: [], bucketDay };
+  const points = keys.map(k => {
+    const dt = new Date(k * 86400000);
+    return { label: `${dt.getMonth()+1}/${dt.getDate()}`, v: map[k], ts: k };
+  });
+  return { points, bucketDay };
+}
+// 제목 동시출현 기반 키워드 네트워크(상위 키워드 노드 + 함께 등장 엣지)
+function naKeywordNetwork(titles, exclude) {
+  const top = naKeywordFreq(titles, exclude).slice(0, 9);  // 상위 키워드 노드
+  const words = top.map(x => x.word);
+  const wset = new Set(words);
+  const pair = {};
+  titles.forEach(t => {
+    const toks = Array.from(new Set((t.replace(/[^가-힣A-Za-z0-9 ]/g,' ').split(/\s+/)).filter(w => wset.has(w))));
+    for (let i=0;i<toks.length;i++) for (let j=i+1;j<toks.length;j++) {
+      const key = [toks[i],toks[j]].sort().join('');
+      pair[key] = (pair[key] || 0) + 1;
+    }
+  });
+  const edges = Object.entries(pair).map(([k,w]) => { const [a,b]=k.split(''); return {a,b,w}; })
+    .filter(e => e.w >= 2).sort((x,y)=>y.w-x.w).slice(0, 14);
+  return { nodes: top, edges };
+}
+// 감성 트렌드 히스토리 누적(최근 12회) → 반환
+function naPushSentHistory(kw, sentiment) {
+  let hist = [];
+  try { hist = JSON.parse(localStorage.getItem('news_analysis_sent_hist') || '[]'); } catch(_) {}
+  if (sentiment) {
+    hist.push({
+      at: Date.now(), kw,
+      pos: +(sentiment['긍정'] ?? sentiment.pos ?? 0),
+      neu: +(sentiment['중립'] ?? sentiment.neu ?? 0),
+      neg: +(sentiment['부정'] ?? sentiment.neg ?? 0),
+    });
+    hist = hist.slice(-12);
+    try { localStorage.setItem('news_analysis_sent_hist', JSON.stringify(hist)); } catch(_) {}
+  }
+  return hist;
 }
 // 시각화 HTML 빌더 (light=true: 내보내기용 밝은 배경, false: 앱 다크)
 function buildNewsViz(d, light) {
@@ -17143,6 +17210,49 @@ function buildNewsViz(d, light) {
     return `<li style="display:flex;gap:6px;font-size:.76rem;line-height:1.6;color:${C.txt};margin:4px 0"><span style="color:${C.accent2}">${icon}</span><span>${inner}</span></li>`;
   }).join('')}</ul>` : '';
 
+  // 시계열 추이 라인 차트(SVG)
+  const lineChart = (ts) => {
+    const pts = (ts && ts.points) || [];
+    if (pts.length < 2) return '';
+    const W=520, H=140, PL=30, PR=12, PT=14, PB=26;
+    const maxV = Math.max(...pts.map(p=>p.v)) || 1;
+    const x = i => PL + (pts.length===1?0:i*(W-PL-PR)/(pts.length-1));
+    const y = v => PT + (1 - v/maxV) * (H-PT-PB);
+    const line = pts.map((p,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ');
+    const area = `M${x(0).toFixed(1)},${y(0).toFixed(1)} ` + pts.map((p,i)=>`L${x(i).toFixed(1)},${y(p.v).toFixed(1)}`).join(' ') + ` L${x(pts.length-1).toFixed(1)},${y(0).toFixed(1)} Z`;
+    const dots = pts.map((p,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(p.v).toFixed(1)}" r="3" fill="${C.accent}"><title>${esc(p.label)}: ${p.v}건</title></circle>`).join('');
+    const labs = pts.map((p,i)=> (pts.length<=8 || i%Math.ceil(pts.length/8)===0) ? `<text x="${x(i).toFixed(1)}" y="${H-8}" font-size="8" fill="${C.dim}" text-anchor="middle">${esc(p.label)}</text>` : '').join('');
+    const grid = [0,.5,1].map(f=>{const yy=(PT+f*(H-PT-PB)).toFixed(1);const vv=Math.round(maxV*(1-f));return `<line x1="${PL}" y1="${yy}" x2="${W-PR}" y2="${yy}" stroke="${C.border}" stroke-width=".5"/><text x="${PL-4}" y="${(+yy+3)}" font-size="8" fill="${C.dim}" text-anchor="end">${vv}</text>`;}).join('');
+    return `<div style="overflow-x:auto"><svg width="100%" viewBox="0 0 ${W} ${H}" style="min-width:340px;max-width:${W}px">${grid}<path d="${area}" fill="${C.accent}" opacity=".12"/><path d="${line}" fill="none" stroke="${C.accent}" stroke-width="2"/>${dots}${labs}</svg></div>`;
+  };
+  // 키워드 네트워크(원형 배치 노드 + 동시출현 엣지)
+  const networkChart = (nw) => {
+    const nodes = (nw && nw.nodes) || [], edges = (nw && nw.edges) || [];
+    if (nodes.length < 2) return '';
+    const W=520, H=300, cx=W/2, cy=H/2, R=105;
+    const pos = {};
+    nodes.forEach((n,i)=>{ const a=-Math.PI/2 + i*2*Math.PI/nodes.length; pos[n.word]={x:cx+R*Math.cos(a), y:cy+R*Math.sin(a)}; });
+    const maxN = Math.max(...nodes.map(n=>n.n)) || 1, maxE = Math.max(...edges.map(e=>e.w),1);
+    const eLines = edges.map(e=>{ const a=pos[e.a], b=pos[e.b]; if(!a||!b) return ''; return `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${C.accent2}" stroke-width="${(0.6+e.w/maxE*2.6).toFixed(1)}" opacity="${(0.2+e.w/maxE*0.5).toFixed(2)}"><title>${esc(e.a)}–${esc(e.b)}: ${e.w}회</title></line>`; }).join('');
+    const nCircles = nodes.map((n,i)=>{ const p=pos[n.word]; const r=8+n.n/maxN*12; const col=PAL[i%PAL.length];
+      return `<g><circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${r.toFixed(1)}" fill="${col}" opacity=".85"><title>${esc(n.word)}: ${n.n}건</title></circle><text x="${p.x.toFixed(1)}" y="${(p.y+r+9).toFixed(1)}" font-size="9" fill="${C.txt}" text-anchor="middle">${esc(n.word)}</text></g>`; }).join('');
+    return `<div style="overflow-x:auto"><svg width="100%" viewBox="0 0 ${W} ${H}" style="min-width:340px;max-width:${W}px">${eLines}${nCircles}</svg></div>`;
+  };
+  // 감성 트렌드 히스토리(다중 라인: 긍/중/부)
+  const sentTrend = (hist) => {
+    const h = (hist||[]).filter(x=>x&&(x.pos||x.neu||x.neg));
+    if (h.length < 2) return '';
+    const W=520, H=150, PL=28, PR=12, PT=12, PB=24;
+    const x = i => PL + i*(W-PL-PR)/(h.length-1);
+    const y = v => PT + (1 - v/100) * (H-PT-PB);
+    const series = [['pos','긍정','#10b981'],['neu','중립','#94a3b8'],['neg','부정','#ef4444']];
+    const paths = series.map(([k,,c])=>`<path d="${h.map((p,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(p[k]).toFixed(1)}`).join(' ')}" fill="none" stroke="${c}" stroke-width="2"/>`).join('');
+    const dots = series.map(([k,,c])=>h.map((p,i)=>`<circle cx="${x(i).toFixed(1)}" cy="${y(p[k]).toFixed(1)}" r="2.5" fill="${c}"/>`).join('')).join('');
+    const labs = h.map((p,i)=>`<text x="${x(i).toFixed(1)}" y="${H-8}" font-size="8" fill="${C.dim}" text-anchor="middle">${i+1}</text>`).join('');
+    const leg = series.map(([,n,c])=>`<span style="display:inline-flex;align-items:center;gap:4px;font-size:.62rem;color:${C.txt};margin-right:12px"><span style="width:9px;height:9px;border-radius:2px;background:${c}"></span>${n}</span>`).join('');
+    return `<div><div style="overflow-x:auto"><svg width="100%" viewBox="0 0 ${W} ${H}" style="min-width:340px;max-width:${W}px">${[0,50,100].map(v=>`<line x1="${PL}" y1="${y(v).toFixed(1)}" x2="${W-PR}" y2="${y(v).toFixed(1)}" stroke="${C.border}" stroke-width=".5"/><text x="${PL-4}" y="${(y(v)+3).toFixed(1)}" font-size="8" fill="${C.dim}" text-anchor="end">${v}</text>`).join('')}${paths}${dots}${labs}</svg></div><div style="margin-top:4px;text-align:center">${leg}</div></div>`;
+  };
+
   const rows = d.items.map((x,i) => {
     const titleCell = x.link
       ? `<a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:${C.accent};text-decoration:none" title="원문 보기">${esc(x.title)} ↗</a>`
@@ -17155,6 +17265,9 @@ function buildNewsViz(d, light) {
     ${stats}
     ${d.summary ? sect('📝 핵심 요약', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${esc(d.summary)}</div>`)) : ''}
     ${donutGrid}
+    ${(() => { const c = lineChart(d.timeSeries); return c ? sect('📈 뉴스 건수 추이', card(c)) : ''; })()}
+    ${(() => { const c = networkChart(d.network); return c ? sect('🕸 키워드 네트워크 (동시출현)', card(c)) : ''; })()}
+    ${(() => { const c = sentTrend(d.sentHistory); return c ? sect('📉 감성 트렌드 히스토리 (최근 분석)', card(c)) : ''; })()}
     ${d.insights && d.insights.length ? sect('💡 핵심 인사이트', card(bullets(d.insights, '▸'))) : ''}
     ${d.trend ? sect('📈 동향·흐름', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${esc(d.trend)}</div>`)) : ''}
     ${d.keyPlayers && d.keyPlayers.length ? sect('👥 핵심 인물·기관', card(bullets(d.keyPlayers, '•'))) : ''}
@@ -17162,12 +17275,12 @@ function buildNewsViz(d, light) {
     ${d.recommendation ? sect('✅ 실무 제언', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${esc(d.recommendation)}</div>`)) : ''}
     ${sect(`📰 분석 대상 뉴스 (${d.count}건)`, card(table))}`;
 }
-function newsAnalysisExport() {
-  if (!_naLast) { showToast('먼저 분석을 실행하세요', 'ℹ️'); return; }
+// 뉴스 분석 결과 → standalone HTML(내보내기·공유 공용)
+function newsAnalysisHtml() {
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const d = _naLast;
   const viz = buildNewsViz(d, true);
-  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>뉴스 분석 — ${esc(d.kw)}</title>
+  return `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>뉴스 분석 — ${esc(d.kw)}</title>
 <style>*{box-sizing:border-box}body{font-family:'Malgun Gothic',sans-serif;max-width:860px;margin:0 auto;padding:24px;color:#1e293b;background:#fff;line-height:1.7}
 .hero{background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;padding:30px 26px;border-radius:14px;margin-bottom:22px}
 .hero h1{margin:0 0 6px;font-size:1.7em}.hero .meta{opacity:.9;font-size:.9em}
@@ -17175,10 +17288,29 @@ function newsAnalysisExport() {
 @media (max-width:720px){body{padding:14px}.hero{padding:20px 16px}.na-donuts{grid-template-columns:repeat(2,1fr)!important}.na-stats{grid-template-columns:repeat(2,1fr)!important}}
 @media (max-width:560px){.na-donuts{grid-template-columns:1fr!important}}</style></head>
 <body>
-<div class="hero"><h1>📊 뉴스 분석 — ${esc(d.kw)}</h1><div class="meta">최근 ${esc(d.label)} · 뉴스 ${d.count}건 · ${esc(d.at)}</div></div>
+<div class="hero"><h1>📊 뉴스 분석 — ${esc(d.kw)}</h1><div class="meta">최근 ${esc(d.label)} · 뉴스 ${d.count}건${d.intl?' · 🌐 영문 포함':''} · ${esc(d.at)}</div></div>
 ${viz}
 <div class="footer">Claude AI 분석 · startgage.up.railway.app</div>
 </body></html>`;
+}
+// 분석 결과 공유 링크 생성(서버 저장 → /s/:id)
+async function newsAnalysisShare() {
+  if (!_naLast) { showToast('먼저 분석을 실행하세요', 'ℹ️'); return; }
+  showToast('공유 링크 생성 중…', '🔗');
+  try {
+    const r = await fetch('/api/share', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: '뉴스 분석 — ' + _naLast.kw, html: newsAnalysisHtml() }),
+    });
+    if (!r.ok) { const e = await r.json().catch(()=>({})); showToast('공유 실패: ' + (e.error || r.status), '⚠️'); return; }
+    const d = await r.json();
+    shareShowLink(location.origin + d.url, '📊 뉴스 분석 — ' + _naLast.kw);
+  } catch(e) { showToast('공유 실패: ' + (e.message || '네트워크'), '⚠️'); }
+}
+function newsAnalysisExport() {
+  if (!_naLast) { showToast('먼저 분석을 실행하세요', 'ℹ️'); return; }
+  const d = _naLast;
+  const html = newsAnalysisHtml();
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
