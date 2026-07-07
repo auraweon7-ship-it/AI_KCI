@@ -924,7 +924,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v1.6</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v1.7</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3866,7 +3866,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v1.6 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v1.7 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7710,11 +7710,12 @@ function renderLinks() {
     panel.style.cssText = 'grid-column:1/-1;margin-top:20px;padding:16px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:12px';
     let savedKws = [];
     try { savedKws = JSON.parse(localStorage.getItem('news_analysis_kws') || '[]'); } catch(_) {}   // 저장된 키워드 복원
-    const kwVal = n => { const esc = s => String(s).replace(/"/g,'&quot;'); if (savedKws.length) return esc(savedKws[n-1] || ''); return n===1 ? '고등교육' : ''; };
+    const defKws = ['고등교육 정책','대학 재정','대학 혁신','지역대학 위기','대학 취업률'];
+    const kwVal = n => { const esc = s => String(s).replace(/"/g,'&quot;'); if (savedKws.length) return esc(savedKws[n-1] || ''); return esc(defKws[n-1] || ''); };
     panel.innerHTML = `
       <div style="font-size:.9rem;font-weight:800;color:var(--accent2);margin-bottom:10px">📊 뉴스 분석 (Claude AI)</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-        ${[1,2,3,4,5].map(n => `<input id="naKw${n}" placeholder="키워드${n}${n===1?' (예: 고등교육)':''}" value="${kwVal(n)}" style="flex:1;min-width:110px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;outline:none">`).join('')}
+        ${[1,2,3,4,5].map(n => `<input id="naKw${n}" placeholder="키워드${n}${n===1?' (예: 고등교육 정책)':''}" value="${kwVal(n)}" style="flex:1;min-width:110px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;outline:none">`).join('')}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
         <label style="font-size:.7rem;color:var(--text-dim)">기간
