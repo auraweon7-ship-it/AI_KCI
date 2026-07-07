@@ -13879,8 +13879,12 @@ const MUSIC = [
   ['lofi hip hop mix','Lofi','LO-FI / CHILL','TURbeWK2wwg'],
   // HEALING / MEDITATION
   ['Relaxing Piano','Healing','HEALING / MEDITATION','lFcSrYw-ARY'],
+  // PROGRESSIVE / NEW AGE
+  ['River Flows in You','Yiruma','PROGRESSIVE / NEW AGE','7maJOI3QMu0'],
+  ['Comfortably Numb','Pink Floyd','PROGRESSIVE / NEW AGE','_FrOQC-zEog'],
+  ['Adiemus','Karl Jenkins','PROGRESSIVE / NEW AGE','SD_Jhrf-YlY'],
 ];
-const MUSIC_GENRE_ORDER = ['POP','ROCK','HIPHOP / RAP','R&B / SOUL','EDM / DANCE','JAZZ','CLASSICAL','ACOUSTIC / FOLK','COUNTRY','BLUES','LATIN / REGGAE','WORLD MUSIC','K-POP','J-POP','C-POP','OST / SOUNDTRACK','LO-FI / CHILL','HEALING / MEDITATION'];
+const MUSIC_GENRE_ORDER = ['POP','ROCK','HIPHOP / RAP','R&B / SOUL','EDM / DANCE','JAZZ','CLASSICAL','ACOUSTIC / FOLK','COUNTRY','BLUES','LATIN / REGGAE','WORLD MUSIC','K-POP','J-POP','C-POP','OST / SOUNDTRACK','LO-FI / CHILL','HEALING / MEDITATION','PROGRESSIVE / NEW AGE'];
 let musicState = { mode: 'genre', cat: 'all', page: 1 };
 function musicSetMode(m) { musicState.mode = m; musicState.cat = 'all'; musicState.page = 1; renderMusicView(); }
 function musicSetCat(c) { musicState.cat = c; musicState.page = 1; renderMusicView(); }
@@ -14009,6 +14013,7 @@ const MUSIC_QUERY = {
   'BLUES':'best blues music','LATIN / REGGAE':'popular latin reggae official music video','WORLD MUSIC':'popular world music',
   'K-POP':'kpop hit songs official mv','J-POP':'jpop hit songs official mv','C-POP':'cpop hit songs official mv',
   'OST / SOUNDTRACK':'famous movie soundtrack ost','LO-FI / CHILL':'lofi chill beats music','HEALING / MEDITATION':'healing meditation relaxing music',
+  'PROGRESSIVE / NEW AGE':'progressive rock new age instrumental music',
 };
 async function musicAutoFill() {
   if (!confirm('전 장르(18개)의 인기곡을 조회수순으로 자동 수집해 추가합니다. 진행할까요?')) return;
