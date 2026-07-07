@@ -14533,13 +14533,12 @@ function musicSetMode(m) { musicState.mode = m; musicState.cat = 'all'; musicSta
 function musicSetCat(c) { musicState.cat = c; musicState.page = 1; renderMusicView(); }
 function musicSetPage(p) { musicState.page = p; renderMusicView(); document.getElementById('linksGrid')?.scrollIntoView({behavior:'smooth',block:'start'}); }
 function musicPlay(id, el) {
-  // 모바일: 클릭 후 삽입된 autoplay iframe은 재생이 막히는 경우가 많아 YouTube로 직접 열어 재생
+  // 그 자리에서 embed 재생. 모바일은 인라인 자동재생을 위해 playsinline + mute(음소거 후 사용자가 해제) 사용
   const isMobile = ('ontouchstart' in window) || window.matchMedia('(max-width:960px)').matches;
-  if (isMobile) {
-    window.open(`https://www.youtube.com/watch?v=${id}`, '_blank', 'noopener');
-    return;
-  }
-  el.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?autoplay=1&rel=0&playsinline=1" title="music"
+  const params = isMobile
+    ? 'autoplay=1&mute=1&playsinline=1&rel=0'   // 모바일: 무음 자동재생 허용(스피커 아이콘으로 소리 켜기)
+    : 'autoplay=1&rel=0&playsinline=1';
+  el.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?${params}" title="music"
     allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen
     style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
 }
