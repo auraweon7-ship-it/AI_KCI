@@ -924,7 +924,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v1.5</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v1.6</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3866,7 +3866,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v1.5 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v1.6 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7708,10 +7708,13 @@ function renderLinks() {
   if (state.activeCat === 'nl') {
     const panel = document.createElement('div');
     panel.style.cssText = 'grid-column:1/-1;margin-top:20px;padding:16px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:12px';
+    let savedKws = [];
+    try { savedKws = JSON.parse(localStorage.getItem('news_analysis_kws') || '[]'); } catch(_) {}   // 저장된 키워드 복원
+    const kwVal = n => { const esc = s => String(s).replace(/"/g,'&quot;'); if (savedKws.length) return esc(savedKws[n-1] || ''); return n===1 ? '고등교육' : ''; };
     panel.innerHTML = `
       <div style="font-size:.9rem;font-weight:800;color:var(--accent2);margin-bottom:10px">📊 뉴스 분석 (Claude AI)</div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
-        ${[1,2,3,4,5].map(n => `<input id="naKw${n}" placeholder="키워드${n}${n===1?' (예: 고등교육)':''}" value="${n===1?'고등교육':''}" style="flex:1;min-width:110px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;outline:none">`).join('')}
+        ${[1,2,3,4,5].map(n => `<input id="naKw${n}" placeholder="키워드${n}${n===1?' (예: 고등교육)':''}" value="${kwVal(n)}" style="flex:1;min-width:110px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;outline:none">`).join('')}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
         <label style="font-size:.7rem;color:var(--text-dim)">기간
@@ -16920,6 +16923,7 @@ async function newsAnalyze() {
   const key = (localStorage.getItem('claude_api_key') || '').trim();
   if (!key) { showToast('설정 → 🧠 Claude API 키를 입력하세요', '🔑'); return; }
   const kws = [1,2,3,4,5].map(n => (document.getElementById('naKw'+n)?.value || '').trim()).filter(Boolean);
+  try { localStorage.setItem('news_analysis_kws', JSON.stringify(kws)); } catch(_) {}   // 키워드 저장
   const kw = kws.length ? kws.join(' OR ') : '고등교육';
   const kwDisplay = kws.length ? kws.join(', ') : '고등교육';
   const days = document.getElementById('naPeriod')?.value || '7';
@@ -16938,6 +16942,7 @@ async function newsAnalyze() {
       items = Array.from(doc.querySelectorAll('item')).slice(0, 60).map(it => ({
         title: (it.querySelector('title')?.textContent || '').trim(),
         date: (it.querySelector('pubDate')?.textContent || '').trim(),
+        link: (it.querySelector('link')?.textContent || '').trim(),
       })).filter(x => x.title);
     }
     if (!items.length) { if(out) out.innerHTML = '<span style="color:var(--danger,#e74c3c)">뉴스를 수집하지 못했습니다 (프록시·키워드 확인)</span>'; if(btn){btn.disabled=false;btn.textContent='분석 실행';} return; }
@@ -17071,7 +17076,12 @@ function buildNewsViz(d, light) {
 
   const bullets = (arr, icon) => arr && arr.length ? `<ul style="margin:0;padding-left:2px;list-style:none">${arr.map(x => `<li style="display:flex;gap:6px;font-size:.76rem;line-height:1.6;color:${C.txt};margin:4px 0"><span style="color:${C.accent2}">${icon}</span><span>${esc(typeof x==='string'?x:(x.name?`<b>${esc(x.name)}</b> — ${esc(x.role||'')}`:''))}</span></li>`).join('')}</ul>` : '';
 
-  const rows = d.items.map((x,i) => `<tr><td style="color:${C.dim};padding:4px 8px;text-align:center">${i+1}</td><td style="padding:4px 8px;color:${C.txt}">${esc(x.title)}</td><td style="color:${C.dim};padding:4px 8px;white-space:nowrap;font-size:.9em">${esc((x.date||'').replace(/\s*\+.*$/,''))}</td></tr>`).join('');
+  const rows = d.items.map((x,i) => {
+    const titleCell = x.link
+      ? `<a href="${esc(x.link)}" target="_blank" rel="noopener" style="color:${C.accent};text-decoration:none" title="원문 보기">${esc(x.title)} ↗</a>`
+      : esc(x.title);
+    return `<tr><td style="color:${C.dim};padding:4px 8px;text-align:center">${i+1}</td><td style="padding:4px 8px;color:${C.txt}">${titleCell}</td><td style="color:${C.dim};padding:4px 8px;white-space:nowrap;font-size:.9em">${esc((x.date||'').replace(/\s*\+.*$/,''))}</td></tr>`;
+  }).join('');
   const table = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.7rem"><thead><tr style="border-bottom:2px solid ${C.border}"><th style="padding:5px 8px;color:${C.dim};text-align:center">#</th><th style="padding:5px 8px;color:${C.dim};text-align:left">제목</th><th style="padding:5px 8px;color:${C.dim}">날짜</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 
   return `<div style="font-size:.66rem;color:${C.dim};margin-bottom:10px">"${esc(d.kw)}" · 최근 ${esc(d.label)} · 뉴스 ${d.count}건 · ${esc(d.at)}</div>
