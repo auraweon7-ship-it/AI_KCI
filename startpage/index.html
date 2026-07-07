@@ -924,7 +924,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v1.9</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v2.0</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3866,7 +3866,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v1.9 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v2.0 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -17103,7 +17103,11 @@ function buildNewsViz(d, light) {
     ${donutCard('📂 카테고리 분포', dCat, '건')}
   </div>`;
 
-  const bullets = (arr, icon) => arr && arr.length ? `<ul style="margin:0;padding-left:2px;list-style:none">${arr.map(x => `<li style="display:flex;gap:6px;font-size:.76rem;line-height:1.6;color:${C.txt};margin:4px 0"><span style="color:${C.accent2}">${icon}</span><span>${esc(typeof x==='string'?x:(x.name?`<b>${esc(x.name)}</b> — ${esc(x.role||'')}`:''))}</span></li>`).join('')}</ul>` : '';
+  const strip = s => String(s==null?'':s).replace(/<[^>]*>/g,'').trim();   // AI가 넣은 HTML 태그 제거
+  const bullets = (arr, icon) => arr && arr.length ? `<ul style="margin:0;padding-left:2px;list-style:none">${arr.map(x => {
+    const inner = typeof x==='string' ? esc(strip(x)) : (x.name ? `<b>${esc(strip(x.name))}</b>${x.role?` — ${esc(strip(x.role))}`:''}` : '');
+    return `<li style="display:flex;gap:6px;font-size:.76rem;line-height:1.6;color:${C.txt};margin:4px 0"><span style="color:${C.accent2}">${icon}</span><span>${inner}</span></li>`;
+  }).join('')}</ul>` : '';
 
   const rows = d.items.map((x,i) => {
     const titleCell = x.link
