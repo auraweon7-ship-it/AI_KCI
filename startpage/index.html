@@ -14081,12 +14081,13 @@ async function musicAiFill() {
   const btn = document.getElementById('aiFillBtn');
   if (btn) { btn.disabled = true; btn.textContent = '🤖 추천 받는 중…'; }
   try {
-    // 1) Claude에 곡 목록 요청 (JSON)
-    const prompt = `"${genre}" 장르의 대표적이고 유명한(조회수·인기 높은) 곡 ${count}곡을 추천해 주세요. 반드시 실제 존재하는 곡만. 오직 JSON 배열만 출력하세요(코드블록·설명 금지):\n[{"title":"곡 제목","artist":"가수명"}]`;
+    // 1) Claude에 곡 목록 요청 (검색 실패·중복 대비 여유분 포함)
+    const want = Math.min(40, count + Math.ceil(count * 0.6) + 4);
+    const prompt = `"${genre}" 장르의 대표적이고 유명한(조회수·인기 높은) 곡 ${want}곡을 추천해 주세요. 반드시 실제 존재하는 서로 다른 곡만(중복 금지). 오직 JSON 배열만 출력하세요(코드블록·설명 금지):\n[{"title":"곡 제목","artist":"가수명"}]`;
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:2000, messages:[{ role:'user', content:prompt }] }),
+      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:3000, messages:[{ role:'user', content:prompt }] }),
     });
     if (!r.ok) { const e = await r.json().catch(()=>({})); showToast('AI 오류: ' + (e.error?.message || r.status), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
     const data = await r.json();
@@ -14096,8 +14097,8 @@ async function musicAiFill() {
     const mArr = txt.match(/\[[\s\S]*\]/);
     try { songs = JSON.parse(mArr ? mArr[0] : txt); } catch(_) {}
     if (!Array.isArray(songs) || !songs.length) { showToast('AI 응답 파싱 실패: ' + txt.slice(0,60), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
-    // 2) 각 곡 YouTube 검색 → videoId (후보 수집)
-    const existIds = new Set(musicAll().map(m => m.id));
+    // 2) 각 곡 YouTube 검색 → videoId (목표 count개까지, 세션 내 중복만 제외)
+    const seen = new Set();          // 이번 추천 내 videoId 중복 방지
     const cand = [];
     let done = 0;
     const findVid = async (query) => {
@@ -14109,19 +14110,21 @@ async function musicAiFill() {
       return mm ? mm[1] : '';
     };
     for (const s of songs) {
+      if (cand.length >= count) break;   // 목표 곡수 채우면 종료
       const title = (s.title||s.t||'').trim(), artist = (s.artist||s.a||'').trim();
       done++;
       if (!title) continue;
-      if (btn) btn.textContent = `🔎 ${done}/${songs.length} 검색 중…`;
+      if (btn) btn.textContent = `🔎 ${cand.length}/${count}곡…`;
       try {
         let id = await findVid(artist + ' ' + title);          // 1차: 가수+제목
         if (!id) id = await findVid(title + ' ' + artist + ' official audio'); // 2차 폴백
-        if (!id || existIds.has(id)) continue;
-        existIds.add(id);
+        if (!id || seen.has(id)) continue;                     // 검색 실패·세션 중복만 제외
+        seen.add(id);
         cand.push({ t: title.slice(0,80), artist: (artist||'—').slice(0,50), genre, id });
       } catch(_) {}
     }
     if (!cand.length) { showToast('YouTube에서 곡을 찾지 못했습니다 (프록시 확인)', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
+    if (cand.length < count) showToast(`${count}곡 중 ${cand.length}곡을 찾았습니다`, 'ℹ️');
     // 3) 미리보기 + 체크 UI로 전환
     _musicAiCand = cand;
     musicAiPreview(genre);
