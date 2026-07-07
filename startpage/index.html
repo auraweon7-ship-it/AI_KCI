@@ -15179,6 +15179,7 @@ function renderPoemsView(keepFocus) {
         <button onclick="poemSetMode('poet')" style="padding:5px 10px;border-radius:6px;border:1px solid ${poemState.mode==='poet'?'var(--accent)':'var(--border)'};background:${poemState.mode==='poet'?'var(--accent)':'var(--bg3)'};color:${poemState.mode==='poet'?'#fff':'var(--text-dim)'};font-size:.7rem;cursor:pointer">시인별</button>
         <button onclick="poemSetMode('fav')" style="padding:5px 10px;border-radius:6px;border:1px solid ${poemState.mode==='fav'?'var(--accent)':'var(--border)'};background:${poemState.mode==='fav'?'var(--accent)':'var(--bg3)'};color:${poemState.mode==='fav'?'#fff':'var(--text-dim)'};font-size:.7rem;cursor:pointer">⭐ 즐겨찾기 ${favCount}</button>
         <button onclick="poemAddOpen()" style="padding:5px 10px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:.7rem;cursor:pointer">➕ 시 등록</button>
+        <button onclick="poemAiOpen()" style="padding:5px 10px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.7rem;cursor:pointer">🤖 AI 추천</button>
         <button onclick="document.getElementById('poemImportFile').click()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.7rem;cursor:pointer">📥 HTML 가져오기</button>
         <button onclick="poemExportHtml()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.7rem;cursor:pointer">📤 HTML 내보내기</button>
         <button onclick="poemShare()" style="padding:5px 10px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.7rem;cursor:pointer">🔗 SHARE</button>
@@ -15410,6 +15411,130 @@ function poemAddSave() {
   }
   _poemEditIdx = null;
   document.getElementById('poemAddOverlay')?.remove();
+  renderPoemsView();
+}
+// ── 좋아하는 시 AI 추천 (저작권 만료 공유 시만) ──
+function poemAiOpen() {
+  let ov = document.getElementById('poemAiOverlay');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'poemAiOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  const tOpts = ['자유(주제 무관)'].concat(POEM_THEME_ORDER).map(t => `<option value="${t}">${t}</option>`).join('');
+  const nOpts = Array.from({length:5},(_,i)=>i+1).map(n => `<option value="${n}"${n===3?' selected':''}>${n}편</option>`).join('');
+  const inS = 'width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;outline:none;box-sizing:border-box';
+  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:440px;width:100%;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <h3 style="flex:1;font-size:1.05rem;font-weight:800;color:var(--text);margin:0">🤖 AI 시 추천</h3>
+      <button onclick="document.getElementById('poemAiOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted)">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <label style="font-size:.68rem;color:var(--text-dim)">시인 (선택) <input id="paf_poet" placeholder="시인명 입력 시 그 시인 작품" style="${inS}"></label>
+      <label style="font-size:.68rem;color:var(--text-dim)">주제 <select id="paf_theme" style="${inS}">${tOpts}</select></label>
+      <label style="font-size:.68rem;color:var(--text-dim)">편 수 <select id="paf_count" style="${inS}">${nOpts}</select></label>
+    </div>
+    <p style="font-size:.66rem;color:var(--text-muted);margin:10px 0 0;line-height:1.5">저작권이 만료된 한국 근현대시(김소월·윤동주·이육사·이상화·한용운 등)를 추천합니다. (설정 → 🧠 Claude API 키 필요)</p>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+      <button onclick="document.getElementById('poemAiOverlay').remove()" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">취소</button>
+      <button id="poemAiBtn" onclick="poemAiFill()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">AI 추천</button>
+    </div>
+  </div>`;
+}
+let _poemAiCand = [];
+async function poemAiFill() {
+  const key = (localStorage.getItem('claude_api_key') || '').trim();
+  if (!key) { showToast('설정 → 🧠 Claude API 키를 입력하세요', '🔑'); return; }
+  const poetIn = (document.getElementById('paf_poet')?.value || '').trim();
+  const themeIn = document.getElementById('paf_theme').value;
+  const count = parseInt(document.getElementById('paf_count').value, 10) || 3;
+  const btn = document.getElementById('poemAiBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '🤖 추천 받는 중…'; }
+  try {
+    const normK = s => (s || '').replace(/\s+/g,'').toLowerCase();
+    const exist = new Set(poemAll().map(p => normK(p.poet) + '|' + normK(p.t)));
+    const relevant = poemAll().filter(p => poetIn ? normK(p.poet) === normK(poetIn) : (themeIn.startsWith('자유') ? true : p.theme === themeIn));
+    const exclList = relevant.slice(0, 40).map(p => `${p.t}(${p.poet})`);
+    const exclLine = exclList.length ? `\n다음 작품은 이미 등록되어 있으니 반드시 제외하세요: ${exclList.join(', ')}` : '';
+    const cond = poetIn
+      ? `시인 "${poetIn}"의 작품 중`
+      : (themeIn.startsWith('자유') ? '' : `"${themeIn}" 주제의 `);
+    const prompt = `반드시 저작권 보호기간이 만료된(사후 70년 이상 경과, 예: 김소월·윤동주·이육사·이상화·한용운·심훈 등 1953년 이전 작고한 시인) ${cond}한국 근현대시 ${count}편을 원문 그대로 추천해 주세요. 생존 시인이나 최근 시인은 절대 포함하지 마세요.${exclLine}\n각 시의 제목·시인·전문을 아래 JSON 배열로만 출력하세요(코드블록·설명 금지). 본문의 줄바꿈은 \\n으로 표기:\n[{"title":"제목","poet":"시인","theme":"주제","body":"시 전문"}]`;
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:4000, messages:[{ role:'user', content:prompt }] }),
+    });
+    if (!r.ok) { const e = await r.json().catch(()=>({})); showToast('AI 오류: ' + (e.error?.message || r.status), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
+    const data = await r.json();
+    let txt = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('') || '';
+    txt = txt.replace(/```json/gi,'').replace(/```/g,'').trim();
+    let arr = [];
+    const mArr = txt.match(/\[[\s\S]*\]/);
+    try { arr = JSON.parse(mArr ? mArr[0] : txt); } catch(_) {}
+    if (!Array.isArray(arr) || !arr.length) { showToast('AI 응답 파싱 실패', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
+    const themeOK = new Set(POEM_THEME_ORDER);
+    const cand = [];
+    for (const s of arr) {
+      const t = (s.title||'').trim(), poet = (s.poet||'').trim(), body = (s.body||'').replace(/\r/g,'').trim();
+      if (!t || !poet || !body) continue;
+      if (exist.has(normK(poet) + '|' + normK(t))) continue;   // 이미 등록된 시 제외
+      cand.push({ t: t.slice(0,80), poet: poet.slice(0,40), book: t, year: '', theme: themeOK.has(s.theme) ? s.theme : (themeIn.startsWith('자유') ? '기타' : themeIn), b: body });
+    }
+    if (!cand.length) { showToast('추천할 새 시를 찾지 못했습니다', 'ℹ️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
+    _poemAiCand = cand;
+    poemAiPreview();
+  } catch(e) {
+    showToast('AI 추천 실패: ' + (e.message || '오류'), '⚠️');
+    if (btn) { btn.disabled = false; btn.textContent = 'AI 추천'; }
+  }
+}
+function poemAiPreview() {
+  const ov = document.getElementById('poemAiOverlay'); if (!ov) return;
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const rows = _poemAiCand.map((p, i) => {
+    const preview = esc(p.b.split('\n').filter(x=>x.trim()).slice(0,2).join(' / ')).slice(0,60);
+    return `<label style="display:flex;align-items:flex-start;gap:8px;padding:8px;border-radius:7px;border:1px solid var(--border);background:var(--bg3);cursor:pointer">
+      <input type="checkbox" class="pai-ck" data-i="${i}" checked style="flex-shrink:0;width:15px;height:15px;margin-top:2px;cursor:pointer">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.76rem;font-weight:700;color:var(--text)">${esc(p.t)} <span style="font-size:.66rem;color:var(--accent2)">· ${esc(p.poet)}</span></div>
+        <div style="font-size:.64rem;color:var(--text-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${preview}</div>
+      </div>
+    </label>`;
+  }).join('');
+  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:480px;width:100%;max-height:86vh;display:flex;flex-direction:column;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <h3 style="flex:1;font-size:1.05rem;font-weight:800;color:var(--text);margin:0">🤖 추천 시 (${_poemAiCand.length}편)</h3>
+      <button onclick="document.getElementById('poemAiOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted)">✕</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:8px;font-size:.66rem">
+      <button onclick="document.querySelectorAll('.pai-ck').forEach(c=>c.checked=true)" style="background:none;border:none;color:var(--accent2);cursor:pointer">전체 선택</button>
+      <button onclick="document.querySelectorAll('.pai-ck').forEach(c=>c.checked=false)" style="background:none;border:none;color:var(--text-muted);cursor:pointer">전체 해제</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:120px">${rows}</div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+      <button onclick="poemAiOpen()" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">← 다시</button>
+      <button onclick="poemAiConfirm()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">선택 시 등록</button>
+    </div>
+  </div>`;
+}
+function poemAiConfirm() {
+  const cks = Array.from(document.querySelectorAll('.pai-ck')).filter(c => c.checked);
+  if (!cks.length) { showToast('등록할 시를 선택하세요', 'ℹ️'); return; }
+  const arr = userPoems();
+  const normK = s => (s || '').replace(/\s+/g,'').toLowerCase();
+  const exist = new Set(poemAll().map(p => normK(p.poet) + '|' + normK(p.t)));
+  let added = 0;
+  cks.forEach(c => {
+    const p = _poemAiCand[+c.dataset.i];
+    if (!p || exist.has(normK(p.poet) + '|' + normK(p.t))) return;
+    exist.add(normK(p.poet) + '|' + normK(p.t)); arr.unshift(p); added++;
+  });
+  if (added) saveUserPoems(arr);
+  _poemAiCand = [];
+  document.getElementById('poemAiOverlay')?.remove();
+  showToast(`AI 추천 ${added}편 등록 🤖`);
   renderPoemsView();
 }
 function poemDelete(i, ev) {
