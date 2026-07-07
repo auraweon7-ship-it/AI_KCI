@@ -917,13 +917,14 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 /* 좋아하는 음악 그리드: 태블릿 3열, 모바일 1열 */
 @media (max-width: 960px) { .music-grid { grid-template-columns: repeat(3, 1fr) !important; } }
 @media (max-width: 560px) { .music-grid { grid-template-columns: 1fr !important; } }
+@media (max-width: 720px) { .na-donuts { grid-template-columns: repeat(2, 1fr) !important; } }
 </style>
 </head>
 <body data-theme="dark">
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v1.4</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v1.5</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3865,7 +3866,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v1.4 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v1.5 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -16943,7 +16944,7 @@ async function newsAnalyze() {
     if (out) out.innerHTML = `<span style="color:var(--text-muted)">🤖 ${items.length}건 분석 중…</span>`;
     // 2) Claude 분석
     const list = items.map((x,i) => `${i+1}. ${x.title}`).join('\n');
-    const prompt = `아래는 키워드 "${kwDisplay}" 관련 최근 ${label}간의 뉴스 제목 ${items.length}건입니다. 한국어로 분석해 아래 JSON만 출력하세요(코드블록·설명 금지):\n{\n"summary":"핵심 요약 3~4문장",\n"issues":[{"title":"주요 이슈","weight":0~100 중요도}] (5개),\n"sentiment":{"긍정":정수,"중립":정수,"부정":정수} (합 100),\n"categories":[{"name":"분야","count":기사수}] (3~6개),\n"outlook":"시사점·전망 2~3문장"\n}\n\n뉴스 목록:\n${list}`;
+    const prompt = `아래는 키워드 "${kwDisplay}" 관련 최근 ${label}간의 뉴스 제목 ${items.length}건입니다. 전문 애널리스트 관점에서 깊이 있게 분석해 아래 JSON만 출력하세요(코드블록·설명 금지):\n{\n"summary":"핵심 요약 4~5문장(구체적 수치·사건 포함)",\n"issues":[{"title":"주요 이슈","weight":0~100 중요도}] (정확히 5개),\n"sentiment":{"긍정":정수,"중립":정수,"부정":정수} (합 100),\n"categories":[{"name":"분야","count":기사수}] (4~6개),\n"keyPlayers":[{"name":"핵심 인물·기관","role":"한 줄 역할"}] (3~5개),\n"insights":["데이터 기반 인사이트 문장"] (3~5개, 각 구체적),\n"trend":"동향·흐름 분석 3~4문장(무엇이 증가/감소, 쟁점 변화)",\n"outlook":"시사점·향후 전망 3~4문장",\n"recommendation":"관심 있는 독자를 위한 실무적 제언 2~3문장"\n}\n\n뉴스 목록:\n${list}`;
     const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 60000);
     let cr;
     try {
@@ -16967,7 +16968,11 @@ async function newsAnalyze() {
       issues: Array.isArray(J.issues) ? J.issues.slice(0,6) : [],
       sentiment: J.sentiment || null,
       categories: Array.isArray(J.categories) ? J.categories.slice(0,8) : [],
+      keyPlayers: Array.isArray(J.keyPlayers) ? J.keyPlayers.slice(0,6) : [],
+      insights: Array.isArray(J.insights) ? J.insights.slice(0,6) : [],
+      trend: J.trend || '',
       outlook: J.outlook || '',
+      recommendation: J.recommendation || '',
       keywords: kwFreq,
       items,
     };
@@ -17022,37 +17027,62 @@ function buildNewsViz(d, light) {
   };
   const sect = (title, inner) => inner ? `<div style="margin-top:16px"><div style="font-size:.72rem;font-weight:800;color:${C.accent2};margin-bottom:8px">${title}</div>${inner}</div>` : '';
   const card = (inner) => `<div style="background:${C.card};border:1px solid ${C.border};border-radius:10px;padding:12px 14px">${inner}</div>`;
+  // 범용 도넛 차트(제목 + 세그먼트 + 범례). seg: [{label,v,color}]
+  const donutCard = (title, seg, unit) => {
+    seg = (seg||[]).filter(x => x.v > 0);
+    if (!seg.length) return card(`<div style="font-size:.68rem;font-weight:700;color:${C.accent2};margin-bottom:8px">${title}</div><div style="font-size:.66rem;color:${C.dim}">데이터 없음</div>`);
+    const tot = seg.reduce((s,x)=>s+x.v,0) || 1;
+    const R=38, CIRC=2*Math.PI*R; let off=0;
+    const arcs = seg.map((s) => { const len=s.v/tot*CIRC; const el=`<circle cx="55" cy="55" r="${R}" fill="none" stroke="${s.color}" stroke-width="16" stroke-dasharray="${len} ${CIRC-len}" stroke-dashoffset="${-off}" transform="rotate(-90 55 55)"><title>${esc(s.label)}: ${s.v}${unit||''}</title></circle>`; off+=len; return el; }).join('');
+    const leg = seg.map(s => `<div style="display:flex;align-items:center;gap:5px;font-size:.6rem;color:${C.txt};margin:2px 0"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};flex-shrink:0"></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.label)}</span><b style="color:${C.dim}">${s.v}${unit||''}</b></div>`).join('');
+    return `<div style="background:${C.card};border:1px solid ${C.border};border-radius:10px;padding:12px">
+      <div style="font-size:.68rem;font-weight:700;color:${C.accent2};margin-bottom:8px;text-align:center">${title}</div>
+      <div style="position:relative;width:110px;height:110px;margin:0 auto"><svg width="110" height="110" viewBox="0 0 110 110">${arcs}</svg>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><span style="font-size:1rem;font-weight:800;color:${C.txt}">${seg.length}</span><span style="font-size:.5rem;color:${C.dim}">항목</span></div>
+      </div>
+      <div style="margin-top:8px">${leg}</div>
+    </div>`;
+  };
+  const seg = (arr) => arr.map((x,i) => ({ ...x, color: x.color || PAL[i%PAL.length] }));
 
   // 인포그래픽 스탯 카드
-  const stats = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px">
-    ${card(`<div style="font-size:1.4rem;font-weight:800;color:${C.accent}">${d.count}</div><div style="font-size:.62rem;color:${C.dim}">분석 뉴스</div>`)}
-    ${card(`<div style="font-size:1.4rem;font-weight:800;color:${C.accent2}">${d.issues.length}</div><div style="font-size:.62rem;color:${C.dim}">주요 이슈</div>`)}
-    ${card(`<div style="font-size:1.4rem;font-weight:800;color:#f59e0b">${d.keywords.length}</div><div style="font-size:.62rem;color:${C.dim}">핵심 키워드</div>`)}
+  const stats = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+    ${card(`<div style="font-size:1.4rem;font-weight:800;color:${C.accent}">${d.count}</div><div style="font-size:.6rem;color:${C.dim}">분석 뉴스</div>`)}
+    ${card(`<div style="font-size:1.4rem;font-weight:800;color:${C.accent2}">${d.issues.length}</div><div style="font-size:.6rem;color:${C.dim}">주요 이슈</div>`)}
+    ${card(`<div style="font-size:1.4rem;font-weight:800;color:#f59e0b">${d.keywords.length}</div><div style="font-size:.6rem;color:${C.dim}">핵심 키워드</div>`)}
+    ${card(`<div style="font-size:1.4rem;font-weight:800;color:#10b981">${d.categories.length}</div><div style="font-size:.6rem;color:${C.dim}">분야</div>`)}
   </div>`;
 
-  const issuesBar = hbar(d.issues.map(x => ({ label: x.title || x.t || '', v: +(x.weight ?? x.w ?? 0) })).filter(x=>x.label), '');
-  const kwBar = hbar(d.keywords.map(x => ({ label: x.word, v: x.n })), '건');
-  const catBar = hbar(d.categories.map(x => ({ label: x.name, v: +(x.count ?? x.n ?? 0) })).filter(x=>x.label), '');
-  let sentSeg = [];
-  if (d.sentiment) {
-    const s = d.sentiment;
-    sentSeg = [
-      { label:'긍정', v:+(s['긍정']??s.pos??0), color:'#10b981' },
-      { label:'중립', v:+(s['중립']??s.neu??0), color:'#94a3b8' },
-      { label:'부정', v:+(s['부정']??s.neg??0), color:'#ef4444' },
-    ].filter(x => x.v > 0);
-  }
+  // 4개 지표 도넛(1×4)
+  const dIssues = seg(d.issues.map(x => ({ label: x.title || x.t || '', v: +(x.weight ?? x.w ?? 0) })).filter(x=>x.label));
+  const dSent = [
+    { label:'긍정', v:+((d.sentiment||{})['긍정']??(d.sentiment||{}).pos??0), color:'#10b981' },
+    { label:'중립', v:+((d.sentiment||{})['중립']??(d.sentiment||{}).neu??0), color:'#94a3b8' },
+    { label:'부정', v:+((d.sentiment||{})['부정']??(d.sentiment||{}).neg??0), color:'#ef4444' },
+  ];
+  const dKw = seg(d.keywords.slice(0,8).map(x => ({ label: x.word, v: x.n })));
+  const dCat = seg(d.categories.map(x => ({ label: x.name, v: +(x.count ?? x.n ?? 0) })).filter(x=>x.label));
+  const donutGrid = `<div class="na-donuts" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:16px">
+    ${donutCard('🔥 주요 이슈 (중요도)', dIssues, '')}
+    ${donutCard('😊 감성 분포', dSent, '%')}
+    ${donutCard('🏷 핵심 키워드 빈도', dKw, '건')}
+    ${donutCard('📂 카테고리 분포', dCat, '건')}
+  </div>`;
+
+  const bullets = (arr, icon) => arr && arr.length ? `<ul style="margin:0;padding-left:2px;list-style:none">${arr.map(x => `<li style="display:flex;gap:6px;font-size:.76rem;line-height:1.6;color:${C.txt};margin:4px 0"><span style="color:${C.accent2}">${icon}</span><span>${esc(typeof x==='string'?x:(x.name?`<b>${esc(x.name)}</b> — ${esc(x.role||'')}`:''))}</span></li>`).join('')}</ul>` : '';
+
   const rows = d.items.map((x,i) => `<tr><td style="color:${C.dim};padding:4px 8px;text-align:center">${i+1}</td><td style="padding:4px 8px;color:${C.txt}">${esc(x.title)}</td><td style="color:${C.dim};padding:4px 8px;white-space:nowrap;font-size:.9em">${esc((x.date||'').replace(/\s*\+.*$/,''))}</td></tr>`).join('');
   const table = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.7rem"><thead><tr style="border-bottom:2px solid ${C.border}"><th style="padding:5px 8px;color:${C.dim};text-align:center">#</th><th style="padding:5px 8px;color:${C.dim};text-align:left">제목</th><th style="padding:5px 8px;color:${C.dim}">날짜</th></tr></thead><tbody>${rows}</tbody></table></div>`;
 
   return `<div style="font-size:.66rem;color:${C.dim};margin-bottom:10px">"${esc(d.kw)}" · 최근 ${esc(d.label)} · 뉴스 ${d.count}건 · ${esc(d.at)}</div>
     ${stats}
-    ${d.summary ? sect('📝 핵심 요약', card(`<div style="font-size:.78rem;line-height:1.7;color:${C.txt}">${esc(d.summary)}</div>`)) : ''}
-    ${issuesBar ? sect('🔥 주요 이슈 (중요도)', card(issuesBar)) : ''}
-    ${sentSeg.length ? sect('😊 감성 분포', card(donut(sentSeg))) : ''}
-    ${kwBar ? sect('🏷 핵심 키워드 빈도', card(kwBar)) : ''}
-    ${catBar ? sect('📂 카테고리 분포', card(catBar)) : ''}
-    ${d.outlook ? sect('🔮 시사점·전망', card(`<div style="font-size:.78rem;line-height:1.7;color:${C.txt}">${esc(d.outlook)}</div>`)) : ''}
+    ${d.summary ? sect('📝 핵심 요약', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${esc(d.summary)}</div>`)) : ''}
+    ${donutGrid}
+    ${d.insights && d.insights.length ? sect('💡 핵심 인사이트', card(bullets(d.insights, '▸'))) : ''}
+    ${d.trend ? sect('📈 동향·흐름', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${esc(d.trend)}</div>`)) : ''}
+    ${d.keyPlayers && d.keyPlayers.length ? sect('👥 핵심 인물·기관', card(bullets(d.keyPlayers, '•'))) : ''}
+    ${d.outlook ? sect('🔮 시사점·전망', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${esc(d.outlook)}</div>`)) : ''}
+    ${d.recommendation ? sect('✅ 실무 제언', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${esc(d.recommendation)}</div>`)) : ''}
     ${sect(`📰 분석 대상 뉴스 (${d.count}건)`, card(table))}`;
 }
 function newsAnalysisExport() {
