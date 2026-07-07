@@ -4056,7 +4056,7 @@ function renderWatchUnivs() {
   if (!list.length) { box.innerHTML = '<div style="font-size:.68rem;color:var(--text-muted)">대학을 등록하면 교수 수·공시 링크가 표시됩니다</div>'; return; }
   box.innerHTML = list.map((name, i) => {
     const prof = PROF_DATA[name];
-    const alrimi = 'https://www.academyinfo.go.kr/search/search.do?kword=' + encodeURIComponent(name);
+    const alrimi = 'https://www.academyinfo.go.kr/search/search.do?kwd=' + encodeURIComponent(name);
     return `<div style="display:flex;align-items:center;gap:6px;font-size:.7rem;padding:4px 6px;background:var(--bg);border-radius:6px;">
       <a href="${alrimi}" target="_blank" rel="noopener" title="대학알리미 검색 결과 보기" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text);text-decoration:none;cursor:pointer">${name}</a>
       ${prof ? `<span style="color:var(--accent2);flex-shrink:0">교원 ${prof.toLocaleString()}</span>` : ''}
