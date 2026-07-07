@@ -15483,10 +15483,27 @@ async function poemAiFill() {
     txt = txt.replace(/```json/gi,'').replace(/```/g,'').trim();
     let arr = [];
     const mArr = txt.match(/\[[\s\S]*\]/);
-    try { arr = JSON.parse(mArr ? mArr[0] : txt); } catch(_) {}
+    const jsonStr = mArr ? mArr[0] : txt;
+    try { arr = JSON.parse(jsonStr); } catch(_) {}
+    // 폴백1: body 내 실제 줄바꿈을 \\n으로 이스케이프 후 재파싱
+    if (!Array.isArray(arr) || !arr.length) {
+      try {
+        const fixed = jsonStr.replace(/"body"\s*:\s*"([\s\S]*?)"(\s*[},])/g, (m, b, tail) => '"body":"' + b.replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n').replace(/"/g,'\\"') + '"' + tail);
+        arr = JSON.parse(fixed);
+      } catch(_) {}
+    }
+    // 폴백2: 정규식으로 객체 직접 추출(멀티라인 body 허용)
+    if (!Array.isArray(arr) || !arr.length) {
+      arr = [];
+      const re = /\{[\s\S]*?"title"\s*:\s*"([^"]+)"[\s\S]*?"poet"\s*:\s*"([^"]+)"[\s\S]*?(?:"theme"\s*:\s*"([^"]*)"[\s\S]*?)?"body"\s*:\s*"([\s\S]*?)"\s*[},]/g;
+      let mm;
+      while ((mm = re.exec(txt))) {
+        arr.push({ title: mm[1], poet: mm[2], theme: mm[3] || '', body: mm[4].replace(/\\n/g,'\n') });
+      }
+    }
     if (!Array.isArray(arr) || !arr.length) {
       const trunc = (data.stop_reason === 'max_tokens') ? ' (응답이 길어 잘렸습니다 — 편수를 줄여보세요)' : '';
-      showToast('AI 응답 파싱 실패' + trunc, '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return;
+      showToast('AI 응답 파싱 실패' + trunc + ': ' + txt.slice(0,50), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return;
     }
     const themeOK = new Set(POEM_THEME_ORDER);
     const cand = [];
