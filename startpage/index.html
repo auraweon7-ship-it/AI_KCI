@@ -15462,11 +15462,21 @@ async function poemAiFill() {
       : (themeIn.startsWith('자유') ? '' : `"${themeIn}" 주제의 `);
     // 저작권이 만료된(퍼블릭 도메인) 한국 근현대시 — 전문 포함
     const prompt = `반드시 저작권 보호기간이 만료된(사후 70년 이상 경과, 예: 김소월·윤동주·이육사·이상화·한용운·심훈 등 1953년 이전 작고한 시인) ${cond}한국 근현대시 ${count}편을 원문 그대로 추천해 주세요. 생존 시인이나 최근 시인은 절대 포함하지 마세요.${exclLine}\n각 시의 제목·시인·주제·전문을 아래 JSON 배열로만 출력하세요(코드블록·설명 금지). 본문의 줄바꿈은 \\n으로 표기:\n[{"title":"제목","poet":"시인","theme":"주제","body":"시 전문"}]`;
-    const r = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:4000, messages:[{ role:'user', content:prompt }] }),
-    });
+    const ctrl = new AbortController();
+    const to = setTimeout(() => ctrl.abort(), 45000);   // 45초 타임아웃(무한 대기 방지)
+    let r;
+    try {
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST', signal: ctrl.signal,
+        headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
+        body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:8000, messages:[{ role:'user', content:prompt }] }),
+      });
+    } catch(fe) {
+      clearTimeout(to);
+      showToast(fe.name === 'AbortError' ? '시간 초과 — 다시 시도하세요' : ('요청 실패: ' + (fe.message||'네트워크')), '⚠️');
+      if(btn){btn.disabled=false;btn.textContent='AI 추천';} return;
+    }
+    clearTimeout(to);
     if (!r.ok) { const e = await r.json().catch(()=>({})); showToast('AI 오류: ' + (e.error?.message || r.status), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
     const data = await r.json();
     let txt = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('') || '';
@@ -15474,7 +15484,10 @@ async function poemAiFill() {
     let arr = [];
     const mArr = txt.match(/\[[\s\S]*\]/);
     try { arr = JSON.parse(mArr ? mArr[0] : txt); } catch(_) {}
-    if (!Array.isArray(arr) || !arr.length) { showToast('AI 응답 파싱 실패', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
+    if (!Array.isArray(arr) || !arr.length) {
+      const trunc = (data.stop_reason === 'max_tokens') ? ' (응답이 길어 잘렸습니다 — 편수를 줄여보세요)' : '';
+      showToast('AI 응답 파싱 실패' + trunc, '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return;
+    }
     const themeOK = new Set(POEM_THEME_ORDER);
     const cand = [];
     for (const s of arr) {
