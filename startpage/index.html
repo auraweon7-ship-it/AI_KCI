@@ -13921,10 +13921,10 @@ function musicGenreInfoOpen(g) {
   const gOpts = MUSIC_GENRE_ORDER.map(x => `<option value="${esc(x)}"${x===genre?' selected':''}>${esc(x)}</option>`).join('');
   const row = (icon, label, val) => val ? `<div style="margin-top:12px"><div style="font-size:.66rem;font-weight:800;color:var(--accent2);margin-bottom:3px">${icon} ${label}</div><div style="font-size:.76rem;color:var(--text);line-height:1.6">${esc(val)}</div></div>` : '';
   const chips = (arr) => (arr||[]).map(x => `<span style="display:inline-block;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:2px 10px;font-size:.7rem;color:var(--text);margin:2px 3px 0 0">${esc(x)}</span>`).join('');
-  // 대표곡 칩: 클릭 시 YouTube 검색으로 연결(가수명 포함)
+  // 대표곡 칩: 클릭 시 곡을 찾아 바로 재생(YouTube watch)
   const songChips = (arr) => (arr||[]).map(x => {
-    const q = encodeURIComponent(x + ' ' + genre.split('/')[0].trim());
-    return `<a href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener" title="YouTube에서 재생" style="display:inline-block;background:var(--bg3);border:1px solid var(--accent2)66;border-radius:14px;padding:2px 10px 2px 8px;font-size:.7rem;color:var(--accent2);text-decoration:none;margin:2px 3px 0 0">▶ ${esc(x)}</a>`;
+    const q = (x + ' ' + genre.split('/')[0].trim()).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `<span onclick="musicOpenSong('${q}')" title="바로 재생" style="display:inline-block;background:var(--bg3);border:1px solid var(--accent2)66;border-radius:14px;padding:2px 10px 2px 8px;font-size:.7rem;color:var(--accent2);cursor:pointer;margin:2px 3px 0 0">▶ ${esc(x)}</span>`;
   }).join('');
   ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:560px;width:100%;max-height:86vh;overflow-y:auto;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
@@ -13939,6 +13939,23 @@ function musicGenreInfoOpen(g) {
     ${info.artists?`<div style="margin-top:12px"><div style="font-size:.66rem;font-weight:800;color:var(--accent2);margin-bottom:4px">🎤 대표 음악가</div><div>${chips(info.artists)}</div></div>`:''}
     ${info.songs?`<div style="margin-top:12px"><div style="font-size:.66rem;font-weight:800;color:var(--accent2);margin-bottom:4px">🎵 대표곡 <span style="font-weight:400;color:var(--text-muted);font-size:.62rem">(클릭 시 YouTube)</span></div><div>${songChips(info.songs)}</div></div>`:''}
   </div>`;
+}
+// 대표곡 바로 재생: YouTube 검색 → 첫 videoId → watch 새 탭(자동재생)
+async function musicOpenSong(query) {
+  const win = window.open('about:blank', '_blank');   // 팝업 차단 회피: 먼저 창 열기
+  try {
+    const api = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    const r = await fetch('/api/proxy?url=' + encodeURIComponent(api));
+    let id = '';
+    if (r.ok) { const html = await r.text(); const m = html.match(/"videoId":"([\w-]{11})"/); if (m) id = m[1]; }
+    const url = id
+      ? `https://www.youtube.com/watch?v=${id}`
+      : `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    if (win) win.location.href = url; else window.open(url, '_blank');
+  } catch(_) {
+    const url = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    if (win) win.location.href = url; else window.open(url, '_blank');
+  }
 }
 let musicState = { mode: 'genre', cat: 'all', page: 1 };
 function musicSetMode(m) { musicState.mode = m; musicState.cat = 'all'; musicState.page = 1; renderMusicView(); }
