@@ -912,11 +912,11 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
   .header-right .icon-btn { padding: 0 5px; }
   .links-grid { grid-template-columns: repeat(3, 1fr); }
   #todoGrid { grid-template-columns: 1fr !important; }
-  .music-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .music-grid { grid-template-columns: 1fr !important; }
 }
-/* 좋아하는 음악 그리드: 태블릿 3열, 모바일 2열 */
+/* 좋아하는 음악 그리드: 태블릿 3열, 모바일 1열 */
 @media (max-width: 960px) { .music-grid { grid-template-columns: repeat(3, 1fr) !important; } }
-@media (max-width: 560px) { .music-grid { grid-template-columns: repeat(2, 1fr) !important; } }
+@media (max-width: 560px) { .music-grid { grid-template-columns: 1fr !important; } }
 </style>
 </head>
 <body data-theme="dark">
