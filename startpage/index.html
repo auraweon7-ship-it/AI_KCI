@@ -15435,7 +15435,7 @@ function poemAiOpen() {
       <label style="font-size:.68rem;color:var(--text-dim)">주제 <select id="paf_theme" style="${inS}">${tOpts}</select></label>
       <label style="font-size:.68rem;color:var(--text-dim)">편 수 <select id="paf_count" style="${inS}">${nOpts}</select></label>
     </div>
-    <p style="font-size:.66rem;color:var(--text-muted);margin:10px 0 0;line-height:1.5">저작권이 만료된 한국 근현대시(김소월·윤동주·이육사·이상화·한용운 등)를 <b>전문 포함</b>으로 추천합니다. 목록에서 제목을 누르면 전문을 확인할 수 있습니다. (설정 → 🧠 Claude API 키 필요)</p>
+    <p style="font-size:.66rem;color:var(--text-muted);margin:10px 0 0;line-height:1.5">한국 근현대시를 <b>제목·시인·소개</b>로 추천합니다. 목록에서 선택해 등록한 뒤, 본문은 카드 <b>✏️</b>로 직접 입력하세요. (설정 → 🧠 Claude API 키 필요)</p>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
       <button onclick="document.getElementById('poemAiOverlay').remove()" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">취소</button>
       <button id="poemAiBtn" onclick="poemAiFill()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">AI 추천</button>
@@ -15460,8 +15460,9 @@ async function poemAiFill() {
     const cond = poetIn
       ? `시인 "${poetIn}"의 작품 중`
       : (themeIn.startsWith('자유') ? '' : `"${themeIn}" 주제의 `);
-    // 저작권이 만료된(퍼블릭 도메인) 한국 근현대시 — 전문 포함
-    const prompt = `반드시 저작권 보호기간이 만료된(사후 70년 이상 경과, 예: 김소월·윤동주·이육사·이상화·한용운·심훈 등 1953년 이전 작고한 시인) ${cond}한국 근현대시 ${count}편을 원문 그대로 추천해 주세요. 생존 시인이나 최근 시인은 절대 포함하지 마세요.${exclLine}\n각 시의 제목·시인·주제·전문을 아래 JSON 배열로만 출력하세요(코드블록·설명 금지). 본문의 줄바꿈은 \\n으로 표기:\n[{"title":"제목","poet":"시인","theme":"주제","body":"시 전문"}]`;
+    // 한국 근현대시 추천 — 제목·시인·주제·소개(메타데이터). 본문은 등록 후 직접 입력
+    const cond2 = poetIn ? `시인 "${poetIn}"의 작품 중` : (themeIn.startsWith('자유') ? '' : `"${themeIn}" 주제의 `);
+    const prompt = `${cond2}실제 존재하는 유명한 한국 근현대시 ${count}편을 추천해 주세요.${exclLine}\n각 시의 제목·시인·주제·한 줄 소개만 아래 JSON 배열로만 출력하세요(코드블록·설명 금지):\n[{"title":"제목","poet":"시인","theme":"주제","note":"한 줄 소개"}]`;
     const ctrl = new AbortController();
     const to = setTimeout(() => ctrl.abort(), 45000);   // 45초 타임아웃(무한 대기 방지)
     let r;
@@ -15492,13 +15493,13 @@ async function poemAiFill() {
         arr = JSON.parse(fixed);
       } catch(_) {}
     }
-    // 폴백2: 정규식으로 객체 직접 추출(멀티라인 body 허용)
+    // 폴백2: 정규식으로 title·poet(+theme·note) 직접 추출
     if (!Array.isArray(arr) || !arr.length) {
       arr = [];
-      const re = /\{[\s\S]*?"title"\s*:\s*"([^"]+)"[\s\S]*?"poet"\s*:\s*"([^"]+)"[\s\S]*?(?:"theme"\s*:\s*"([^"]*)"[\s\S]*?)?"body"\s*:\s*"([\s\S]*?)"\s*[},]/g;
+      const re = /"title"\s*:\s*"([^"]+)"[\s\S]*?"poet"\s*:\s*"([^"]+)"(?:[\s\S]*?"theme"\s*:\s*"([^"]*)")?(?:[\s\S]*?"note"\s*:\s*"([^"]*)")?/g;
       let mm;
       while ((mm = re.exec(txt))) {
-        arr.push({ title: mm[1], poet: mm[2], theme: mm[3] || '', body: mm[4].replace(/\\n/g,'\n') });
+        arr.push({ title: mm[1], poet: mm[2], theme: mm[3] || '', note: mm[4] || '' });
       }
     }
     if (!Array.isArray(arr) || !arr.length) {
@@ -15508,10 +15509,13 @@ async function poemAiFill() {
     const themeOK = new Set(POEM_THEME_ORDER);
     const cand = [];
     for (const s of arr) {
-      const t = (s.title||'').trim(), poet = (s.poet||'').trim(), body = (s.body||'').replace(/\r/g,'').trim();
-      if (!t || !poet || !body) continue;
+      const t = (s.title||'').trim(), poet = (s.poet||'').trim();
+      const note = (s.note||'').trim(), rawBody = (s.body||'').replace(/\r/g,'').trim();
+      if (!t || !poet) continue;
       if (exist.has(normK(poet) + '|' + normK(t))) continue;   // 이미 등록된 시 제외
-      cand.push({ t: t.slice(0,80), poet: poet.slice(0,40), book: t, year: '', theme: themeOK.has(s.theme) ? s.theme : (themeIn.startsWith('자유') ? '기타' : themeIn), b: body });
+      // 본문이 오면 사용, 없으면 소개 + 직접 입력 안내
+      const b = rawBody || ((note ? `[소개] ${note}\n\n` : '') + '(본문을 직접 입력하세요 — 카드의 ✏️로 편집)');
+      cand.push({ t: t.slice(0,80), poet: poet.slice(0,40), book: t, year: '', theme: themeOK.has(s.theme) ? s.theme : (themeIn.startsWith('자유') ? '기타' : themeIn), b });
     }
     if (!cand.length) { showToast('추천할 새 시를 찾지 못했습니다', 'ℹ️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
     _poemAiCand = cand;
