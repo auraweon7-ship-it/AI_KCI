@@ -14087,36 +14087,42 @@ const MUSIC_QUERY = {
   'OST / SOUNDTRACK':'famous movie soundtrack ost','LO-FI / CHILL':'lofi chill beats music','HEALING / MEDITATION':'healing meditation relaxing music',
   'PROGRESSIVE / NEW AGE':'progressive rock new age instrumental music',
 };
-async function musicAutoFill() {
-  if (!confirm('전 장르(18개)의 인기곡을 조회수순으로 자동 수집해 추가합니다. 진행할까요?')) return;
+async function musicAutoFill(perGenre) {
+  const N = perGenre || 30;
+  if (!confirm(`전 장르(${MUSIC_GENRE_ORDER.length}개)의 대표·인기곡을 조회수순으로 장르당 최대 ${N}곡 자동 수집해 추가합니다. 시간이 걸릴 수 있습니다. 진행할까요?`)) return;
   const arr = userMusic();
   const existIds = new Set(musicAll().map(m => m.id));
   let totalAdded = 0;
   const re = /"videoId":"([\w-]{11})"[\s\S]{0,600}?"title":\{"runs":\[\{"text":"([^"]{2,120})"/g;
   for (const genre of MUSIC_GENRE_ORDER) {
     const q = MUSIC_QUERY[genre] || genre;
-    showToast(`🔎 ${genre} 수집 중…`, '⏳');
-    try {
-      const api = `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}&sp=CAMSAhAB`; // 조회수순
-      const r = await fetch('/api/proxy?url=' + encodeURIComponent(api));
-      if (!r.ok) continue;
-      const html = await r.text();
-      const seen = new Set(); let m, cnt = 0;
-      re.lastIndex = 0;
-      while ((m = re.exec(html)) && cnt < 20) {
-        const id = m[1];
-        if (seen.has(id) || existIds.has(id)) continue;
-        seen.add(id); existIds.add(id);
-        let title = m[2].replace(/\\u0026/g,'&').replace(/\\"/g,'"').replace(/\\/g,'').trim();
-        // "가수 - 제목" 분리 시도
-        let artist = '', t = title;
-        const dash = title.split(/\s[-–—|]\s/);
-        if (dash.length >= 2) { artist = dash[0].trim(); t = dash.slice(1).join(' - ').replace(/\s*\(.*?official.*?\)/i,'').trim(); }
-        t = t.replace(/\s*[\(\[][^)\]]*(official|mv|m\/v|audio|lyric|video)[^)\]]*[\)\]]/ig,'').trim() || title;
-        arr.unshift({ t: t.slice(0,80), artist: (artist||'—').slice(0,50), genre, id });
-        cnt++; totalAdded++;
-      }
-    } catch(_) {}
+    let got = 0;
+    // 한 검색 페이지의 결과가 부족하면 페이지 파라미터 없이 재요청은 불가하므로,
+    // 조회수순 검색 + 다양한 쿼리 변형으로 N곡까지 수집
+    const queries = [`${q}`, `best ${q}`, `${q} greatest hits`, `top ${q} songs`];
+    for (const qq of queries) {
+      if (got >= N) break;
+      showToast(`🔎 ${genre} 수집 중… (${got}/${N})`, '⏳');
+      try {
+        const api = `https://www.youtube.com/results?search_query=${encodeURIComponent(qq)}&sp=CAMSAhAB`; // 조회수순
+        const r = await fetch('/api/proxy?url=' + encodeURIComponent(api));
+        if (!r.ok) continue;
+        const html = await r.text();
+        let m; re.lastIndex = 0;
+        while ((m = re.exec(html)) && got < N) {
+          const id = m[1];
+          if (existIds.has(id)) continue;
+          existIds.add(id);
+          let title = m[2].replace(/\\u0026/g,'&').replace(/\\"/g,'"').replace(/\\/g,'').trim();
+          let artist = '', t = title;
+          const dash = title.split(/\s[-–—|]\s/);
+          if (dash.length >= 2) { artist = dash[0].trim(); t = dash.slice(1).join(' - ').replace(/\s*\(.*?official.*?\)/i,'').trim(); }
+          t = t.replace(/\s*[\(\[][^)\]]*(official|mv|m\/v|audio|lyric|video)[^)\]]*[\)\]]/ig,'').trim() || title;
+          arr.unshift({ t: t.slice(0,80), artist: (artist||'—').slice(0,50), genre, id });
+          got++; totalAdded++;
+        }
+      } catch(_) {}
+    }
   }
   saveUserMusic(arr);
   showToast(`자동 채우기 완료 — ${totalAdded}곡 추가 🎶`);
@@ -14493,7 +14499,7 @@ function renderMusicView() {
       <button onclick="musicGenreInfoOpen(musicState.mode!=='artist'&&musicState.cat!=='all'?musicState.cat:'')" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📖 장르특성</button>
       <button onclick="musicAddOpen()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:.72rem;cursor:pointer">➕ 곡 등록</button>
       <button onclick="musicAiOpen()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.72rem;cursor:pointer">🤖 AI 등록</button>
-      <button onclick="musicAutoFill()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">🔎 자동채우기</button>
+      <button onclick="musicAutoFill(30)" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">🔎 자동채우기(장르당 30곡)</button>
       <button onclick="document.getElementById('musicImportFile').click()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📥 HTML 가져오기</button>
       <button onclick="musicExportHtml()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📤 HTML 내보내기</button>
       <button onclick="musicShare()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.72rem;cursor:pointer">🔗 SHARE</button>
