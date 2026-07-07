@@ -14082,41 +14082,46 @@ async function musicAiFill() {
   if (btn) { btn.disabled = true; btn.textContent = '🤖 추천 받는 중…'; }
   try {
     // 1) Claude에 곡 목록 요청 (JSON)
-    const prompt = `"${genre}" 장르의 대표적이고 유명한(조회수·인기 높은) 곡 ${count}곡을 추천해 주세요. 반드시 실제 존재하는 곡만. 아래 JSON 배열 형식으로만 답하세요(설명 없이):\n[{"title":"곡 제목","artist":"가수"}]`;
+    const prompt = `"${genre}" 장르의 대표적이고 유명한(조회수·인기 높은) 곡 ${count}곡을 추천해 주세요. 반드시 실제 존재하는 곡만. 오직 JSON 배열만 출력하세요(코드블록·설명 금지):\n[{"title":"곡 제목","artist":"가수명"}]`;
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:1500, messages:[{ role:'user', content:prompt }] }),
+      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:2000, messages:[{ role:'user', content:prompt }] }),
     });
     if (!r.ok) { const e = await r.json().catch(()=>({})); showToast('AI 오류: ' + (e.error?.message || r.status), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
     const data = await r.json();
-    const txt = (data.content && data.content[0] && data.content[0].text) || '';
+    let txt = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('') || '';
+    txt = txt.replace(/```json/gi,'').replace(/```/g,'').trim();
     let songs = [];
-    try { songs = JSON.parse(txt.match(/\[[\s\S]*\]/)[0]); } catch(_) { showToast('AI 응답 파싱 실패', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
-    if (!songs.length) { showToast('추천 곡이 없습니다', 'ℹ️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
+    const mArr = txt.match(/\[[\s\S]*\]/);
+    try { songs = JSON.parse(mArr ? mArr[0] : txt); } catch(_) {}
+    if (!Array.isArray(songs) || !songs.length) { showToast('AI 응답 파싱 실패: ' + txt.slice(0,60), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
     // 2) 각 곡 YouTube 검색 → videoId (후보 수집)
     const existIds = new Set(musicAll().map(m => m.id));
     const cand = [];
     let done = 0;
+    const findVid = async (query) => {
+      const api = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+      const yr = await fetch('/api/proxy?url=' + encodeURIComponent(api));
+      if (!yr.ok) return '';
+      const html = await yr.text();
+      const mm = html.match(/"videoId":"([\w-]{11})"/);
+      return mm ? mm[1] : '';
+    };
     for (const s of songs) {
-      const title = (s.title||'').trim(), artist = (s.artist||'').trim();
+      const title = (s.title||s.t||'').trim(), artist = (s.artist||s.a||'').trim();
       done++;
       if (!title) continue;
       if (btn) btn.textContent = `🔎 ${done}/${songs.length} 검색 중…`;
       try {
-        const api = `https://www.youtube.com/results?search_query=${encodeURIComponent(artist + ' ' + title + ' official')}`;
-        const yr = await fetch('/api/proxy?url=' + encodeURIComponent(api));
-        if (!yr.ok) continue;
-        const html = await yr.text();
-        const mm = html.match(/"videoId":"([\w-]{11})"/);
-        if (!mm) continue;
-        const id = mm[1];
-        if (existIds.has(id)) continue;
+        let id = await findVid(artist + ' ' + title);          // 1차: 가수+제목
+        if (!id) id = await findVid(title + ' ' + artist + ' official audio'); // 2차 폴백
+        if (!id || existIds.has(id)) continue;
         existIds.add(id);
         cand.push({ t: title.slice(0,80), artist: (artist||'—').slice(0,50), genre, id });
       } catch(_) {}
     }
-    if (!cand.length) { showToast('YouTube에서 곡을 찾지 못했습니다', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
+    if (!cand.length) { showToast('YouTube에서 곡을 찾지 못했습니다 (프록시 확인)', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
     // 3) 미리보기 + 체크 UI로 전환
     _musicAiCand = cand;
     musicAiPreview(genre);
