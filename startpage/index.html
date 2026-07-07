@@ -14069,7 +14069,7 @@ function musicAiOpen() {
     <p style="font-size:.66rem;color:var(--text-muted);margin:10px 0 0;line-height:1.5">Claude AI가 장르 대표 인기곡을 추천하고, YouTube에서 영상을 찾아 등록합니다. (설정 → 🧠 Claude API 키 필요)</p>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
       <button onclick="document.getElementById('musicAiOverlay').remove()" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">취소</button>
-      <button id="aiFillBtn" onclick="musicAiFill()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">AI 추천 등록</button>
+      <button id="aiFillBtn" onclick="musicAiFill()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">AI 추천</button>
     </div>
   </div>`;
 }
@@ -14088,12 +14088,12 @@ async function musicAiFill() {
       headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
       body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:1500, messages:[{ role:'user', content:prompt }] }),
     });
-    if (!r.ok) { const e = await r.json().catch(()=>({})); showToast('AI 오류: ' + (e.error?.message || r.status), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천 등록';} return; }
+    if (!r.ok) { const e = await r.json().catch(()=>({})); showToast('AI 오류: ' + (e.error?.message || r.status), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
     const data = await r.json();
     const txt = (data.content && data.content[0] && data.content[0].text) || '';
     let songs = [];
-    try { songs = JSON.parse(txt.match(/\[[\s\S]*\]/)[0]); } catch(_) { showToast('AI 응답 파싱 실패', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천 등록';} return; }
-    if (!songs.length) { showToast('추천 곡이 없습니다', 'ℹ️'); if(btn){btn.disabled=false;btn.textContent='AI 추천 등록';} return; }
+    try { songs = JSON.parse(txt.match(/\[[\s\S]*\]/)[0]); } catch(_) { showToast('AI 응답 파싱 실패', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
+    if (!songs.length) { showToast('추천 곡이 없습니다', 'ℹ️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
     // 2) 각 곡 YouTube 검색 → videoId (후보 수집)
     const existIds = new Set(musicAll().map(m => m.id));
     const cand = [];
@@ -14116,13 +14116,13 @@ async function musicAiFill() {
         cand.push({ t: title.slice(0,80), artist: (artist||'—').slice(0,50), genre, id });
       } catch(_) {}
     }
-    if (!cand.length) { showToast('YouTube에서 곡을 찾지 못했습니다', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천 등록';} return; }
+    if (!cand.length) { showToast('YouTube에서 곡을 찾지 못했습니다', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
     // 3) 미리보기 + 체크 UI로 전환
     _musicAiCand = cand;
     musicAiPreview(genre);
   } catch(e) {
     showToast('AI 등록 실패: ' + (e.message || '오류'), '⚠️');
-    if (btn) { btn.disabled = false; btn.textContent = 'AI 추천 등록'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'AI 추천'; }
   }
 }
 let _musicAiCand = [];
