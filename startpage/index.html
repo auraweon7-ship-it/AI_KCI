@@ -924,7 +924,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v2.1</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v2.2</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3866,7 +3866,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v2.1 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v2.2 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7710,6 +7710,7 @@ function renderLinks() {
     panel.style.cssText = 'grid-column:1/-1;margin-top:20px;padding:16px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:12px';
     let savedKws = [];
     try { savedKws = JSON.parse(localStorage.getItem('news_analysis_kws') || '[]'); } catch(_) {}   // 저장된 키워드 복원
+    const savedCount = localStorage.getItem('news_analysis_count') || '50';   // 저장된 건수(기본 50)
     const defKws = ['고등교육 정책','대학 재정','대학 혁신','지역대학 위기','대학 취업률'];
     const kwVal = n => { const esc = s => String(s).replace(/"/g,'&quot;'); if (savedKws.length) return esc(savedKws[n-1] || ''); return esc(defKws[n-1] || ''); };
     panel.innerHTML = `
@@ -7726,6 +7727,11 @@ function renderLinks() {
             <option value="90">3개월</option>
             <option value="180">6개월</option>
             <option value="365">12개월</option>
+          </select>
+        </label>
+        <label style="font-size:.7rem;color:var(--text-dim)">건수
+          <select id="naCount" style="padding:7px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">
+            ${[10,20,30,50,70,100].map(c => `<option value="${c}"${String(c)===savedCount?' selected':''}>${c}개</option>`).join('')}
           </select>
         </label>
         <button id="naRunBtn" onclick="newsAnalyze()" style="padding:7px 16px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.76rem;cursor:pointer">분석 실행</button>
@@ -16924,7 +16930,7 @@ async function newsAnalyze() {
   const key = (localStorage.getItem('claude_api_key') || '').trim();
   if (!key) { showToast('설정 → 🧠 Claude API 키를 입력하세요', '🔑'); return; }
   const kws = [1,2,3,4,5].map(n => (document.getElementById('naKw'+n)?.value || '').trim()).filter(Boolean);
-  try { localStorage.setItem('news_analysis_kws', JSON.stringify(kws)); } catch(_) {}   // 키워드 저장
+  try { localStorage.setItem('news_analysis_kws', JSON.stringify(kws)); localStorage.setItem('news_analysis_count', document.getElementById('naCount')?.value || '50'); } catch(_) {}   // 키워드·건수 저장
   const kw = kws.length ? kws.join(' OR ') : '고등교육';
   const kwDisplay = kws.length ? kws.join(', ') : '고등교육';
   const days = document.getElementById('naPeriod')?.value || '7';
@@ -16934,7 +16940,7 @@ async function newsAnalyze() {
   if (out) out.innerHTML = '<span style="color:var(--text-muted)">📰 뉴스 수집 중…</span>';
   try {
     // 1) 구글뉴스 RSS로 기간 내 뉴스 수집 — 키워드별 피드 병렬 수집 후 병합·중복제거(최대한 많은 건수)
-    const CAP = 100;  // 분석 상한
+    const CAP = Math.max(10, Math.min(100, parseInt(document.getElementById('naCount')?.value || '50', 10) || 50));  // 분석 건수(사용자 설정 10~100)
     const queries = kws.length ? kws : ['고등교육'];  // 키워드별 개별 피드
     const parseFeed = async (q) => {
       const rss = `https://news.google.com/rss/search?q=${encodeURIComponent(q + ' when:' + days + 'd')}&hl=ko&gl=KR&ceid=KR:ko`;
