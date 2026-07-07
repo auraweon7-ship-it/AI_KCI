@@ -14175,7 +14175,7 @@ function musicAiConfirm() {
   renderMusicView();
 }
 // 좋아하는 음악 HTML 내보내기 (music-item 구조 → 가져오기 호환, 클릭 시 embed 재생)
-function musicExportHtml() {
+function musicExportHtml(returnOnly) {
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const attr = s => esc(s).replace(/"/g,'&quot;');
   const list = musicAll();
@@ -14252,6 +14252,7 @@ function play(el,id){el.innerHTML='<iframe src="https://www.youtube.com/embed/'+
 })();
 <\/script>
 </body></html>`;
+  if (returnOnly) return html;
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -14259,6 +14260,44 @@ function play(el,id){el.innerHTML='<iframe src="https://www.youtube.com/embed/'+
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   showToast(`${list.length}곡을 HTML로 내보냈습니다 📤`);
+}
+// 좋아하는 음악 공유 링크 생성 (서버에 HTML 저장 → /s/:id 링크)
+async function musicShare() {
+  const html = musicExportHtml(true);
+  showToast('공유 링크 생성 중…', '🔗');
+  try {
+    const r = await fetch('/api/share', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: '좋아하는 음악', html }),
+    });
+    if (!r.ok) { const e = await r.json().catch(()=>({})); showToast('공유 실패: ' + (e.error || r.status), '⚠️'); return; }
+    const d = await r.json();
+    const link = location.origin + d.url;
+    shareShowLink(link, '🎶 좋아하는 음악');
+  } catch(e) { showToast('공유 실패: ' + (e.message || '네트워크'), '⚠️'); }
+}
+// 공유 링크 팝업(복사)
+function shareShowLink(link, label) {
+  let ov = document.getElementById('shareOverlay');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'shareOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10001;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:440px;width:100%;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <h3 style="flex:1;font-size:1.05rem;font-weight:800;color:var(--text);margin:0">🔗 공유 링크 — ${esc(label)}</h3>
+      <button onclick="document.getElementById('shareOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted)">✕</button>
+    </div>
+    <p style="font-size:.7rem;color:var(--text-dim);margin:0 0 8px">이 링크로 누구나 목록을 볼 수 있습니다.</p>
+    <div style="display:flex;gap:6px">
+      <input id="shareLinkInput" value="${esc(link)}" readonly onclick="this.select()" style="flex:1;min-width:0;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;outline:none">
+      <button onclick="navigator.clipboard.writeText('${esc(link)}').then(()=>showToast('링크가 복사되었습니다 📋'))" style="padding:8px 14px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.74rem;cursor:pointer;white-space:nowrap">복사</button>
+      <a href="${esc(link)}" target="_blank" rel="noopener" style="padding:8px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;text-decoration:none;white-space:nowrap">열기</a>
+    </div>
+  </div>`;
 }
 // 좋아하는 음악 HTML 가져오기 (music-item 파싱 → user_music, 중복 생략)
 function musicImportHtml(input) {
@@ -14350,6 +14389,7 @@ function renderMusicView() {
       <button onclick="musicAutoFill()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">🔎 자동채우기</button>
       <button onclick="document.getElementById('musicImportFile').click()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📥 HTML 가져오기</button>
       <button onclick="musicExportHtml()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📤 HTML 내보내기</button>
+      <button onclick="musicShare()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.72rem;cursor:pointer">🔗 SHARE</button>
       <input type="file" id="musicImportFile" accept=".html,.htm" style="display:none" onchange="musicImportHtml(this)">
       <span style="margin-left:auto;font-size:.66rem;color:var(--text-muted)">${list.length}곡</span>
     </div>
