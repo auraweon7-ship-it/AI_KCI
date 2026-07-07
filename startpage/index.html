@@ -924,7 +924,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v1.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v1.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3866,7 +3866,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v1.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v1.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -16933,19 +16933,37 @@ async function newsAnalyze() {
   if (btn) { btn.disabled = true; btn.textContent = '분석 중…'; }
   if (out) out.innerHTML = '<span style="color:var(--text-muted)">📰 뉴스 수집 중…</span>';
   try {
-    // 1) 구글뉴스 RSS로 기간 내 뉴스 제목·날짜 수집
-    const rss = `https://news.google.com/rss/search?q=${encodeURIComponent(kw + ' when:' + days + 'd')}&hl=ko&gl=KR&ceid=KR:ko`;
-    const r = await fetch('/api/proxy?url=' + encodeURIComponent(rss));
+    // 1) 구글뉴스 RSS로 기간 내 뉴스 수집 — 키워드별 피드 병렬 수집 후 병합·중복제거(최대한 많은 건수)
+    const CAP = 100;  // 분석 상한
+    const queries = kws.length ? kws : ['고등교육'];  // 키워드별 개별 피드
+    const parseFeed = async (q) => {
+      const rss = `https://news.google.com/rss/search?q=${encodeURIComponent(q + ' when:' + days + 'd')}&hl=ko&gl=KR&ceid=KR:ko`;
+      try {
+        const r = await fetch('/api/proxy?url=' + encodeURIComponent(rss));
+        if (!r.ok) return [];
+        const doc = new DOMParser().parseFromString(await r.text(), 'text/xml');
+        return Array.from(doc.querySelectorAll('item')).map(it => ({
+          title: (it.querySelector('title')?.textContent || '').trim(),
+          date: (it.querySelector('pubDate')?.textContent || '').trim(),
+          link: (it.querySelector('link')?.textContent || '').trim(),
+        })).filter(x => x.title);
+      } catch(_) { return []; }
+    };
+    const feeds = await Promise.all(queries.map(parseFeed));
+    const seen = new Set();
     let items = [];
-    if (r.ok) {
-      const xml = await r.text();
-      const doc = new DOMParser().parseFromString(xml, 'text/xml');
-      items = Array.from(doc.querySelectorAll('item')).slice(0, 60).map(it => ({
-        title: (it.querySelector('title')?.textContent || '').trim(),
-        date: (it.querySelector('pubDate')?.textContent || '').trim(),
-        link: (it.querySelector('link')?.textContent || '').trim(),
-      })).filter(x => x.title);
+    const maxLen = Math.max(0, ...feeds.map(f => f.length));
+    for (let i = 0; i < maxLen && items.length < CAP; i++) {   // 라운드로빈: 키워드별 균형 수집
+      for (const feed of feeds) {
+        const x = feed[i]; if (!x) continue;
+        const k = x.title.replace(/\s+/g,'').toLowerCase();     // 제목 정규화 중복제거
+        if (seen.has(k)) continue;
+        seen.add(k); items.push(x);
+        if (items.length >= CAP) break;
+      }
     }
+    // 최신순 정렬
+    items.sort((a,b) => (new Date(b.date||0)) - (new Date(a.date||0)));
     if (!items.length) { if(out) out.innerHTML = '<span style="color:var(--danger,#e74c3c)">뉴스를 수집하지 못했습니다 (프록시·키워드 확인)</span>'; if(btn){btn.disabled=false;btn.textContent='분석 실행';} return; }
     if (out) out.innerHTML = `<span style="color:var(--text-muted)">🤖 ${items.length}건 분석 중…</span>`;
     // 2) Claude 분석
