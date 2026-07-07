@@ -14100,25 +14100,28 @@ async function musicAiFill() {
     // 2) 각 곡 YouTube 검색 → videoId (목표 count개까지, 세션 내 중복만 제외)
     const seen = new Set();          // 이번 추천 내 videoId 중복 방지
     const cand = [];
-    let done = 0;
-    const findVid = async (query) => {
+    // 검색 결과에서 videoId 후보 여러 개 추출(첫 매치 고정으로 인한 중복 회피)
+    const findVids = async (query) => {
       const api = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
       const yr = await fetch('/api/proxy?url=' + encodeURIComponent(api));
-      if (!yr.ok) return '';
+      if (!yr.ok) return [];
       const html = await yr.text();
-      const mm = html.match(/"videoId":"([\w-]{11})"/);
-      return mm ? mm[1] : '';
+      const ids = [], seenLocal = new Set();
+      const re = /"videoId":"([\w-]{11})"/g; let m;
+      while ((m = re.exec(html)) && ids.length < 8) { if (!seenLocal.has(m[1])) { seenLocal.add(m[1]); ids.push(m[1]); } }
+      return ids;
     };
     for (const s of songs) {
       if (cand.length >= count) break;   // 목표 곡수 채우면 종료
       const title = (s.title||s.t||'').trim(), artist = (s.artist||s.a||'').trim();
-      done++;
       if (!title) continue;
       if (btn) btn.textContent = `🔎 ${cand.length}/${count}곡…`;
       try {
-        let id = await findVid(artist + ' ' + title);          // 1차: 가수+제목
-        if (!id) id = await findVid(title + ' ' + artist + ' official audio'); // 2차 폴백
-        if (!id || seen.has(id)) continue;                     // 검색 실패·세션 중복만 제외
+        let ids = await findVids(artist + ' ' + title);                 // 1차: 가수+제목
+        if (!ids.length) ids = await findVids(title + ' ' + artist + ' official audio'); // 2차 폴백
+        // 아직 안 쓴 첫 videoId 선택(검색 결과 상단 중복 회피)
+        const id = ids.find(x => !seen.has(x));
+        if (!id) continue;
         seen.add(id);
         cand.push({ t: title.slice(0,80), artist: (artist||'—').slice(0,50), genre, id });
       } catch(_) {}
