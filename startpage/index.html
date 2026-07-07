@@ -14536,7 +14536,7 @@ function musicPlay(id, el) {
   // 그 자리에서 embed 재생. 모바일은 인라인 자동재생을 위해 playsinline + mute(음소거 후 사용자가 해제) 사용
   const isMobile = ('ontouchstart' in window) || window.matchMedia('(max-width:960px)').matches;
   const params = isMobile
-    ? 'autoplay=1&mute=1&playsinline=1&rel=0'   // 모바일: 무음 자동재생 허용(스피커 아이콘으로 소리 켜기)
+    ? 'playsinline=1&rel=0'                     // 모바일: 플레이어만 로드 → ▶ 탭 시 소리와 함께 재생
     : 'autoplay=1&rel=0&playsinline=1';
   el.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?${params}" title="music"
     allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen
