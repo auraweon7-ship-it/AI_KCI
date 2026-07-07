@@ -15462,7 +15462,8 @@ async function poemAiFill() {
       : (themeIn.startsWith('자유') ? '' : `"${themeIn}" 주제의 `);
     // 한국 근현대시 추천 — 제목·시인·주제·소개(메타데이터). 본문은 등록 후 직접 입력
     const cond2 = poetIn ? `시인 "${poetIn}"의 작품 중` : (themeIn.startsWith('자유') ? '' : `"${themeIn}" 주제의 `);
-    const prompt = `${cond2}실제 존재하는 유명한 한국 근현대시 ${count}편을 추천해 주세요.${exclLine}\n각 시의 제목·시인·주제·한 줄 소개만 아래 JSON 배열로만 출력하세요(코드블록·설명 금지):\n[{"title":"제목","poet":"시인","theme":"주제","note":"한 줄 소개"}]`;
+    const want = Math.min(40, count * 4 + 6);   // 이미 등록된 시가 많아 여유분 넉넉히 요청
+    const prompt = `${cond2}실제 존재하는 한국 근현대시 ${want}편을 추천해 주세요. 널리 알려진 대표작뿐 아니라 덜 알려진 작품·다양한 시인도 폭넓게 포함해 서로 다른 시로 추천하세요.${exclLine}\n각 시의 제목·시인·주제·한 줄 소개만 아래 JSON 배열로만 출력하세요(코드블록·설명 금지):\n[{"title":"제목","poet":"시인","theme":"주제","note":"한 줄 소개"}]`;
     const ctrl = new AbortController();
     const to = setTimeout(() => ctrl.abort(), 45000);   // 45초 타임아웃(무한 대기 방지)
     let r;
@@ -15507,17 +15508,19 @@ async function poemAiFill() {
       showToast('AI 응답 파싱 실패' + trunc + ': ' + txt.slice(0,50), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return;
     }
     const themeOK = new Set(POEM_THEME_ORDER);
-    const cand = [];
+    const cand = []; const seen = new Set();
     for (const s of arr) {
+      if (cand.length >= count) break;   // 목표 편수 채우면 종료
       const t = (s.title||'').trim(), poet = (s.poet||'').trim();
       const note = (s.note||'').trim(), rawBody = (s.body||'').replace(/\r/g,'').trim();
       if (!t || !poet) continue;
-      if (exist.has(normK(poet) + '|' + normK(t))) continue;   // 이미 등록된 시 제외
-      // 본문이 오면 사용, 없으면 소개 + 직접 입력 안내
+      const k = normK(poet) + '|' + normK(t);
+      if (exist.has(k) || seen.has(k)) continue;   // 이미 등록·세션 중복 제외
+      seen.add(k);
       const b = rawBody || ((note ? `[소개] ${note}\n\n` : '') + '(본문을 직접 입력하세요 — 카드의 ✏️로 편집)');
       cand.push({ t: t.slice(0,80), poet: poet.slice(0,40), book: t, year: '', theme: themeOK.has(s.theme) ? s.theme : (themeIn.startsWith('자유') ? '기타' : themeIn), b });
     }
-    if (!cand.length) { showToast('추천할 새 시를 찾지 못했습니다', 'ℹ️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
+    if (!cand.length) { showToast('추천할 새 시를 찾지 못했습니다(이미 대부분 등록됨). 다른 주제/시인으로 시도하세요', 'ℹ️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
     _poemAiCand = cand;
     poemAiPreview();
   } catch(e) {
