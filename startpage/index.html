@@ -923,7 +923,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v1.3</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v1.4</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3865,7 +3865,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v1.3 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v1.4 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7709,9 +7709,10 @@ function renderLinks() {
     panel.style.cssText = 'grid-column:1/-1;margin-top:20px;padding:16px 18px;background:var(--bg2);border:1px solid var(--border);border-radius:12px';
     panel.innerHTML = `
       <div style="font-size:.9rem;font-weight:800;color:var(--accent2);margin-bottom:10px">📊 뉴스 분석 (Claude AI)</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+        ${[1,2,3,4,5].map(n => `<input id="naKw${n}" placeholder="키워드${n}${n===1?' (예: 고등교육)':''}" value="${n===1?'고등교육':''}" style="flex:1;min-width:110px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;outline:none">`).join('')}
+      </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-        <input id="naKeyword" placeholder="분석 키워드 (예: 고등교육 정책)" value="고등교육"
-          style="flex:1;min-width:160px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.76rem;outline:none">
         <label style="font-size:.7rem;color:var(--text-dim)">기간
           <select id="naPeriod" style="padding:7px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">
             <option value="1">1일</option>
@@ -7725,7 +7726,7 @@ function renderLinks() {
         <button id="naRunBtn" onclick="newsAnalyze()" style="padding:7px 16px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.76rem;cursor:pointer">분석 실행</button>
         <button onclick="newsAnalysisExport()" style="padding:7px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:.76rem;cursor:pointer">📤 HTML 내보내기</button>
       </div>
-      <div id="naResult" style="font-size:.78rem;color:var(--text-dim);line-height:1.7">기간·키워드를 정하고 <b>분석 실행</b>을 누르면, 해당 기간의 뉴스를 수집해 주요 이슈·동향을 분석합니다. (설정 → 🧠 Claude API 키 필요)</div>`;
+      <div id="naResult" style="font-size:.78rem;color:var(--text-dim);line-height:1.7">키워드(최대 5개)·기간을 정하고 <b>분석 실행</b>을 누르면, 해당 기간의 뉴스를 수집해 주요 이슈·동향을 분석합니다. (설정 → 🧠 Claude API 키 필요)</div>`;
     grid.appendChild(panel);
   }
 }
@@ -16917,7 +16918,9 @@ let _naLast = null;   // 마지막 분석 결과(내보내기용)
 async function newsAnalyze() {
   const key = (localStorage.getItem('claude_api_key') || '').trim();
   if (!key) { showToast('설정 → 🧠 Claude API 키를 입력하세요', '🔑'); return; }
-  const kw = (document.getElementById('naKeyword')?.value || '').trim() || '고등교육';
+  const kws = [1,2,3,4,5].map(n => (document.getElementById('naKw'+n)?.value || '').trim()).filter(Boolean);
+  const kw = kws.length ? kws.join(' OR ') : '고등교육';
+  const kwDisplay = kws.length ? kws.join(', ') : '고등교육';
   const days = document.getElementById('naPeriod')?.value || '7';
   const label = ({1:'1일',7:'1주일',30:'1개월',90:'3개월',180:'6개월',365:'12개월'})[days] || days+'일';
   const btn = document.getElementById('naRunBtn'), out = document.getElementById('naResult');
@@ -16940,7 +16943,7 @@ async function newsAnalyze() {
     if (out) out.innerHTML = `<span style="color:var(--text-muted)">🤖 ${items.length}건 분석 중…</span>`;
     // 2) Claude 분석
     const list = items.map((x,i) => `${i+1}. ${x.title}`).join('\n');
-    const prompt = `아래는 "${kw}" 관련 최근 ${label}간의 뉴스 제목 ${items.length}건입니다. 한국어로 분석해 아래 JSON만 출력하세요(코드블록·설명 금지):\n{\n"summary":"핵심 요약 3~4문장",\n"issues":[{"title":"주요 이슈","weight":0~100 중요도}] (5개),\n"sentiment":{"긍정":정수,"중립":정수,"부정":정수} (합 100),\n"categories":[{"name":"분야","count":기사수}] (3~6개),\n"outlook":"시사점·전망 2~3문장"\n}\n\n뉴스 목록:\n${list}`;
+    const prompt = `아래는 키워드 "${kwDisplay}" 관련 최근 ${label}간의 뉴스 제목 ${items.length}건입니다. 한국어로 분석해 아래 JSON만 출력하세요(코드블록·설명 금지):\n{\n"summary":"핵심 요약 3~4문장",\n"issues":[{"title":"주요 이슈","weight":0~100 중요도}] (5개),\n"sentiment":{"긍정":정수,"중립":정수,"부정":정수} (합 100),\n"categories":[{"name":"분야","count":기사수}] (3~6개),\n"outlook":"시사점·전망 2~3문장"\n}\n\n뉴스 목록:\n${list}`;
     const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 60000);
     let cr;
     try {
@@ -16957,9 +16960,9 @@ async function newsAnalyze() {
     let J = {};
     try { const m = txt.match(/\{[\s\S]*\}/); J = JSON.parse(m ? m[0] : txt); } catch(_) {}
     // 키워드 빈도(클라이언트 계산)
-    const kwFreq = naKeywordFreq(items.map(x => x.title), kw);
+    const kwFreq = naKeywordFreq(items.map(x => x.title), kws);
     _naLast = {
-      kw, label, count: items.length, at: new Date().toLocaleString('ko-KR'),
+      kw: kwDisplay, label, count: items.length, at: new Date().toLocaleString('ko-KR'),
       summary: J.summary || txt.slice(0,300),
       issues: Array.isArray(J.issues) ? J.issues.slice(0,6) : [],
       sentiment: J.sentiment || null,
@@ -16977,13 +16980,13 @@ async function newsAnalyze() {
 }
 // 제목에서 키워드 빈도 상위 추출
 function naKeywordFreq(titles, exclude) {
-  const stop = new Set(['그리고','그러나','하지만','대한','위한','통해','기자','있다','했다','한다','오늘','올해','지난','관련','대해','뉴스','종합','속보','단독','이번','최근','대학','고등교육']);
-  const ex = (exclude||'').replace(/\s+/g,'');
+  const stop = new Set(['그리고','그러나','하지만','대한','위한','통해','기자','있다','했다','한다','오늘','올해','지난','관련','대해','뉴스','종합','속보','단독','이번','최근']);
+  const exArr = (Array.isArray(exclude) ? exclude : [exclude]).map(x => (x||'').replace(/\s+/g,''));
   const cnt = {};
   titles.forEach(t => {
     (t.replace(/[^가-힣A-Za-z0-9 ]/g,' ').split(/\s+/)).forEach(w => {
       w = w.trim();
-      if (w.length < 2 || stop.has(w) || w === ex) return;
+      if (w.length < 2 || stop.has(w) || exArr.includes(w)) return;
       cnt[w] = (cnt[w]||0) + 1;
     });
   });
