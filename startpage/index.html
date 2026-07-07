@@ -14130,14 +14130,17 @@ function musicAiPreview(genre) {
   const ov = document.getElementById('musicAiOverlay'); if (!ov) return;
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const rows = _musicAiCand.map((m, i) => `
-    <label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;cursor:pointer;border:1px solid var(--border);background:var(--bg3)">
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;border:1px solid var(--border);background:var(--bg3)">
       <input type="checkbox" class="ai-song-ck" data-i="${i}" checked style="flex-shrink:0;width:15px;height:15px;cursor:pointer">
-      <img src="https://i.ytimg.com/vi/${m.id}/default.jpg" style="width:52px;height:39px;object-fit:cover;border-radius:4px;flex-shrink:0" onerror="this.style.opacity=.3">
+      <div class="ai-thumb" onclick="musicPlay('${m.id}',this)" title="미리듣기" style="position:relative;width:72px;height:41px;flex-shrink:0;border-radius:4px;overflow:hidden;background:#000;cursor:pointer">
+        <img src="https://i.ytimg.com/vi/${m.id}/mqdefault.jpg" style="width:100%;height:100%;object-fit:cover" onerror="this.style.opacity=.3">
+        <span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.7rem;text-shadow:0 0 4px #000">▶</span>
+      </div>
       <div style="flex:1;min-width:0">
         <div style="font-size:.74rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.t)}</div>
         <div style="font-size:.64rem;color:var(--accent2)">${esc(m.artist)}</div>
       </div>
-    </label>`).join('');
+    </div>`).join('');
   ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:480px;width:100%;max-height:86vh;display:flex;flex-direction:column;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
       <h3 style="flex:1;font-size:1.05rem;font-weight:800;color:var(--text);margin:0">🤖 ${esc(genre)} 추천 (${_musicAiCand.length}곡)</h3>
