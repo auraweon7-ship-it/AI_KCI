@@ -13885,6 +13885,56 @@ const MUSIC = [
   ['Adiemus','Karl Jenkins','PROGRESSIVE / NEW AGE','SD_Jhrf-YlY'],
 ];
 const MUSIC_GENRE_ORDER = ['POP','ROCK','HIPHOP / RAP','R&B / SOUL','EDM / DANCE','JAZZ','CLASSICAL','ACOUSTIC / FOLK','COUNTRY','BLUES','LATIN / REGGAE','WORLD MUSIC','K-POP','J-POP','C-POP','OST / SOUNDTRACK','LO-FI / CHILL','HEALING / MEDITATION','PROGRESSIVE / NEW AGE'];
+// 장르특성 정보 (유래·역사·특징·대표 음악가·대표곡)
+const GENRE_INFO = {
+  'POP':{origin:'20세기 중반 미국·영국에서 대중을 겨냥해 형성된 상업 음악.',history:'1950~60년대 로큰롤·모타운에서 출발, 1980년대 MTV로 세계화, 이후 디지털·스트리밍 시대 주류로 성장.',feature:'따라 부르기 쉬운 후크, 3~4분 정형 구조, 절-후렴 반복, 폭넓은 프로듀싱.',artists:['Michael Jackson','Madonna','Taylor Swift','Ed Sheeran'],songs:['Billie Jean','Shape of You','Uptown Funk']},
+  'ROCK':{origin:'1950년대 미국 로큰롤에서 파생, 블루스·컨트리·R&B가 뿌리.',history:'1960년대 비틀스·롤링스톤스로 폭발, 70년대 하드록·프로그레시브, 80~90년대 메탈·얼터너티브·그런지로 분화.',feature:'일렉트릭 기타·베이스·드럼 중심, 강한 비트와 리프, 반항·자유의 정서.',artists:['The Beatles','Led Zeppelin','Queen','Nirvana'],songs:['Bohemian Rhapsody','Smells Like Teen Spirit','Hotel California']},
+  'HIPHOP / RAP':{origin:'1970년대 뉴욕 브롱크스 흑인·라틴계 커뮤니티의 블록파티에서 탄생.',history:'DJ 브레이크비트+MC 랩으로 출발, 80년대 골든에이지, 90년대 이스트/웨스트, 2000년대 이후 세계 대중음악의 중심.',feature:'라임·플로우 중심 랩, 샘플링·비트, 사회 메시지와 자기표현.',artists:['Tupac','The Notorious B.I.G.','Eminem','Kendrick Lamar'],songs:['Lose Yourself','HUMBLE.','In Da Club']},
+  'R&B / SOUL':{origin:'1940~60년대 아프리카계 미국인의 가스펠·블루스·재즈 융합.',history:'모타운·스택스 소울, 70년대 펑크·필리소울, 90년대 뉴잭스윙·컨템포러리 R&B, 현대 얼터너티브 R&B로 진화.',feature:'풍부한 보컬 그루브, 감성적 멜로디, 그루비한 리듬과 화성.',artists:['Aretha Franklin','Stevie Wonder','Beyoncé','The Weeknd'],songs:['Blinding Lights','Halo','What’s Going On']},
+  'EDM / DANCE':{origin:'1980년대 시카고 하우스·디트로이트 테크노 등 전자 클럽 음악.',history:'유럽 레이브·트랜스를 거쳐 2010년대 EDM 붐(페스티벌 문화)으로 대중화.',feature:'신시사이저·드럼머신, 4/4 비트, 빌드업-드롭 구조, DJ·프로듀서 중심.',artists:['Avicii','Calvin Harris','Martin Garrix','Marshmello'],songs:['Wake Me Up','Faded','Animals']},
+  'JAZZ':{origin:'19세기 말~20세기 초 미국 뉴올리언스 흑인 음악(블루스·래그타임) 융합.',history:'스윙·비밥·쿨재즈·프리재즈·퓨전으로 끊임없이 진화한 즉흥의 예술.',feature:'즉흥 연주(improvisation), 스윙 리듬, 복잡한 화성과 블루노트.',artists:['Louis Armstrong','Miles Davis','John Coltrane','Nina Simone'],songs:['So What','What a Wonderful World','Take Five']},
+  'CLASSICAL':{origin:'서양 예술음악 전통, 중세 교회음악에서 기원.',history:'바로크(바흐)·고전(모차르트·베토벤)·낭만(쇼팽)·근현대까지 수백 년 이어진 정통.',feature:'악보 기보, 오케스트라·실내악·독주, 정교한 형식과 화성.',artists:['J.S. Bach','Mozart','Beethoven','Chopin'],songs:['운명 교향곡','월광 소나타','Canon in D']},
+  'ACOUSTIC / FOLK':{origin:'각 지역 민중의 구전 전통 음악에서 유래.',history:'20세기 미국 포크 리바이벌(밥 딜런), 싱어송라이터 전통으로 계승.',feature:'어쿠스틱 기타·통기타 중심, 진솔한 가사와 서정적 멜로디.',artists:['Bob Dylan','Simon & Garfunkel','Ed Sheeran'],songs:['Perfect','The Sound of Silence','Thinking Out Loud']},
+  'COUNTRY':{origin:'1920년대 미국 남부 백인 노동계층의 민속·컨트리 음악.',history:'내슈빌 사운드, 아웃로 컨트리를 거쳐 현대 컨트리팝으로 대중화.',feature:'기타·밴조·피들, 이야기 중심 가사, 소박한 정서.',artists:['Johnny Cash','Dolly Parton','Taylor Swift'],songs:['Love Story','Take Me Home, Country Roads']},
+  'BLUES':{origin:'19세기 말 미국 남부 흑인 노동요·영가에서 태동.',history:'델타 블루스에서 시카고 일렉트릭 블루스로 발전, 록·재즈의 뿌리.',feature:'12마디 형식, 블루노트, 콜앤리스폰스, 애환의 정서.',artists:['B.B. King','Muddy Waters','Eric Clapton'],songs:['The Thrill Is Gone','Still Got the Blues']},
+  'LATIN / REGGAE':{origin:'라틴은 중남미 전통·아프로쿠반 리듬, 레게는 1960년대 자메이카.',history:'살사·레게톤·라틴팝과 레게·스카·덥이 세계로 확산.',feature:'싱코페이션 리듬, 타악 그루브, 흥겨운 춤과 사회 메시지.',artists:['Bob Marley','Shakira','Luis Fonsi'],songs:['Despacito','Three Little Birds','Waka Waka']},
+  'WORLD MUSIC':{origin:'서구 대중음악 외 세계 각 지역의 전통·민속 음악 총칭.',history:'1980년대 이후 서구에서 비서구 음악을 아우르는 마케팅 개념으로 정착.',feature:'지역 고유의 음계·악기·리듬, 문화적 다양성.',artists:['Gipsy Kings','Ravi Shankar','Buena Vista Social Club'],songs:['Bamboléo','Chan Chan']},
+  'K-POP':{origin:'1990년대 한국 아이돌 시스템과 서구 팝·힙합·EDM 융합.',history:'서태지와 아이들 이후 2세대~4세대 아이돌, 2010년대 BTS·BLACKPINK로 세계화.',feature:'완성도 높은 군무·비주얼, 훅 강한 멜로디, 팬덤 문화.',artists:['BTS','BLACKPINK','PSY','EXO'],songs:['Dynamite','Gangnam Style','How You Like That']},
+  'J-POP':{origin:'1980~90년대 일본 대중가요(가요쿄쿠)에서 발전.',history:'시티팝·비주얼계·애니송을 거쳐 현대 J-POP·보컬로이드 문화로 확장.',feature:'서정적 멜로디, 정교한 편곡, 애니메이션·미디어 연계.',artists:['YOASOBI','Kenshi Yonezu','Utada Hikaru'],songs:['夜に駆ける','Lemon','Idol']},
+  'C-POP':{origin:'중화권(중국·대만·홍콩) 대중음악, 만다린·광둥 팝 포괄.',history:'홍콩 칸토팝, 대만 만다린팝(주걸륜)을 거쳐 중국 본토 시장으로 확대.',feature:'서정적 발라드 강세, 전통 요소와 팝의 결합.',artists:['Jay Chou','Teresa Teng','Faye Wong'],songs:['告白氣球','月亮代表我的心']},
+  'OST / SOUNDTRACK':{origin:'영화·드라마·게임 등 영상 매체를 위한 음악.',history:'무성영화 반주에서 시작, 존 윌리엄스·한스 짐머로 오케스트라 스코어 전성기.',feature:'장면·감정을 뒷받침, 주제 선율(라이트모티프), 극적 몰입감.',artists:['Hans Zimmer','John Williams','Ennio Morricone'],songs:['My Heart Will Go On','Let It Go','Shallow']},
+  'LO-FI / CHILL':{origin:'저음질(lo-fidelity) 미학에서 출발한 편안한 비트 음악.',history:'2010년대 유튜브 라이브 스트림(lofi hip hop)으로 공부·휴식용 배경음악으로 대중화.',feature:'잔잔한 비트, 재즈·소울 샘플, 빗소리 등 앰비언스, 반복적 루프.',artists:['Nujabes','J Dilla','Lofi Girl'],songs:['Feather','lofi hip hop radio']},
+  'HEALING / MEDITATION':{origin:'심신 안정·명상을 목적으로 한 뉴에이지·앰비언트 계열.',history:'1970년대 뉴에이지 운동과 함께 자연음·명상음악으로 발전.',feature:'느린 템포, 자연 소리, 미니멀한 선율, 이완과 집중 유도.',artists:['Enya','Yiruma','Brian Eno'],songs:['River Flows in You','Only Time']},
+  'PROGRESSIVE / NEW AGE':{origin:'프로그레시브 록은 1960년대 말 예술적 실험 록, 뉴에이지는 명상적 기악.',history:'핑크 플로이드·예스 등 프로그레시브 록과 야니·이루마의 뉴에이지 피아노로 발전.',feature:'긴 곡 구성·복잡한 박자·서사성, 서정적 기악과 몽환적 사운드스케이프.',artists:['Pink Floyd','Yanni','Yiruma','Karl Jenkins'],songs:['Comfortably Numb','River Flows in You','Adiemus']},
+};
+function musicGenreInfoOpen(g) {
+  const genre = g || MUSIC_GENRE_ORDER[0];
+  let ov = document.getElementById('genreInfoOverlay');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'genreInfoOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const info = GENRE_INFO[genre] || {};
+  const gOpts = MUSIC_GENRE_ORDER.map(x => `<option value="${esc(x)}"${x===genre?' selected':''}>${esc(x)}</option>`).join('');
+  const row = (icon, label, val) => val ? `<div style="margin-top:12px"><div style="font-size:.66rem;font-weight:800;color:var(--accent2);margin-bottom:3px">${icon} ${label}</div><div style="font-size:.76rem;color:var(--text);line-height:1.6">${esc(val)}</div></div>` : '';
+  const chips = (arr) => (arr||[]).map(x => `<span style="display:inline-block;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:2px 10px;font-size:.7rem;color:var(--text);margin:2px 3px 0 0">${esc(x)}</span>`).join('');
+  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:560px;width:100%;max-height:86vh;overflow-y:auto;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+      <h3 style="flex:1;font-size:1.1rem;font-weight:800;color:var(--text);margin:0">📖 장르특성</h3>
+      <select onchange="musicGenreInfoOpen(this.value)" style="padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">${gOpts}</select>
+      <button onclick="document.getElementById('genreInfoOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted)">✕</button>
+    </div>
+    <div style="font-size:1.2rem;font-weight:800;color:var(--accent);margin:6px 0 2px">${esc(genre)}</div>
+    ${row('🌱','유래',info.origin)}
+    ${row('📜','역사',info.history)}
+    ${row('🎯','특징',info.feature)}
+    ${info.artists?`<div style="margin-top:12px"><div style="font-size:.66rem;font-weight:800;color:var(--accent2);margin-bottom:4px">🎤 대표 음악가</div><div>${chips(info.artists)}</div></div>`:''}
+    ${info.songs?`<div style="margin-top:12px"><div style="font-size:.66rem;font-weight:800;color:var(--accent2);margin-bottom:4px">🎵 대표곡</div><div>${chips(info.songs)}</div></div>`:''}
+  </div>`;
+}
 let musicState = { mode: 'genre', cat: 'all', page: 1 };
 function musicSetMode(m) { musicState.mode = m; musicState.cat = 'all'; musicState.page = 1; renderMusicView(); }
 function musicSetCat(c) { musicState.cat = c; musicState.page = 1; renderMusicView(); }
@@ -14414,6 +14464,7 @@ function renderMusicView() {
   grid.innerHTML = `<div style="grid-column:1/-1">
     <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
       ${modeBtn('fav','⭐ 즐겨찾기 '+favCount)}
+      <button onclick="musicGenreInfoOpen(musicState.mode!=='artist'&&musicState.cat!=='all'?musicState.cat:'')" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📖 장르특성</button>
       <button onclick="musicAddOpen()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:.72rem;cursor:pointer">➕ 곡 등록</button>
       <button onclick="musicAiOpen()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.72rem;cursor:pointer">🤖 AI 등록</button>
       <button onclick="musicAutoFill()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">🔎 자동채우기</button>
