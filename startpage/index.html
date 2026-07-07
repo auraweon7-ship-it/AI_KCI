@@ -14346,12 +14346,20 @@ function renderMusicView() {
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const all = musicAll();
   const favCount = musicFavs().length;
-  // 정렬 기준(장르/가수) 칩
-  const keyOf = m => musicState.mode === 'genre' ? m.genre : m.artist;
+  // 헤더 정렬 드롭다운을 음악 전용으로 연결
+  const sortSel = document.getElementById('sortSelHeader');
+  if (sortSel) {
+    sortSel.style.display = '';
+    sortSel.innerHTML = '<option value="genre">장르순</option><option value="title">노래제목순</option><option value="artist">가수순</option>';
+    sortSel.value = (musicState.mode === 'fav') ? 'genre' : musicState.mode;
+    sortSel.onchange = () => musicSetMode(sortSel.value);
+  }
+  // 필터 칩 기준(가수순=가수칩, 그 외=장르칩)
+  const keyOf = m => musicState.mode === 'artist' ? m.artist : m.genre;
   const cnt = {}; all.forEach(m => cnt[keyOf(m)] = (cnt[keyOf(m)]||0)+1);
   let cats;
-  if (musicState.mode === 'genre') cats = MUSIC_GENRE_ORDER.filter(g => cnt[g]).map(g => [g, cnt[g]]);
-  else cats = Object.keys(cnt).sort((a,b)=>a.localeCompare(b,'ko')).map(a => [a, cnt[a]]);
+  if (musicState.mode === 'artist') cats = Object.keys(cnt).sort((a,b)=>a.localeCompare(b,'ko')).map(a => [a, cnt[a]]);
+  else cats = MUSIC_GENRE_ORDER.filter(g => cnt[g]).map(g => [g, cnt[g]]);
   const chip = (val, label, n) => {
     const on = musicState.cat === val;
     const jv = (val+'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
@@ -14362,7 +14370,8 @@ function renderMusicView() {
   let list = all.slice();
   if (musicState.mode === 'fav') list = list.filter(m => musicIsFav(m));
   else if (musicState.cat !== 'all') list = list.filter(m => keyOf(m) === musicState.cat);
-  if (musicState.mode === 'artist') list.sort((a,b) => a.artist.localeCompare(b.artist,'ko') || a.t.localeCompare(b.t));
+  if (musicState.mode === 'artist') list.sort((a,b) => a.artist.localeCompare(b.artist,'ko') || a.t.localeCompare(b.t,'ko'));
+  else if (musicState.mode === 'title') list.sort((a,b) => a.t.localeCompare(b.t,'ko') || a.artist.localeCompare(b.artist,'ko'));
   else list.sort((a,b) => (MUSIC_GENRE_ORDER.indexOf(a.genre)-MUSIC_GENRE_ORDER.indexOf(b.genre)) || a.artist.localeCompare(b.artist,'ko'));
   // 페이지네이션 (5열 × 10행 = 50곡/페이지)
   const PER = 50;
@@ -14392,8 +14401,7 @@ function renderMusicView() {
   const modeBtn = (mode, label) => `<button onclick="musicSetMode('${mode}')" style="padding:5px 12px;border-radius:6px;border:1px solid ${musicState.mode===mode?'var(--accent)':'var(--border)'};background:${musicState.mode===mode?'var(--accent)':'var(--bg3)'};color:${musicState.mode===mode?'#fff':'var(--text-dim)'};font-size:.72rem;cursor:pointer">${label}</button>`;
   grid.innerHTML = `<div style="grid-column:1/-1">
     <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
-      <span style="font-size:.7rem;color:var(--text-dim)">정렬</span>
-      ${modeBtn('genre','장르별')}${modeBtn('artist','가수별')}${modeBtn('fav','⭐ 즐겨찾기 '+favCount)}
+      ${modeBtn('fav','⭐ 즐겨찾기 '+favCount)}
       <button onclick="musicAddOpen()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:.72rem;cursor:pointer">➕ 곡 등록</button>
       <button onclick="musicAiOpen()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.72rem;cursor:pointer">🤖 AI 등록</button>
       <button onclick="musicAutoFill()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">🔎 자동채우기</button>
