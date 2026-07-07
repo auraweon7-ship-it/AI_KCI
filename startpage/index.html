@@ -917,14 +917,15 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 /* 좋아하는 음악 그리드: 태블릿 3열, 모바일 1열 */
 @media (max-width: 960px) { .music-grid { grid-template-columns: repeat(3, 1fr) !important; } }
 @media (max-width: 560px) { .music-grid { grid-template-columns: 1fr !important; } }
-@media (max-width: 720px) { .na-donuts { grid-template-columns: repeat(2, 1fr) !important; } }
+@media (max-width: 720px) { .na-donuts { grid-template-columns: repeat(2, 1fr) !important; } .na-stats { grid-template-columns: repeat(2, 1fr) !important; } }
+@media (max-width: 560px) { .na-donuts { grid-template-columns: 1fr !important; } }
 </style>
 </head>
 <body data-theme="dark">
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v2.2</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v2.3</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3866,7 +3867,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v2.2 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v2.3 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -17113,7 +17114,7 @@ function buildNewsViz(d, light) {
   const seg = (arr) => arr.map((x,i) => ({ ...x, color: x.color || PAL[i%PAL.length] }));
 
   // 인포그래픽 스탯 카드
-  const stats = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
+  const stats = `<div class="na-stats" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px">
     ${card(`<div style="font-size:1.4rem;font-weight:800;color:${C.accent}">${d.count}</div><div style="font-size:.6rem;color:${C.dim}">분석 뉴스</div>`)}
     ${card(`<div style="font-size:1.4rem;font-weight:800;color:${C.accent2}">${d.issues.length}</div><div style="font-size:.6rem;color:${C.dim}">주요 이슈</div>`)}
     ${card(`<div style="font-size:1.4rem;font-weight:800;color:#f59e0b">${d.keywords.length}</div><div style="font-size:.6rem;color:${C.dim}">핵심 키워드</div>`)}
@@ -17170,7 +17171,9 @@ function newsAnalysisExport() {
 <style>*{box-sizing:border-box}body{font-family:'Malgun Gothic',sans-serif;max-width:860px;margin:0 auto;padding:24px;color:#1e293b;background:#fff;line-height:1.7}
 .hero{background:linear-gradient(135deg,#ec4899,#8b5cf6);color:#fff;padding:30px 26px;border-radius:14px;margin-bottom:22px}
 .hero h1{margin:0 0 6px;font-size:1.7em}.hero .meta{opacity:.9;font-size:.9em}
-.footer{text-align:center;color:#94a3b8;font-size:.8em;margin-top:30px;padding-top:16px;border-top:1px solid #e2e8f0}</style></head>
+.footer{text-align:center;color:#94a3b8;font-size:.8em;margin-top:30px;padding-top:16px;border-top:1px solid #e2e8f0}
+@media (max-width:720px){body{padding:14px}.hero{padding:20px 16px}.na-donuts{grid-template-columns:repeat(2,1fr)!important}.na-stats{grid-template-columns:repeat(2,1fr)!important}}
+@media (max-width:560px){.na-donuts{grid-template-columns:1fr!important}}</style></head>
 <body>
 <div class="hero"><h1>📊 뉴스 분석 — ${esc(d.kw)}</h1><div class="meta">최근 ${esc(d.label)} · 뉴스 ${d.count}건 · ${esc(d.at)}</div></div>
 ${viz}
