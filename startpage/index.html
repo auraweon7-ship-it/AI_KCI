@@ -905,7 +905,11 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
   .header-right .icon-btn { padding: 0 5px; }
   .links-grid { grid-template-columns: repeat(3, 1fr); }
   #todoGrid { grid-template-columns: 1fr !important; }
+  .music-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
+/* 좋아하는 음악 그리드: 태블릿 3열, 모바일 2열 */
+@media (max-width: 960px) { .music-grid { grid-template-columns: repeat(3, 1fr) !important; } }
+@media (max-width: 560px) { .music-grid { grid-template-columns: repeat(2, 1fr) !important; } }
 </style>
 </head>
 <body data-theme="dark">
@@ -15093,7 +15097,7 @@ function renderMusicView() {
       <span style="margin-left:auto;font-size:.66rem;color:var(--text-muted)">${list.length}곡</span>
     </div>
     ${chips ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;max-height:96px;overflow-y:auto">${chips}</div>` : ''}
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">${cards || '<div style="color:var(--text-muted);font-size:.72rem;padding:12px">곡이 없습니다.</div>'}</div>
+    <div class="music-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px">${cards || '<div style="color:var(--text-muted);font-size:.72rem;padding:12px">곡이 없습니다.</div>'}</div>
     ${totalPages>1 ? `<div style="display:flex;justify-content:center;align-items:center;gap:4px;margin-top:14px;flex-wrap:wrap">
       <button onclick="musicSetPage(${Math.max(1,pg-1)})" ${pg===1?'disabled':''} style="padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:.7rem;cursor:${pg===1?'default':'pointer'};opacity:${pg===1?.4:1}">‹ 이전</button>
       ${Array.from({length:totalPages},(_,x)=>x+1).map(pn=>`<button onclick="musicSetPage(${pn})" style="min-width:28px;padding:4px 8px;border-radius:6px;border:1px solid ${pn===pg?'var(--accent)':'var(--border)'};background:${pn===pg?'var(--accent)':'var(--bg3)'};color:${pn===pg?'#fff':'var(--text-dim)'};font-size:.7rem;cursor:pointer">${pn}</button>`).join('')}
