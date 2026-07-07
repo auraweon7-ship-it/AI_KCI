@@ -13815,6 +13815,7 @@ function poemFiltered() {
   const sm = state.sortMode || 'default';
   if (sm === 'name') list.sort((a,b) => a.p.t.localeCompare(b.p.t, 'ko'));
   else if (sm === 'nameDesc') list.sort((a,b) => b.p.t.localeCompare(a.p.t, 'ko'));
+  else if (sm === 'poet') list.sort((a,b) => a.p.poet.localeCompare(b.p.poet, 'ko') || a.p.t.localeCompare(b.p.t, 'ko'));
   else if (sm === 'recent') list.reverse();  // 등록 시가 앞(최근)이므로 역순=오래된순 토글
   // visits/default: 기본 순서(등록 시 먼저)
   return list;
@@ -13826,6 +13827,14 @@ function renderPoemsView(keepFocus) {
   if (title) title.textContent = '📜 좋아하는 시';
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const favCount = poemFavs().length;
+  // 헤더 정렬 드롭다운을 시 정렬용으로 복원(음악 뷰가 덮어쓴 것 되돌림)
+  const sortSel = document.getElementById('sortSelHeader');
+  if (sortSel) {
+    sortSel.style.display = '';
+    sortSel.innerHTML = '<option value="default">기본순</option><option value="name">제목 가나다</option><option value="nameDesc">제목 역순</option><option value="poet">시인 가나다</option><option value="recent">최근 추가순</option>';
+    sortSel.value = state.sortMode || 'default';
+    sortSel.onchange = () => setSortMode(sortSel.value);
+  }
 
   // 카테고리 칩
   let chips = '';
