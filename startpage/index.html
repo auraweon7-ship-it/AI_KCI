@@ -926,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v5.1</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v5.2</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3868,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v5.1 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v5.2 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6390,17 +6390,18 @@ function renderYouTubeView() {
           <button onclick="ytShare()" style="padding:.4rem .8rem;border-radius:8px;border:none;background:var(--accent2);color:#fff;font-size:.74rem;cursor:pointer">🔗 SHARE</button>
           <input type="file" id="ytImportFile" accept=".html,.htm" style="display:none" onchange="ytImportHtml(this)">
         </div>
-        <!-- 카테고리 필터: 영상 있는 분류만 표시 -->
+        <!-- 카테고리 필터: 전체 카테고리 표시(분류 드롭다운과 통일), 빈 카테고리는 흐리게 -->
         <div id="ytCatBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem">
           ${(() => {
             const vis = ytVisibleList();
             const cnt = {}; vis.forEach(v => { const c = v.cat || '기타'; cnt[c] = (cnt[c]||0)+1; });
-            const shown = YT_CATS.filter(c => c === '전체' || cnt[c]);
-            return shown.map(c => {
+            // 분류(AI 등록 드롭다운)와 동일하게 전체 카테고리 표시 — 카테고리 기준 통일
+            return YT_CATS.map(c => {
               const n = c === '전체' ? vis.length : (cnt[c]||0);
+              const empty = c !== '전체' && n === 0;
               return `<button class="yt-cat-btn ${c===ytCat?'active':''}" data-cat="${c}"
               style="padding:.35rem .8rem;border-radius:20px;border:1.5px solid ${c===ytCat?'var(--accent2)':'var(--border)'};
-                     background:${c===ytCat?'var(--accent2)':'var(--card)'};
+                     background:${c===ytCat?'var(--accent2)':'var(--card)'};opacity:${empty?.5:1};
                      color:${c===ytCat?'#fff':'var(--text)'};font-size:.78rem;cursor:pointer;font-weight:${c===ytCat?700:400}">
               ${c} <span style="opacity:.7;font-size:.9em">${n}</span>
             </button>`; }).join('');
