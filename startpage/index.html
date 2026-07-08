@@ -926,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3868,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v4.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v4.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5878,6 +5878,67 @@ function ytPlay(id, el) {
     style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
   el.removeAttribute('onclick');
 }
+// 카테고리별 YouTube 검색어(자동채우기용) — 교육 콘텐츠 위주
+const YT_QUERY = {
+  'AI 기초': ['AI 인공지능 기초 강의', 'machine learning basics tutorial', '딥러닝 입문 강의'],
+  'ML 이론': ['머신러닝 이론 강의', 'machine learning theory lecture', 'statistical learning tutorial'],
+  '딥러닝·신경망': ['딥러닝 신경망 강의', 'deep learning neural network tutorial', 'backpropagation explained'],
+  'LLM 개발': ['LLM 대규모 언어모델 개발', 'build large language model tutorial', 'transformer from scratch'],
+  '자연어처리(NLP)': ['자연어처리 NLP 강의', 'natural language processing tutorial', 'NLP transformers course'],
+  '컴퓨터비전': ['컴퓨터비전 강의', 'computer vision tutorial', 'CNN image classification tutorial'],
+  '프롬프트 엔지니어링': ['프롬프트 엔지니어링 강의', 'prompt engineering tutorial', 'ChatGPT prompt engineering course'],
+  'RAG·파인튜닝': ['RAG 검색증강생성 강의', 'RAG retrieval augmented generation tutorial', 'fine-tuning LLM tutorial'],
+  'AI 에이전트': ['AI 에이전트 만들기', 'AI agent tutorial langchain', 'autonomous AI agents course'],
+  '생성AI 활용': ['생성형 AI 활용법', 'generative AI tutorial', 'ChatGPT 활용 강의'],
+  'AI 이미지 제작': ['AI 이미지 생성 강의', 'Midjourney tutorial', 'Stable Diffusion tutorial'],
+  'AI 영상 제작': ['AI 영상 제작 강의', 'AI video generation tutorial', 'Runway Sora tutorial'],
+  '데이터분석·통계': ['데이터분석 강의', 'data analysis python tutorial', 'statistics for data science'],
+  '파이썬·코딩': ['파이썬 프로그래밍 강의', 'python programming tutorial', 'python for AI course'],
+  'MLOps·배포': ['MLOps 강의', 'MLOps tutorial', 'deploy machine learning model tutorial'],
+  '웹플랫폼 제작': ['AI 웹앱 만들기', 'build AI web app tutorial', 'streamlit AI app tutorial'],
+  'AI 교육정책': ['AI 교육정책', 'AI in education policy', 'AI 디지털교과서'],
+  'AI 윤리·안전': ['AI 윤리 강의', 'AI ethics lecture', 'AI safety alignment'],
+  'AI 비즈니스': ['AI 비즈니스 활용', 'AI for business tutorial', 'AI startup strategy'],
+  'AI활용 연구': ['AI 연구 활용', 'AI for research tutorial', 'AI academic research tools'],
+};
+// 전 카테고리 자동채우기 — 실제 YouTube 검색 결과에서 videoId·제목 수집(환각 없음)
+async function ytAutoFill(perCat) {
+  const key = (localStorage.getItem('claude_api_key') || '');   // 키 불필요(검색 스크랩) — 안내용
+  const N = perCat || 20;
+  const cats = YT_CATS.filter(c => c !== '전체');
+  if (!confirm(`전 카테고리(${cats.length}개)의 대표 교육영상을 YouTube에서 카테고리당 최대 ${N}개 자동 수집해 추가합니다. 시간이 걸릴 수 있습니다. 진행할까요?`)) return;
+  const arr = ytUserVideos();
+  const existIds = new Set(YOUTUBE_VIDEOS.concat(arr).map(v => v.vid).filter(Boolean));
+  const re = /"videoId":"([\w-]{11})"[\s\S]{0,700}?"title":\{"runs":\[\{"text":"([^"]{3,140})"[\s\S]{0,400}?"(?:longBylineText|ownerText)":\{"runs":\[\{"text":"([^"]{1,60})"/g;
+  let totalAdded = 0;
+  for (const cat of cats) {
+    const queries = YT_QUERY[cat] || [cat + ' 강의'];
+    let got = 0;
+    for (const qq of queries) {
+      if (got >= N) break;
+      showToast(`🔎 ${cat} 수집 중… (${got}/${N})`, '⏳');
+      try {
+        const api = `https://www.youtube.com/results?search_query=${encodeURIComponent(qq)}`;
+        const r = await fetch('/api/proxy?url=' + encodeURIComponent(api));
+        if (!r.ok) continue;
+        const html = await r.text();
+        let m; re.lastIndex = 0;
+        while ((m = re.exec(html)) && got < N) {
+          const id = m[1];
+          if (existIds.has(id)) continue;
+          existIds.add(id);
+          const title = m[2].replace(/\\u0026/g,'&').replace(/\\"/g,'"').replace(/\\/g,'').trim();
+          const ch = m[3].replace(/\\u0026/g,'&').replace(/\\/g,'').trim();
+          arr.unshift({ vid: id, title: title.slice(0,90), ch: ch.slice(0,50), cat, views: 0 });
+          got++; totalAdded++;
+        }
+      } catch(_) {}
+    }
+  }
+  saveYtUser(arr);
+  showToast(`자동 채우기 완료 — ${totalAdded}개 영상 추가 ▶️`);
+  if (state.activeCat === 'youtube') renderYouTubeView();
+}
 function ytFavs() { try { return JSON.parse(localStorage.getItem('yt_favs') || '[]'); } catch(_) { return []; } }
 function ytIsFav(key) { return ytFavs().includes(key); }
 function ytToggleFav(key, ev) {
@@ -6237,6 +6298,7 @@ function renderYouTubeView() {
         <!-- AI 등록 / 내보내기 / 가져오기 / 공유 -->
         <div style="display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap;margin-bottom:.6rem">
           <button onclick="ytAiOpen()" style="padding:.4rem .9rem;border-radius:8px;border:none;background:var(--accent2);color:#fff;font-size:.76rem;font-weight:700;cursor:pointer">🤖 AI 등록</button>
+          <button onclick="ytAutoFill(20)" style="padding:.4rem .8rem;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.74rem;cursor:pointer">🔎 자동채우기(카테고리당 20개)</button>
           <button onclick="document.getElementById('ytImportFile').click()" style="padding:.4rem .8rem;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.74rem;cursor:pointer">📥 HTML 가져오기</button>
           <button onclick="ytExportHtml()" style="padding:.4rem .8rem;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.74rem;cursor:pointer">📤 HTML 내보내기</button>
           <button onclick="ytShare()" style="padding:.4rem .8rem;border-radius:8px;border:none;background:var(--accent2);color:#fff;font-size:.74rem;cursor:pointer">🔗 SHARE</button>
@@ -6245,16 +6307,18 @@ function renderYouTubeView() {
         <!-- 카테고리 필터: 영상 있는 분류만 표시 -->
         <div id="ytCatBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem">
           ${(() => {
-            const merged = ytUserVideos().concat(YOUTUBE_VIDEOS);
-            const present = new Set(merged.map(v => v.cat).filter(Boolean));
-            return YT_CATS.filter(c => c === '전체' || present.has(c));
-          })().map(c => `
-            <button class="yt-cat-btn ${c===ytCat?'active':''}" data-cat="${c}"
+            const vis = ytVisibleList();
+            const cnt = {}; vis.forEach(v => { const c = v.cat || '기타'; cnt[c] = (cnt[c]||0)+1; });
+            const shown = YT_CATS.filter(c => c === '전체' || cnt[c]);
+            return shown.map(c => {
+              const n = c === '전체' ? vis.length : (cnt[c]||0);
+              return `<button class="yt-cat-btn ${c===ytCat?'active':''}" data-cat="${c}"
               style="padding:.35rem .8rem;border-radius:20px;border:1.5px solid ${c===ytCat?'var(--accent2)':'var(--border)'};
                      background:${c===ytCat?'var(--accent2)':'var(--card)'};
                      color:${c===ytCat?'#fff':'var(--text)'};font-size:.78rem;cursor:pointer;font-weight:${c===ytCat?700:400}">
-              ${c}
-            </button>`).join('')}
+              ${c} <span style="opacity:.7;font-size:.9em">${n}</span>
+            </button>`; }).join('');
+          })()}
         </div>
 
         <!-- 5×2 영상 그리드 -->
