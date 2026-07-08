@@ -925,7 +925,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v2.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v2.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3867,7 +3867,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v2.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v2.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -16991,7 +16991,7 @@ async function newsAnalyze() {
     if (out) out.innerHTML = `<span style="color:var(--text-muted)">🤖 ${items.length}건 분석 중…</span>`;
     // 2) Claude 분석
     const list = items.map((x,i) => `${i+1}. ${x.title}`).join('\n');
-    const prompt = `아래는 키워드 "${kwDisplay}" 관련 최근 ${label}간의 뉴스 제목 ${items.length}건입니다. 전문 애널리스트 관점에서 깊이 있게 분석해 아래 JSON만 출력하세요(코드블록·설명 금지, 모든 문자열 값 안에 실제 줄바꿈 없이 한 줄로 작성):\n{\n"summary":"핵심 요약 4~5문장(구체적 수치·사건 포함, 각 문장을 마침표로 끝나는 완결된 문장으로 작성)",\n"issues":[{"title":"주요 이슈","weight":0~100 중요도}] (정확히 5개),\n"sentiment":{"긍정":정수,"중립":정수,"부정":정수} (합 100),\n"categories":[{"name":"분야","count":기사수}] (4~6개),\n"keyPlayers":[{"name":"핵심 인물·기관","role":"한 줄 역할"}] (3~5개),\n"insights":["데이터 기반 인사이트 문장"] (3~5개, 각 구체적),\n"trend":"동향·흐름 분석 3~4문장(무엇이 증가/감소, 쟁점 변화)",\n"outlook":"시사점·향후 전망 3~4문장",\n"recommendation":"관심 있는 독자를 위한 실무적 제언 2~3문장"\n}\n\n뉴스 목록:\n${list}`;
+    const prompt = `아래는 키워드 "${kwDisplay}" 관련 최근 ${label}간의 뉴스 제목 ${items.length}건입니다. 전문 애널리스트 관점에서 깊이 있게 분석해 아래 JSON만 출력하세요(코드블록·설명 금지, 모든 문자열 값 안에 실제 줄바꿈 없이 한 줄로 작성).\nsummary·insights·trend·outlook·recommendation·legislation의 문장에서 특히 강조할 핵심 명사(기관명·정책명·핵심 개념·수치 등)는 **단어** 형식(양쪽 별표 두 개)으로 감싸 표시하세요. 문장당 1~3개만 선별해 감싸고 남용하지 마세요.\n{\n"summary":"핵심 요약 4~5문장(구체적 수치·사건 포함, 각 문장을 마침표로 끝나는 완결된 문장으로 작성)",\n"issues":[{"title":"주요 이슈","weight":0~100 중요도}] (정확히 5개),\n"sentiment":{"긍정":정수,"중립":정수,"부정":정수} (합 100),\n"categories":[{"name":"분야","count":기사수}] (4~6개),\n"keyPlayers":[{"name":"핵심 인물·기관","role":"한 줄 역할"}] (3~5개),\n"insights":["데이터 기반 인사이트 문장"] (3~5개, 각 구체적),\n"trend":"동향·흐름 분석 3~4문장(무엇이 증가/감소, 쟁점 변화)",\n"outlook":"시사점·향후 전망 3~4문장",\n"recommendation":"관심 있는 독자를 위한 실무적 제언 2~3문장",\n"legislation":["입법·정책 제안 문장"] (3~4개, 각 구체적 — 필요한 법령 제·개정, 정부·국회 차원 정책 제안)\n}\n\n뉴스 목록:\n${list}`;
     const ctrl = new AbortController(); const to = setTimeout(() => ctrl.abort(), 60000);
     let cr;
     try {
@@ -17025,6 +17025,7 @@ async function newsAnalyze() {
       trend: J.trend || '',
       outlook: J.outlook || '',
       recommendation: J.recommendation || '',
+      legislation: Array.isArray(J.legislation) ? J.legislation.slice(0,6) : [],
       keywords: kwFreq,
       timeSeries, wordCloud, network, sentHistory,
       items,
@@ -17060,7 +17061,7 @@ function naParseJSON(txt) {
   const str = k => { const m = body.match(new RegExp('"'+k+'"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"')); return m ? m[1].replace(/\\n/g,' ').replace(/\\"/g,'"').replace(/\\\\/g,'\\').trim() : ''; };
   const arr = k => { const m = body.match(new RegExp('"'+k+'"\\s*:\\s*(\\[[\\s\\S]*?\\])(?=\\s*,\\s*"|\\s*\\})')); if(!m) return []; try { return JSON.parse(m[1]); } catch(_) { return []; } };
   J.summary = str('summary'); J.trend = str('trend'); J.outlook = str('outlook'); J.recommendation = str('recommendation');
-  J.issues = arr('issues'); J.categories = arr('categories'); J.keyPlayers = arr('keyPlayers'); J.insights = arr('insights');
+  J.issues = arr('issues'); J.categories = arr('categories'); J.keyPlayers = arr('keyPlayers'); J.insights = arr('insights'); J.legislation = arr('legislation');
   const sm = body.match(/"sentiment"\s*:\s*(\{[^}]*\})/); if (sm) { try { J.sentiment = JSON.parse(sm[1]); } catch(_) {} }
   return J;
 }
@@ -17236,8 +17237,11 @@ function buildNewsViz(d, light) {
   </div>`;
 
   const strip = s => String(s==null?'':s).replace(/<[^>]*>/g,'').trim();   // AI가 넣은 HTML 태그 제거
-  const bullets = (arr, icon) => arr && arr.length ? `<ul style="margin:0;padding-left:2px;list-style:none">${arr.map(x => {
-    const inner = typeof x==='string' ? esc(strip(x)) : (x.name ? `<b>${esc(strip(x.name))}</b>${x.role?` — ${esc(strip(x.role))}`:''}` : '');
+  // **명사** 강조 → 빨강 굵게 (esc 후 변환)
+  const emphColor = light ? '#dc2626' : '#f87171';
+  const emph = s => esc(strip(s)).replace(/\*\*([^*]+?)\*\*/g, `<b style="color:${emphColor};font-weight:800">$1</b>`);
+  const bullets = (arr, icon, useEmph) => arr && arr.length ? `<ul style="margin:0;padding-left:2px;list-style:none">${arr.map(x => {
+    const inner = typeof x==='string' ? (useEmph ? emph(x) : esc(strip(x))) : (x.name ? `<b>${esc(strip(x.name))}</b>${x.role?` — ${esc(strip(x.role))}`:''}` : '');
     return `<li style="display:flex;gap:6px;font-size:.76rem;line-height:1.6;color:${C.txt};margin:4px 0"><span style="color:${C.accent2}">${icon}</span><span>${inner}</span></li>`;
   }).join('')}</ul>` : '';
 
@@ -17313,17 +17317,18 @@ function buildNewsViz(d, light) {
 
   return `<div style="font-size:.66rem;color:${C.dim};margin-bottom:10px">"${esc(d.kw)}" · 최근 ${esc(d.label)} · 뉴스 ${d.count}건 · ${esc(d.at)}</div>
     ${stats}
-    ${d.summary ? sect('📝 핵심 요약', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${esc(d.summary)}</div>`)) : ''}
+    ${d.summary ? sect('📝 핵심 요약', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${emph(d.summary)}</div>`)) : ''}
     ${donutGrid}
     ${(() => { const c = lineChart(d.timeSeries); return c ? sect('📈 뉴스 건수 추이', card(c)) : ''; })()}
     ${(() => { const c = wordCloud(d.wordCloud); return c ? sect('☁️ 워드클라우드 (핵심 명사)', card(c)) : ''; })()}
     ${(() => { const c = networkChart(d.network); return c ? sect('🕸 키워드 네트워크 (동시출현)', card(c)) : ''; })()}
     ${(() => { const c = sentTrend(d.sentHistory); return c ? sect('📉 감성 트렌드 히스토리 (최근 분석)', card(c)) : ''; })()}
-    ${d.insights && d.insights.length ? sect('💡 핵심 인사이트', card(bullets(d.insights, '▸'))) : ''}
-    ${d.trend ? sect('📈 동향·흐름', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${esc(d.trend)}</div>`)) : ''}
+    ${d.insights && d.insights.length ? sect('💡 핵심 인사이트', card(bullets(d.insights, '▸', true))) : ''}
+    ${d.trend ? sect('📈 동향·흐름', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${emph(d.trend)}</div>`)) : ''}
     ${d.keyPlayers && d.keyPlayers.length ? sect('👥 핵심 인물·기관', card(bullets(d.keyPlayers, '•'))) : ''}
-    ${d.outlook ? sect('🔮 시사점·전망', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${esc(d.outlook)}</div>`)) : ''}
-    ${d.recommendation ? sect('✅ 실무 제언', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${esc(d.recommendation)}</div>`)) : ''}
+    ${d.outlook ? sect('🔮 시사점·전망', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${emph(d.outlook)}</div>`)) : ''}
+    ${d.recommendation ? sect('✅ 실무 제언', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${emph(d.recommendation)}</div>`)) : ''}
+    ${d.legislation && d.legislation.length ? sect('⚖️ 입법·정책 제안', card(bullets(d.legislation, '▹', true))) : ''}
     ${sect(`📰 분석 대상 뉴스 (${d.count}건)`, card(table))}`;
 }
 // 뉴스 분석 결과 → standalone HTML(내보내기·공유 공용)
