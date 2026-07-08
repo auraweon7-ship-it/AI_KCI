@@ -929,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.2</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.3</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3871,7 +3871,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v6.2 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v6.3 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -4191,7 +4191,7 @@ function isLoggedIn() { try { return !!JSON.parse(localStorage.getItem('startpag
 // ── 클라우드 동기화 (Railway Postgres) ──
 let _cloudToken = null, _cloudTokenExp = 0;
 const CLOUD_BASE_KEYS = ['api_keys', 'apps', 'sched_events', 'lectures', 'todo_items'];  // 계정별(__이메일)
-const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·좋아하는 시·감상메모·좋아하는 음악·YouTube(등록영상·즐겨찾기·채널·숨김·수정)
+const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·좋아하는 시·감상메모·좋아하는 음악·YouTube(등록영상·즐겨찾기·채널·숨김·수정)
 const CLOUD_ALL_KEYS = [...CLOUD_BASE_KEYS, ...CLOUD_PLAIN_KEYS];
 function _cloudLocalKey(base) { return CLOUD_PLAIN_KEYS.includes(base) ? base : base + '__' + userEmail(); }
 function cloudSetToken(token, expiresIn) {
@@ -5868,9 +5868,12 @@ YOUTUBE_VIDEOS.sort((a,b) => b.views - a.views);
 const YT_CATS_BUILTIN = ['전체', 'AI 기초', 'ML 이론', '딥러닝·신경망', 'LLM 개발', '자연어처리(NLP)', '컴퓨터비전', '프롬프트 엔지니어링', 'RAG·파인튜닝', 'AI 에이전트', '생성AI 활용', 'AI 이미지 제작', 'AI 영상 제작', '데이터분석·통계', '파이썬·코딩', 'MLOps·배포', '웹플랫폼 제작', 'AI 교육정책', 'AI 윤리·안전', 'AI 비즈니스', 'AI활용 연구'];
 function ytUserCats() { try { return JSON.parse(localStorage.getItem('yt_user_cats') || '[]'); } catch(_) { return []; } }
 function saveYtUserCats(a) { localStorage.setItem('yt_user_cats', JSON.stringify(a)); try { cloudPush('yt_user_cats'); } catch(_) {} }
-// 전체 카테고리(내장 + 사용자 추가, 중복 제거)
+function ytCatHidden() { try { return JSON.parse(localStorage.getItem('yt_cat_hidden') || '[]'); } catch(_) { return []; } }
+function saveYtCatHidden(a) { localStorage.setItem('yt_cat_hidden', JSON.stringify(a)); try { cloudPush('yt_cat_hidden'); } catch(_) {} }
+// 전체 카테고리(내장−숨김 + 사용자 추가, 중복 제거)
 function ytAllCats() {
-  const out = YT_CATS_BUILTIN.slice();
+  const hidden = new Set(ytCatHidden());
+  const out = YT_CATS_BUILTIN.filter(c => c === '전체' || !hidden.has(c));
   ytUserCats().forEach(c => { if (c && !out.includes(c)) out.push(c); });
   return out;
 }
@@ -5978,18 +5981,21 @@ function ytCatManageRender() {
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const vis = ytVisibleList();
   const cnt = {}; vis.forEach(v => { const c = v.cat || '기타'; cnt[c] = (cnt[c]||0)+1; });
-  const user = ytUserCats();
-  const builtin = YT_CATS_BUILTIN.filter(c => c !== '전체');
-  const rowB = builtin.map(c => `
-    <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg3)">
+  const cats = ytAllCats().filter(c => c !== '전체');
+  const userSet = new Set(ytUserCats());
+  const edit = (typeof window._ytCatEdit === 'string') ? window._ytCatEdit : null;
+  const rows = cats.map(c => c === edit ? `
+    <div style="display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:7px;border:1px solid var(--accent2);background:var(--bg3)">
+      <input id="ytCatEditInput" value="${esc(c)}" onkeydown="if(event.key==='Enter')ytCatRenameSave('${esc(c).replace(/'/g,"\\'")}')" style="flex:1;min-width:0;padding:5px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:.74rem;outline:none">
+      <button onclick="ytCatRenameSave('${esc(c).replace(/'/g,"\\'")}')" style="background:var(--accent);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:.7rem;padding:4px 8px">저장</button>
+      <button onclick="window._ytCatEdit=null;ytCatManageRender()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.8rem">✕</button>
+    </div>` : `
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:7px;border:1px solid ${userSet.has(c)?'var(--accent2)':'var(--border)'};background:var(--bg3)">
       <span style="flex:1;font-size:.74rem;color:var(--text)">🏷 ${esc(c)} <span style="color:var(--text-muted);font-size:.9em">${cnt[c]||0}</span></span>
-      <span style="font-size:.58rem;color:var(--text-muted)">기본</span>
+      <span style="font-size:.56rem;color:var(--text-muted)">${userSet.has(c)?'추가':'기본'}</span>
+      <button onclick="window._ytCatEdit='${esc(c).replace(/'/g,"\\'")}';ytCatManageRender()" title="수정" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:.76rem">✏️</button>
+      <button onclick="ytCatDelete('${esc(c).replace(/'/g,"\\'")}')" title="삭제" style="background:none;border:none;color:var(--danger,#e74c3c);cursor:pointer;font-size:.8rem">✕</button>
     </div>`).join('');
-  const rowU = user.length ? user.map((c,i) => `
-    <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:7px;border:1px solid var(--accent2);background:var(--bg3)">
-      <span style="flex:1;font-size:.74rem;color:var(--text)">🏷 ${esc(c)} <span style="color:var(--text-muted);font-size:.9em">${cnt[c]||0}</span></span>
-      <button onclick="ytCatDel(${i})" title="삭제" style="background:none;border:none;color:var(--danger,#e74c3c);cursor:pointer;font-size:.8rem">✕</button>
-    </div>`).join('') : '';
   ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:440px;width:100%;max-height:82vh;display:flex;flex-direction:column;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
       <h3 style="flex:1;font-size:1.05rem;font-weight:800;color:var(--text);margin:0">🏷 카테고리 관리</h3>
@@ -5999,26 +6005,59 @@ function ytCatManageRender() {
       <input id="ytCatInput" placeholder="새 카테고리명 (예: 강화학습, AI 논문리뷰)" onkeydown="if(event.key==='Enter')ytCatAdd()" style="flex:1;min-width:0;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.76rem;outline:none">
       <button onclick="ytCatAdd()" style="padding:8px 14px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.76rem;cursor:pointer;white-space:nowrap">추가</button>
     </div>
-    <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:100px">
-      ${rowU}${user.length?'<div style="height:6px"></div>':''}${rowB}
-    </div>
-    <p style="font-size:.64rem;color:var(--text-muted);margin:10px 0 0;line-height:1.5">추가한 카테고리는 필터·AI 등록·자동채우기에 반영됩니다. 기본 카테고리는 삭제할 수 없습니다.</p>
+    <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:100px">${rows}</div>
+    <p style="font-size:.64rem;color:var(--text-muted);margin:10px 0 0;line-height:1.5">✏️ 수정·✕ 삭제 가능(기본 카테고리 포함). 수정 시 해당 영상 분류도 함께 바뀌고, 삭제 시 영상은 '기타'로 이동합니다.</p>
   </div>`;
+  if (edit) { const ei = document.getElementById('ytCatEditInput'); if (ei) { ei.focus(); ei.select(); } }
 }
 function ytCatAdd() {
   const inp = document.getElementById('ytCatInput'); const v = (inp?.value || '').trim();
   if (!v) return;
-  if (YT_CATS_BUILTIN.includes(v) || ytUserCats().includes(v)) { showToast('이미 있는 카테고리입니다', 'ℹ️'); return; }
-  const list = ytUserCats(); list.push(v.slice(0,30)); saveYtUserCats(list);
+  if (ytAllCats().includes(v)) { showToast('이미 있는 카테고리입니다', 'ℹ️'); return; }
+  // 숨김 처리된 기본 카테고리명 재추가 시 숨김 해제
+  const hidden = ytCatHidden();
+  if (hidden.includes(v)) { saveYtCatHidden(hidden.filter(x => x !== v)); }
+  else { const list = ytUserCats(); list.push(v.slice(0,30)); saveYtUserCats(list); }
   if (inp) inp.value = '';
   ytCatManageRender();
   if (state.activeCat === 'youtube') renderYouTubeView();
 }
-function ytCatDel(i) {
-  const list = ytUserCats(); const name = list[i];
+// 영상 cat 일괄 변경(old→new)
+function ytMigrateVideoCat(oldName, newName) {
+  const arr = ytUserVideos(); let changed = false;
+  arr.forEach(v => { if (v.cat === oldName) { v.cat = newName; changed = true; } });
+  if (changed) saveYtUser(arr);
+}
+function ytCatRenameSave(oldName) {
+  const nv = (document.getElementById('ytCatEditInput')?.value || '').trim();
+  window._ytCatEdit = null;
+  if (!nv || nv === oldName) { ytCatManageRender(); return; }
+  if (ytAllCats().includes(nv)) { showToast('이미 있는 카테고리명입니다', 'ℹ️'); ytCatManageRender(); return; }
+  const isBuiltin = YT_CATS_BUILTIN.includes(oldName);
+  const users = ytUserCats();
+  if (isBuiltin) {
+    // 기본 → 이름변경: 원래 기본은 숨김, 새 이름은 사용자 카테고리로
+    const hidden = ytCatHidden(); if (!hidden.includes(oldName)) { hidden.push(oldName); saveYtCatHidden(hidden); }
+    if (!users.includes(nv)) { users.push(nv.slice(0,30)); saveYtUserCats(users); }
+  } else {
+    const idx = users.indexOf(oldName);
+    if (idx >= 0) { users[idx] = nv.slice(0,30); saveYtUserCats(users); }
+  }
+  ytMigrateVideoCat(oldName, nv);
+  ytCatManageRender();
+  if (state.activeCat === 'youtube') renderYouTubeView();
+}
+function ytCatDelete(name) {
   const cnt = ytVisibleList().filter(v => v.cat === name).length;
-  if (cnt && !confirm(`"${name}" 카테고리에 영상 ${cnt}개가 있습니다. 카테고리를 삭제하면 해당 영상의 분류가 '기타'로 바뀝니다. 삭제할까요?`)) return;
-  list.splice(i,1); saveYtUserCats(list);
+  if (cnt && !confirm(`"${name}" 카테고리에 영상 ${cnt}개가 있습니다. 삭제하면 해당 영상은 '기타'로 이동합니다. 삭제할까요?`)) return;
+  if (!cnt && !confirm(`"${name}" 카테고리를 삭제할까요?`)) return;
+  if (YT_CATS_BUILTIN.includes(name)) {
+    const hidden = ytCatHidden(); if (!hidden.includes(name)) { hidden.push(name); saveYtCatHidden(hidden); }
+  } else {
+    saveYtUserCats(ytUserCats().filter(c => c !== name));
+  }
+  ytMigrateVideoCat(name, '기타');
+  window._ytCatEdit = null;
   ytCatManageRender();
   if (state.activeCat === 'youtube') renderYouTubeView();
 }
