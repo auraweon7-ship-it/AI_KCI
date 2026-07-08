@@ -925,7 +925,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v3.5</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v3.6</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3867,7 +3867,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v3.5 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v3.6 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -4878,11 +4878,21 @@ function todoRender() {
     const datePrefix = fmtDate(it.due || it.created);
     const overdue = !it.done && it.due && it.due < todayStr;
     const pr = PRIO[it.prio||2];
+    // D-day 계산(미완료·마감일 있을 때). 오늘=D-DAY, 미래=D-n, 지남=D+n
+    let ddayBadge = '';
+    if (!it.done && it.due) {
+      const d0 = new Date(todayStr + 'T00:00:00'), d1 = new Date(it.due + 'T00:00:00');
+      if (!isNaN(d1)) {
+        const diff = Math.round((d1 - d0) / 86400000);
+        const label = diff === 0 ? 'D-DAY' : (diff > 0 ? 'D-' + diff : 'D+' + (-diff));
+        ddayBadge = `<span style="display:inline-block;font-size:.54rem;font-weight:800;color:#fff;background:#000;padding:0 6px;border-radius:8px;margin-right:4px;vertical-align:middle;letter-spacing:.3px">${label}</span>`;
+      }
+    }
     return `
     <div style="position:relative;padding:8px 8px 8px 26px;min-height:52px;background:${it.done?'var(--bg3)':overdue?'rgba(239,68,68,.08)':'var(--card)'};border:1px solid ${overdue?'rgba(239,68,68,.5)':'var(--border)'};border-radius:8px;font-size:.7rem;">
       <input type="checkbox" ${it.done?'checked':''} onchange="todoToggle('${it.id}')"
         style="position:absolute;left:7px;top:9px;width:14px;height:14px;cursor:pointer;accent-color:var(--accent);">
-      <span style="display:inline-block;font-size:.54rem;font-weight:700;color:#fff;background:${pr.c};padding:0 6px;border-radius:8px;margin-right:4px;vertical-align:middle">${pr.t}</span>
+      ${ddayBadge}<span style="display:inline-block;font-size:.54rem;font-weight:700;color:#fff;background:${pr.c};padding:0 6px;border-radius:8px;margin-right:4px;vertical-align:middle">${pr.t}</span>
       ${overdue?'<span style="font-size:.54rem;color:#ef4444;font-weight:700;margin-right:3px">⚠️지남</span>':''}
       ${(() => {
         // cat 필드 우선, 없으면 텍스트 앞 [분류] 패턴 자동 감지
