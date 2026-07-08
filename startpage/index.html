@@ -929,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.6</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.8</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3871,7 +3871,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v6.6 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v6.8 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -21320,6 +21320,14 @@ const MUSIC = [
   ['Adiemus','Karl Jenkins','PROGRESSIVE / NEW AGE','SD_Jhrf-YlY'],
 ];
 const MUSIC_GENRE_ORDER = ['POP','ROCK','HIPHOP / RAP','R&B / SOUL','EDM / DANCE','JAZZ','CLASSICAL','ACOUSTIC / FOLK','COUNTRY','BLUES','LATIN / REGGAE','WORLD MUSIC','K-POP','J-POP','C-POP','OST / SOUNDTRACK','LO-FI / CHILL','HEALING / MEDITATION','PROGRESSIVE / NEW AGE'];
+// 장르별 필터 버튼 배경색
+const MUSIC_GENRE_COLORS = {
+  'POP':'#ec4899', 'ROCK':'#ef4444', 'HIPHOP / RAP':'#f59e0b', 'R&B / SOUL':'#8b5cf6',
+  'EDM / DANCE':'#06b6d4', 'JAZZ':'#b45309', 'CLASSICAL':'#6366f1', 'ACOUSTIC / FOLK':'#84cc16',
+  'COUNTRY':'#d97706', 'BLUES':'#3b82f6', 'LATIN / REGGAE':'#f97316', 'WORLD MUSIC':'#14b8a6',
+  'K-POP':'#e11d48', 'J-POP':'#a855f7', 'C-POP':'#dc2626', 'OST / SOUNDTRACK':'#0ea5e9',
+  'LO-FI / CHILL':'#7c3aed', 'HEALING / MEDITATION':'#10b981', 'PROGRESSIVE / NEW AGE':'#0891b2',
+};
 // 장르특성 정보 (유래·역사·특징·대표 음악가·대표곡)
 const GENRE_INFO = {
   'POP':{origin:'팝(Pop)은 "대중적(popular)"이라는 말에서 나온 이름으로, 20세기 중반 미국과 영국에서 라디오·음반 산업의 성장과 함께 대중을 겨냥해 형성된 상업 음악을 총칭한다. 특정 악기나 리듬으로 정의되기보다, 그 시대에 가장 널리 소비되는 음악 양식을 흡수해 온 유연한 장르다.',history:'1950년대 로큰롤과 1960년대 모타운·브릴 빌딩 작곡 시스템에서 뿌리를 내렸고, 비틀스가 팝의 예술적 가능성을 넓혔다. 1980년대에는 마이클 잭슨·마돈나와 MTV 뮤직비디오 문화가 팝을 시각적 스펙터클로 만들며 전 세계로 확산시켰다. 1990~2000년대 틴팝·보이밴드 열풍을 거쳐, 2010년대 이후에는 힙합·EDM·R&B 요소를 흡수하고 스트리밍과 소셜미디어를 무대로 삼아 글로벌 주류로 자리 잡았다.',feature:'가장 큰 특징은 누구나 따라 부를 수 있는 강렬한 후크(hook)와 절-후렴(verse-chorus) 반복 구조다. 곡 길이는 대개 3~4분으로 압축적이며, 세련된 프로듀싱과 명확한 멜로디 라인을 지향한다. 사랑·이별·자기긍정 같은 보편적 정서를 다루고, 시대의 유행을 빠르게 반영해 끊임없이 변신하는 것이 팝의 생존 방식이다.',artists:['Michael Jackson','Madonna','Taylor Swift','Ed Sheeran','Ariana Grande','The Beatles'],songs:['Billie Jean','Shape of You','Uptown Funk','Rolling in the Deep','Bad Guy']},
@@ -22068,7 +22076,12 @@ function renderMusicView() {
   const chip = (val, label, n) => {
     const on = musicState.cat === val;
     const jv = (val+'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `<button onclick="musicSetCat('${jv}')" style="padding:3px 10px;border-radius:14px;border:1px solid ${on?'var(--accent)':'var(--border)'};background:${on?'var(--accent)':'var(--bg3)'};color:${on?'#fff':'var(--text-dim)'};font-size:.68rem;cursor:pointer;white-space:nowrap">${esc(label)} ${n}</button>`;
+    const gc = val === 'all' ? 'var(--accent)' : (MUSIC_GENRE_COLORS[val] || 'var(--accent)');
+    // 선택 시 장르색 채움(흰 글씨), 미선택 시 장르색 테두리+연한 틴트
+    const bg = on ? gc : (val === 'all' ? 'var(--bg3)' : gc + '22');
+    const bd = on ? gc : (val === 'all' ? 'var(--border)' : gc + '66');
+    const col = on ? '#fff' : (val === 'all' ? 'var(--text-dim)' : gc);
+    return `<button onclick="musicSetCat('${jv}')" style="padding:3px 10px;border-radius:14px;border:1px solid ${bd};background:${bg};color:${col};font-size:.68rem;font-weight:${on?700:600};cursor:pointer;white-space:nowrap">${esc(label)} ${n}</button>`;
   };
   const chips = (musicState.mode==='fav') ? '' : chip('all', '전체', all.length) + cats.map(([v,n]) => chip(v, v, n)).join('');
   // 필터 + 정렬
@@ -22101,7 +22114,6 @@ function renderMusicView() {
       </div>
       <div style="font-size:.7rem;font-weight:700;color:var(--text);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.t)}</div>
       <div style="font-size:.62rem;color:var(--accent2);display:flex;align-items:center;gap:5px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.artist)}</span>${m.views?`<span style="flex-shrink:0;color:var(--text-muted)">👁 ${musicFmtViews(m.views)}</span>`:''}</div>
-      <div style="margin-top:3px"><span style="display:inline-block;font-size:.55rem;font-weight:700;color:#fff;background:var(--accent2);padding:1px 7px;border-radius:8px">${esc(m.genre||'')}</span></div>
     </div>`;
   }).join('');
   const modeBtn = (mode, label) => `<button onclick="musicSetMode('${mode}')" style="padding:5px 12px;border-radius:6px;border:1px solid ${musicState.mode===mode?'var(--accent)':'var(--border)'};background:${musicState.mode===mode?'var(--accent)':'var(--bg3)'};color:${musicState.mode===mode?'#fff':'var(--text-dim)'};font-size:.72rem;cursor:pointer">${label}</button>`;
