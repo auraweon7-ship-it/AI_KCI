@@ -929,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.5</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.6</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3871,7 +3871,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v6.5 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v6.6 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -21509,7 +21509,21 @@ function musicParseViewText(s) {
   else if (u === '억') n *= 100000000;
   return Math.round(n);
 }
-// 등록 곡 조회수 일괄 조회·갱신(YouTube watch 페이지 viewCount 파싱)
+// 단일 곡 조회수 조회(watch 페이지 파싱, consent 우회)
+async function musicFetchViews(id) {
+  const url = 'https://www.youtube.com/watch?v=' + id + '&hl=ko&gl=KR&bpctr=9999999999&has_verified=1';
+  const r = await fetch('/api/proxy?url=' + encodeURIComponent(url), { signal: AbortSignal.timeout(9000) });
+  if (!r.ok) return 0;
+  const html = await r.text();
+  let mm = html.match(/"viewCount":"(\d+)"/);                                   // videoDetails.viewCount(정확)
+  if (mm) return parseInt(mm[1], 10) || 0;
+  mm = html.match(/"viewCount":\{"simpleText":"([\d,]+)/);                       // simpleText
+  if (mm) return parseInt(mm[1].replace(/,/g,''), 10) || 0;
+  mm = html.match(/"(?:short)?[Vv]iewCountText":\{(?:"simpleText":"([^"]+)"|"runs":\[\{"text":"([^"]+)")/);
+  if (mm) return musicParseViewText(mm[1] || mm[2] || '');
+  return 0;
+}
+// 등록 곡 조회수 일괄 갱신(병렬 8개·배치 중간저장)
 async function musicRefreshViews() {
   const arr = userMusic();
   const targets = arr.filter(m => m.id);
@@ -21517,23 +21531,22 @@ async function musicRefreshViews() {
   if (!confirm(`${targets.length}곡의 조회수를 YouTube에서 조회합니다. 시간이 걸릴 수 있습니다. 진행할까요?`)) return;
   const btn = document.getElementById('musicViewsBtn');
   if (btn) btn.disabled = true;
-  let updated = 0, n = 0;
-  for (const m of arr) {
-    if (!m.id) continue;
-    n++;
-    if (btn) btn.textContent = `👁 조회수 갱신 ${n}/${targets.length}…`;
-    try {
-      const r = await fetch('/api/proxy?url=' + encodeURIComponent('https://www.youtube.com/watch?v=' + m.id + '&hl=ko'), { signal: AbortSignal.timeout(9000) });
-      if (r.ok) {
-        const html = await r.text();
-        const mm = html.match(/"viewCount":"(\d+)"/) || html.match(/"viewCount":\{"simpleText":"([\d,]+)/);
-        if (mm) { const v = parseInt(mm[1].replace(/,/g,''), 10); if (v > 0) { m.views = v; updated++; } }
-      }
-    } catch(_) {}
+  let updated = 0, done = 0;
+  const CONC = 8;                    // 동시 요청 수
+  const queue = targets.slice();
+  async function worker() {
+    while (queue.length) {
+      const m = queue.shift(); if (!m) break;
+      try { const v = await musicFetchViews(m.id); if (v > 0) { m.views = v; updated++; } } catch(_) {}
+      done++;
+      if (btn) btn.textContent = `👁 조회수 갱신 ${done}/${targets.length}…`;
+      if (done % 50 === 0) saveUserMusic(arr);   // 배치 중간 저장(중단 대비)
+    }
   }
+  await Promise.all(Array.from({ length: Math.min(CONC, targets.length) }, worker));
   saveUserMusic(arr);
   if (btn) { btn.disabled = false; btn.textContent = '👁 조회수 갱신'; }
-  showToast(`${updated}곡 조회수를 갱신했습니다 👁`);
+  showToast(`${updated}곡 조회수를 갱신했습니다 👁 ${updated<targets.length?`(${targets.length-updated}곡 실패)`:''}`);
   renderMusicView();
 }
 function musicToggleFav(k, ev) {
