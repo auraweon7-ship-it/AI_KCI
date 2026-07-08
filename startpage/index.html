@@ -929,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.4</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.5</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3871,7 +3871,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v6.4 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v6.5 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -22088,6 +22088,7 @@ function renderMusicView() {
       </div>
       <div style="font-size:.7rem;font-weight:700;color:var(--text);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.t)}</div>
       <div style="font-size:.62rem;color:var(--accent2);display:flex;align-items:center;gap:5px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.artist)}</span>${m.views?`<span style="flex-shrink:0;color:var(--text-muted)">👁 ${musicFmtViews(m.views)}</span>`:''}</div>
+      <div style="margin-top:3px"><span style="display:inline-block;font-size:.55rem;font-weight:700;color:#fff;background:var(--accent2);padding:1px 7px;border-radius:8px">${esc(m.genre||'')}</span></div>
     </div>`;
   }).join('');
   const modeBtn = (mode, label) => `<button onclick="musicSetMode('${mode}')" style="padding:5px 12px;border-radius:6px;border:1px solid ${musicState.mode===mode?'var(--accent)':'var(--border)'};background:${musicState.mode===mode?'var(--accent)':'var(--bg3)'};color:${musicState.mode===mode?'#fff':'var(--text-dim)'};font-size:.72rem;cursor:pointer">${label}</button>`;
