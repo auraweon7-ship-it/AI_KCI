@@ -926,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v5.9</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.0</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3868,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v5.9 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v6.0 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5268,7 +5268,7 @@ function renderCats() {
   bar.querySelectorAll('.cat-tab').forEach(el => el.remove());
   state.categories.forEach(cat => {
     // 좋아하는 시·좋아하는 음악·내 북마크: 로그인 전에는 메뉴 숨김
-    if ((cat.id === 'poems' || cat.id === 'music' || cat.id === 'mybm') && !isLoggedIn()) return;
+    if ((cat.id === 'poems' || cat.id === 'music' || cat.id === 'mybm' || cat.id === 'youtube') && !isLoggedIn()) return;
     const btn = document.createElement('button');
     btn.className = 'cat-tab' + (state.activeCat === cat.id ? ' active' : '');
     btn.innerHTML = `${cat.emoji || ''} ${cat.name}${cat.pinned ? '' : ` <span class="cat-del" onclick="deleteCat('${cat.id}',event)">✕</span>`}`;
@@ -5918,7 +5918,7 @@ async function ytAutoFill(perCat) {
   const cats = YT_CATS.filter(c => c !== '전체');
   if (!confirm(`전 카테고리(${cats.length}개)의 대표 교육영상을 YouTube에서 카테고리당 최대 ${N}개 자동 수집해 추가합니다. 시간이 걸릴 수 있습니다. 진행할까요?`)) return;
   const arr = ytUserVideos();
-  const existIds = new Set(YOUTUBE_VIDEOS.concat(arr).map(v => v.vid).filter(Boolean));
+  const existIds = new Set(arr.map(v => v.vid).filter(Boolean));
   const re = /"videoId":"([\w-]{11})"[\s\S]{0,700}?"title":\{"runs":\[\{"text":"([^"]{3,140})"[\s\S]{0,400}?"(?:longBylineText|ownerText)":\{"runs":\[\{"text":"([^"]{1,60})"/g;
   let totalAdded = 0;
   for (const cat of cats) {
@@ -6239,8 +6239,8 @@ async function ytAiFill() {
   const useCh = !!document.getElementById('ytai_ch')?.checked;   // 등록 채널에서 검색
   const btn = document.getElementById('ytAiFillBtn');
   const normK = s => (s || '').replace(/\s+/g,'').toLowerCase();
-  const existTitles = new Set(YOUTUBE_VIDEOS.concat(ytUserVideos()).map(v => normK(v.title)));
-  const existIds = new Set(YOUTUBE_VIDEOS.concat(ytUserVideos()).map(v => v.vid).filter(Boolean));
+  const existTitles = new Set(ytUserVideos().map(v => normK(v.title)));
+  const existIds = new Set(ytUserVideos().map(v => v.vid).filter(Boolean));
   // 채널 검색 결과에서 videoId+제목+채널 추출
   const searchVideos = async (query) => {
     const api = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
@@ -6374,7 +6374,7 @@ function ytAiConfirm() {
 // 현재 표시 영상 목록(내장+사용자, 숨김·오버라이드 반영)
 function ytVisibleList() {
   const hidden = ytHiddenSet(), tOv = ytTitleOverrides(), vOv = ytVidOverrides();
-  const merged = ytUserVideos().map(v => ({ ...v, u: true })).concat(YOUTUBE_VIDEOS);
+  const merged = ytUserVideos().map(v => ({ ...v, u: true }));   // 사용자 등록 영상만(내장 시드 숨김)
   return merged.filter(v => !hidden.has(v.vid || v.title)).map(v => {
     const k = v.vid || v.title;
     return { ...v, title: tOv[k] || v.title, vid: vOv[k] || v.vid };
@@ -6470,7 +6470,7 @@ function ytImportHtml(inputEl) {
     }
     items = items.filter(v => v && v.vid);
     if (!items.length) { showToast('가져올 영상을 찾지 못했습니다', '⚠️'); inputEl.value=''; return; }
-    const user = ytUserVideos(); const have = new Set(YOUTUBE_VIDEOS.concat(user).map(v=>v.vid).filter(Boolean));
+    const user = ytUserVideos(); const have = new Set(user.map(v=>v.vid).filter(Boolean));
     let added = 0;
     items.forEach(v => { if (!have.has(v.vid)) { user.unshift({ vid:v.vid, title:(v.title||'(제목없음)').slice(0,90), ch:(v.ch||'').slice(0,50), cat:v.cat||'AI 기초', views:0 }); have.add(v.vid); added++; } });
     saveYtUser(user);
@@ -6524,6 +6524,7 @@ function ytEditSave() {
 }
 
 function renderYouTubeView() {
+  if (!isLoggedIn()) { state.activeCat = 'all'; saveState(); render(); return; }
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
   const addBtn = document.getElementById('addLinkHeaderBtn');
@@ -6563,7 +6564,7 @@ function renderYouTubeView() {
   function getFiltered() {
     const hidden = ytHiddenSet();
     const tOv = ytTitleOverrides(), vOv = ytVidOverrides();
-    const merged = ytUserVideos().map(v => ({ ...v, u: true })).concat(YOUTUBE_VIDEOS);   // 사용자 등록 영상 우선
+    const merged = ytUserVideos().map(v => ({ ...v, u: true }));   // 사용자 등록 영상만(내장 시드 숨김)
     const base = ytCat === '전체' ? merged : merged.filter(v => v.cat === ytCat);
     return base.filter(v => !hidden.has(v.vid || v.title))
       .map(v => {
@@ -20411,11 +20412,10 @@ function savePoemOverrides(o) { localStorage.setItem('poem_over', JSON.stringify
 function poemAll() {
   const hid = new Set(poemHidden());
   const ov = poemOverrides();
-  const users = userPoems().map(p => ({ ...p, u: true }));
-  const builtin = POEMS
+  const users = userPoems()
     .filter(p => !hid.has(poemKey(p)))
-    .map(p => { const o = ov[poemKey(p)]; return o ? { ...p, ...o, ok: poemKey(p) } : p; });
-  return users.concat(builtin);
+    .map(p => { const o = ov[poemKey(p)]; const b = o ? { ...p, ...o, ok: poemKey(p) } : p; return { ...b, u: true }; });
+  return users;   // 사용자 등록 시만(내장 시드 숨김)
 }
 function poemKey(p) { return p.poet + '|' + p.t; }
 function poemFavs() { try { return JSON.parse(localStorage.getItem('poem_favs') || '[]'); } catch(_) { return []; } }
@@ -21440,11 +21440,10 @@ function musicIsFav(m) { return musicFavs().includes(musicKey(m)); }
 function musicAll() {
   const hid = new Set(musicHidden());
   const ov = musicOverrides();
-  const users = userMusic().map(m => ({ ...m, u: true }));
-  const builtin = MUSIC.map(a => ({ t: a[0], artist: a[1], genre: a[2], id: a[3] }))
+  const users = userMusic()
     .filter(m => !hid.has(musicKey(m)))
-    .map(m => { const o = ov[musicKey(m)]; return o ? { ...m, ...o, ok: musicKey(m) } : m; });
-  return users.concat(builtin);
+    .map(m => { const o = ov[musicKey(m)]; const b = o ? { ...m, ...o, ok: musicKey(m) } : m; return { ...b, u: true }; });
+  return users;   // 사용자 등록 곡만(내장 시드 숨김)
 }
 function musicToggleFav(k, ev) {
   if (ev) ev.stopPropagation();
