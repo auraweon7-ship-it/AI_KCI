@@ -926,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.9</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v5.0</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3868,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v4.9 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v5.0 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5949,6 +5949,50 @@ function ytToggleFav(key, ev) {
   try { cloudPush('yt_favs'); } catch(_) {}
   if (state.activeCat === 'youtube') renderYouTubeView();
 }
+// ── 선호 YouTube 채널 등록/관리 ──
+function ytChannels() { try { return JSON.parse(localStorage.getItem('yt_channels') || '[]'); } catch(_) { return []; } }
+function saveYtChannels(a) { localStorage.setItem('yt_channels', JSON.stringify(a)); try { cloudPush('yt_channels'); } catch(_) {} }
+function ytChannelOpen() {
+  let ov = document.getElementById('ytChOverlay');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'ytChOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  ytChannelRender();
+}
+function ytChannelRender() {
+  const ov = document.getElementById('ytChOverlay'); if (!ov) return;
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const list = ytChannels();
+  const rows = list.length ? list.map((ch, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg3)">
+      <span style="flex:1;font-size:.76rem;color:var(--text)">📺 ${esc(ch)}</span>
+      <button onclick="ytChannelDel(${i})" title="삭제" style="background:none;border:none;color:var(--danger,#e74c3c);cursor:pointer;font-size:.8rem">✕</button>
+    </div>`).join('') : '<div style="font-size:.72rem;color:var(--text-muted);padding:10px">등록된 채널이 없습니다.</div>';
+  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:420px;width:100%;max-height:80vh;display:flex;flex-direction:column;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <h3 style="flex:1;font-size:1.05rem;font-weight:800;color:var(--text);margin:0">📺 채널 등록 (${list.length})</h3>
+      <button onclick="document.getElementById('ytChOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted)">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <input id="ytChInput" placeholder="채널명 입력 (예: 3Blue1Brown, 테디노트)" onkeydown="if(event.key==='Enter')ytChannelAdd()" style="flex:1;min-width:0;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.76rem;outline:none">
+      <button onclick="ytChannelAdd()" style="padding:8px 14px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.76rem;cursor:pointer;white-space:nowrap">추가</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:80px">${rows}</div>
+    <p style="font-size:.64rem;color:var(--text-muted);margin:10px 0 0;line-height:1.5">등록한 채널은 <b>AI 등록</b> 창의 "등록한 채널에서 검색"으로 우선 검색됩니다.</p>
+  </div>`;
+}
+function ytChannelAdd() {
+  const inp = document.getElementById('ytChInput'); const v = (inp?.value || '').trim();
+  if (!v) return;
+  const list = ytChannels();
+  if (!list.some(c => c.toLowerCase() === v.toLowerCase())) list.push(v.slice(0,60));
+  saveYtChannels(list); if (inp) inp.value = '';
+  ytChannelRender();
+}
+function ytChannelDel(i) { const list = ytChannels(); list.splice(i,1); saveYtChannels(list); ytChannelRender(); }
 // ── YouTube AI 교육 영상 AI 등록 ──
 function ytAiOpen() {
   let ov = document.getElementById('ytAiOverlay');
@@ -5970,8 +6014,11 @@ function ytAiOpen() {
       <label style="font-size:.68rem;color:var(--text-dim)">주제·키워드 (선택) <input id="ytai_topic" placeholder="예: RAG, 파인튜닝, 프롬프트 엔지니어링" style="${inS}"></label>
       <label style="font-size:.68rem;color:var(--text-dim)">분류 <select id="ytai_cat" style="${inS}">${cOpts}</select></label>
       <label style="font-size:.68rem;color:var(--text-dim)">개수 <select id="ytai_count" style="${inS}">${nOpts}</select></label>
+      <label style="font-size:.7rem;color:var(--text);display:inline-flex;align-items:center;gap:6px;cursor:${ytChannels().length?'pointer':'not-allowed'};opacity:${ytChannels().length?1:.5}">
+        <input type="checkbox" id="ytai_ch"${ytChannels().length?'':' disabled'} style="cursor:inherit">📺 등록한 채널에서 검색 (${ytChannels().length}개)
+      </label>
     </div>
-    <p style="font-size:.66rem;color:var(--text-muted);margin:10px 0 0;line-height:1.5">주제 입력 시 해당 주제, 비우면 선택 분류의 인기 교육영상을 AI가 추천하고 YouTube에서 실제 영상을 찾아 등록합니다. (설정 → 🧠 Claude API 키 필요)</p>
+    <p style="font-size:.66rem;color:var(--text-muted);margin:10px 0 0;line-height:1.5">주제 입력 시 해당 주제, 비우면 선택 분류의 인기 교육영상을 추천합니다. "등록한 채널에서 검색"을 켜면 등록 채널의 영상만 대상으로 수집합니다. (일반 검색은 설정 → 🧠 Claude API 키 필요)</p>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
       <button onclick="document.getElementById('ytAiOverlay').remove()" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">취소</button>
       <button id="ytAiFillBtn" onclick="ytAiFill()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">AI 추천</button>
@@ -5980,16 +6027,54 @@ function ytAiOpen() {
 }
 let _ytAiCand = [];
 async function ytAiFill() {
-  const key = (localStorage.getItem('claude_api_key') || '').trim();
-  if (!key) { showToast('설정 → 🧠 Claude API 키를 입력하세요', '🔑'); return; }
   const topic = (document.getElementById('ytai_topic')?.value || '').trim();
   const cat = document.getElementById('ytai_cat')?.value || 'AI 기초';
   const count = parseInt(document.getElementById('ytai_count')?.value, 10) || 5;
+  const useCh = !!document.getElementById('ytai_ch')?.checked;   // 등록 채널에서 검색
   const btn = document.getElementById('ytAiFillBtn');
-  if (btn) { btn.disabled = true; btn.textContent = '🤖 추천 받는 중…'; }
   const normK = s => (s || '').replace(/\s+/g,'').toLowerCase();
   const existTitles = new Set(YOUTUBE_VIDEOS.concat(ytUserVideos()).map(v => normK(v.title)));
   const existIds = new Set(YOUTUBE_VIDEOS.concat(ytUserVideos()).map(v => v.vid).filter(Boolean));
+  // 채널 검색 결과에서 videoId+제목+채널 추출
+  const searchVideos = async (query) => {
+    const api = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+    const yr = await fetch('/api/proxy?url=' + encodeURIComponent(api));
+    if (!yr.ok) return [];
+    const html = await yr.text(); const out = [];
+    const re = /"videoId":"([\w-]{11})"[\s\S]{0,700}?"title":\{"runs":\[\{"text":"([^"]{3,140})"[\s\S]{0,400}?"(?:longBylineText|ownerText)":\{"runs":\[\{"text":"([^"]{1,60})"/g;
+    let m; while ((m = re.exec(html)) && out.length < 12) {
+      out.push({ vid: m[1], title: m[2].replace(/\\u0026/g,'&').replace(/\\"/g,'"').replace(/\\/g,'').trim(), ch: m[3].replace(/\\u0026/g,'&').replace(/\\/g,'').trim() });
+    }
+    return out;
+  };
+  // ── 채널 모드: 등록 채널에서 직접 검색(Claude·키 불필요) ──
+  if (useCh) {
+    const chans = ytChannels();
+    if (!chans.length) { showToast('등록된 채널이 없습니다 — 📺 채널 등록 먼저', 'ℹ️'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = '🔎 채널 검색 중…'; }
+    const seen = new Set(); const cand = [];
+    try {
+      for (const ch of chans) {
+        if (cand.length >= count) break;
+        const q = ch + ' ' + (topic || cat);
+        if (btn) btn.textContent = `🔎 ${ch} (${cand.length}/${count})`;
+        const vids = await searchVideos(q);
+        for (const v of vids) {
+          if (cand.length >= count) break;
+          if (!v.vid || seen.has(v.vid) || existIds.has(v.vid) || existTitles.has(normK(v.title))) continue;
+          seen.add(v.vid);
+          cand.push({ vid: v.vid, title: v.title.slice(0,90), ch: (v.ch||ch).slice(0,50), cat, views: 0 });
+        }
+      }
+      if (!cand.length) { showToast('등록 채널에서 영상을 찾지 못했습니다', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
+      _ytAiCand = cand; ytAiPreview();
+    } catch(e) { showToast('채널 검색 실패: ' + (e.message||'오류'), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} }
+    return;
+  }
+  // ── 일반 AI 추천 모드 ──
+  const key = (localStorage.getItem('claude_api_key') || '').trim();
+  if (!key) { showToast('설정 → 🧠 Claude API 키를 입력하세요', '🔑'); return; }
+  if (btn) { btn.disabled = true; btn.textContent = '🤖 추천 받는 중…'; }
   try {
     const want = Math.min(30, count * 2 + 4);
     const scope = topic ? `주제 "${topic}"에 관한` : `"${cat}" 분야의`;
@@ -6297,6 +6382,7 @@ function renderYouTubeView() {
       <div class="ai-view-wrap" style="padding:0 .5rem">
         <!-- AI 등록 / 내보내기 / 가져오기 / 공유 -->
         <div style="display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap;margin-bottom:.6rem">
+          <button onclick="ytChannelOpen()" style="padding:.4rem .9rem;border-radius:8px;border:1px solid var(--accent2);background:var(--bg3);color:var(--accent2);font-size:.76rem;font-weight:700;cursor:pointer">📺 채널 등록</button>
           <button onclick="ytAiOpen()" style="padding:.4rem .9rem;border-radius:8px;border:none;background:var(--accent2);color:#fff;font-size:.76rem;font-weight:700;cursor:pointer">🤖 AI 등록</button>
           <button onclick="ytAutoFill(20)" style="padding:.4rem .8rem;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.74rem;cursor:pointer">🔎 자동채우기(카테고리당 20개)</button>
           <button onclick="document.getElementById('ytImportFile').click()" style="padding:.4rem .8rem;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.74rem;cursor:pointer">📥 HTML 가져오기</button>
