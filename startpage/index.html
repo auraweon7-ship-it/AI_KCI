@@ -926,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v5.7</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v5.8</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3868,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v5.7 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v5.8 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6119,6 +6119,25 @@ function ytChannelEditSave(i) {
   saveYtChannels(list); window._ytChEdit = -1; ytChannelRender();
   showToast('채널 수정됨 ✏️');
 }
+// 채널 페이지 HTML에서 실제 채널명 추출(여러 패턴)
+function ytExtractChannelName(html) {
+  if (!html) return '';
+  const decode = s => s.replace(/\\u0026/g,'&').replace(/\\"/g,'"').replace(/\\\//g,'/').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").replace(/ - YouTube$/,'').trim();
+  const pats = [
+    /"channelMetadataRenderer":\{"title":"((?:[^"\\]|\\.)+)"/,        // 가장 정확
+    /"metadata":\{"channelMetadataRenderer":\{"title":"((?:[^"\\]|\\.)+)"/,
+    /<meta property="og:title" content="([^"]+)"/,
+    /<meta name="title" content="([^"]+)"/,
+    /<meta property="twitter:title" content="([^"]+)"/,
+    /"author":"((?:[^"\\]|\\.)+)"/,
+    /<title>([^<]+)<\/title>/,
+  ];
+  for (const p of pats) {
+    const m = html.match(p);
+    if (m) { const nm = decode(m[1]); if (nm && !/^channel:/i.test(nm) && nm.toLowerCase() !== 'youtube') return nm.slice(0,60); }
+  }
+  return '';
+}
 // 등록된 채널의 실제 채널명 조회·갱신(URL만 있거나 channel:ID·비어있는 이름 대상)
 async function ytChannelRefreshNames() {
   const list = ytChannels();
@@ -6130,18 +6149,19 @@ async function ytChannelRefreshNames() {
   for (const { c, i } of targets) {
     n++;
     if (btn) btn.textContent = `🔄 조회 중 ${n}/${targets.length}…`;
-    try {
-      const r = await fetch('/api/proxy?url=' + encodeURIComponent(c.url), { signal: AbortSignal.timeout(8000) });
-      if (r.ok) {
-        const html = await r.text();
-        let m = html.match(/<meta property="og:title" content="([^"]+)"/) || html.match(/<title>([^<]+)<\/title>/);
-        if (m) { let nm = m[1].replace(/ - YouTube$/,'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim(); if (nm && !/^channel:/.test(nm)) { list[i].name = nm.slice(0,60); updated++; } }
-      }
-    } catch(_) {}
+    let nm = '';
+    // /channel/ID 페이지 + /about 페이지 둘 다 시도(consent·리다이렉트 대비)
+    for (const u of [c.url, c.url.replace(/\/?$/,'') + '/about']) {
+      try {
+        const r = await fetch('/api/proxy?url=' + encodeURIComponent(u + (u.includes('?')?'&':'?') + 'hl=ko&gl=KR'), { signal: AbortSignal.timeout(9000) });
+        if (r.ok) { nm = ytExtractChannelName(await r.text()); if (nm) break; }
+      } catch(_) {}
+    }
+    if (nm) { list[i].name = nm; updated++; }
   }
   saveYtChannels(list);
   if (btn) { btn.disabled = false; btn.textContent = '🔄 채널명 새로고침(실제 이름 조회)'; }
-  showToast(`${updated}개 채널명을 갱신했습니다 📺`);
+  showToast(`${updated}개 채널명을 갱신했습니다 📺 ${updated<targets.length?`(${targets.length-updated}개 실패 — 재시도 가능)`:''}`);
   ytChannelRender();
 }
 // 채널 URL/이름 여러 줄 일괄 등록(+선택 시 채널명 자동 조회)
@@ -6164,12 +6184,8 @@ async function ytChannelBulkAdd() {
     if (fetchName && ch.url && (!ch.name || /^channel:/.test(ch.name))) {
       if (btn) btn.textContent = `🔎 채널명 조회 ${i}/${total}…`;
       try {
-        const r = await fetch('/api/proxy?url=' + encodeURIComponent(ch.url), { signal: AbortSignal.timeout(8000) });
-        if (r.ok) {
-          const html = await r.text();
-          let m = html.match(/<meta property="og:title" content="([^"]+)"/) || html.match(/<title>([^<]+)<\/title>/);
-          if (m) { let nm = m[1].replace(/ - YouTube$/,'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').trim(); if (nm) ch.name = nm.slice(0,60); }
-        }
+        const r = await fetch('/api/proxy?url=' + encodeURIComponent(ch.url + (ch.url.includes('?')?'&':'?') + 'hl=ko&gl=KR'), { signal: AbortSignal.timeout(9000) });
+        if (r.ok) { const nm = ytExtractChannelName(await r.text()); if (nm) ch.name = nm; }
       } catch(_) {}
     }
     list.push(ch);
