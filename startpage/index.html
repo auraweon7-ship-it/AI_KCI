@@ -926,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.4</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.5</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3868,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v4.4 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v4.5 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5867,6 +5867,16 @@ const YT_CATS = ['전체', 'AI 기초', 'LLM 개발', 'ML 이론', '생성AI 활
 // YouTube 추천 영상 숨김·제목수정 (하드코딩 배열이라 id 없음 → vid/제목 키로 로컬 오버라이드)
 function ytUserVideos() { try { return JSON.parse(localStorage.getItem('yt_user') || '[]'); } catch(_) { return []; } }
 function saveYtUser(a) { localStorage.setItem('yt_user', JSON.stringify(a)); try { cloudPush('yt_user'); } catch(_) {} }
+function ytFavs() { try { return JSON.parse(localStorage.getItem('yt_favs') || '[]'); } catch(_) { return []; } }
+function ytIsFav(key) { return ytFavs().includes(key); }
+function ytToggleFav(key, ev) {
+  if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+  const f = ytFavs(); const at = f.indexOf(key);
+  if (at >= 0) f.splice(at, 1); else f.push(key);
+  localStorage.setItem('yt_favs', JSON.stringify(f));
+  try { cloudPush('yt_favs'); } catch(_) {}
+  if (state.activeCat === 'youtube') renderYouTubeView();
+}
 // ── YouTube AI 교육 영상 AI 등록 ──
 function ytAiOpen() {
   let ov = document.getElementById('ytAiOverlay');
@@ -6179,7 +6189,7 @@ function renderYouTubeView() {
 
   function render() {
     const filtered = getFiltered();
-    const perPage = 10, totalPages = Math.ceil(filtered.length / perPage);
+    const perPage = 50, totalPages = Math.ceil(filtered.length / perPage);   // 5열 × 10행
     if (ytPage >= totalPages) ytPage = 0;
     const slice = filtered.slice(ytPage * perPage, ytPage * perPage + perPage);
 
@@ -6218,6 +6228,7 @@ function renderYouTubeView() {
             <a class="yt-card" href="${href}" target="_blank" rel="noopener noreferrer"
                style="display:block;text-decoration:none;background:${cs.cardBg};border:1.5px solid ${cs.borderColor};border-radius:10px;overflow:hidden;position:relative">
               <div class="yt-card-actions" style="position:absolute;top:5px;right:5px;display:flex;gap:3px;z-index:5">
+                <button class="fav" onclick="ytToggleFav('${vkey}',event)" title="즐겨찾기" style="width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:.62rem;cursor:pointer;display:flex;align-items:center;justify-content:center">${ytIsFav(v.vid||v.title)?'⭐':'☆'}</button>
                 <button class="edit" onclick="ytEditVideo('${vkey}',event)" title="제목 수정" style="width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✏️</button>
                 <button class="del" onclick="ytHideVideo('${vkey}',event)" title="삭제(숨김)" style="width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
               </div>
