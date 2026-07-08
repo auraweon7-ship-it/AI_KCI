@@ -925,7 +925,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v2.5</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v2.6</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3867,7 +3867,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v2.5 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v2.6 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -15476,7 +15476,7 @@ function poemAiOpen() {
       <label style="font-size:.68rem;color:var(--text-dim)">주제 <select id="paf_theme" style="${inS}">${tOpts}</select></label>
       <label style="font-size:.68rem;color:var(--text-dim)">편 수 <select id="paf_count" style="${inS}">${nOpts}</select></label>
     </div>
-    <p style="font-size:.66rem;color:var(--text-muted);margin:10px 0 0;line-height:1.5">한국 근현대시를 <b>제목·시인·소개</b>로 추천합니다. 목록에서 선택해 등록한 뒤, 본문은 카드 <b>✏️</b>로 직접 입력하세요. (설정 → 🧠 Claude API 키 필요)</p>
+    <p style="font-size:.66rem;color:var(--text-muted);margin:10px 0 0;line-height:1.5">한국 근현대시를 추천합니다. <b>저작권이 만료된 공유마당(퍼블릭 도메인) 작품</b>은 시 전문을 함께 제공하며, 저작권 보호 중인 작품은 소개만 제공되니 본문은 카드 <b>✏️</b>로 직접 입력하세요. (설정 → 🧠 Claude API 키 필요)</p>
     <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
       <button onclick="document.getElementById('poemAiOverlay').remove()" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">취소</button>
       <button id="poemAiBtn" onclick="poemAiFill()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">AI 추천</button>
@@ -15504,7 +15504,12 @@ async function poemAiFill() {
     // 한국 근현대시 추천 — 제목·시인·주제·소개(메타데이터). 본문은 등록 후 직접 입력
     const cond2 = poetIn ? `시인 "${poetIn}"의 작품 중` : (themeIn.startsWith('자유') ? '' : `"${themeIn}" 주제의 `);
     const want = Math.min(40, count * 4 + 6);   // 이미 등록된 시가 많아 여유분 넉넉히 요청
-    const prompt = `${cond2}실제 존재하는 한국 근현대시 ${want}편을 추천해 주세요. 널리 알려진 대표작뿐 아니라 덜 알려진 작품·다양한 시인도 폭넓게 포함해 서로 다른 시로 추천하세요.${exclLine}\n각 시의 제목·시인·주제·한 줄 소개만 아래 JSON 배열로만 출력하세요(코드블록·설명 금지):\n[{"title":"제목","poet":"시인","theme":"주제","note":"한 줄 소개"}]`;
+    const prompt = `${cond2}실제 존재하는 한국 근현대시 ${want}편을 추천해 주세요. 널리 알려진 대표작뿐 아니라 덜 알려진 작품·다양한 시인도 폭넓게 포함해 서로 다른 시로 추천하세요.${exclLine}
+각 시를 아래 JSON 배열로만 출력하세요(코드블록·설명 금지).
+["pd"는 저작권 만료 여부입니다: 시인이 1953년 이전에 별세하여 저작권 보호기간(사후 70년)이 끝난 공유마당(퍼블릭 도메인) 작품이면 true, 그 외(생존 시인 또는 최근 별세)면 false로 표기하세요.]
+"pd":true인 저작권 만료 작품만 "body"에 시 전문을 정확히 원문 그대로(행·연 구분을 \\n으로) 포함하세요. "pd":false인 저작권 보호 작품은 "body"를 반드시 빈 문자열("")로 두세요(전문 금지).
+확실치 않으면 pd를 false로 하고 body를 비우세요.
+[{"title":"제목","poet":"시인","theme":"주제","note":"한 줄 소개","pd":true/false,"body":"pd=true면 시 전문, 아니면 빈 문자열"}]`;
     const ctrl = new AbortController();
     const to = setTimeout(() => ctrl.abort(), 45000);   // 45초 타임아웃(무한 대기 방지)
     let r;
