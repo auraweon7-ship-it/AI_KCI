@@ -925,7 +925,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v3.6</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v3.7</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1886,7 +1886,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 <!-- ── 커맨드바 (Ctrl+K) ── -->
 <div class="cmdbar-overlay" id="cmdOverlay" onclick="if(event.target===this)cmdClose()">
   <div class="cmdbar">
-    <input id="cmdInput" placeholder="링크 검색... (k=KCI, r=RISS, s=Scholar, g=구글 검색)" autocomplete="off">
+    <input id="cmdInput" placeholder="전역 검색 — 링크·시·일정·할 일 (k=KCI, r=RISS, s=Scholar, g=구글)" autocomplete="off">
     <div class="cmdbar-hint">↑↓ 이동 · Enter 열기 · Esc 닫기 · 접두어+공백+검색어로 학술검색</div>
     <div class="cmdbar-results" id="cmdResults"></div>
   </div>
@@ -3867,7 +3867,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v3.6 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v3.7 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -3987,11 +3987,35 @@ function cmdRender(q) {
     const e = CMD_ENGINES[pm[1]];
     cmdItems.push({ label: `${e.name}: "${pm[2]}"`, emoji: '🔍', action: () => window.open(e.url(pm[2]), '_blank') });
   }
-  // 링크 검색
+  // 전역 검색: 링크·시·일정·투두 통합
   if (ql && !pm) {
+    // 🔗 링크
     state.links.filter(l => l.name.toLowerCase().includes(ql) || (l.desc||'').toLowerCase().includes(ql))
-      .slice(0, 12)
-      .forEach(l => cmdItems.push({ label: l.name, desc: l.desc, emoji: l.emoji || '🔗', action: () => { recordVisit(l.id); window.open(l.url, '_blank'); } }));
+      .slice(0, 8)
+      .forEach(l => cmdItems.push({ label: l.name, desc: '🔗 링크' + (l.desc?' · '+l.desc:''), emoji: l.emoji || '🔗', action: () => { recordVisit(l.id); window.open(l.url, '_blank'); } }));
+    // 📜 시 (제목·시인·본문)
+    try {
+      const all = poemAll();
+      all.map((p,i)=>({p,i}))
+        .filter(({p}) => (p.t||'').toLowerCase().includes(ql) || (p.poet||'').toLowerCase().includes(ql) || (p.b||'').toLowerCase().includes(ql))
+        .slice(0, 6)
+        .forEach(({p,i}) => cmdItems.push({ label: `${p.t} · ${p.poet}`, desc: '📜 시', emoji: '📜', action: () => poemOpenDetail(i) }));
+    } catch(_) {}
+    // ✅ 투두
+    try {
+      todoGetAll().filter(t => (t.text||'').toLowerCase().includes(ql))
+        .slice(0, 5)
+        .forEach(t => cmdItems.push({ label: t.text, desc: '✅ 할 일' + (t.due?' · '+t.due:''), emoji: '✅', action: () => { selectCat('all'); setTimeout(()=>document.getElementById('todoGrid')?.scrollIntoView({behavior:'smooth',block:'center'}), 100); } }));
+    } catch(_) {}
+    // 📅 일정
+    try {
+      const sched = schedGetAll(); const hits = [];
+      Object.entries(sched).forEach(([ds, evs]) => (evs||[]).forEach(ev => {
+        if ((ev.text||'').toLowerCase().includes(ql)) hits.push({ ds, ev });
+      }));
+      hits.sort((a,b)=>a.ds.localeCompare(b.ds)).slice(0, 5)
+        .forEach(({ds, ev}) => cmdItems.push({ label: ev.text, desc: '📅 일정 · ' + ds, emoji: '📅', action: () => { selectCat('all'); setTimeout(()=>document.getElementById('schedGrid')?.scrollIntoView({behavior:'smooth',block:'center'}), 100); } }));
+    } catch(_) {}
     // 폴백: 구글 검색
     cmdItems.push({ label: `Google에서 "${q.trim()}" 검색`, emoji: '🌐', action: () => window.open(CMD_ENGINES.g.url(q.trim()), '_blank') });
   }
