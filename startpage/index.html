@@ -926,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.6</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.7</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3868,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v4.6 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v4.7 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5867,6 +5867,17 @@ const YT_CATS = ['전체', 'AI 기초', 'LLM 개발', 'ML 이론', '생성AI 활
 // YouTube 추천 영상 숨김·제목수정 (하드코딩 배열이라 id 없음 → vid/제목 키로 로컬 오버라이드)
 function ytUserVideos() { try { return JSON.parse(localStorage.getItem('yt_user') || '[]'); } catch(_) { return []; } }
 function saveYtUser(a) { localStorage.setItem('yt_user', JSON.stringify(a)); try { cloudPush('yt_user'); } catch(_) {} }
+// 영상 카드 인라인 재생(embed) — 썸네일 영역을 iframe으로 교체
+function ytPlay(id, el) {
+  if (!id || !el) return;
+  const isMobile = ('ontouchstart' in window) || window.matchMedia('(max-width:960px)').matches;
+  const params = isMobile ? 'autoplay=1&mute=1&playsinline=1&rel=0' : 'autoplay=1&rel=0&playsinline=1';
+  el.style.cursor = 'default';
+  el.innerHTML = `<iframe src="https://www.youtube.com/embed/${id}?${params}&enablejsapi=1" title="video"
+    allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen
+    style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
+  el.removeAttribute('onclick');
+}
 function ytFavs() { try { return JSON.parse(localStorage.getItem('yt_favs') || '[]'); } catch(_) { return []; } }
 function ytIsFav(key) { return ytFavs().includes(key); }
 function ytToggleFav(key, ev) {
@@ -6241,16 +6252,18 @@ function renderYouTubeView() {
               ? `<img src="https://i.ytimg.com/vi/${v.vid}/mqdefault.jpg" loading="lazy" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div style="position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:2rem;color:#fff">▶️</div>`
               : `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:2rem;color:#fff">▶️</div>`;
             const vkey = (v.vid || v.title).replace(/'/g, "\\'");
+            const playAttr = v.vid ? `onclick="ytPlay('${v.vid}',this)"` : `onclick="window.open('${href}','_blank')"`;
             return `
-            <a class="yt-card" href="${href}" target="_blank" rel="noopener noreferrer"
-               style="display:block;text-decoration:none;background:${cs.cardBg};border:1.5px solid ${cs.borderColor};border-radius:10px;overflow:hidden;position:relative">
+            <div class="yt-card"
+               style="display:block;background:${cs.cardBg};border:1.5px solid ${cs.borderColor};border-radius:10px;overflow:hidden;position:relative">
               <div class="yt-card-actions" style="position:absolute;top:5px;right:5px;display:flex;gap:3px;z-index:5">
                 <button class="fav" onclick="ytToggleFav('${vkey}',event)" title="즐겨찾기" style="width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:.62rem;cursor:pointer;display:flex;align-items:center;justify-content:center">${ytIsFav(v.vid||v.title)?'⭐':'☆'}</button>
                 <button class="edit" onclick="ytEditVideo('${vkey}',event)" title="제목 수정" style="width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✏️</button>
                 <button class="del" onclick="ytHideVideo('${vkey}',event)" title="삭제(숨김)" style="width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
               </div>
-              <div style="position:relative;padding-top:56.25%;background:linear-gradient(135deg,#1a1a2e,#16213e)">
+              <div class="yt-play" ${playAttr} title="${(v.title||'').replace(/"/g,'&quot;')}" style="position:relative;padding-top:56.25%;background:linear-gradient(135deg,#1a1a2e,#16213e);cursor:pointer">
                 ${thumb}
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none"><span style="width:38px;height:38px;background:rgba(0,0,0,.7);border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.9rem">▶</span></div>
                 <div style="position:absolute;right:6px;bottom:6px;background:rgba(0,0,0,.75);color:#fff;font-size:.6rem;padding:.1rem .35rem;border-radius:3px">▶ 재생</div>
               </div>
               <div style="padding:.5rem .6rem">
@@ -6260,9 +6273,10 @@ function renderYouTubeView() {
                 <div style="font-size:.65rem;margin-top:.15rem;display:flex;align-items:center;gap:.3rem">
                   <span style="background:${cs.badgeBg};color:${cs.badgeColor};padding:.1rem .4rem;border-radius:4px;font-weight:600">${v.cat}</span>
                   <span style="color:#777">👁 ${fmtViews(v.views)}</span>
+                  ${v.vid?`<a href="${href}" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="margin-left:auto;color:#8b5cf6;text-decoration:none;font-size:.62rem">↗ YouTube</a>`:''}
                 </div>
               </div>
-            </a>`; }).join('')}
+            </div>`; }).join('')}
         </div>
 
         <!-- 사용자 추가 링크 -->
