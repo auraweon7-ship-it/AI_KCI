@@ -918,6 +918,9 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 @media (max-width: 960px) { .music-grid { grid-template-columns: repeat(3, 1fr) !important; } }
 @media (max-width: 560px) { .music-grid { grid-template-columns: 1fr !important; } }
 .yt-thumb.playing { outline: 2px solid var(--accent2); outline-offset: 1px; box-shadow: 0 0 0 3px rgba(236,72,153,.35); }
+@media (max-width: 1100px) { .yt-grid { grid-template-columns: repeat(3, 1fr) !important; } }
+@media (max-width: 760px) { .yt-grid { grid-template-columns: repeat(2, 1fr) !important; } }
+@media (max-width: 520px) { .yt-grid { grid-template-columns: 1fr !important; } }
 @media (max-width: 720px) { .na-donuts { grid-template-columns: repeat(2, 1fr) !important; } .na-stats { grid-template-columns: repeat(2, 1fr) !important; } }
 @media (max-width: 560px) { .na-donuts { grid-template-columns: 1fr !important; } }
 </style>
@@ -926,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.0</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.1</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -2162,7 +2165,7 @@ let state = {
     { id: 'univstats', name: '대학통계',   emoji: '📈', special: 'univstats' },
     { id: 'lawai',    name: '법령 AI',     emoji: '⚖️', special: 'lawai' },
     { id: 'mybm',     name: '내 북마크',   emoji: '🔖' },
-    { id: 'youtube',  name: 'YouTube',     emoji: '▶️' },
+    { id: 'youtube',  name: 'AI YouTube',  emoji: '▶️' },
     { id: 'poems',    name: '좋아하는 시', emoji: '📜', special: 'poems' },
     { id: 'music',    name: '좋아하는 음악', emoji: '🎶', special: 'music' },
   ],
@@ -3868,7 +3871,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v6.0 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v6.1 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6618,7 +6621,7 @@ function renderYouTubeView() {
         </div>
 
         <!-- 5×2 영상 그리드 -->
-        <div id="ytGrid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1rem">
+        <div id="ytGrid" class="yt-grid" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:1rem">
           ${slice.map(v => { const cs = ytCardStyle(v.cat);
             const href = v.vid
               ? `https://www.youtube.com/watch?v=${v.vid}`
