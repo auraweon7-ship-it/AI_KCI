@@ -926,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.2</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.3</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3868,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v4.2 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v4.3 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5865,6 +5865,138 @@ YOUTUBE_VIDEOS.sort((a,b) => b.views - a.views);
 const YT_CATS = ['전체', 'AI 기초', 'LLM 개발', 'ML 이론', '생성AI 활용', 'AI 교육정책', 'AI 이미지 제작', 'AI 영상 제작', '웹플랫폼 제작', 'AI활용 연구'];
 
 // YouTube 추천 영상 숨김·제목수정 (하드코딩 배열이라 id 없음 → vid/제목 키로 로컬 오버라이드)
+function ytUserVideos() { try { return JSON.parse(localStorage.getItem('yt_user') || '[]'); } catch(_) { return []; } }
+function saveYtUser(a) { localStorage.setItem('yt_user', JSON.stringify(a)); try { cloudPush('yt_user'); } catch(_) {} }
+// ── YouTube AI 교육 영상 AI 등록 ──
+function ytAiOpen() {
+  let ov = document.getElementById('ytAiOverlay');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'ytAiOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  const cOpts = YT_CATS.filter(c => c !== '전체').map(c => `<option value="${c}">${c}</option>`).join('');
+  const nOpts = [3,5,8,10].map(n => `<option value="${n}"${n===5?' selected':''}>${n}개</option>`).join('');
+  const inS = 'width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;outline:none;box-sizing:border-box';
+  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:440px;width:100%;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <h3 style="flex:1;font-size:1.05rem;font-weight:800;color:var(--text);margin:0">🤖 AI 교육영상 등록</h3>
+      <button onclick="document.getElementById('ytAiOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted)">✕</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <label style="font-size:.68rem;color:var(--text-dim)">주제·키워드 (선택) <input id="ytai_topic" placeholder="예: RAG, 파인튜닝, 프롬프트 엔지니어링" style="${inS}"></label>
+      <label style="font-size:.68rem;color:var(--text-dim)">분류 <select id="ytai_cat" style="${inS}">${cOpts}</select></label>
+      <label style="font-size:.68rem;color:var(--text-dim)">개수 <select id="ytai_count" style="${inS}">${nOpts}</select></label>
+    </div>
+    <p style="font-size:.66rem;color:var(--text-muted);margin:10px 0 0;line-height:1.5">주제 입력 시 해당 주제, 비우면 선택 분류의 인기 교육영상을 AI가 추천하고 YouTube에서 실제 영상을 찾아 등록합니다. (설정 → 🧠 Claude API 키 필요)</p>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+      <button onclick="document.getElementById('ytAiOverlay').remove()" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">취소</button>
+      <button id="ytAiFillBtn" onclick="ytAiFill()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">AI 추천</button>
+    </div>
+  </div>`;
+}
+let _ytAiCand = [];
+async function ytAiFill() {
+  const key = (localStorage.getItem('claude_api_key') || '').trim();
+  if (!key) { showToast('설정 → 🧠 Claude API 키를 입력하세요', '🔑'); return; }
+  const topic = (document.getElementById('ytai_topic')?.value || '').trim();
+  const cat = document.getElementById('ytai_cat')?.value || 'AI 기초';
+  const count = parseInt(document.getElementById('ytai_count')?.value, 10) || 5;
+  const btn = document.getElementById('ytAiFillBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '🤖 추천 받는 중…'; }
+  const normK = s => (s || '').replace(/\s+/g,'').toLowerCase();
+  const existTitles = new Set(YOUTUBE_VIDEOS.concat(ytUserVideos()).map(v => normK(v.title)));
+  const existIds = new Set(YOUTUBE_VIDEOS.concat(ytUserVideos()).map(v => v.vid).filter(Boolean));
+  try {
+    const want = Math.min(30, count * 2 + 4);
+    const scope = topic ? `주제 "${topic}"에 관한` : `"${cat}" 분야의`;
+    const prompt = `${scope} 실제 존재하는 유명한 유튜브 교육 영상 ${want}개를 추천해 주세요. AI·머신러닝·딥러닝·생성AI 등 교육 콘텐츠 위주로, 실제 채널·영상만(허구 금지, 중복 금지). 오직 JSON 배열만 출력하세요(코드블록·설명 금지):\n[{"title":"영상 제목","ch":"채널명"}]`;
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:3000, messages:[{ role:'user', content:prompt }] }),
+    });
+    if (!r.ok) { const e = await r.json().catch(()=>({})); showToast('AI 오류: ' + (e.error?.message || r.status), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
+    const data = await r.json();
+    let txt = (data.content || []).filter(c => c.type === 'text').map(c => c.text).join('') || '';
+    txt = txt.replace(/```json/gi,'').replace(/```/g,'').trim();
+    let vids = []; const mArr = txt.match(/\[[\s\S]*\]/);
+    try { vids = JSON.parse(mArr ? mArr[0] : txt); } catch(_) {}
+    if (!Array.isArray(vids) || !vids.length) { showToast('AI 응답 파싱 실패: ' + txt.slice(0,60), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
+    // YouTube 검색 → 실제 videoId 해석
+    const findVids = async (query) => {
+      const api = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+      const yr = await fetch('/api/proxy?url=' + encodeURIComponent(api));
+      if (!yr.ok) return [];
+      const html = await yr.text(); const ids = [], seen = new Set();
+      const re = /"videoId":"([\w-]{11})"/g; let m;
+      while ((m = re.exec(html)) && ids.length < 10) { if (!seen.has(m[1])) { seen.add(m[1]); ids.push(m[1]); } }
+      return ids;
+    };
+    const seen = new Set(); const cand = [];
+    for (const v of vids) {
+      if (cand.length >= count) break;
+      const title = (v.title||'').trim(), ch = (v.ch||v.channel||'').trim();
+      if (!title || existTitles.has(normK(title))) continue;
+      if (btn) btn.textContent = `🔎 ${cand.length}/${count}개…`;
+      try {
+        let ids = await findVids(ch + ' ' + title);
+        let id = ids.find(x => !seen.has(x) && !existIds.has(x));
+        if (!id) { const ids2 = await findVids(title + ' ' + ch + ' 강의'); id = ids2.find(x => !seen.has(x) && !existIds.has(x)); }
+        if (!id) continue;
+        seen.add(id);
+        cand.push({ vid: id, title: title.slice(0,90), ch: (ch||'—').slice(0,50), cat, views: 0 });
+      } catch(_) {}
+    }
+    if (!cand.length) { showToast('YouTube에서 영상을 찾지 못했습니다 (프록시 확인)', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
+    _ytAiCand = cand;
+    ytAiPreview();
+  } catch(e) {
+    showToast('AI 등록 실패: ' + (e.message || '오류'), '⚠️');
+    if (btn) { btn.disabled = false; btn.textContent = 'AI 추천'; }
+  }
+}
+function ytAiPreview() {
+  const ov = document.getElementById('ytAiOverlay'); if (!ov) return;
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const rows = _ytAiCand.map((v, i) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;border:1px solid var(--border);background:var(--bg3)">
+      <input type="checkbox" class="ytai-ck" data-i="${i}" checked style="flex-shrink:0;width:15px;height:15px;cursor:pointer">
+      <img src="https://i.ytimg.com/vi/${v.vid}/mqdefault.jpg" style="width:72px;height:41px;flex-shrink:0;border-radius:4px;object-fit:cover;background:#000">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.74rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(v.title)}</div>
+        <div style="font-size:.64rem;color:var(--accent2)">${esc(v.ch)}</div>
+      </div>
+    </div>`).join('');
+  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:480px;width:100%;max-height:86vh;display:flex;flex-direction:column;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <h3 style="flex:1;font-size:1.05rem;font-weight:800;color:var(--text);margin:0">🤖 추천 영상 (${_ytAiCand.length}개)</h3>
+      <button onclick="document.getElementById('ytAiOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted)">✕</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:8px;font-size:.66rem">
+      <button onclick="document.querySelectorAll('.ytai-ck').forEach(c=>c.checked=true)" style="background:none;border:none;color:var(--accent2);cursor:pointer">전체 선택</button>
+      <button onclick="document.querySelectorAll('.ytai-ck').forEach(c=>c.checked=false)" style="background:none;border:none;color:var(--text-muted);cursor:pointer">전체 해제</button>
+    </div>
+    <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:120px">${rows}</div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px">
+      <button onclick="ytAiOpen()" style="padding:8px 16px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;cursor:pointer">← 다시</button>
+      <button onclick="ytAiConfirm()" style="padding:8px 18px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.78rem;cursor:pointer">선택 등록</button>
+    </div>
+  </div>`;
+}
+function ytAiConfirm() {
+  const picks = Array.from(document.querySelectorAll('.ytai-ck')).filter(c => c.checked).map(c => _ytAiCand[+c.dataset.i]).filter(Boolean);
+  if (!picks.length) { showToast('등록할 영상을 선택하세요', 'ℹ️'); return; }
+  const user = ytUserVideos();
+  const have = new Set(user.map(v => v.vid));
+  let added = 0;
+  picks.forEach(v => { if (!have.has(v.vid)) { user.unshift(v); have.add(v.vid); added++; } });
+  saveYtUser(user);
+  document.getElementById('ytAiOverlay')?.remove();
+  showToast(`${added}개 영상을 등록했습니다 ▶️`);
+  if (state.activeCat === 'youtube') renderYouTubeView();
+}
 function ytHiddenSet() { try { return new Set(JSON.parse(localStorage.getItem('yt_hidden') || '[]')); } catch(_) { return new Set(); } }
 function ytTitleOverrides() { try { return JSON.parse(localStorage.getItem('yt_title_ov') || '{}'); } catch(_) { return {}; } }
 function ytVidOverrides() { try { return JSON.parse(localStorage.getItem('yt_vid_ov') || '{}'); } catch(_) { return {}; } }
@@ -5937,7 +6069,8 @@ function renderYouTubeView() {
   function getFiltered() {
     const hidden = ytHiddenSet();
     const tOv = ytTitleOverrides(), vOv = ytVidOverrides();
-    const base = ytCat === '전체' ? YOUTUBE_VIDEOS : YOUTUBE_VIDEOS.filter(v => v.cat === ytCat);
+    const merged = ytUserVideos().map(v => ({ ...v, u: true })).concat(YOUTUBE_VIDEOS);   // 사용자 등록 영상 우선
+    const base = ytCat === '전체' ? merged : merged.filter(v => v.cat === ytCat);
     return base.filter(v => !hidden.has(v.vid || v.title))
       .map(v => {
         const k = v.vid || v.title;
@@ -5960,6 +6093,10 @@ function renderYouTubeView() {
 
     grid.innerHTML = `
       <div class="ai-view-wrap" style="padding:0 .5rem">
+        <!-- AI 등록 -->
+        <div style="display:flex;justify-content:flex-end;margin-bottom:.6rem">
+          <button onclick="ytAiOpen()" style="padding:.4rem .9rem;border-radius:8px;border:none;background:var(--accent2);color:#fff;font-size:.76rem;font-weight:700;cursor:pointer">🤖 AI 등록</button>
+        </div>
         <!-- 카테고리 필터 -->
         <div id="ytCatBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem">
           ${YT_CATS.map(c => `
