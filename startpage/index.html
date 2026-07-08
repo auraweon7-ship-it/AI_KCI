@@ -925,7 +925,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v3.3</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v3.4</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3867,7 +3867,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v3.3 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v3.4 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -18521,7 +18521,14 @@ function poemToggleFav(i, ev) {
 }
 function poemSetMode(m) { poemState.mode = m; poemState.cat = 'all'; renderPoemsView(); }
 function poemSetCat(c) { poemState.cat = c; renderPoemsView(); }
-function poemOnSearch(v) { poemState.q = v; renderPoemsView(true); }
+let _poemIMEComposing = false;   // 한글 IME 조합 중 여부
+function poemOnSearch(v) {
+  poemState.q = v;
+  if (_poemIMEComposing) return;   // 조합 중엔 재렌더 금지(자모 분리 방지)
+  renderPoemsView(true);
+}
+function poemSearchCompStart() { _poemIMEComposing = true; }
+function poemSearchCompEnd(el) { _poemIMEComposing = false; poemOnSearch(el.value); }
 const POEM_THEME_ORDER = ['사랑·연인','이별·슬픔','고향·가족','자연·계절','삶·성찰','기타'];
 
 function poemFiltered() {
@@ -18611,7 +18618,7 @@ function renderPoemsView(keepFocus) {
   grid.innerHTML = `<div style="grid-column:1/-1">
     ${todayHtml}
     <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
-      <input id="poemSearchInput" value="${esc(poemState.q)}" oninput="poemOnSearch(this.value)" placeholder="🔍 시·시인·구절 찾기"
+      <input id="poemSearchInput" value="${esc(poemState.q)}" oninput="poemOnSearch(this.value)" oncompositionstart="poemSearchCompStart()" oncompositionend="poemSearchCompEnd(this)" placeholder="🔍 시·시인·구절 찾기"
         style="flex:1;min-width:140px;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;outline:none">
       <div style="display:flex;gap:4px">
         <button onclick="poemSetMode('theme')" style="padding:5px 10px;border-radius:6px;border:1px solid ${poemState.mode==='theme'?'var(--accent)':'var(--border)'};background:${poemState.mode==='theme'?'var(--accent)':'var(--bg3)'};color:${poemState.mode==='theme'?'#fff':'var(--text-dim)'};font-size:.7rem;cursor:pointer">주제별</button>
