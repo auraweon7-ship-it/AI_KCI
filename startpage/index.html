@@ -929,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.3</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.4</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3871,7 +3871,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v6.3 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v6.4 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -21494,6 +21494,21 @@ function musicFmtViews(n) {
   if (n >= 1000) return Math.round(n/1000) + '천';
   return n;
 }
+// 조회수 텍스트 → 숫자 ("1.2M views", "조회수 1.2천만회", "12,345회")
+function musicParseViewText(s) {
+  if (!s) return 0;
+  s = String(s).replace(/조회수|views?|회|,/gi, '').trim();
+  let m = s.match(/([\d.]+)\s*([KMB억만천])?/i);
+  if (!m) return 0;
+  let n = parseFloat(m[1]) || 0;
+  const u = (m[2] || '').toUpperCase();
+  if (u === 'K' || u === '천') n *= 1000;
+  else if (u === 'M') n *= 1000000;
+  else if (u === 'B') n *= 1000000000;
+  else if (u === '만') n *= 10000;
+  else if (u === '억') n *= 100000000;
+  return Math.round(n);
+}
 // 등록 곡 조회수 일괄 조회·갱신(YouTube watch 페이지 viewCount 파싱)
 async function musicRefreshViews() {
   const arr = userMusic();
@@ -21629,7 +21644,7 @@ async function musicAutoFill(perGenre) {
   const arr = userMusic();
   const existIds = new Set(musicAll().map(m => m.id));
   let totalAdded = 0;
-  const re = /"videoId":"([\w-]{11})"[\s\S]{0,600}?"title":\{"runs":\[\{"text":"([^"]{2,120})"/g;
+  const re = /"videoId":"([\w-]{11})"[\s\S]{0,600}?"title":\{"runs":\[\{"text":"([^"]{2,120})"[\s\S]{0,1400}?"(?:short)?[Vv]iewCountText":\{(?:"simpleText":"([^"]+)"|"runs":\[\{"text":"([^"]+)")/g;
   for (const genre of MUSIC_GENRE_ORDER) {
     const q = MUSIC_QUERY[genre] || genre;
     let got = 0;
@@ -21654,7 +21669,8 @@ async function musicAutoFill(perGenre) {
           const dash = title.split(/\s[-–—|]\s/);
           if (dash.length >= 2) { artist = dash[0].trim(); t = dash.slice(1).join(' - ').replace(/\s*\(.*?official.*?\)/i,'').trim(); }
           t = t.replace(/\s*[\(\[][^)\]]*(official|mv|m\/v|audio|lyric|video)[^)\]]*[\)\]]/ig,'').trim() || title;
-          arr.unshift({ t: t.slice(0,80), artist: (artist||'—').slice(0,50), genre, id });
+          const views = musicParseViewText(m[3] || m[4] || '');
+          arr.unshift({ t: t.slice(0,80), artist: (artist||'—').slice(0,50), genre, id, views });
           got++; totalAdded++;
         }
       } catch(_) {}
