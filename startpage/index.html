@@ -925,7 +925,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v2.7</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v2.8</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3867,7 +3867,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v2.7 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v2.8 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7738,7 +7738,7 @@ function renderLinks() {
         <label style="font-size:.7rem;color:var(--text-dim);display:inline-flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="naIntl"${localStorage.getItem('news_analysis_intl')==='1'?' checked':''} style="cursor:pointer">🌐 영문 뉴스 포함</label>
         <button id="naRunBtn" onclick="newsAnalyze()" style="padding:7px 16px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.76rem;cursor:pointer">분석 실행</button>
         <button onclick="newsAnalysisExport()" style="padding:7px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:.76rem;cursor:pointer">📤 HTML 내보내기</button>
-        <button onclick="newsAnalysisShare()" style="padding:7px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:.76rem;cursor:pointer">🔗 공유 링크</button>
+        <button onclick="newsAnalysisShare()" style="padding:7px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:.76rem;cursor:pointer">🔗 SHARE</button>
       </div>
       <div id="naResult" style="font-size:.78rem;color:var(--text-dim);line-height:1.7">키워드(최대 5개)·기간을 정하고 <b>분석 실행</b>을 누르면, 해당 기간의 뉴스를 수집해 주요 이슈·동향을 분석합니다. (설정 → 🧠 Claude API 키 필요)</div>`;
     grid.appendChild(panel);
@@ -17009,6 +17009,7 @@ async function newsAnalyze() {
     // 클라이언트 계산: 키워드 빈도·시계열 추이·키워드 네트워크
     const kwFreq = naKeywordFreq(items.map(x => x.title), kws);
     const timeSeries = naTimeSeries(items, +days);
+    const wordCloud = naNounFreq(items.map(x => x.title), kws);
     const network = naKeywordNetwork(items.map(x => x.title), kws);
     const sentiment = J.sentiment || null;
     const sentHistory = naPushSentHistory(kwDisplay, sentiment);   // 감성 트렌드 히스토리 누적·반환
@@ -17025,7 +17026,7 @@ async function newsAnalyze() {
       outlook: J.outlook || '',
       recommendation: J.recommendation || '',
       keywords: kwFreq,
-      timeSeries, network, sentHistory,
+      timeSeries, wordCloud, network, sentHistory,
       items,
     };
     if (out) out.innerHTML = buildNewsViz(_naLast, false);
@@ -17086,6 +17087,31 @@ function naKeywordFreq(titles, exclude) {
     });
   });
   return Object.entries(cnt).filter(x => x[1] >= 2).sort((a,b)=>b[1]-a[1]).slice(0,12).map(([word,n]) => ({ word, n }));
+}
+// 제목에서 명사 위주 빈도 추출(워드클라우드용) — 조사·어미 휴리스틱 제거
+function naNounFreq(titles, exclude) {
+  const stop = new Set(['그리고','그러나','하지만','대한','위한','통해','기자','있다','없다','했다','한다','된다','되는','하는','오늘','올해','내년','작년','지난','관련','대해','뉴스','종합','속보','단독','이번','최근','우리','그것','저것','이것','때문','경우','등등','및','또','더','가장','매우','계속','현재','당시','이후','이전','지금','모든','통한','대비','기존','신규','일부','전체','추진','발표','밝혀','공개','예정','계획','확대','강화','방안','위해','따라','대해서','에서','으로','한편','아직','만약','만큼','정도']);
+  const josa = /(으로부터|으로서|으로써|에서는|에게서|이라는|라는|으로|에서|에게|에는|께서|이나|하고|이라|처럼|보다|까지|부터|마다|조차|이란|란|은|는|이|가|을|를|에|의|와|과|도|만|로|나|엔|께|든|봐)$/;
+  const verbEnd = /(습니다|했다|한다|된다|하는|되는|하며|되며|했던|하고|되고|이다|였다|겠다|온다|간다|왔다|같다|많다|높다|낮다|크다|작다|짧다|길다)$/;
+  const exArr = (Array.isArray(exclude) ? exclude : [exclude]).map(x => (x||'').replace(/\s+/g,''));
+  const cnt = {};
+  titles.forEach(t => {
+    (t.replace(/\[[^\]]*\]/g,' ').replace(/[^가-힣A-Za-z0-9 ]/g,' ').split(/\s+/)).forEach(w0 => {
+      let w = w0.trim();
+      if (!w) return;
+      // 한글 토큰: 조사 제거 후 재검사
+      if (/[가-힣]/.test(w)) {
+        w = w.replace(josa, '');
+        if (w.length < 2) return;
+        if (verbEnd.test(w)) return;   // 동사·형용사 활용형 제외
+      } else {
+        if (w.length < 3) return;      // 영문은 3자+ (of/in/to 류 제거)
+      }
+      if (stop.has(w) || exArr.includes(w)) return;
+      cnt[w] = (cnt[w]||0) + 1;
+    });
+  });
+  return Object.entries(cnt).filter(x => x[1] >= 2).sort((a,b)=>b[1]-a[1]).slice(0,32).map(([word,n]) => ({ word, n }));
 }
 // 뉴스 pubDate → 날짜별 건수 시계열(기간 길이에 맞춰 일/주 단위 버킷)
 function naTimeSeries(items, days) {
@@ -17230,6 +17256,25 @@ function buildNewsViz(d, light) {
     const grid = [0,.5,1].map(f=>{const yy=(PT+f*(H-PT-PB)).toFixed(1);const vv=Math.round(maxV*(1-f));return `<line x1="${PL}" y1="${yy}" x2="${W-PR}" y2="${yy}" stroke="${C.border}" stroke-width=".5"/><text x="${PL-4}" y="${(+yy+3)}" font-size="8" fill="${C.dim}" text-anchor="end">${vv}</text>`;}).join('');
     return `<div style="overflow-x:auto"><svg width="100%" viewBox="0 0 ${W} ${H}" style="min-width:340px;max-width:${W}px;display:block;margin:0 auto">${grid}<path d="${area}" fill="${C.accent}" opacity=".12"/><path d="${line}" fill="none" stroke="${C.accent}" stroke-width="2"/>${dots}${labs}</svg></div>`;
   };
+  // 워드클라우드(명사 빈도 → 크기·색 가변 태그 구름)
+  const wordCloud = (words) => {
+    const w = (words || []).filter(x => x.word);
+    if (!w.length) return '';
+    const max = Math.max(...w.map(x=>x.n)) || 1, min = Math.min(...w.map(x=>x.n));
+    // 빈도 높은 순 → 중앙 우선 배치 위해 교차 정렬(큰 것 가운데)
+    const sorted = w.slice().sort((a,b)=>b.n-a.n);
+    const arranged = [];
+    sorted.forEach((x,i) => i%2 ? arranged.push(x) : arranged.unshift(x));
+    const tags = arranged.map((x,i) => {
+      const t = max===min ? 1 : (x.n-min)/(max-min);
+      const size = (0.72 + t*1.5).toFixed(2);         // 0.72rem ~ 2.22rem
+      const wght = t>0.6 ? 800 : (t>0.3 ? 700 : 500);
+      const op = (0.55 + t*0.45).toFixed(2);
+      const col = PAL[(x.word.charCodeAt(0)+i) % PAL.length];
+      return `<span style="font-size:${size}rem;font-weight:${wght};color:${col};opacity:${op};line-height:1.15;padding:2px 4px;white-space:nowrap" title="${esc(x.word)}: ${x.n}건">${esc(x.word)}</span>`;
+    }).join('');
+    return `<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 10px;padding:6px 4px">${tags}</div>`;
+  };
   // 키워드 네트워크(원형 배치 노드 + 동시출현 엣지)
   const networkChart = (nw) => {
     const nodes = (nw && nw.nodes) || [], edges = (nw && nw.edges) || [];
@@ -17271,6 +17316,7 @@ function buildNewsViz(d, light) {
     ${d.summary ? sect('📝 핵심 요약', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${esc(d.summary)}</div>`)) : ''}
     ${donutGrid}
     ${(() => { const c = lineChart(d.timeSeries); return c ? sect('📈 뉴스 건수 추이', card(c)) : ''; })()}
+    ${(() => { const c = wordCloud(d.wordCloud); return c ? sect('☁️ 워드클라우드 (핵심 명사)', card(c)) : ''; })()}
     ${(() => { const c = networkChart(d.network); return c ? sect('🕸 키워드 네트워크 (동시출현)', card(c)) : ''; })()}
     ${(() => { const c = sentTrend(d.sentHistory); return c ? sect('📉 감성 트렌드 히스토리 (최근 분석)', card(c)) : ''; })()}
     ${d.insights && d.insights.length ? sect('💡 핵심 인사이트', card(bullets(d.insights, '▸'))) : ''}
