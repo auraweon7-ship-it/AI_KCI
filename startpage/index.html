@@ -926,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v5.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v5.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -2159,10 +2159,10 @@ let state = {
     { id: 'nl',       name: '뉴스·법령',   emoji: '📰', merged: ['news','law'] },
     { id: 'uinfo',    name: '대학 행정·평가', emoji: '🏫', merged: ['research','employ','finance','eval','stat','univ','rank','inst','admis','hire','inter'] },
     { id: 'ai',       name: 'AI',          emoji: '🤖' },
-    { id: 'youtube',  name: 'YouTube',     emoji: '▶️' },
     { id: 'univstats', name: '대학통계',   emoji: '📈', special: 'univstats' },
     { id: 'lawai',    name: '법령 AI',     emoji: '⚖️', special: 'lawai' },
     { id: 'mybm',     name: '내 북마크',   emoji: '🔖' },
+    { id: 'youtube',  name: 'YouTube',     emoji: '▶️' },
     { id: 'poems',    name: '좋아하는 시', emoji: '📜', special: 'poems' },
     { id: 'music',    name: '좋아하는 음악', emoji: '🎶', special: 'music' },
   ],
@@ -3868,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v5.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v5.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
