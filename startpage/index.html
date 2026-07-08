@@ -926,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v5.4</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v5.5</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3868,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v5.4 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v5.5 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6013,6 +6013,7 @@ function ytChannelRender() {
       <button id="ytChBulkBtn" onclick="ytChannelBulkAdd()" style="width:100%;padding:8px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.76rem;cursor:pointer">일괄 등록</button>
     </details>
     <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;min-height:80px">${rows}</div>
+    ${list.length ? `<button id="ytChRefreshBtn" onclick="ytChannelRefreshNames()" style="margin-top:8px;padding:7px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:.72rem;cursor:pointer">🔄 채널명 새로고침(실제 이름 조회)</button>` : ''}
     <p style="font-size:.64rem;color:var(--text-muted);margin:10px 0 0;line-height:1.5">등록한 채널은 <b>AI 등록</b> 창의 "등록한 채널에서 검색"으로 우선 검색됩니다.</p>
   </div>`;
 }
@@ -6028,6 +6029,31 @@ function ytChannelAdd() {
   ytChannelRender();
 }
 function ytChannelDel(i) { const list = ytChannels(); list.splice(i,1); saveYtChannels(list); ytChannelRender(); }
+// 등록된 채널의 실제 채널명 조회·갱신(URL만 있거나 channel:ID·비어있는 이름 대상)
+async function ytChannelRefreshNames() {
+  const list = ytChannels();
+  const targets = list.map((c,i)=>({c,i})).filter(({c}) => c.url && (!c.name || /^channel:/.test(c.name)));
+  if (!targets.length) { showToast('갱신할 채널이 없습니다 (모두 이름 있음)', 'ℹ️'); return; }
+  const btn = document.getElementById('ytChRefreshBtn');
+  if (btn) btn.disabled = true;
+  let updated = 0, n = 0;
+  for (const { c, i } of targets) {
+    n++;
+    if (btn) btn.textContent = `🔄 조회 중 ${n}/${targets.length}…`;
+    try {
+      const r = await fetch('/api/proxy?url=' + encodeURIComponent(c.url), { signal: AbortSignal.timeout(8000) });
+      if (r.ok) {
+        const html = await r.text();
+        let m = html.match(/<meta property="og:title" content="([^"]+)"/) || html.match(/<title>([^<]+)<\/title>/);
+        if (m) { let nm = m[1].replace(/ - YouTube$/,'').replace(/&amp;/g,'&').replace(/&quot;/g,'"').replace(/&#39;/g,"'").trim(); if (nm && !/^channel:/.test(nm)) { list[i].name = nm.slice(0,60); updated++; } }
+      }
+    } catch(_) {}
+  }
+  saveYtChannels(list);
+  if (btn) { btn.disabled = false; btn.textContent = '🔄 채널명 새로고침(실제 이름 조회)'; }
+  showToast(`${updated}개 채널명을 갱신했습니다 📺`);
+  ytChannelRender();
+}
 // 채널 URL/이름 여러 줄 일괄 등록(+선택 시 채널명 자동 조회)
 async function ytChannelBulkAdd() {
   const ta = document.getElementById('ytChBulk'); const raw = (ta?.value || '').trim();
