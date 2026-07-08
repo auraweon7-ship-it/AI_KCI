@@ -925,7 +925,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v3.7</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v3.8</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3867,7 +3867,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v3.7 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v3.8 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -19735,11 +19735,38 @@ function poemSetCat(c) { poemState.cat = c; renderPoemsView(); }
 let _poemIMEComposing = false;   // 한글 IME 조합 중 여부
 function poemOnSearch(v) {
   poemState.q = v;
-  if (_poemIMEComposing) return;   // 조합 중엔 재렌더 금지(자모 분리 방지)
-  renderPoemsView(true);
+  if (_poemIMEComposing) return;   // 조합 중엔 갱신 보류(자모 분리 방지)
+  poemUpdateList();                // input DOM은 건드리지 않고 카드 리스트만 갱신
 }
 function poemSearchCompStart() { _poemIMEComposing = true; }
-function poemSearchCompEnd(el) { _poemIMEComposing = false; poemOnSearch(el.value); }
+function poemSearchCompEnd(el) { _poemIMEComposing = false; poemState.q = el.value; poemUpdateList(); }
+// 검색어 변경 시 카드 목록·카운트만 부분 갱신(검색창 유지 → IME 안전)
+function poemUpdateList() {
+  const wrap = document.getElementById('poemCardsWrap');
+  const label = document.getElementById('poemCountLabel');
+  if (!wrap) { renderPoemsView(); return; }   // 뷰 아직 없으면 전체 렌더
+  const list = poemFiltered();
+  wrap.innerHTML = poemCardsHtml(list) || '<div style="color:var(--text-muted);font-size:.72rem;padding:12px">해당하는 시가 없습니다.</div>';
+  if (label) label.textContent = list.length + '편';
+}
+// 시 카드 HTML 생성(공용). list: [{p,i}]
+function poemCardsHtml(list) {
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return list.map(({p, i}) => {
+    const fav = poemIsFav(p);
+    const preview = esc(p.b.split('\n').filter(x=>x.trim()).slice(0,2).join(' / ')).slice(0, 70);
+    return `<div onclick="poemOpenDetail(${i})" style="cursor:pointer;background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 2px 10px rgba(0,0,0,.15)'" onmouseout="this.style.boxShadow='none'">
+      <div style="display:flex;align-items:flex-start;gap:6px">
+        <div style="flex:1;min-width:0;font-size:.82rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.u?'<span style="color:var(--accent);font-size:.6rem;vertical-align:middle">●</span> ':''}${esc(p.t)}</div>
+        <button onclick="poemToggleFav(${i},event)" title="즐겨찾기" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:.9rem;line-height:1">${fav?'⭐':'☆'}</button>
+        <button onclick="poemEdit(${i},event)" title="수정" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:.78rem;line-height:1">✏️</button>
+        <button onclick="poemDelete(${i},event)" title="삭제" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:.78rem;line-height:1;color:var(--danger,#e74c3c)">✕</button>
+      </div>
+      <div style="font-size:.66rem;color:var(--accent2);font-weight:600">${esc(p.poet)} · <span style="color:var(--text-muted);font-weight:400">${esc(p.theme)}</span></div>
+      <div style="font-size:.64rem;color:var(--text-dim);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${preview}</div>
+    </div>`;
+  }).join('');
+}
 const POEM_THEME_ORDER = ['사랑·연인','이별·슬픔','고향·가족','자연·계절','삶·성찰','기타'];
 
 function poemFiltered() {
@@ -19797,20 +19824,7 @@ function renderPoemsView(keepFocus) {
   }
 
   const list = poemFiltered();
-  const cards = list.map(({p, i}) => {
-    const fav = poemIsFav(p);
-    const preview = esc(p.b.split('\n').filter(x=>x.trim()).slice(0,2).join(' / ')).slice(0, 70);
-    return `<div onclick="poemOpenDetail(${i})" style="cursor:pointer;background:var(--bg2);border:1px solid var(--border);border-left:3px solid var(--accent2);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;transition:box-shadow .15s" onmouseover="this.style.boxShadow='0 2px 10px rgba(0,0,0,.15)'" onmouseout="this.style.boxShadow='none'">
-      <div style="display:flex;align-items:flex-start;gap:6px">
-        <div style="flex:1;min-width:0;font-size:.82rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.u?'<span style="color:var(--accent);font-size:.6rem;vertical-align:middle">●</span> ':''}${esc(p.t)}</div>
-        <button onclick="poemToggleFav(${i},event)" title="즐겨찾기" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:.9rem;line-height:1">${fav?'⭐':'☆'}</button>
-        <button onclick="poemEdit(${i},event)" title="수정" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:.78rem;line-height:1">✏️</button>
-        <button onclick="poemDelete(${i},event)" title="삭제" style="flex-shrink:0;background:none;border:none;cursor:pointer;font-size:.78rem;line-height:1;color:var(--danger,#e74c3c)">✕</button>
-      </div>
-      <div style="font-size:.66rem;color:var(--accent2);font-weight:600">${esc(p.poet)} · <span style="color:var(--text-muted);font-weight:400">${esc(p.theme)}</span></div>
-      <div style="font-size:.64rem;color:var(--text-dim);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${preview}</div>
-    </div>`;
-  }).join('');
+  const cards = poemCardsHtml(list);
 
   // 오늘의 시 (날짜 기준 고정 1편)
   const all = poemAll();
@@ -19844,8 +19858,8 @@ function renderPoemsView(keepFocus) {
       </div>
     </div>
     ${chips ? `<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;max-height:96px;overflow-y:auto">${chips}</div>` : ''}
-    <div style="font-size:.66rem;color:var(--text-muted);margin-bottom:6px">${list.length}편</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">${cards || '<div style="color:var(--text-muted);font-size:.72rem;padding:12px">해당하는 시가 없습니다.</div>'}</div>
+    <div id="poemCountLabel" style="font-size:.66rem;color:var(--text-muted);margin-bottom:6px">${list.length}편</div>
+    <div id="poemCardsWrap" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">${cards || '<div style="color:var(--text-muted);font-size:.72rem;padding:12px">해당하는 시가 없습니다.</div>'}</div>
   </div>`;
 
   if (keepFocus) {
