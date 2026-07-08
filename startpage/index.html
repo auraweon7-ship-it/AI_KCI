@@ -926,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.3</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.4</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3868,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v4.3 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v4.4 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5997,6 +5997,98 @@ function ytAiConfirm() {
   showToast(`${added}개 영상을 등록했습니다 ▶️`);
   if (state.activeCat === 'youtube') renderYouTubeView();
 }
+// 현재 표시 영상 목록(내장+사용자, 숨김·오버라이드 반영)
+function ytVisibleList() {
+  const hidden = ytHiddenSet(), tOv = ytTitleOverrides(), vOv = ytVidOverrides();
+  const merged = ytUserVideos().map(v => ({ ...v, u: true })).concat(YOUTUBE_VIDEOS);
+  return merged.filter(v => !hidden.has(v.vid || v.title)).map(v => {
+    const k = v.vid || v.title;
+    return { ...v, title: tOv[k] || v.title, vid: vOv[k] || v.vid };
+  });
+}
+// standalone HTML 생성(내보내기·공유 공용)
+function ytBuildHtml() {
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const list = ytVisibleList();
+  const dt = new Date(); const ds = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  const cards = list.map(v => {
+    const href = v.vid ? `https://www.youtube.com/watch?v=${v.vid}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(v.title+' '+(v.ch||''))}`;
+    const thumb = v.vid ? `https://i.ytimg.com/vi/${v.vid}/mqdefault.jpg` : '';
+    return `<a class="card" href="${esc(href)}" target="_blank" rel="noopener">
+      <div class="th">${thumb?`<img src="${thumb}" loading="lazy" alt="">`:''}<span class="pl">▶</span><span class="cat">${esc(v.cat||'')}</span></div>
+      <div class="t">${esc(v.title)}</div><div class="ch">${esc(v.ch||'')}</div></a>`;
+  }).join('');
+  const dataJson = JSON.stringify(list.filter(v=>v.vid).map(v=>({vid:v.vid,title:v.title,ch:v.ch,cat:v.cat}))).replace(/<\//g,'<\\/');
+  return `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>YouTube AI 교육</title>
+<style>*{box-sizing:border-box}body{font-family:'Malgun Gothic',sans-serif;margin:0;color:#1e293b;background:#f1f5f9}
+.hero{background:linear-gradient(135deg,#ec4899,#8b5cf6 60%,#6366f1);color:#fff;padding:44px 24px 38px;text-align:center}
+.hero h1{font-size:2.1em;margin:0 0 8px;font-weight:800}.hero .badge{display:inline-block;margin-top:12px;background:rgba(255,255,255,.2);padding:5px 14px;border-radius:999px;font-size:.85em}
+.wrap{max-width:1150px;margin:0 auto;padding:22px}
+.grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.card{text-decoration:none;color:inherit;display:block}
+.th{position:relative;width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;background:#000}
+.th img{width:100%;height:100%;object-fit:cover}
+.pl{position:absolute;inset:0;margin:auto;width:36px;height:36px;background:rgba(0,0,0,.65);border-radius:50%;color:#fff;display:flex;align-items:center;justify-content:center;font-size:.85em}
+.cat{position:absolute;top:5px;left:5px;background:rgba(139,92,246,.9);color:#fff;font-size:.6em;padding:2px 7px;border-radius:6px}
+.t{font-weight:700;font-size:.86em;margin-top:6px;line-height:1.3}.ch{font-size:.76em;color:#8b5cf6;margin-top:2px}
+.footer{text-align:center;color:#94a3b8;font-size:.8em;padding:28px 20px;border-top:1px solid #e2e8f0;margin-top:26px}.footer a{color:#8b5cf6;text-decoration:none}
+@media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:600px){.grid{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:1.6em}}@media(max-width:430px){.grid{grid-template-columns:1fr}}
+</style></head><body>
+<div class="hero"><h1>▶️ YouTube AI 교육</h1><p>AI·머신러닝 교육 영상 모음</p><div class="badge">총 ${list.length}편 · ${ds}</div></div>
+<div class="wrap"><div class="grid">${cards}</div></div>
+<div class="footer"><div>Copyright 2026 ⓒ <a href="https://startgage.up.railway.app">startgage.up.railway.app</a>, All Rights Reserved. | 박정원(한국외국어대학교)</div></div>
+<script type="application/json" id="ytdata">${dataJson}<\/script>
+</body></html>`;
+}
+function ytExportHtml() {
+  const html = ytBuildHtml();
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dt = new Date();
+  a.href = url; a.download = `YouTube_AI교육_${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}.html`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  showToast('YouTube 목록을 HTML로 내보냈습니다 📤');
+}
+async function ytShare() {
+  showToast('공유 링크 생성 중…', '🔗');
+  try {
+    const r = await fetch('/api/share', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: 'YouTube AI 교육', html: ytBuildHtml() }),
+    });
+    if (!r.ok) { const e = await r.json().catch(()=>({})); showToast('공유 실패: ' + (e.error || r.status), '⚠️'); return; }
+    const d = await r.json();
+    shareShowLink(location.origin + d.url, '▶️ YouTube AI 교육');
+  } catch(e) { showToast('공유 실패: ' + (e.message || '네트워크'), '⚠️'); }
+}
+function ytImportHtml(inputEl) {
+  const file = inputEl.files && inputEl.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let items = [];
+    const txt = String(reader.result || '');
+    // 1) 내보내기 HTML의 임베드 JSON 우선
+    const m = txt.match(/<script[^>]*id="ytdata"[^>]*>([\s\S]*?)<\/script>/);
+    if (m) { try { items = JSON.parse(m[1].replace(/<\\\//g,'</')); } catch(_) {} }
+    // 2) 폴백: 페이지 내 youtube watch 링크에서 videoId 추출
+    if (!items.length) {
+      const seen = new Set(); const re = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w-]{11})/g; let mm;
+      while ((mm = re.exec(txt))) { if (!seen.has(mm[1])) { seen.add(mm[1]); items.push({ vid: mm[1], title: '(가져온 영상)', ch: '', cat: 'AI 기초' }); } }
+    }
+    items = items.filter(v => v && v.vid);
+    if (!items.length) { showToast('가져올 영상을 찾지 못했습니다', '⚠️'); inputEl.value=''; return; }
+    const user = ytUserVideos(); const have = new Set(YOUTUBE_VIDEOS.concat(user).map(v=>v.vid).filter(Boolean));
+    let added = 0;
+    items.forEach(v => { if (!have.has(v.vid)) { user.unshift({ vid:v.vid, title:(v.title||'(제목없음)').slice(0,90), ch:(v.ch||'').slice(0,50), cat:v.cat||'AI 기초', views:0 }); have.add(v.vid); added++; } });
+    saveYtUser(user);
+    showToast(`${added}개 영상을 가져왔습니다 📥`);
+    if (state.activeCat === 'youtube') renderYouTubeView();
+    inputEl.value = '';
+  };
+  reader.readAsText(file);
+}
 function ytHiddenSet() { try { return new Set(JSON.parse(localStorage.getItem('yt_hidden') || '[]')); } catch(_) { return new Set(); } }
 function ytTitleOverrides() { try { return JSON.parse(localStorage.getItem('yt_title_ov') || '{}'); } catch(_) { return {}; } }
 function ytVidOverrides() { try { return JSON.parse(localStorage.getItem('yt_vid_ov') || '{}'); } catch(_) { return {}; } }
@@ -6093,9 +6185,13 @@ function renderYouTubeView() {
 
     grid.innerHTML = `
       <div class="ai-view-wrap" style="padding:0 .5rem">
-        <!-- AI 등록 -->
-        <div style="display:flex;justify-content:flex-end;margin-bottom:.6rem">
+        <!-- AI 등록 / 내보내기 / 가져오기 / 공유 -->
+        <div style="display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap;margin-bottom:.6rem">
           <button onclick="ytAiOpen()" style="padding:.4rem .9rem;border-radius:8px;border:none;background:var(--accent2);color:#fff;font-size:.76rem;font-weight:700;cursor:pointer">🤖 AI 등록</button>
+          <button onclick="document.getElementById('ytImportFile').click()" style="padding:.4rem .8rem;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.74rem;cursor:pointer">📥 HTML 가져오기</button>
+          <button onclick="ytExportHtml()" style="padding:.4rem .8rem;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.74rem;cursor:pointer">📤 HTML 내보내기</button>
+          <button onclick="ytShare()" style="padding:.4rem .8rem;border-radius:8px;border:none;background:var(--accent2);color:#fff;font-size:.74rem;cursor:pointer">🔗 SHARE</button>
+          <input type="file" id="ytImportFile" accept=".html,.htm" style="display:none" onchange="ytImportHtml(this)">
         </div>
         <!-- 카테고리 필터 -->
         <div id="ytCatBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem">
