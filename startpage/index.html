@@ -926,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.7</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.8</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3868,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v4.7 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v4.8 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5862,7 +5862,7 @@ const YOUTUBE_VIDEOS = [
 // 조회수 내림차순 정렬
 YOUTUBE_VIDEOS.sort((a,b) => b.views - a.views);
 
-const YT_CATS = ['전체', 'AI 기초', 'LLM 개발', 'ML 이론', '생성AI 활용', 'AI 교육정책', 'AI 이미지 제작', 'AI 영상 제작', '웹플랫폼 제작', 'AI활용 연구'];
+const YT_CATS = ['전체', 'AI 기초', 'ML 이론', '딥러닝·신경망', 'LLM 개발', '자연어처리(NLP)', '컴퓨터비전', '프롬프트 엔지니어링', 'RAG·파인튜닝', 'AI 에이전트', '생성AI 활용', 'AI 이미지 제작', 'AI 영상 제작', '데이터분석·통계', '파이썬·코딩', 'MLOps·배포', '웹플랫폼 제작', 'AI 교육정책', 'AI 윤리·안전', 'AI 비즈니스', 'AI활용 연구'];
 
 // YouTube 추천 영상 숨김·제목수정 (하드코딩 배열이라 id 없음 → vid/제목 키로 로컬 오버라이드)
 function ytUserVideos() { try { return JSON.parse(localStorage.getItem('yt_user') || '[]'); } catch(_) { return []; } }
@@ -6180,13 +6180,24 @@ function renderYouTubeView() {
 
   const YT_CAT_COLORS = {
     'AI 기초':      { bg:'#e8f4fd', border:'#90caf9', badge:'#1565c0' },
-    'LLM 개발':     { bg:'#fce4ec', border:'#f48fb1', badge:'#ad1457' },
     'ML 이론':      { bg:'#f3e5f5', border:'#ce93d8', badge:'#6a1b9a' },
+    '딥러닝·신경망':{ bg:'#ede7f6', border:'#b39ddb', badge:'#4527a0' },
+    'LLM 개발':     { bg:'#fce4ec', border:'#f48fb1', badge:'#ad1457' },
+    '자연어처리(NLP)':{ bg:'#e1f5fe', border:'#81d4fa', badge:'#0277bd' },
+    '컴퓨터비전':   { bg:'#e0f7fa', border:'#80deea', badge:'#00838f' },
+    '프롬프트 엔지니어링':{ bg:'#fff3e0', border:'#ffcc80', badge:'#e65100' },
+    'RAG·파인튜닝': { bg:'#f1f8e9', border:'#c5e1a5', badge:'#558b2f' },
+    'AI 에이전트':  { bg:'#fceabb', border:'#f6c667', badge:'#b26a00' },
     '생성AI 활용':  { bg:'#e8f5e9', border:'#a5d6a7', badge:'#2e7d32' },
-    'AI 교육정책':  { bg:'#fff8e1', border:'#ffe082', badge:'#f57f17' },
     'AI 이미지 제작':{ bg:'#fbe9e7', border:'#ffab91', badge:'#bf360c' },
     'AI 영상 제작': { bg:'#e0f2f1', border:'#80cbc4', badge:'#00695c' },
+    '데이터분석·통계':{ bg:'#e3f2fd', border:'#90caf9', badge:'#1976d2' },
+    '파이썬·코딩':  { bg:'#eceff1', border:'#b0bec5', badge:'#37474f' },
+    'MLOps·배포':   { bg:'#f9fbe7', border:'#e6ee9c', badge:'#9e9d24' },
     '웹플랫폼 제작':{ bg:'#e8eaf6', border:'#9fa8da', badge:'#283593' },
+    'AI 교육정책':  { bg:'#fff8e1', border:'#ffe082', badge:'#f57f17' },
+    'AI 윤리·안전': { bg:'#ffebee', border:'#ef9a9a', badge:'#c62828' },
+    'AI 비즈니스':  { bg:'#f3e5f5', border:'#e1bee7', badge:'#8e24aa' },
     'AI활용 연구':  { bg:'#f9fbe7', border:'#dce775', badge:'#827717' },
   };
   function ytCardStyle(cat) {
@@ -6231,9 +6242,13 @@ function renderYouTubeView() {
           <button onclick="ytShare()" style="padding:.4rem .8rem;border-radius:8px;border:none;background:var(--accent2);color:#fff;font-size:.74rem;cursor:pointer">🔗 SHARE</button>
           <input type="file" id="ytImportFile" accept=".html,.htm" style="display:none" onchange="ytImportHtml(this)">
         </div>
-        <!-- 카테고리 필터 -->
+        <!-- 카테고리 필터: 영상 있는 분류만 표시 -->
         <div id="ytCatBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem">
-          ${YT_CATS.map(c => `
+          ${(() => {
+            const merged = ytUserVideos().concat(YOUTUBE_VIDEOS);
+            const present = new Set(merged.map(v => v.cat).filter(Boolean));
+            return YT_CATS.filter(c => c === '전체' || present.has(c));
+          })().map(c => `
             <button class="yt-cat-btn ${c===ytCat?'active':''}" data-cat="${c}"
               style="padding:.35rem .8rem;border-radius:20px;border:1.5px solid ${c===ytCat?'var(--accent2)':'var(--border)'};
                      background:${c===ytCat?'var(--accent2)':'var(--card)'};
