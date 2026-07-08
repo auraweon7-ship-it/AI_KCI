@@ -926,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v5.6</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v5.7</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3868,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v5.6 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v5.7 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6053,18 +6053,29 @@ function ytChannelOpen() {
     ov.onclick = e => { if (e.target === ov) ov.remove(); };
     document.body.appendChild(ov);
   }
+  window._ytChEdit = -1;
   ytChannelRender();
 }
 function ytChannelRender() {
   const ov = document.getElementById('ytChOverlay'); if (!ov) return;
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const list = ytChannels();
-  const rows = list.length ? list.map((ch, i) => `
+  const _ei = (typeof window._ytChEdit === 'number') ? window._ytChEdit : -1;
+  const rows = list.length ? list.map((ch, i) => i === _ei ? `
+    <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:7px;border:1px solid var(--accent2);background:var(--bg3)">
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
+        <input id="ytChEditName" value="${esc(ch.name||'')}" placeholder="채널명" onkeydown="if(event.key==='Enter')ytChannelEditSave(${i})" style="width:100%;box-sizing:border-box;padding:5px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:.74rem;outline:none">
+        <input id="ytChEditUrl" value="${esc(ch.url||'')}" placeholder="채널 URL" onkeydown="if(event.key==='Enter')ytChannelEditSave(${i})" style="width:100%;box-sizing:border-box;padding:5px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:.66rem;outline:none">
+      </div>
+      <button onclick="ytChannelEditSave(${i})" title="저장" style="flex-shrink:0;background:var(--accent);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:.7rem;padding:4px 8px">저장</button>
+      <button onclick="window._ytChEdit=-1;ytChannelRender()" title="취소" style="flex-shrink:0;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.8rem">✕</button>
+    </div>` : `
     <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg3)">
       <div style="flex:1;min-width:0">
         <div style="font-size:.78rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📺 ${esc(ch.name || '(이름없음)')}</div>
         ${ch.url ? `<a href="${esc(ch.url)}" target="_blank" rel="noopener" style="font-size:.62rem;color:var(--accent2);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${esc(ch.url)}</a>` : ''}
       </div>
+      <button onclick="window._ytChEdit=${i};ytChannelRender()" title="수정" style="flex-shrink:0;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:.78rem">✏️</button>
       <button onclick="ytChannelDel(${i})" title="삭제" style="flex-shrink:0;background:none;border:none;color:var(--danger,#e74c3c);cursor:pointer;font-size:.8rem">✕</button>
     </div>`).join('') : '<div style="font-size:.72rem;color:var(--text-muted);padding:10px">등록된 채널이 없습니다.</div>';
   ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:420px;width:100%;max-height:80vh;display:flex;flex-direction:column;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
@@ -6098,7 +6109,16 @@ function ytChannelAdd() {
   saveYtChannels(list); if (inp) inp.value = '';
   ytChannelRender();
 }
-function ytChannelDel(i) { const list = ytChannels(); list.splice(i,1); saveYtChannels(list); ytChannelRender(); }
+function ytChannelDel(i) { const list = ytChannels(); list.splice(i,1); saveYtChannels(list); window._ytChEdit = -1; ytChannelRender(); }
+function ytChannelEditSave(i) {
+  const list = ytChannels(); if (!list[i]) return;
+  const name = (document.getElementById('ytChEditName')?.value || '').trim();
+  const url = (document.getElementById('ytChEditUrl')?.value || '').trim();
+  if (!name && !url) { showToast('채널명 또는 URL을 입력하세요', 'ℹ️'); return; }
+  list[i] = { name: name.slice(0,60), url: (url ? (/^https?:\/\//i.test(url) ? url : 'https://' + url) : '').slice(0,300) };
+  saveYtChannels(list); window._ytChEdit = -1; ytChannelRender();
+  showToast('채널 수정됨 ✏️');
+}
 // 등록된 채널의 실제 채널명 조회·갱신(URL만 있거나 channel:ID·비어있는 이름 대상)
 async function ytChannelRefreshNames() {
   const list = ytChannels();
