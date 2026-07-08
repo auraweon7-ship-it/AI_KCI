@@ -926,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.5</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.6</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3868,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v4.5 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v4.6 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6021,10 +6021,17 @@ function ytBuildHtml() {
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const list = ytVisibleList();
   const dt = new Date(); const ds = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  const attr = s => esc(s).replace(/"/g,'&quot;');
+  // 카테고리 집계·필터 바
+  const catCount = {}; list.forEach(v => { const c = v.cat || '기타'; catCount[c] = (catCount[c]||0)+1; });
+  const catOrder = (typeof YT_CATS !== 'undefined' ? YT_CATS.filter(c => c !== '전체' && catCount[c]) : Object.keys(catCount));
+  Object.keys(catCount).forEach(c => { if (!catOrder.includes(c)) catOrder.push(c); });
+  const catBar = `<button class="cat-btn active" data-cat="__all">전체 ${list.length}</button>` +
+    catOrder.map(c => `<button class="cat-btn" data-cat="${attr(c)}">${esc(c)} ${catCount[c]}</button>`).join('');
   const cards = list.map(v => {
     const href = v.vid ? `https://www.youtube.com/watch?v=${v.vid}` : `https://www.youtube.com/results?search_query=${encodeURIComponent(v.title+' '+(v.ch||''))}`;
     const thumb = v.vid ? `https://i.ytimg.com/vi/${v.vid}/mqdefault.jpg` : '';
-    return `<a class="card" href="${esc(href)}" target="_blank" rel="noopener">
+    return `<a class="card" data-cat="${attr(v.cat||'기타')}" href="${esc(href)}" target="_blank" rel="noopener">
       <div class="th">${thumb?`<img src="${thumb}" loading="lazy" alt="">`:''}<span class="pl">▶</span><span class="cat">${esc(v.cat||'')}</span></div>
       <div class="t">${esc(v.title)}</div><div class="ch">${esc(v.ch||'')}</div></a>`;
   }).join('');
@@ -6042,11 +6049,21 @@ function ytBuildHtml() {
 .cat{position:absolute;top:5px;left:5px;background:rgba(139,92,246,.9);color:#fff;font-size:.6em;padding:2px 7px;border-radius:6px}
 .t{font-weight:700;font-size:.86em;margin-top:6px;line-height:1.3}.ch{font-size:.76em;color:#8b5cf6;margin-top:2px}
 .footer{text-align:center;color:#94a3b8;font-size:.8em;padding:28px 20px;border-top:1px solid #e2e8f0;margin-top:26px}.footer a{color:#8b5cf6;text-decoration:none}
+.cat-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px}
+.cat-btn{padding:5px 12px;border-radius:999px;border:1px solid #e2e8f0;background:#fff;color:#475569;font-size:.82em;cursor:pointer}
+.cat-btn.active{background:#8b5cf6;color:#fff;border-color:#8b5cf6}
+.card.hide{display:none}
 @media(max-width:900px){.grid{grid-template-columns:repeat(3,1fr)}}@media(max-width:600px){.grid{grid-template-columns:repeat(2,1fr)}.hero h1{font-size:1.6em}}@media(max-width:430px){.grid{grid-template-columns:1fr}}
 </style></head><body>
 <div class="hero"><h1>▶️ YouTube AI 교육</h1><p>AI·머신러닝 교육 영상 모음</p><div class="badge">총 ${list.length}편 · ${ds}</div></div>
-<div class="wrap"><div class="grid">${cards}</div></div>
+<div class="wrap"><div class="cat-bar" id="catBar">${catBar}</div><div class="grid" id="grid">${cards}</div><div id="cnt" style="text-align:center;color:#94a3b8;font-size:.8em;margin-top:14px"></div></div>
 <div class="footer"><div>Copyright 2026 ⓒ <a href="https://startgage.up.railway.app">startgage.up.railway.app</a>, All Rights Reserved. | 박정원(한국외국어대학교)</div></div>
+<script>(function(){
+  var bar=document.getElementById('catBar'),cards=[].slice.call(document.querySelectorAll('.card')),cnt=document.getElementById('cnt');
+  function apply(cat){var n=0;cards.forEach(function(c){var show=(cat==='__all'||c.getAttribute('data-cat')===cat);c.classList.toggle('hide',!show);if(show)n++;});cnt.textContent=n+'편 표시';}
+  bar.addEventListener('click',function(e){var b=e.target.closest('.cat-btn');if(!b)return;bar.querySelectorAll('.cat-btn').forEach(function(x){x.classList.remove('active');});b.classList.add('active');apply(b.getAttribute('data-cat'));});
+  apply('__all');
+})();<\/script>
 <script type="application/json" id="ytdata">${dataJson}<\/script>
 </body></html>`;
 }
