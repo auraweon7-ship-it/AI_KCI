@@ -929,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.1</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.2</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3871,7 +3871,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v6.1 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v6.2 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -21448,6 +21448,40 @@ function musicAll() {
     .map(m => { const o = ov[musicKey(m)]; const b = o ? { ...m, ...o, ok: musicKey(m) } : m; return { ...b, u: true }; });
   return users;   // 사용자 등록 곡만(내장 시드 숨김)
 }
+function musicFmtViews(n) {
+  n = +n || 0;
+  if (n >= 100000000) return (n/100000000).toFixed(1).replace(/\.0$/,'') + '억';
+  if (n >= 10000) return (n/10000).toFixed(1).replace(/\.0$/,'') + '만';
+  if (n >= 1000) return Math.round(n/1000) + '천';
+  return n;
+}
+// 등록 곡 조회수 일괄 조회·갱신(YouTube watch 페이지 viewCount 파싱)
+async function musicRefreshViews() {
+  const arr = userMusic();
+  const targets = arr.filter(m => m.id);
+  if (!targets.length) { showToast('등록된 곡이 없습니다', 'ℹ️'); return; }
+  if (!confirm(`${targets.length}곡의 조회수를 YouTube에서 조회합니다. 시간이 걸릴 수 있습니다. 진행할까요?`)) return;
+  const btn = document.getElementById('musicViewsBtn');
+  if (btn) btn.disabled = true;
+  let updated = 0, n = 0;
+  for (const m of arr) {
+    if (!m.id) continue;
+    n++;
+    if (btn) btn.textContent = `👁 조회수 갱신 ${n}/${targets.length}…`;
+    try {
+      const r = await fetch('/api/proxy?url=' + encodeURIComponent('https://www.youtube.com/watch?v=' + m.id + '&hl=ko'), { signal: AbortSignal.timeout(9000) });
+      if (r.ok) {
+        const html = await r.text();
+        const mm = html.match(/"viewCount":"(\d+)"/) || html.match(/"viewCount":\{"simpleText":"([\d,]+)/);
+        if (mm) { const v = parseInt(mm[1].replace(/,/g,''), 10); if (v > 0) { m.views = v; updated++; } }
+      }
+    } catch(_) {}
+  }
+  saveUserMusic(arr);
+  if (btn) { btn.disabled = false; btn.textContent = '👁 조회수 갱신'; }
+  showToast(`${updated}곡 조회수를 갱신했습니다 👁`);
+  renderMusicView();
+}
 function musicToggleFav(k, ev) {
   if (ev) ev.stopPropagation();
   const f = musicFavs(); const at = f.indexOf(k);
@@ -21998,7 +22032,7 @@ function renderMusicView() {
         <button onclick="event.stopPropagation();musicDelete('${kj}',event)" title="삭제" style="background:rgba(0,0,0,.6);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:.62rem;line-height:1;padding:2px 3px">✕</button>
       </div>
       <div style="font-size:.7rem;font-weight:700;color:var(--text);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.t)}</div>
-      <div style="font-size:.62rem;color:var(--accent2)">${esc(m.artist)}</div>
+      <div style="font-size:.62rem;color:var(--accent2);display:flex;align-items:center;gap:5px"><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.artist)}</span>${m.views?`<span style="flex-shrink:0;color:var(--text-muted)">👁 ${musicFmtViews(m.views)}</span>`:''}</div>
     </div>`;
   }).join('');
   const modeBtn = (mode, label) => `<button onclick="musicSetMode('${mode}')" style="padding:5px 12px;border-radius:6px;border:1px solid ${musicState.mode===mode?'var(--accent)':'var(--border)'};background:${musicState.mode===mode?'var(--accent)':'var(--bg3)'};color:${musicState.mode===mode?'#fff':'var(--text-dim)'};font-size:.72rem;cursor:pointer">${label}</button>`;
@@ -22014,6 +22048,7 @@ function renderMusicView() {
       <button onclick="document.getElementById('musicImportFile').click()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📥 HTML 가져오기</button>
       <button onclick="musicExportHtml()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📤 HTML 내보내기</button>
       <button onclick="musicShare()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.72rem;cursor:pointer">🔗 SHARE</button>
+      <button id="musicViewsBtn" onclick="musicRefreshViews()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">👁 조회수 갱신</button>
       <input type="file" id="musicImportFile" accept=".html,.htm" style="display:none" onchange="musicImportHtml(this)">
       <span style="margin-left:auto;font-size:.66rem;color:var(--text-muted)">${list.length}곡</span>
     </div>
