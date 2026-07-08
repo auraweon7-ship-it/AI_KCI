@@ -925,7 +925,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v3.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v3.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3867,7 +3867,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v3.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v3.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -21236,12 +21236,12 @@ function renderMusicView() {
            style="position:relative;width:100%;aspect-ratio:16/9;border-radius:6px;overflow:hidden;background:#000;cursor:pointer">
         <img src="https://i.ytimg.com/vi/${m.id}/mqdefault.jpg" alt="${esc(m.t)}" loading="lazy" style="width:100%;height:100%;object-fit:cover" onerror="this.style.opacity=.3">
         <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center"><span style="width:34px;height:34px;background:rgba(0,0,0,.7);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem">▶</span></div>
-        <span style="position:absolute;top:4px;left:4px;background:rgba(139,92,246,.85);color:#fff;font-size:.54rem;padding:1px 6px;border-radius:6px">${esc(m.genre)}${m.u?' ●':''}</span>
-        <div style="position:absolute;top:3px;right:3px;display:flex;gap:2px">
-          <button onclick="event.stopPropagation();musicToggleFav('${kj}',event)" title="즐겨찾기" style="background:rgba(0,0,0,.55);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:.68rem;line-height:1;padding:2px 3px">${fav?'⭐':'☆'}</button>
-          <button onclick="event.stopPropagation();musicEdit('${kj}',event)" title="수정" style="background:rgba(0,0,0,.55);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:.62rem;line-height:1;padding:2px 3px">✏️</button>
-          <button onclick="event.stopPropagation();musicDelete('${kj}',event)" title="삭제" style="background:rgba(0,0,0,.55);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:.62rem;line-height:1;padding:2px 3px">✕</button>
-        </div>
+      </div>
+      <span style="position:absolute;top:4px;left:4px;z-index:5;pointer-events:none;background:rgba(139,92,246,.85);color:#fff;font-size:.54rem;padding:1px 6px;border-radius:6px">${esc(m.genre)}${m.u?' ●':''}</span>
+      <div style="position:absolute;top:3px;right:3px;z-index:5;display:flex;gap:2px">
+        <button onclick="event.stopPropagation();musicToggleFav('${kj}',event)" title="즐겨찾기" style="background:rgba(0,0,0,.6);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:.68rem;line-height:1;padding:2px 3px">${fav?'⭐':'☆'}</button>
+        <button onclick="event.stopPropagation();musicEdit('${kj}',event)" title="수정" style="background:rgba(0,0,0,.6);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:.62rem;line-height:1;padding:2px 3px">✏️</button>
+        <button onclick="event.stopPropagation();musicDelete('${kj}',event)" title="삭제" style="background:rgba(0,0,0,.6);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:.62rem;line-height:1;padding:2px 3px">✕</button>
       </div>
       <div style="font-size:.7rem;font-weight:700;color:var(--text);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(m.t)}</div>
       <div style="font-size:.62rem;color:var(--accent2)">${esc(m.artist)}</div>
