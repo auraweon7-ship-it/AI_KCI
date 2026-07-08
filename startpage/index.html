@@ -917,6 +917,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 /* 좋아하는 음악 그리드: 태블릿 3열, 모바일 1열 */
 @media (max-width: 960px) { .music-grid { grid-template-columns: repeat(3, 1fr) !important; } }
 @media (max-width: 560px) { .music-grid { grid-template-columns: 1fr !important; } }
+.yt-thumb.playing { outline: 2px solid var(--accent2); outline-offset: 1px; box-shadow: 0 0 0 3px rgba(236,72,153,.35); }
 @media (max-width: 720px) { .na-donuts { grid-template-columns: repeat(2, 1fr) !important; } .na-stats { grid-template-columns: repeat(2, 1fr) !important; } }
 @media (max-width: 560px) { .na-donuts { grid-template-columns: 1fr !important; } }
 </style>
@@ -925,7 +926,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.1</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v4.2</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3867,7 +3868,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v4.1 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v4.2 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -20704,25 +20705,78 @@ let musicState = { mode: 'genre', cat: 'all', page: 1 };
 function musicSetMode(m) { musicState.mode = m; musicState.cat = 'all'; musicState.page = 1; renderMusicView(); }
 function musicSetCat(c) { musicState.cat = c; musicState.page = 1; renderMusicView(); }
 function musicSetPage(p) { musicState.page = p; renderMusicView(); document.getElementById('linksGrid')?.scrollIntoView({behavior:'smooth',block:'start'}); }
-function musicPlay(id, el) {
-  // 그 자리에서 embed 재생. 모바일은 인라인 자동재생을 위해 playsinline + mute(음소거 후 사용자가 해제) 사용
-  const isMobile = ('ontouchstart' in window) || window.matchMedia('(max-width:960px)').matches;
-  const params = isMobile
-    ? 'autoplay=1&mute=1&playsinline=1&rel=0'   // 모바일: 한 번 탭으로 재생(정책상 무음 자동재생) → 스피커 아이콘 탭 시 소리
-    : 'autoplay=1&rel=0&playsinline=1';
-  el.innerHTML = `<iframe id="mplay_${id}" src="https://www.youtube.com/embed/${id}?${params}&enablejsapi=1" title="music"
-    allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen
-    style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
-  // 모바일: 재생 시작 후 음소거 해제 시도(브라우저가 허용하면 소리도 나옴)
-  if (isMobile) {
-    setTimeout(() => {
-      const f = document.getElementById('mplay_' + id);
-      if (f && f.contentWindow) {
-        f.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
-        f.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
-      }
-    }, 900);
+// ── YouTube IFrame API 로더(자동 다음곡 재생용) ──
+let _ytLoading = false, _ytPlayer = null;
+let _ytAutoNext = localStorage.getItem('music_autonext') !== '0';   // 기본 ON
+function musicToggleAutoNext() {
+  _ytAutoNext = !_ytAutoNext;
+  localStorage.setItem('music_autonext', _ytAutoNext ? '1' : '0');
+  renderMusicView();
+}
+function ensureYTApi(cb) {
+  if (window.YT && window.YT.Player) { cb(true); return; }
+  if (!_ytLoading) {
+    _ytLoading = true;
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = function () { if (prev) try { prev(); } catch(_){} };
+    const s = document.createElement('script'); s.src = 'https://www.youtube.com/iframe_api'; s.async = true;
+    s.onerror = () => { _ytLoading = false; };
+    document.head.appendChild(s);
   }
+  let waited = 0;
+  const t = setInterval(() => {
+    if (window.YT && window.YT.Player) { clearInterval(t); cb(true); }
+    else if ((waited += 120) > 4000) { clearInterval(t); cb(false); }   // 로드 실패 → 폴백
+  }, 120);
+}
+// 현재 재생 카드 강조
+function musicHighlight(thumb) {
+  document.querySelectorAll('.yt-thumb.playing').forEach(e => e.classList.remove('playing'));
+  if (thumb) thumb.classList.add('playing');
+}
+// 종료·오류 시 다음 카드 자동재생
+function musicPlayNext(curThumb) {
+  if (!_ytAutoNext || !curThumb) return;
+  const card = curThumb.parentElement;               // 카드 래퍼
+  let next = card && card.nextElementSibling;
+  while (next && !next.querySelector('.yt-thumb')) next = next.nextElementSibling;
+  if (!next) return;                                  // 페이지 끝 → 정지
+  const th = next.querySelector('.yt-thumb');
+  const m = th.getAttribute('onclick').match(/musicPlay\('([^']+)'/);
+  if (!m) return;
+  th.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  musicPlay(m[1], th);
+}
+function musicPlay(id, el) {
+  const isMobile = ('ontouchstart' in window) || window.matchMedia('(max-width:960px)').matches;
+  musicHighlight(el);
+  // 이전 플레이어 정리(중복 소리 방지)
+  if (_ytPlayer && _ytPlayer.destroy) { try { _ytPlayer.destroy(); } catch(_){} _ytPlayer = null; }
+  // 플레이어 마운트용 컨테이너
+  el.innerHTML = `<div id="ytp_${id}" style="position:absolute;inset:0;width:100%;height:100%"></div>`;
+  ensureYTApi((ok) => {
+    if (!document.getElementById('ytp_' + id)) return;   // 그 사이 다른 곡으로 교체됨
+    if (!ok) {
+      // 폴백: JS API 미로드 시 기존 방식(자동 다음곡 불가)
+      const params = isMobile ? 'autoplay=1&mute=1&playsinline=1&rel=0' : 'autoplay=1&rel=0&playsinline=1';
+      el.innerHTML = `<iframe id="mplay_${id}" src="https://www.youtube.com/embed/${id}?${params}&enablejsapi=1" title="music"
+        allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen
+        style="position:absolute;inset:0;width:100%;height:100%;border:0"></iframe>`;
+      return;
+    }
+    _ytPlayer = new YT.Player('ytp_' + id, {
+      videoId: id,
+      playerVars: { autoplay: 1, rel: 0, playsinline: 1, mute: isMobile ? 1 : 0 },
+      events: {
+        onReady: (e) => {
+          const f = e.target.getIframe(); if (f) f.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0';
+          try { e.target.playVideo(); if (isMobile) { e.target.unMute(); e.target.playVideo(); } } catch(_){}
+        },
+        onStateChange: (e) => { if (e.data === YT.PlayerState.ENDED) musicPlayNext(el); },
+        onError: () => { musicPlayNext(el); },   // embed 불가 곡 → 자동 스킵
+      },
+    });
+  });
 }
 // 내장 MUSIC(배열) → 객체 + 사용자 등록/수정/삭제 오버레이
 function musicKey(m) { return m.artist + '|' + m.t; }
@@ -21301,6 +21355,7 @@ function renderMusicView() {
     <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap">
       ${modeBtn('fav','⭐ 즐겨찾기 '+favCount)}
       <button onclick="musicGenreInfoOpen(musicState.mode!=='artist'&&musicState.cat!=='all'?musicState.cat:'')" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📖 장르특성</button>
+      <button id="musicAutoNextBtn" onclick="musicToggleAutoNext()" title="곡 종료 시 다음 곡 자동재생" style="padding:5px 12px;border-radius:6px;border:1px solid ${_ytAutoNext?'var(--accent)':'var(--border)'};background:${_ytAutoNext?'var(--accent)':'var(--bg3)'};color:${_ytAutoNext?'#fff':'var(--text-dim)'};font-size:.72rem;cursor:pointer">🔁 자동재생 ${_ytAutoNext?'ON':'OFF'}</button>
       <button onclick="musicAddOpen()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent);color:#fff;font-size:.72rem;cursor:pointer">➕ 곡 등록</button>
       <button onclick="musicAiOpen()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.72rem;cursor:pointer">🤖 AI 등록</button>
       <button onclick="musicAutoFill(30)" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">🔎 자동채우기(장르당 30곡)</button>
