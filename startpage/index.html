@@ -929,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.1</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.2</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3871,7 +3871,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v7.1 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v7.2 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -4208,6 +4208,9 @@ function cloudToken() {
   if (t && Date.now() < e) { _cloudToken = t; _cloudTokenExp = e; return t; }
   return null;
 }
+// 개인 콘텐츠 키(계정별 데이터) — 로그인 시 초기화 후 해당 계정 것만 pull 복원
+const PERSONAL_CONTENT_KEYS = ['postit_notes','watch_univs','user_poems','poem_favs','poem_hidden','poem_over','poem_notes','user_music','music_favs','music_hidden','music_over','yt_user','yt_favs','yt_channels','yt_hidden','yt_vid_ov','yt_title_ov','yt_user_cats','yt_cat_hidden'];
+function clearPersonalData() { PERSONAL_CONTENT_KEYS.forEach(k => localStorage.removeItem(k)); }
 // 서버 → 로컬 (로그인 직후)
 async function cloudPull() {
   const token = cloudToken(); if (!token || !isLoggedIn()) return false;
@@ -23013,6 +23016,8 @@ function handleLogin() {
           cloudSetToken(resp.access_token, resp.expires_in);
           showUserUI(user);
           registerUser();  // 서버 등록 + 승인여부 확인
+          // 계정 전환 대비: 이전 계정 개인 데이터·북마크 로컬 제거 → 이 계정 서버 데이터만 pull 복원(새 계정=백지)
+          clearPersonalData(); localStorage.removeItem(getStateKey());
           loadState();
           mergeGuestState();  // 비로그인 때 추가한 북마크·카테고리 유지
           render(); applySettings();
