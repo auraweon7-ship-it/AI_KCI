@@ -929,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.9</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.0</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3871,7 +3871,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v6.9 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v7.0 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5883,6 +5883,15 @@ Object.defineProperty(window, 'YT_CATS', { get: ytAllCats, configurable: true })
 // YouTube 추천 영상 숨김·제목수정 (하드코딩 배열이라 id 없음 → vid/제목 키로 로컬 오버라이드)
 function ytUserVideos() { try { return JSON.parse(localStorage.getItem('yt_user') || '[]'); } catch(_) { return []; } }
 function saveYtUser(a) { localStorage.setItem('yt_user', JSON.stringify(a)); try { cloudPush('yt_user'); } catch(_) {} }
+// AI YouTube 등록 영상 전체 초기화(백지 상태) — 채널·카테고리 설정은 유지
+function ytClearAll() {
+  const n = ytUserVideos().length;
+  if (!confirm(`등록된 영상 ${n}개를 모두 삭제하고 백지 상태로 초기화합니다. (등록 채널·카테고리 설정은 유지) 되돌릴 수 없습니다. 진행할까요?`)) return;
+  saveYtUser([]);
+  ['yt_favs','yt_hidden','yt_vid_ov','yt_title_ov'].forEach(k => { localStorage.setItem(k, k==='yt_favs'||k==='yt_hidden'?'[]':'{}'); try { cloudPush(k); } catch(_) {} });
+  render();
+  showToast('AI YouTube 영상을 초기화했습니다 🗑');
+}
 // 영상 카드 인라인 재생(embed) — 썸네일 영역을 iframe으로 교체
 function ytPlay(id, el) {
   if (!id || !el) return;
@@ -6639,6 +6648,7 @@ function renderYouTubeView() {
           <button onclick="document.getElementById('ytImportFile').click()" style="padding:.4rem .8rem;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.74rem;cursor:pointer">📥 HTML 가져오기</button>
           <button onclick="ytExportHtml()" style="padding:.4rem .8rem;border-radius:8px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.74rem;cursor:pointer">📤 HTML 내보내기</button>
           <button onclick="ytShare()" style="padding:.4rem .8rem;border-radius:8px;border:none;background:var(--accent2);color:#fff;font-size:.74rem;cursor:pointer">🔗 SHARE</button>
+          <button onclick="ytClearAll()" style="padding:.4rem .8rem;border-radius:8px;border:1px solid var(--danger,#e74c3c);background:var(--bg3);color:var(--danger,#e74c3c);font-size:.74rem;cursor:pointer">🗑 전체 초기화</button>
           <input type="file" id="ytImportFile" accept=".html,.htm" style="display:none" onchange="ytImportHtml(this)">
         </div>
         <!-- 카테고리 필터: 전체 카테고리 표시(분류 드롭다운과 통일), 빈 카테고리는 흐리게 -->
@@ -20463,6 +20473,17 @@ let poemState = { mode: 'theme', cat: 'all', q: '' };
 // 사용자가 등록한 시 (localStorage) — 기본 POEMS 앞에 병합
 function userPoems() { try { return JSON.parse(localStorage.getItem('user_poems') || '[]'); } catch(_) { return []; } }
 function saveUserPoems(arr) { localStorage.setItem('user_poems', JSON.stringify(arr)); try { cloudPush('user_poems'); } catch(_) {} }
+// 좋아하는 시 전체 초기화(백지 상태)
+function poemClearAll() {
+  const n = userPoems().length;
+  if (!confirm(`등록된 시 ${n}편을 모두 삭제하고 백지 상태로 초기화합니다. 되돌릴 수 없습니다. 진행할까요?`)) return;
+  saveUserPoems([]); savePoemHidden([]); savePoemOverrides({});
+  localStorage.setItem('poem_favs', '[]'); try { cloudPush('poem_favs'); } catch(_) {}
+  localStorage.setItem('poem_notes', '{}'); try { cloudPush('poem_notes'); } catch(_) {}
+  poemState.q = ''; poemState.cat = 'all';
+  render();
+  showToast('좋아하는 시를 초기화했습니다 🗑');
+}
 // 내장 시 오버레이: 숨김(삭제) 키 목록 + 수정본(원본키→수정 데이터)
 function poemHidden() { try { return JSON.parse(localStorage.getItem('poem_hidden') || '[]'); } catch(_) { return []; } }
 function savePoemHidden(a) { localStorage.setItem('poem_hidden', JSON.stringify(a)); try { cloudPush('poem_hidden'); } catch(_) {} }
@@ -20612,6 +20633,7 @@ function renderPoemsView(keepFocus) {
         <button onclick="document.getElementById('poemImportFile').click()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.7rem;cursor:pointer">📥 HTML 가져오기</button>
         <button onclick="poemExportHtml()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.7rem;cursor:pointer">📤 HTML 내보내기</button>
         <button onclick="poemShare()" style="padding:5px 10px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.7rem;cursor:pointer">🔗 SHARE</button>
+        <button onclick="poemClearAll()" style="padding:5px 10px;border-radius:6px;border:1px solid var(--danger,#e74c3c);background:var(--bg3);color:var(--danger,#e74c3c);font-size:.7rem;cursor:pointer">🗑 전체 초기화</button>
         <input type="file" id="poemImportFile" accept=".html,.htm" style="display:none" onchange="poemImportHtml(this)">
       </div>
     </div>
@@ -21574,6 +21596,16 @@ async function musicRefreshViews() {
   showToast(`${updated}곡 조회수를 갱신했습니다 👁 ${updated<targets.length?`(${targets.length-updated}곡 실패)`:''}`);
   renderMusicView();
 }
+// 좋아하는 음악 전체 초기화(백지 상태)
+function musicClearAll() {
+  const n = userMusic().length;
+  if (!confirm(`등록된 음악 ${n}곡을 모두 삭제하고 백지 상태로 초기화합니다. 되돌릴 수 없습니다. 진행할까요?`)) return;
+  saveUserMusic([]); saveMusicHidden([]); saveMusicOverrides({});
+  localStorage.setItem('music_favs', '[]'); try { cloudPush('music_favs'); } catch(_) {}
+  musicState.cat = 'all'; musicState.page = 1;
+  render();
+  showToast('좋아하는 음악을 초기화했습니다 🗑');
+}
 function musicToggleFav(k, ev) {
   if (ev) ev.stopPropagation();
   const f = musicFavs(); const at = f.indexOf(k);
@@ -22147,6 +22179,7 @@ function renderMusicView() {
       <button onclick="musicExportHtml()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">📤 HTML 내보내기</button>
       <button onclick="musicShare()" style="padding:5px 12px;border-radius:6px;border:none;background:var(--accent2);color:#fff;font-size:.72rem;cursor:pointer">🔗 SHARE</button>
       <button id="musicViewsBtn" onclick="musicRefreshViews()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--text-dim);font-size:.72rem;cursor:pointer">👁 조회수 갱신</button>
+      <button onclick="musicClearAll()" style="padding:5px 12px;border-radius:6px;border:1px solid var(--danger,#e74c3c);background:var(--bg3);color:var(--danger,#e74c3c);font-size:.72rem;cursor:pointer">🗑 전체 초기화</button>
       <input type="file" id="musicImportFile" accept=".html,.htm" style="display:none" onchange="musicImportHtml(this)">
       <span style="margin-left:auto;font-size:.66rem;color:var(--text-muted)">${list.length}곡</span>
     </div>
