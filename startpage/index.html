@@ -929,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.4</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.5</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3756,7 +3756,8 @@ async function driveDoAction(tk) {
           if (!listR.ok) { showToast('Drive 오류: ' + await apiErr(listR), '⚠️'); return; }
           const files = (await listR.json()).files || [];
           if (driveAction === 'backup') {
-            // localStorage 전체 스냅샷 (계정별 키 포함) — API/APP/캘린더/강의/TODO/북마크/설정 등 모두
+            try { saveState(); } catch(_) {}   // 최신 상태(내 북마크·카테고리 등) localStorage 반영 후 스냅샷
+            // localStorage 전체 스냅샷 (계정별 키 포함) — API/APP/캘린더/강의/TODO/북마크·내 북마크/설정 등 모두
             const snapshot = {};
             for (let i = 0; i < localStorage.length; i++) {
               const k = localStorage.key(i);
@@ -3882,7 +3883,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v7.4 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v7.5 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
