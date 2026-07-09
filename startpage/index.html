@@ -929,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v6.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3871,7 +3871,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v6.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v6.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -8055,6 +8055,22 @@ function renderLinks() {
     sortSel.value = state.sortMode || 'default';
   }
 
+  // 로그인·관리자 승인 게이트: 내 북마크·AI YouTube·좋아하는 시·좋아하는 음악
+  if (['mybm','youtube','poems','music'].includes(state.activeCat)) {
+    if (!isLoggedIn()) { state.activeCat = 'all'; saveState(); render(); return; }
+    if (!isApproved()) {
+      const nm = ({mybm:'🔖 내 북마크', youtube:'▶️ AI YouTube', poems:'📜 좋아하는 시', music:'🎶 좋아하는 음악'})[state.activeCat] || '';
+      if (title) title.textContent = nm;
+      grid.classList.remove('univall-mode');
+      grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px 16px;color:var(--text-muted)">
+        <div style="font-size:2.2rem;margin-bottom:10px">🛡</div>
+        <div style="font-size:.95rem;font-weight:700;color:var(--text)">관리자 승인 후 이용할 수 있습니다</div>
+        <div style="font-size:.74rem;margin-top:6px">로그인은 완료되었습니다 · 승인 대기 중</div>
+      </div>`;
+      return;
+    }
+  }
+
   // Special: 대학 전체 뷰
   if (state.activeCat === 'univall') {
     renderUnivAll();
@@ -8197,7 +8213,8 @@ function renderLinks() {
       .map(([id]) => state.links.find(l => l.id === id)).filter(Boolean);
     miniSection('🕘 자주 방문', '#81d4fa', freqLinks);
 
-    const allCats = state.categories.filter(c => c.id !== 'all');
+    // 전체 뷰에서 제외: 전체 자신 + 로그인·승인 전용 개인 메뉴(내 북마크·AI YouTube·좋아하는 시·좋아하는 음악)
+    const allCats = state.categories.filter(c => !['all','mybm','youtube','poems','music'].includes(c.id));
     allCats.forEach(cat => {
       const neon = CAT_NEON[cat.id] || '#888';
 
