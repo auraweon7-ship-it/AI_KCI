@@ -929,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.2</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.3</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3422,6 +3422,16 @@ function appImport() {
   });
 }
 // ── 내 북마크 내보내기/가져오기 (표준 Netscape 북마크 HTML) ──
+// 내 북마크 전체 초기화(백지 상태)
+function bmClearAll() {
+  const n = state.links.filter(l => l.catId === 'mybm').length;
+  if (!n) { showToast('삭제할 북마크가 없습니다', 'ℹ️'); return; }
+  if (!confirm(`내 북마크 ${n}개를 모두 삭제하고 백지 상태로 초기화합니다. 되돌릴 수 없습니다. 진행할까요?`)) return;
+  state.links = state.links.filter(l => l.catId !== 'mybm');
+  saveState();
+  render();
+  showToast('내 북마크를 초기화했습니다 🗑');
+}
 function bmExport() {
   const list = state.links.filter(l => l.catId === 'mybm');
   if (!list.length) { showToast('내보낼 북마크가 없습니다', '⚠️'); return; }
@@ -3871,7 +3881,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v7.2 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v7.3 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -8461,6 +8471,7 @@ function renderLinks() {
     bar.innerHTML = `
       <button onclick="bmImport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">📥 가져오기(HTML)</button>
       <button onclick="bmExport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">📤 내보내기(HTML)</button>
+      <button onclick="bmClearAll()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--danger,#e74c3c);border-radius:6px;color:var(--danger,#e74c3c);font-size:.74rem;cursor:pointer">🗑 전체 초기화</button>
       <span style="margin-left:auto;font-size:.68rem;color:var(--text-dim);align-self:center">${links.length}개 북마크</span>`;
     grid.appendChild(bar);
     // 카테고리별 그룹핑
