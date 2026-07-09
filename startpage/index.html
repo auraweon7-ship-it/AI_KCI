@@ -929,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.3</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.4</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3423,12 +3423,13 @@ function appImport() {
 }
 // ── 내 북마크 내보내기/가져오기 (표준 Netscape 북마크 HTML) ──
 // 내 북마크 전체 초기화(백지 상태)
-function bmClearAll() {
+async function bmClearAll() {
   const n = state.links.filter(l => l.catId === 'mybm').length;
   if (!n) { showToast('삭제할 북마크가 없습니다', 'ℹ️'); return; }
   if (!confirm(`내 북마크 ${n}개를 모두 삭제하고 백지 상태로 초기화합니다. 되돌릴 수 없습니다. 진행할까요?`)) return;
   state.links = state.links.filter(l => l.catId !== 'mybm');
   saveState();
+  try { await cloudPushNow('startpage_v7'); } catch(_) {}   // 서버 즉시 반영(재로그인 시 복원 방지)
   render();
   showToast('내 북마크를 초기화했습니다 🗑');
 }
@@ -3881,7 +3882,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v7.3 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v7.4 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5899,11 +5900,12 @@ Object.defineProperty(window, 'YT_CATS', { get: ytAllCats, configurable: true })
 function ytUserVideos() { try { return JSON.parse(localStorage.getItem('yt_user') || '[]'); } catch(_) { return []; } }
 function saveYtUser(a) { localStorage.setItem('yt_user', JSON.stringify(a)); try { cloudPush('yt_user'); } catch(_) {} }
 // AI YouTube 등록 영상 전체 초기화(백지 상태) — 채널·카테고리 설정은 유지
-function ytClearAll() {
+async function ytClearAll() {
   const n = ytUserVideos().length;
   if (!confirm(`등록된 영상 ${n}개를 모두 삭제하고 백지 상태로 초기화합니다. (등록 채널·카테고리 설정은 유지) 되돌릴 수 없습니다. 진행할까요?`)) return;
   saveYtUser([]);
-  ['yt_favs','yt_hidden','yt_vid_ov','yt_title_ov'].forEach(k => { localStorage.setItem(k, k==='yt_favs'||k==='yt_hidden'?'[]':'{}'); try { cloudPush(k); } catch(_) {} });
+  ['yt_favs','yt_hidden','yt_vid_ov','yt_title_ov'].forEach(k => localStorage.setItem(k, k==='yt_favs'||k==='yt_hidden'?'[]':'{}'));
+  try { await Promise.all(['yt_user','yt_favs','yt_hidden','yt_vid_ov','yt_title_ov'].map(k => cloudPushNow(k))); } catch(_) {}
   render();
   showToast('AI YouTube 영상을 초기화했습니다 🗑');
 }
@@ -20490,12 +20492,12 @@ let poemState = { mode: 'theme', cat: 'all', q: '' };
 function userPoems() { try { return JSON.parse(localStorage.getItem('user_poems') || '[]'); } catch(_) { return []; } }
 function saveUserPoems(arr) { localStorage.setItem('user_poems', JSON.stringify(arr)); try { cloudPush('user_poems'); } catch(_) {} }
 // 좋아하는 시 전체 초기화(백지 상태)
-function poemClearAll() {
+async function poemClearAll() {
   const n = userPoems().length;
   if (!confirm(`등록된 시 ${n}편을 모두 삭제하고 백지 상태로 초기화합니다. 되돌릴 수 없습니다. 진행할까요?`)) return;
   saveUserPoems([]); savePoemHidden([]); savePoemOverrides({});
-  localStorage.setItem('poem_favs', '[]'); try { cloudPush('poem_favs'); } catch(_) {}
-  localStorage.setItem('poem_notes', '{}'); try { cloudPush('poem_notes'); } catch(_) {}
+  localStorage.setItem('poem_favs', '[]'); localStorage.setItem('poem_notes', '{}');
+  try { await Promise.all(['user_poems','poem_hidden','poem_over','poem_favs','poem_notes'].map(k => cloudPushNow(k))); } catch(_) {}
   poemState.q = ''; poemState.cat = 'all';
   render();
   showToast('좋아하는 시를 초기화했습니다 🗑');
@@ -21613,11 +21615,12 @@ async function musicRefreshViews() {
   renderMusicView();
 }
 // 좋아하는 음악 전체 초기화(백지 상태)
-function musicClearAll() {
+async function musicClearAll() {
   const n = userMusic().length;
   if (!confirm(`등록된 음악 ${n}곡을 모두 삭제하고 백지 상태로 초기화합니다. 되돌릴 수 없습니다. 진행할까요?`)) return;
   saveUserMusic([]); saveMusicHidden([]); saveMusicOverrides({});
-  localStorage.setItem('music_favs', '[]'); try { cloudPush('music_favs'); } catch(_) {}
+  localStorage.setItem('music_favs', '[]');
+  try { await Promise.all(['user_music','music_hidden','music_over','music_favs'].map(k => cloudPushNow(k))); } catch(_) {}
   musicState.cat = 'all'; musicState.page = 1;
   render();
   showToast('좋아하는 음악을 초기화했습니다 🗑');
