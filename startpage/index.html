@@ -929,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.0</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.1</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3871,7 +3871,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v7.0 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v7.1 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -4066,6 +4066,7 @@ function updateHdrDday() {
 // ── 관심 대학 ──
 function getWatchUnivs() { return JSON.parse(localStorage.getItem('watch_univs') || '[]'); }
 function addWatchUniv() {
+  if (!isLoggedIn()) { showToast('로그인 후 이용할 수 있습니다', '🔑'); return; }
   const inp = document.getElementById('watchUnivInput');
   const name = inp.value.trim();
   if (!name) return;
@@ -4082,6 +4083,7 @@ function delWatchUniv(i) {
 function renderWatchUnivs() {
   const box = document.getElementById('watchUnivList');
   if (!box) return;
+  if (!isLoggedIn()) { box.innerHTML = '<div style="font-size:.68rem;color:var(--text-muted)">🔒 로그인 후 관심 대학을 등록할 수 있습니다</div>'; return; }
   const list = getWatchUnivs();
   if (!list.length) { box.innerHTML = '<div style="font-size:.68rem;color:var(--text-muted)">대학을 등록하면 교수 수·공시 링크가 표시됩니다</div>'; return; }
   box.innerHTML = list.map((name, i) => {
