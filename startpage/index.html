@@ -915,7 +915,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v8.0</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v8.1</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3839,7 +3839,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v8.0 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v8.1 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7381,20 +7381,22 @@ const UNIV_FUND_PROGRAMS = [
     sourceUrl: 'https://www.moe.go.kr/boardCnts/listRenew.do?boardID=72775&renew=72775&m=0316&s=moe',
   },
   {
-    id: 'rise', name: 'RISE (지역혁신중심 대학지원체계)', color: '#0ea5e9',
-    period: '2025~2029 (1차 기본계획 5년)', status: '2025 전국 시행',
-    budget: '2025년 국비 2조 10억 원 (지방비 포함 총 약 2.4조 원)', budgetNote: '국회 확정(2024.12)',
-    selected: '17개 시도 주도 (중앙 공모형 아님)', selectedNote: '시도별 자체 공모로 지역대학 선정',
-    agency: '교육부 · 17개 광역지자체(RISE센터)',
+    id: 'rise', name: '앵커(ANCHOR, 지역성장 인재양성체계)', color: '#0ea5e9',
+    period: '2025~2029 (1차 기본계획 5년)', status: 'RISE → 앵커 재구조화(2026.4)',
+    budget: '2026년 2조 1,403억 원', budgetNote: '성과평가 인센티브 약 4,000억 원 포함(2025년 지자체 성과 평가 → 2026년 차등 지원) · 2025년 국비 2조 10억 원(지방비 포함 총 약 2.4조 원)',
+    selected: '17개 시도 주도 (중앙 공모형 아님)', selectedNote: '시도별 자체 공모로 지역대학 선정 · 지역 취업·정주 연계 강화',
+    agency: '교육부 · 17개 광역지자체',
     confidence: '부분확인',
     schedule: [
       { stage: 'RISE센터 지정', date: '2024-05' },
       { stage: '기본계획 수립', date: '2024-12' },
-      { stage: '전국 시행', date: '2025-01' },
-      { stage: '시도별 선정', date: '2025 연중' },
+      { stage: 'RISE 전국 시행', date: '2025-01' },
+      { stage: '앵커 추진방안 발표', date: '2026-04-02' },
+      { stage: '개정 법률 시행', date: '2026-08' },
     ],
-    sourceName: 'NABIS 정책정보 / 교육부 보도자료',
-    sourceUrl: 'https://www.nabis.go.kr/policyDetailView.do?menucd=20&gbnCode=P50&refCode=20&poIdx=11724',
+    scheduleNote: '2026.4.2 「지역성장 인재양성체계(앵커) 추진방안」 발표로 RISE 명칭·운영방향 개편 · 시행령 입법예고 후 2026년 8월 개정 법률 시행 예정',
+    sourceName: '한국대학신문 / 교육부 앵커 추진방안(2026.4.2)',
+    sourceUrl: 'https://news.unn.net/news/articleView.html?idxno=591242',
   },
   {
     id: 'innov', name: '대학혁신지원사업 (일반대, 3주기)', color: '#ec4899',
@@ -7497,7 +7499,7 @@ const UNIV_FUND_PROGRAMS = [
   },
   {
     id: 'hive', name: 'HiVE (고등직업교육거점지구)', color: '#a855f7',
-    period: '2022~2024 (마지막 독립 공모)', status: 'RISE 통합(2025~)',
+    period: '2022~2024 (마지막 독립 공모)', status: '앵커(구 RISE) 통합(2025~)',
     budget: '연 405억 원 (2022년 국비)', budgetNote: '지구당 3년 총 15억 원 내외 + 지방비 10% 이상',
     selected: '30개 지구(연합체)', selectedNote: '전국 6개 권역 각 5~6개',
     agency: '교육부 · 한국연구재단',
@@ -7508,13 +7510,13 @@ const UNIV_FUND_PROGRAMS = [
       { stage: '선정평가', date: '2022-05-23~27' },
       { stage: '최종선정', date: '2022-06-02' },
     ],
-    scheduleNote: '2022년 최초 30개 지구 선정 기준 · 2025년부터 RISE로 이관',
+    scheduleNote: '2022년 최초 30개 지구 선정 기준 · 2025년부터 RISE(2026.4 앵커로 개편)로 이관',
     sourceName: '한국대학신문',
     sourceUrl: 'http://news.unn.net/news/articleView.html?idxno=529018',
   },
   {
     id: 'life', name: 'LiFE 2.0 (대학 평생교육체제)', color: '#84cc16',
-    period: '2023~2024 (2주기)', status: 'RISE 통합(2025~)',
+    period: '2023~2024 (2주기)', status: '앵커(구 RISE) 통합(2025~)',
     budget: '연 510억 원', budgetNote: '언론 인용치 — 교육부 원문 미확인 · 대학별 평균 약 10억 원',
     selected: '50개교', selectedNote: '일반대 30 · 전문대 20',
     agency: '교육부 · 국가평생교육진흥원',
@@ -7525,7 +7527,7 @@ const UNIV_FUND_PROGRAMS = [
       { stage: '선정평가', date: '미확인' },
       { stage: '최종선정', date: '2023-06-21' },
     ],
-    scheduleNote: '2주기 기준 · 2025년부터 RISE로 이관',
+    scheduleNote: '2주기 기준 · 2025년부터 RISE(2026.4 앵커로 개편)로 이관',
     sourceName: '교육부 보도자료(2023.6.21)',
     sourceUrl: 'https://www.moe.go.kr/boardCnts/viewRenew.do?boardID=294&boardSeq=95403&lev=0&s=moe&m=020402&opType=N',
   },
