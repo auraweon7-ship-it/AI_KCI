@@ -915,7 +915,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v8.4</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v8.5</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3839,7 +3839,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v8.4 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v8.5 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -25569,29 +25569,48 @@ async function loadStock() {
 }
 
 // ══ RSS 맞춤 피드 ══
+// 2026-07 전수 검증(HTTP 200 + item 존재)한 피드만 등록
 const RSS_DEFAULTS = [
   { name:'교육부 보도자료', url:'https://news.google.com/rss/search?q=%EA%B5%90%EC%9C%A1%EB%B6%80+%EB%B3%B4%EB%8F%84%EC%9E%90%EB%A3%8C&hl=ko&gl=KR&ceid=KR:ko' },
-  { name:'연합뉴스 사회', url:'https://www.yna.co.kr/rss/socialculture.xml' },
-  { name:'연합뉴스 교육', url:'https://www.yna.co.kr/rss/education.xml' },
+  { name:'고등교육 정책', url:'https://news.google.com/rss/search?q=%EA%B3%A0%EB%93%B1%EA%B5%90%EC%9C%A1+%EC%A0%95%EC%B1%85&hl=ko&gl=KR&ceid=KR:ko' },
+  { name:'대학 재정지원사업', url:'https://news.google.com/rss/search?q=%EB%8C%80%ED%95%99+%EC%9E%AC%EC%A0%95%EC%A7%80%EC%9B%90%EC%82%AC%EC%97%85&hl=ko&gl=KR&ceid=KR:ko' },
+  { name:'연합뉴스 교육', url:'https://news.google.com/rss/search?q=%EC%97%B0%ED%95%A9%EB%89%B4%EC%8A%A4+%EA%B5%90%EC%9C%A1&hl=ko&gl=KR&ceid=KR:ko' },
+  { name:'한국대학신문', url:'https://www.unipress.co.kr/rss/allArticle.xml' },
   { name:'대학신문', url:'https://news.unn.net/rss/allArticle.xml' },
   { name:'교수신문', url:'https://www.kyosu.net/rss/allArticle.xml' },
-  { name:'교육신문', url:'https://www.hangyo.com/rss/allArticle.xml' },
+  { name:'베리타스알파', url:'https://www.veritas-a.com/rss/allArticle.xml' },
+  { name:'한겨레 사회', url:'https://www.hani.co.kr/rss/society/' },
+  { name:'경향 사회', url:'https://www.khan.co.kr/rss/rssdata/society_news.xml' },
+  { name:'조선 사회', url:'https://www.chosun.com/arc/outboundfeeds/rss/category/national/?outputType=xml' },
+  { name:'전자신문', url:'https://rss.etnews.com/Section902.xml' },
+];
+// 서비스가 중단(404)되었거나 XML 대신 HTML을 반환하는 피드 — 저장된 목록에서 1회 제거
+const RSS_DEAD = [
+  'https://www.yna.co.kr/rss/socialculture.xml',   // 404
+  'https://www.yna.co.kr/rss/education.xml',       // 404
+  'https://www.hangyo.com/rss/allArticle.xml',     // HTML 반환(item 0건)
 ];
 let rssCur = 0;
 function rssGetFeeds() {
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem('rss_feeds') || 'null'); } catch(_) {}
   if (!Array.isArray(saved) || !saved.length) return RSS_DEFAULTS;
-  // 신규 기본 피드(교수신문 등) 1회 병합 — 사용자가 직접 삭제한 경우 재추가 방지
-  const added = (() => { try { return JSON.parse(localStorage.getItem('rss_migrated') || '[]'); } catch(_) { return []; } })();
   let changed = false;
+  // 1) 죽은 기본 피드 제거
+  const before = saved.length;
+  saved = saved.filter(f => !RSS_DEAD.includes(f.url));
+  if (saved.length !== before) changed = true;
+  // 2) 신규 기본 피드 1회 병합 — 사용자가 직접 삭제한 경우 재추가 방지
+  const added = (() => { try { return JSON.parse(localStorage.getItem('rss_migrated') || '[]'); } catch(_) { return []; } })();
   RSS_DEFAULTS.forEach(d => {
     if (added.includes(d.url)) return;                       // 이미 병합 처리한 피드
     if (!saved.some(f => f.url === d.url)) { saved.push(d); changed = true; }
     added.push(d.url);
   });
+  if (!saved.length) saved = RSS_DEFAULTS.slice();
   if (changed) localStorage.setItem('rss_feeds', JSON.stringify(saved));
   localStorage.setItem('rss_migrated', JSON.stringify(added));
+  if (rssCur >= saved.length) rssCur = 0;
   return saved;
 }
 function rssRenderTabs() {
@@ -25609,38 +25628,51 @@ async function rssLoad() {
   rssRenderTabs();
   let items = null;
   try {
+    // ※ rss2json의 count 파라미터는 유료 전환됨 — 붙이면 전 피드가 실패한다. 클라이언트에서 자른다.
     const d = await (await Promise.race([
-      fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}&count=6`),
+      fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`),
       _tout(5000)
     ])).json();
-    if (d.status === 'ok' && d.items?.length) items = d.items.map(it => ({ title:it.title, link:it.link, date:it.pubDate }));
+    if (d.status === 'ok' && d.items?.length) items = d.items.slice(0,6).map(it => ({ title:it.title, link:it.link, date:it.pubDate }));
   } catch(_) {}
   if (!items) {
     try {
       const raw = await Promise.race([proxyfetch(feed.url), _tout(8000)]);
       const xml = new DOMParser().parseFromString(raw, 'text/xml');
-      const parsed = [...xml.querySelectorAll('item')].slice(0,6).map(it => ({
-        title: it.querySelector('title')?.textContent || '',
-        link:  it.querySelector('link')?.textContent || it.querySelector('guid')?.textContent || '',
-        date:  it.querySelector('pubDate')?.textContent || '',
-      })).filter(it => it.title);
+      // RSS 2.0(<item>) · Atom(<entry>) 모두 지원
+      const nodes = [...xml.querySelectorAll('item')];
+      const isAtom = !nodes.length;
+      const src = isAtom ? [...xml.querySelectorAll('entry')] : nodes;
+      const parsed = src.slice(0,6).map(it => {
+        const linkEl = it.querySelector('link');
+        return {
+          title: (it.querySelector('title')?.textContent || '').trim(),
+          link:  (isAtom ? (linkEl?.getAttribute('href') || '') : (linkEl?.textContent || ''))
+                 || it.querySelector('guid')?.textContent || '',
+          date:  it.querySelector('pubDate')?.textContent || it.querySelector('updated')?.textContent
+                 || it.querySelector('published')?.textContent || '',
+        };
+      }).filter(it => it.title);
       if (parsed.length) items = parsed;
     } catch(_) {}
   }
   if (items?.length) {
     el.innerHTML = items.map(it => {
-      const date = it.date ? new Date(it.date).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'}) : '';
+      const dt = it.date ? new Date(it.date) : null;
+      const date = (dt && !isNaN(dt)) ? dt.toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'}) : '';
       return `<div class="rss-item"><a href="${it.link}" target="_blank">${it.title}</a><div class="rss-item-meta">${date}</div></div>`;
     }).join('');
   } else {
-    // 폴백: 직접 링크 카드
+    // 폴백: 직접 링크 카드 (피드 호스트 홈으로)
+    let home = feed.url;
+    try { home = new URL(feed.url).origin; } catch(_) {}
     el.innerHTML = `
-      <a href="${feed.url.replace('/rss/','/').replace('allArticle.xml','')}" target="_blank"
+      <a href="${home}" target="_blank" rel="noopener"
          style="display:block;background:var(--accent);color:#fff;text-align:center;border-radius:6px;padding:8px;font-size:.78rem;font-weight:600;text-decoration:none;margin-bottom:6px">
         ${feed.name} 바로가기 ↗
       </a>
-      <div style="font-size:.68rem;color:var(--text-muted);text-align:center">
-        ※ 크롬 홈페이지 설정 시 기사가 자동 표시됩니다
+      <div style="font-size:.68rem;color:var(--text-muted);text-align:center;line-height:1.5">
+        피드를 불러오지 못했습니다.<br>네트워크·프록시 상태를 확인하세요.
       </div>`;
   }
 }
@@ -25677,9 +25709,11 @@ async function noticeLoad() {
   const kw = document.getElementById('noticeKw').value.trim().toLowerCase();
   el.innerHTML = '<div class="skel" style="height:30px"></div>';
   const rssFeeds = [
-    { url:'https://www.yna.co.kr/rss/education.xml', badge:'연합' },
+    { url:'https://news.google.com/rss/search?q=%EC%97%B0%ED%95%A9%EB%89%B4%EC%8A%A4+%EA%B5%90%EC%9C%A1&hl=ko&gl=KR&ceid=KR:ko', badge:'연합' },
+    { url:'https://www.unipress.co.kr/rss/allArticle.xml', badge:'한국대학신문' },
     { url:'https://news.unn.net/rss/allArticle.xml', badge:'대학신문' },
     { url:'https://www.kyosu.net/rss/allArticle.xml', badge:'교수신문' },
+    { url:'https://www.veritas-a.com/rss/allArticle.xml', badge:'베리타스알파' },
   ];
   let allItems = [];
   await Promise.all(rssFeeds.map(async f => {
@@ -25687,9 +25721,9 @@ async function noticeLoad() {
       // rss2json 우선
       let ok = false;
       try {
-        const d = await (await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}&count=8`)).json();
+        const d = await (await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}`)).json();
         if (d.status === 'ok' && d.items?.length) {
-          allItems.push(...d.items.map(it => ({ title:it.title, link:it.link, pubDate:it.pubDate, badge:f.badge })));
+          allItems.push(...d.items.slice(0,8).map(it => ({ title:it.title, link:it.link, pubDate:it.pubDate, badge:f.badge })));
           ok = true;
         }
       } catch(_) {}
