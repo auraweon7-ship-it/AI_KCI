@@ -942,7 +942,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.3</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.4</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1015,6 +1015,9 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       <div class="clock-time" id="clockTime">00:00:00</div>
       <div class="clock-date" id="clockDate"></div>
     </div>
+
+    <!-- 📌 오늘의 브리핑 (4열 패널) — 페이지 최상단. 로그인 시에만 채워진다. -->
+    <div id="briefPanel" style="margin-bottom:.8rem"></div>
 
     <!-- 오늘 브리핑 -->
     <div id="todayBriefing" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:.8rem;font-size:.72rem;color:var(--text-dim);"></div>
@@ -3867,7 +3870,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v9.3 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v9.4 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5303,13 +5306,14 @@ document.addEventListener('click', e => {
 
 // ── RENDER ──
 // 전체 메뉴에서만 보이는 상단 섹션들
-const ALL_ONLY_SECTIONS = ['todayBriefing', 'univNoticeWidget', 'newsWidget', 'schedWidget', 'todoWidget'];
+const ALL_ONLY_SECTIONS = ['briefPanel', 'todayBriefing', 'univNoticeWidget', 'newsWidget', 'schedWidget', 'todoWidget'];
 function renderAllOnlySections() {
   const show = state.activeCat === 'all';
   ALL_ONLY_SECTIONS.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('all-only-hidden', !show);
   });
+  if (show) briefRender();
 }
 
 function render() {
@@ -9525,6 +9529,7 @@ function briefToday() {
 function briefRender() {
   const el = document.getElementById('briefPanel');
   if (!el) return;
+  if (!isLoggedIn()) { el.innerHTML = ''; return; }   // 비로그인 사용자에겐 아무것도 없다
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const today = briefToday();
 
@@ -9736,15 +9741,6 @@ function renderLinks() {
     ctrlRow.appendChild(filterBox);
     ctrlRow.appendChild(sortSel);
     grid.appendChild(ctrlRow);
-
-    // 📌 오늘의 브리핑 — 로그인 사용자에게만. 링크 그리드보다 위에 온다.
-    if (isLoggedIn()) {
-      const brief = document.createElement('div');
-      brief.id = 'briefPanel';
-      brief.style.cssText = 'grid-column:1/-1;margin-bottom:.6rem';
-      grid.appendChild(brief);
-      briefRender();
-    }
 
     // 헬퍼: 미니 섹션 헤더 + 링크 카드 목록
     const miniSection = (label, color, links, secId) => {
