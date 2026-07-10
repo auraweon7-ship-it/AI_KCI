@@ -124,6 +124,16 @@
             filter: drop-shadow(0 0 12px rgba(124,106,255,0.25));
             letter-spacing: 1px;
         }
+        .app-version {
+            font-size: 10px;
+            font-weight: 600;
+            background: rgba(124,106,255,0.2);
+            -webkit-text-fill-color: var(--accent);
+            padding: 1px 6px;
+            border-radius: 8px;
+            vertical-align: middle;
+            letter-spacing: 0;
+        }
 
         .nav-visitor {
             display: flex;
@@ -2694,7 +2704,7 @@
     <!-- Top Navigation -->
     <nav class="top-nav">
         <div class="nav-inner">
-            <div class="nav-brand">漢字 필순마스터</div>
+            <div class="nav-brand">漢字 필순마스터 <span class="app-version">v2.0</span></div>
             <div class="nav-visitor" id="navVisitor" style="display:none;">
                 <span class="visitor-dot"></span>
                 <span id="visitorCount">0</span>명 방문

@@ -682,7 +682,10 @@
 
     window.isUserLoggedIn = function() { return !!currentUser; };
     window.getCurrentUser = function() { return currentUser; };
-    window.isUserApproved = function() { return !!(currentUser && currentUser.approved); };
+    window.isUserApproved = function() {
+        if (!currentUser) return false;
+        return currentUser.approved !== false;
+    };
     window.recheckApproval = function(cb) {
         if (!authToken || !currentUser) return cb(false);
         fetch(API_BASE + '/auth/status', {
