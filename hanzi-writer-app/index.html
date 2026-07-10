@@ -3384,17 +3384,6 @@
                 if (typeof showLoginModal === 'function') showLoginModal();
                 return;
             }
-            if (typeof isUserApproved === 'function' && !isUserApproved()) {
-                if (typeof recheckApproval === 'function') {
-                    recheckApproval(function(ok) {
-                        if (ok) { selectChar(char); }
-                        else { showToast('⏳ 관리자 승인 대기 중입니다. 승인 후 한자쓰기를 이용할 수 있습니다.'); }
-                    });
-                } else {
-                    showToast('⏳ 관리자 승인 대기 중입니다. 승인 후 한자쓰기를 이용할 수 있습니다.');
-                }
-                return;
-            }
             document.getElementById('charInput').value = char;
             currentChar = char;
 
