@@ -942,7 +942,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.5</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.6</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1024,6 +1024,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
           <span style="display:flex;background:var(--bg3);border-radius:6px;overflow:hidden;">
             <button id="schedViewMonth" onclick="schedSetView('month')" style="font-size:.62rem;padding:3px 8px;border:none;background:var(--accent);color:#fff;cursor:pointer">월간</button>
             <button id="schedViewWeek" onclick="schedSetView('week')" style="font-size:.62rem;padding:3px 8px;border:none;background:transparent;color:var(--text-dim);cursor:pointer">주간</button>
+            <button id="schedViewAgenda" onclick="schedSetView('agenda')" style="font-size:.62rem;padding:3px 8px;border:none;background:transparent;color:var(--text-dim);cursor:pointer">목록</button>
           </span>
           <button class="news-refresh-btn" onclick="schedMove(-1)" title="이전">‹</button>
           <span id="schedTitle" style="font-size:.78rem;font-weight:700;color:var(--text)"></span>
@@ -1032,6 +1033,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
             style="width:110px;padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.66rem;outline:none;">
           <button onclick="openLectureManager()" title="강의시간 관리" style="font-size:.66rem;padding:3px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;">📚 강의</button>
           <button onclick="gcalSync()" title="구글 캘린더에서 가져오기" style="font-size:.72rem;padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:3px"><span style="color:#4285f4;font-weight:800">G</span>⬇</button>
+          <button onclick="schedExportICS()" title=".ics로 내보내기 (아웃룩·애플 캘린더)" style="font-size:.66rem;padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;">📤 ICS</button>
           <button onclick="gcalPushAll()" title="구글 캘린더로 보내기" style="font-size:.72rem;padding:3px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);cursor:pointer;display:flex;align-items:center;gap:3px"><span style="color:#4285f4;font-weight:800">G</span>⬆</button>
           <a href="https://calendar.google.com" target="_blank" rel="noopener" title="구글 캘린더 열기" style="font-size:.72rem;text-decoration:none">🗓</a>
         </span>
@@ -1085,13 +1087,16 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
     <div class="news-widget" id="todoWidget">
       <div class="news-widget-header">
         <span>✅ TO-DO 리스트</span>
-        <label style="margin-left:auto;font-size:.62rem;color:var(--text-dim);display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="todoHideDone" onchange="todoRender()"> 완료 숨김</label>
+        <span id="todoOverdueCount" style="margin-left:auto;font-size:.6rem;font-weight:700;color:#ef4444;"></span>
+        <label style="margin-left:8px;font-size:.62rem;color:var(--text-dim);display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="todoHideOverdue" onchange="todoRender()"> 지난 항목 숨김</label>
+        <label style="margin-left:8px;font-size:.62rem;color:var(--text-dim);display:flex;align-items:center;gap:3px;cursor:pointer;"><input type="checkbox" id="todoHideDone" onchange="todoRender()"> 완료 숨김</label>
         <span style="font-size:.64rem;color:var(--text-dim);margin-left:8px;" id="todoCount"></span>
       </div>
       <!-- 진행률 바 -->
       <div style="height:5px;background:var(--bg3);border-radius:3px;overflow:hidden;margin-bottom:8px;"><div id="todoProgress" style="height:100%;width:0;background:var(--success,#3fb950);transition:width .3s;"></div></div>
       <div style="display:flex;gap:6px;margin-bottom:8px;">
-        <input id="todoInput" placeholder="할 일 입력 후 Enter"
+        <input id="todoInput" placeholder="할 일 입력 후 Enter — 예: 내일 15:00 대학정책포럼 #회의 !높음"
+          title="자연어 인식: 오늘·내일·모레·N일 후 / 7/15 · 2026-07-15 / 15:00 · 오후 3시 / #분류 / !높음"
           style="flex:1;min-width:0;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;outline:none"
           onkeydown="if(event.key==='Enter')todoAdd()">
         <input id="todoDue" type="date" title="마감일" style="flex-shrink:0;padding:6px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.7rem;outline:none;color-scheme:dark;">
@@ -3870,7 +3875,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v9.5 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v9.6 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -4170,12 +4175,59 @@ let schedView = localStorage.getItem('sched_view') || 'month';  // month | week
 let schedWeekStart = null;  // 주간 뷰 시작일(일요일)
 function schedSetView(v) {
   schedView = v; localStorage.setItem('sched_view', v);
-  document.getElementById('schedViewMonth').style.background = v==='month'?'var(--accent)':'transparent';
-  document.getElementById('schedViewMonth').style.color = v==='month'?'#fff':'var(--text-dim)';
-  document.getElementById('schedViewWeek').style.background = v==='week'?'var(--accent)':'transparent';
-  document.getElementById('schedViewWeek').style.color = v==='week'?'#fff':'var(--text-dim)';
+  [['schedViewMonth','month'], ['schedViewWeek','week'], ['schedViewAgenda','agenda']].forEach(([id, k]) => {
+    const b = document.getElementById(id);
+    if (!b) return;
+    b.style.background = v === k ? 'var(--accent)' : 'transparent';
+    b.style.color = v === k ? '#fff' : 'var(--text-dim)';
+  });
   if (v==='week' && !schedWeekStart) { const d=new Date(schedCurDate); d.setDate(d.getDate()-d.getDay()); schedWeekStart=d; }
   schedRender();
+}
+
+// ── 아젠다(목록) 뷰 — 앞으로 14일. 월간 격자에서 잘리는 일정을 전부 보여준다. ──
+const AGENDA_DAYS = 14;
+function schedRenderAgenda(loggedIn) {
+  const grid = document.getElementById('schedGrid');
+  const title = document.getElementById('schedTitle');
+  grid.style.gridTemplateColumns = '1fr';
+  const start = new Date(); start.setHours(0,0,0,0);
+  const end = new Date(start); end.setDate(end.getDate() + AGENDA_DAYS - 1);
+  if (title) title.textContent = `${start.getMonth()+1}.${start.getDate()} ~ ${end.getMonth()+1}.${end.getDate()}`;
+
+  if (!loggedIn) {
+    grid.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:.74rem">🔒 로그인 후 일정이 표시됩니다</div>';
+    return;
+  }
+  const DOWS = ['일','월','화','수','목','금','토'];
+  const rows = [];
+  for (let i = 0; i < AGENDA_DAYS; i++) {
+    const d = new Date(start); d.setDate(d.getDate() + i);
+    const ds = _dstr(d);
+    let evs = schedGetEventsFor(ds);
+    if (schedFilterCat) evs = evs.filter(e => (e.cat || '기타') === schedFilterCat);
+    if (!evs.length) continue;
+    const isToday = i === 0;
+    const dow = d.getDay();
+    const dowCol = dow === 0 ? '#ef4444' : dow === 6 ? '#3b82f6' : 'var(--text)';
+    rows.push(`<div style="display:grid;grid-template-columns:82px 1fr;gap:10px;padding:8px 4px;border-top:1px solid var(--border)">
+      <div style="text-align:right">
+        <div style="font-size:.8rem;font-weight:800;color:${isToday ? 'var(--accent)' : dowCol}">${d.getMonth()+1}.${d.getDate()} (${DOWS[dow]})</div>
+        ${isToday ? '<div style="font-size:.56rem;font-weight:700;color:var(--accent)">오늘</div>' : `<div style="font-size:.56rem;color:var(--text-muted)">D-${i}</div>`}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+        ${evs.map(e => `<div onclick="schedOpenDay('${ds}')" style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--bg3);border-radius:6px;cursor:pointer;min-width:0">
+          ${e.time ? `<span style="font-size:.64rem;font-weight:700;color:var(--accent2);flex-shrink:0">${e.time}</span>` : ''}
+          ${e.cat ? `<span style="font-size:.56rem;font-weight:700;color:#fff;background:${SCHED_CAT_COLORS[e.cat]||'#94a3b8'};padding:1px 6px;border-radius:8px;flex-shrink:0">${e.cat}</span>` : ''}
+          <span style="font-size:.72rem;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(e.text||'').replace(/</g,'&lt;')}</span>
+          ${e._repeat ? `<button onclick="schedSkipOccurrence('${e._anchor}',${e._idx},'${ds}',event)" title="이 회차만 제외" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.62rem;flex-shrink:0">🔁✕</button>` : ''}
+        </div>`).join('')}
+      </div>
+    </div>`);
+  }
+  grid.innerHTML = rows.length
+    ? `<div>${rows.join('')}</div>`
+    : `<div style="padding:24px;text-align:center;color:var(--text-muted);font-size:.74rem">앞으로 ${AGENDA_DAYS}일간 등록된 일정이 없습니다</div>`;
 }
 let gcalEvents = {};  // 구글 캘린더 동기화 결과 { 'YYYY-MM-DD': [text,...] }
 const SCHED_CAT_COLORS = {
@@ -4348,6 +4400,7 @@ function schedGetEventsFor(ds) {
     if (anchor > target) return;
     evs.forEach((ev, i) => {
       if (!ev.repeat) return;
+      if (ev.exdates && ev.exdates.includes(ds)) return;   // 이 회차는 제외됨
       const match = ev.repeat === 'w'
         ? anchor.getDay() === target.getDay()
         : ev.repeat === 'm' && anchor.getDate() === target.getDate();
@@ -4356,6 +4409,95 @@ function schedGetEventsFor(ds) {
   });
   out.sort((a,b) => (a.time||'99:99').localeCompare(b.time||'99:99'));
   return out;
+}
+
+// ── 반복 일정의 특정 회차만 제외 (exdates) ──
+function schedSkipOccurrence(anchor, idx, ds, ev) {
+  if (ev) ev.stopPropagation();
+  const all = schedGetAll();
+  const target = all[anchor]?.[idx];
+  if (!target) return;
+  target.exdates = target.exdates || [];
+  if (!target.exdates.includes(ds)) target.exdates.push(ds);
+  schedSaveAll(all);
+  schedRender();
+  showToast(`${ds} 회차만 제외했습니다`);
+}
+function schedRestoreOccurrence(anchor, idx, ds) {
+  const all = schedGetAll();
+  const target = all[anchor]?.[idx];
+  if (!target?.exdates) return;
+  target.exdates = target.exdates.filter(d => d !== ds);
+  if (!target.exdates.length) delete target.exdates;
+  schedSaveAll(all);
+  schedRender();
+}
+
+// ── ICS 내보내기 (아웃룩·애플 캘린더 호환) ──
+// 순수 문자열 생성이라 서버가 필요 없다.
+function icsEscape(s) {
+  return String(s || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+}
+// RFC 5545: 한 줄 75옥텟 제한 → 접기
+function icsFold(line) {
+  const bytes = new TextEncoder().encode(line);
+  if (bytes.length <= 73) return line;
+  const out = [];
+  let cur = '';
+  for (const ch of line) {
+    const next = cur + ch;
+    if (new TextEncoder().encode(next).length > 72) { out.push(cur); cur = ' ' + ch; }
+    else cur = next;
+  }
+  if (cur) out.push(cur);
+  return out.join('\r\n');
+}
+function schedExportICS() {
+  if (!gateOK()) { showToast('로그인 후 이용할 수 있습니다 🔒'); return; }
+  const all = schedGetAll();
+  const stamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+  const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Start Page//University Schedule//KO', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+  let n = 0;
+
+  Object.entries(all).forEach(([ds, evs]) => {
+    evs.forEach((ev, i) => {
+      const d = ds.replace(/-/g, '');
+      const uid = `${ev.id || (ds + '-' + i)}@startpage`;
+      lines.push('BEGIN:VEVENT', `UID:${uid}`, `DTSTAMP:${stamp}`);
+
+      if (ev.time && /^\d{2}:\d{2}$/.test(ev.time)) {
+        const [hh, mm] = ev.time.split(':');
+        // 종일이 아닌 일정은 1시간짜리로 본다
+        const startH = +hh, endH = (startH + 1) % 24;
+        const endD = endH === 0 ? String(+d + 1) : d;   // 자정 넘김은 드물지만 방어
+        lines.push(`DTSTART;TZID=Asia/Seoul:${d}T${hh}${mm}00`);
+        lines.push(`DTEND;TZID=Asia/Seoul:${endD}T${String(endH).padStart(2,'0')}${mm}00`);
+      } else {
+        const next = new Date(ds); next.setDate(next.getDate() + 1);
+        lines.push(`DTSTART;VALUE=DATE:${d}`, `DTEND;VALUE=DATE:${_dstr(next).replace(/-/g,'')}`);
+      }
+
+      lines.push(icsFold(`SUMMARY:${icsEscape(ev.text)}`));
+      if (ev.cat) lines.push(icsFold(`CATEGORIES:${icsEscape(ev.cat)}`));
+      if (ev.repeat === 'w') lines.push('RRULE:FREQ=WEEKLY');
+      if (ev.repeat === 'm') lines.push('RRULE:FREQ=MONTHLY');
+      // 제외 회차
+      (ev.exdates || []).forEach(x => lines.push(`EXDATE;VALUE=DATE:${x.replace(/-/g,'')}`));
+      lines.push('END:VEVENT');
+      n++;
+    });
+  });
+
+  if (!n) { showToast('내보낼 일정이 없습니다'); return; }
+  lines.push('END:VCALENDAR');
+
+  const blob = new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/calendar;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `startpage-schedule-${_dstr(new Date())}.ics`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  showToast(`${n}건을 .ics로 내보냈습니다 📅`);
 }
 function schedMove(dir) {
   if (schedView === 'week') {
@@ -4377,6 +4519,7 @@ function schedRender() {
   const panel = document.getElementById('schedDayPanel');
   // 비로그인: 빈 캘린더 격자는 표시, 일정 데이터·입력 패널만 숨김
   if (panel) panel.style.display = loggedIn ? '' : 'none';
+  if (schedView === 'agenda') { schedRenderAgenda(loggedIn); return; }
   if (schedView === 'week') { schedRenderWeek(loggedIn); return; }
   grid.style.gridTemplateColumns = 'repeat(7,minmax(0,1fr))';  // 월간 복귀 (셀 넘침 방지)
   title.textContent = `${schedYear}년 ${schedMonth+1}월`;
@@ -4807,31 +4950,95 @@ function lecMemoSave() {
 function todoStoreKey() { const e = userEmail(); return e ? 'todo_items__' + e : 'todo_items'; }
 function todoGetAll() { if (!isLoggedIn()) return []; return JSON.parse(localStorage.getItem(todoStoreKey()) || '[]'); }
 function todoSaveAll(list) { if (isLoggedIn()) { localStorage.setItem(todoStoreKey(), JSON.stringify(list)); cloudPush('todo_items'); } }
-function todoAddItem(text, dueDate, cat, prio) {
-  if (!isLoggedIn()) { showToast('로그인 후 이용할 수 있습니다 🔒'); return; }
-  const list = todoGetAll();
-  const now = new Date();
-  const created = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-  list.push({ id: 't' + Date.now() + Math.floor(performance.now()), text: text.slice(0, 60), done: false, created, due: dueDate || created, cat: cat || '', prio: prio || 2 });
-  todoSaveAll(list); todoRender();
+const _dstr = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
+/**
+ * 자연어 입력 파싱. "내일 15:00 대학정책포럼 #회의 !높음" 같은 문자열에서
+ * 날짜·시간·분류·우선순위를 뽑고 나머지를 본문으로 돌려준다.
+ * 매치된 토큰만 제거하므로, 아무것도 안 걸리면 원문 그대로다.
+ */
+function todoParseNL(raw) {
+  let s = ' ' + raw + ' ';
+  const out = { due: '', time: '', cat: '', prio: null };
+  const today = new Date(); today.setHours(0,0,0,0);
+  const shift = n => { const d = new Date(today); d.setDate(d.getDate() + n); return _dstr(d); };
+
+  // #분류 (등록된 분류만)
+  s = s.replace(/#(\S+)/g, (m, c) => { if (SCHED_CAT_COLORS[c]) { out.cat = c; return ' '; } return m; });
+  // !높음 / !보통 / !낮음
+  s = s.replace(/!(높음|보통|낮음)/g, (m, p) => { out.prio = { '높음':3, '보통':2, '낮음':1 }[p]; return ' '; });
+
+  // 상대 날짜
+  const REL = { '오늘':0, '내일':1, '모레':2, '글피':3 };
+  s = s.replace(/(오늘|내일|모레|글피)/, (m, w) => { out.due = shift(REL[w]); return ' '; });
+  // N일 후 / N주 후
+  if (!out.due) s = s.replace(/(\d+)일\s*(?:후|뒤)/, (m, n) => { out.due = shift(+n); return ' '; });
+  if (!out.due) s = s.replace(/(\d+)주\s*(?:후|뒤)/, (m, n) => { out.due = shift(+n * 7); return ' '; });
+  // YYYY-M-D / YYYY.M.D
+  if (!out.due) s = s.replace(/(\d{4})[-.](\d{1,2})[-.](\d{1,2})/, (m, y, mo, d) => {
+    out.due = `${y}-${String(+mo).padStart(2,'0')}-${String(+d).padStart(2,'0')}`; return ' ';
+  });
+  // M/D 또는 M월 D일 — 이미 지난 날짜면 내년으로
+  if (!out.due) s = s.replace(/(\d{1,2})\s*[\/월]\s*(\d{1,2})\s*일?/, (m, mo, d) => {
+    let y = today.getFullYear();
+    const cand = new Date(y, +mo - 1, +d);
+    if (cand < today) y++;
+    out.due = `${y}-${String(+mo).padStart(2,'0')}-${String(+d).padStart(2,'0')}`; return ' ';
+  });
+
+  // 시간: 15:00 / 오후 3시 / 3시 30분
+  s = s.replace(/(\d{1,2}):(\d{2})/, (m, hh, mm) => { out.time = `${String(+hh).padStart(2,'0')}:${mm}`; return ' '; });
+  if (!out.time) s = s.replace(/(오전|오후)?\s*(\d{1,2})시\s*(?:(\d{1,2})분)?/, (m, ap, hh, mm) => {
+    let h = +hh;
+    if (ap === '오후' && h < 12) h += 12;
+    if (ap === '오전' && h === 12) h = 0;
+    out.time = `${String(h).padStart(2,'0')}:${String(+(mm||0)).padStart(2,'0')}`; return ' ';
+  });
+
+  out.text = s.replace(/\s+/g, ' ').trim();
+  return out;
 }
+
+function todoAddItem(text, dueDate, cat, prio, extra) {
+  if (!isLoggedIn()) { showToast('로그인 후 이용할 수 있습니다 🔒'); return null; }
+  const list = todoGetAll();
+  const created = _dstr(new Date());
+  const item = { id: 't' + Date.now() + Math.floor(performance.now()), text: text.slice(0, 60), done: false, created, due: dueDate || created, cat: cat || '', prio: prio || 2, ...(extra || {}) };
+  list.push(item);
+  todoSaveAll(list); todoRender();
+  return item;
+}
+
 function todoAdd() {
   const inp = document.getElementById('todoInput');
   const dueEl = document.getElementById('todoDue');
   const prioEl = document.getElementById('todoPrio');
-  const t = inp.value.trim();
-  if (!t) return;
-  const due = dueEl?.value || '';
-  todoAddItem(t, due, '', parseInt(prioEl?.value)||2);
-  // 캘린더에도 자동 등록 (마감일 없으면 오늘)
-  const ds = due || (() => { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })();
+  const raw = inp.value.trim();
+  if (!raw) return;
+
+  // 자연어에서 뽑은 값이 우선. 입력칸 값은 폴백.
+  const nl = todoParseNL(raw);
+  const text = nl.text || raw;
+  const due  = nl.due || dueEl?.value || _dstr(new Date());
+  const prio = nl.prio || parseInt(prioEl?.value) || 2;
+  const cat  = nl.cat || '';
+
+  const linkId = 'lk' + Date.now() + Math.floor(Math.random()*1e4);
+  const item = todoAddItem(text, due, cat, prio, { linkId });
+  if (!item) return;   // 로그인 게이트에서 막힘
+
+  // 캘린더에도 같은 linkId로 등록 → 한쪽을 지우면 같이 지워진다
   const all = schedGetAll();
-  if (!all[ds]) all[ds] = [];
-  all[ds].push({ id: 'ev' + Date.now(), text: t.slice(0,60), time: '', repeat: '', cat: '기타', fromTodo: true });
-  all[ds].sort((a,b) => (a.time||'99:99').localeCompare(b.time||'99:99'));
+  if (!all[due]) all[due] = [];
+  all[due].push({ id: 'ev' + Date.now(), text: text.slice(0,60), time: nl.time || '', repeat: '', cat: cat || '기타', fromTodo: true, linkId });
+  all[due].sort((a,b) => (a.time||'99:99').localeCompare(b.time||'99:99'));
   schedSaveAll(all);
   schedRender();
+
   inp.value = ''; if (dueEl) dueEl.value = ''; if (prioEl) prioEl.value = '2';
+  if (nl.due || nl.time || nl.cat || nl.prio) {
+    showToast(`해석: ${nl.due || due}${nl.time ? ' ' + nl.time : ''}${nl.cat ? ' · ' + nl.cat : ''} 📝`);
+  }
 }
 function todoToggle(id) {
   const list = todoGetAll();
@@ -4843,8 +5050,60 @@ function todoToggle(id) {
     todoSaveAll(list); todoRender();
   }
 }
+// TO-DO 삭제 — linkId로 묶인 캘린더 일정도 함께 지운다
 function todoDel(id) {
-  todoSaveAll(todoGetAll().filter(x => x.id !== id)); todoRender();
+  const list = todoGetAll();
+  const it = list.find(x => x.id === id);
+  if (it?.linkId) schedDelByLink(it.linkId);
+  todoSaveAll(list.filter(x => x.id !== id));
+  todoRender();
+}
+
+// ── TO-DO 인라인 편집 ──
+let _todoEditId = null;
+function todoEdit(id) { _todoEditId = id; todoRender(); }
+function todoCancelEdit() { _todoEditId = null; todoRender(); }
+function todoSaveEdit(id) {
+  const list = todoGetAll();
+  const it = list.find(x => x.id === id);
+  if (!it) return;
+  const text = document.getElementById('todoEditText')?.value.trim();
+  if (!text) { showToast('내용을 입력하세요'); return; }
+  const oldDue = it.due, oldText = it.text;
+  it.text = text.slice(0, 60);
+  it.due  = document.getElementById('todoEditDue')?.value || it.due;
+  it.prio = parseInt(document.getElementById('todoEditPrio')?.value) || it.prio;
+  it.cat  = document.getElementById('todoEditCat')?.value || '';
+  // 연결된 캘린더 일정도 따라 움직인다
+  if (it.linkId && (oldDue !== it.due || oldText !== it.text)) {
+    schedDelByLink(it.linkId);
+    schedAddLinked(it.due, it.text, it.cat, it.linkId);
+  }
+  todoSaveAll(list);
+  _todoEditId = null;
+  todoRender();
+}
+
+// ── TO-DO ↔ 캘린더 연결 (linkId) ──
+function schedDelByLink(linkId) {
+  const all = schedGetAll();
+  let changed = false;
+  Object.keys(all).forEach(k => {
+    const before = all[k].length;
+    all[k] = all[k].filter(e => e.linkId !== linkId);
+    if (all[k].length !== before) changed = true;
+    if (!all[k].length) delete all[k];
+  });
+  if (changed) { schedSaveAll(all); if (typeof schedRender === 'function') schedRender(); }
+}
+function schedAddLinked(ds, text, cat, linkId) {
+  if (!ds) return;
+  const all = schedGetAll();
+  if (!all[ds]) all[ds] = [];
+  all[ds].push({ id: 'ev' + Date.now() + Math.floor(Math.random()*1e4), text: text.slice(0,60), time: '', repeat: '', cat: cat || '기타', fromTodo: true, linkId });
+  all[ds].sort((a,b) => (a.time||'99:99').localeCompare(b.time||'99:99'));
+  schedSaveAll(all);
+  if (typeof schedRender === 'function') schedRender();
 }
 // ── TO-DO 일정 분류 도넛 차트 (주/월/연 동시) ──
 function todoRenderStats() {
@@ -4938,10 +5197,21 @@ function todoRender() {
   if (cnt) cnt.textContent = totalCnt ? `${doneCnt}/${totalCnt} 완료` : '';
   const prog = document.getElementById('todoProgress');
   if (prog) prog.style.width = totalCnt ? Math.round(doneCnt/totalCnt*100)+'%' : '0';
+  const _today = _dstr(new Date());
+  const isOverdue = x => !x.done && x.due && x.due < _today;
+  const overdueCnt = list.filter(isOverdue).length;
+  const odEl = document.getElementById('todoOverdueCount');
+  if (odEl) odEl.textContent = overdueCnt ? `지남 ${overdueCnt}건` : '';
   // 완료 숨김 옵션
   if (document.getElementById('todoHideDone')?.checked) list = list.filter(x => !x.done);
-  // 정렬: 미완료 우선 → 우선순위 높은순 → 마감 빠른순
-  list.sort((a,b) => (a.done?1:0)-(b.done?1:0) || (b.prio||2)-(a.prio||2) || (a.due||a.created||'9999').localeCompare(b.due||b.created||'9999'));
+  // 지난 항목 숨김 옵션
+  if (document.getElementById('todoHideOverdue')?.checked) list = list.filter(x => !isOverdue(x));
+  // 정렬: 지난 항목 최상단 → 미완료 우선 → 우선순위 높은순 → 마감 빠른순
+  list.sort((a,b) =>
+    (isOverdue(b)?1:0)-(isOverdue(a)?1:0) ||
+    (a.done?1:0)-(b.done?1:0) ||
+    (b.prio||2)-(a.prio||2) ||
+    (a.due||a.created||'9999').localeCompare(b.due||b.created||'9999'));
   if (!list.length) {
     grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:10px;color:var(--text-muted);font-size:.7rem">할 일을 추가하세요</div>';
     todoRenderStats();
@@ -4952,6 +5222,7 @@ function todoRender() {
   const todayStr = (() => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`; })();
   const PRIO = { 3:{t:'높음',c:'#ef4444'}, 2:{t:'보통',c:'#f59e0b'}, 1:{t:'낮음',c:'#64748b'} };
   grid.innerHTML = list.map(it => {
+    if (_todoEditId === it.id) return todoEditForm(it);
     const datePrefix = fmtDate(it.due || it.created);
     const overdue = !it.done && it.due && it.due < todayStr;
     const pr = PRIO[it.prio||2];
@@ -4981,10 +5252,35 @@ function todoRender() {
           ${it.done?'<span style="position:absolute;left:0;right:0;top:50%;height:1.5px;background:rgba(231,76,60,.7);pointer-events:none;"></span>':''}
         </span>`;
       })()}
+      ${it.linkId ? '<span title="캘린더 일정과 연결됨 — 삭제 시 함께 지워집니다" style="position:absolute;right:38px;top:5px;font-size:.6rem;opacity:.5">🔗</span>' : ''}
+      <button onclick="todoEdit('${it.id}')" title="편집" style="position:absolute;right:20px;top:4px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.62rem;">✏️</button>
       <button onclick="todoDel('${it.id}')" title="삭제" style="position:absolute;right:4px;top:4px;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.62rem;">✕</button>
     </div>`;
   }).join('');
   todoRenderStats();
+}
+
+// 편집 폼 (카드 자리에 인라인으로 그려진다)
+function todoEditForm(it) {
+  const cats = ['', ...Object.keys(SCHED_CAT_COLORS)];
+  return `<div style="grid-column:span 1;padding:8px;background:var(--card);border:1.5px solid var(--accent);border-radius:8px;font-size:.7rem">
+    <input id="todoEditText" value="${(it.text||'').replace(/"/g,'&quot;')}" maxlength="60"
+      onkeydown="if(event.key==='Enter'&&!event.isComposing)todoSaveEdit('${it.id}');if(event.key==='Escape')todoCancelEdit()"
+      style="width:100%;padding:5px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.72rem;outline:none;margin-bottom:5px;font-family:inherit">
+    <div style="display:flex;gap:4px;margin-bottom:5px">
+      <input id="todoEditDue" type="date" value="${it.due||''}" style="flex:1;min-width:0;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.66rem;color-scheme:dark">
+      <select id="todoEditPrio" style="padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.66rem;cursor:pointer">
+        ${[[3,'높음'],[2,'보통'],[1,'낮음']].map(([v,t]) => `<option value="${v}" ${(it.prio||2)===v?'selected':''}>${t}</option>`).join('')}
+      </select>
+      <select id="todoEditCat" style="padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.66rem;cursor:pointer">
+        ${cats.map(c => `<option value="${c}" ${(it.cat||'')===c?'selected':''}>${c||'분류 없음'}</option>`).join('')}
+      </select>
+    </div>
+    <div style="display:flex;gap:4px">
+      <button onclick="todoSaveEdit('${it.id}')" style="flex:1;padding:4px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.66rem;cursor:pointer;font-family:inherit">저장</button>
+      <button onclick="todoCancelEdit()" style="flex:1;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.66rem;cursor:pointer;font-family:inherit">취소</button>
+    </div>
+  </div>`;
 }
 
 // ── 구글 캘린더에 일정 쓰기 (토큰 캐싱 — 세션 내 재로그인 방지) ──
@@ -5180,17 +5476,24 @@ function schedOpenDay(ds) {
 }
 function schedRenderEvList() {
   const box = document.getElementById('schedEvList');
-  const all = schedGetAll();
-  const evs = all[schedCurDate] || [];
+  // 반복 회차까지 포함해 보여준다(_repeat=true는 다른 날짜에 저장된 원본의 파생)
+  const evs = schedGetEventsFor(schedCurDate);
   if (!evs.length) { box.innerHTML = '<div style="font-size:.72rem;color:var(--text-muted);text-align:center;padding:8px 0">등록된 일정 없음</div>'; return; }
-  box.innerHTML = evs.map((ev, i) => {
+  box.innerHTML = evs.map(ev => {
     const gd = schedCurDate.replace(/-/g,'');
     const gUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(ev.text)}&dates=${gd}/${gd}`;
+    // 반복 파생 회차는 원본을 지우면 안 된다 → 이 회차만 제외
+    const actions = ev._repeat
+      ? `<span title="반복 일정" style="font-size:.62rem;opacity:.6;flex-shrink:0">🔁</span>
+         <button onclick="schedSkipOccurrence('${ev._anchor}',${ev._idx},'${schedCurDate}',event)" title="이 회차만 제외" style="background:none;border:none;color:var(--danger,#e74c3c);cursor:pointer;font-size:.7rem;flex-shrink:0">✕</button>`
+      : `<button onclick="schedEditEv(${ev._idx})" title="수정" style="background:none;border:none;cursor:pointer;font-size:.7rem;flex-shrink:0">✏️</button>
+         <button onclick="schedDelEv(${ev._idx})" title="삭제" style="background:none;border:none;color:var(--danger,#e74c3c);cursor:pointer;font-size:.7rem;flex-shrink:0">✕</button>`;
     return `<div style="display:flex;align-items:center;gap:6px;padding:6px 8px;background:var(--bg3);border-radius:6px;font-size:.74rem">
-      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ev.text}</span>
+      ${ev.time ? `<span style="font-size:.66rem;font-weight:700;color:var(--accent2);flex-shrink:0">${ev.time}</span>` : ''}
+      <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(ev.text||'').replace(/</g,'&lt;')}</span>
+      ${ev.linkId ? '<span title="TO-DO와 연결됨" style="font-size:.62rem;opacity:.5;flex-shrink:0">🔗</span>' : ''}
       <a href="${gUrl}" target="_blank" rel="noopener" title="구글 캘린더에 등록" style="text-decoration:none;flex-shrink:0">🗓</a>
-      <button onclick="schedEditEv(${i})" title="수정" style="background:none;border:none;cursor:pointer;font-size:.7rem;flex-shrink:0">✏️</button>
-      <button onclick="schedDelEv(${i})" title="삭제" style="background:none;border:none;color:var(--danger,#e74c3c);cursor:pointer;font-size:.7rem;flex-shrink:0">✕</button>
+      ${actions}
     </div>`;
   }).join('');
 }
@@ -5222,6 +5525,13 @@ function schedDelEv(i, anchor, ev) {
   const key = anchor || schedCurDate;
   const all = schedGetAll();
   if (!all[key]) return;
+  // linkId로 묶인 TO-DO도 함께 지운다
+  const gone = all[key][i];
+  if (gone?.linkId) {
+    const list = todoGetAll();
+    const rest = list.filter(t => t.linkId !== gone.linkId);
+    if (rest.length !== list.length) { todoSaveAll(rest); todoRender(); }
+  }
   all[key].splice(i, 1);
   if (!all[key].length) delete all[key];
   schedSaveAll(all);
