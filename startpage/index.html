@@ -903,7 +903,24 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 @media (max-width: 960px) { .music-grid { grid-template-columns: repeat(3, 1fr) !important; } }
 @media (max-width: 560px) { .music-grid { grid-template-columns: 1fr !important; } }
 .yt-thumb.playing { outline: 2px solid var(--accent2); outline-offset: 1px; box-shadow: 0 0 0 3px rgba(236,72,153,.35); }
-@media (max-width: 900px) { .uf-cards { grid-template-columns: 1fr !important; } }
+@media (max-width: 900px) {
+  .uf-cards { grid-template-columns: 1fr !important; }
+  /* 타임라인: 사업명 레인 폭 축소(가로 스크롤 유지) */
+  .uf-tl-row { grid-template-columns: 118px 1fr !important; gap: 6px !important; }
+  .uf-tl-grid { left: 124px !important; }
+}
+@media (max-width: 640px) {
+  /* 예산·선정대학 2열 → 1열 */
+  .uf-kv { grid-template-columns: 1fr !important; }
+  /* 사업 AI: 헤더 줄바꿈, 설명문 숨김, 프리셋 가로 스크롤 */
+  .uf-ai-head { flex-wrap: wrap; }
+  .uf-ai-head > div:nth-child(2) { display: none; }
+  .uf-presets { flex-wrap: nowrap !important; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+  .uf-presets button { flex: 0 0 auto; }
+  /* 상세 팝업: 화면 꽉 채우기 */
+  .uf-overlay { padding: 10px !important; align-items: flex-start !important; }
+  .uf-modal { max-height: 92vh !important; padding: 16px 14px !important; }
+}
 @media (max-width: 1100px) { .yt-grid { grid-template-columns: repeat(3, 1fr) !important; } }
 @media (max-width: 760px) { .yt-grid { grid-template-columns: repeat(2, 1fr) !important; } }
 @media (max-width: 520px) { .yt-grid { grid-template-columns: 1fr !important; } }
@@ -915,7 +932,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v8.5</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v8.6</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3839,7 +3856,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v8.5 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v8.6 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7427,6 +7444,24 @@ const UNIV_FUND_PROGRAMS = [
     scheduleNote: '국립대학육성사업·앵커와 연계 운영',
     sourceName: '사용자 제공 2026 고등교육 재정지원계획',
     sourceUrl: 'https://www.moe.go.kr/boardCnts/listRenew.do?boardID=294&m=020402&s=moe',
+    detail: {
+      overview: '2026년 신설된 앵커(구 RISE) 인센티브의 한 축으로, 거점국립대를 지역 전략산업과 연계한 지·산·학·연 협력 허브이자 세계적 수준의 연구중심대학으로 육성하는 사업이다.',
+      operation: [
+        '2026년 지역혁신 허브화 부문 총 2,000억 원 중 거점국립대 몫 1,200억 원 배정 (정책브리핑·교수신문 보도 기준)',
+        '2026년 3개 거점국립대 선정, 선정교당 약 1,000억 원 규모 추가 재원 투입으로 보도됨',
+        '5극3특 성장엔진 분야와 연계한 연구중심대학 육성을 지원 방향으로 제시',
+        '앵커(지역혁신중심 대학지원체계) 인센티브 구조 안에서 성과관리·환류 부문과 함께 운영',
+      ],
+      notes: [
+        '2026년 선정 거점국립대 3개교 명단은 확인된 1차 출처 없음 — 미확인',
+        '선정 방식·평가지표·협약 등 세부 운영 기준은 공고문에 아직 미공시 — 미확인',
+        '⚠ 총액 2,000억(허브화 전체)과 1,200억(거점국립대분)은 산정 범위가 다르므로 인용 시 혼동 주의',
+      ],
+      links: [
+        { name: '정책브리핑 — 대학 혁신 1조3800억 투입', url: 'https://www.korea.kr/news/policyNewsView.do?newsId=148961703' },
+        { name: '교수신문 — 거점국립대 지원 2배', url: 'https://www.kyosu.net/news/articleView.html?idxno=142278' },
+      ],
+    },
   },
   {
     id: 'natl-acct', cat: 'natl', target: '국립대', name: '국립대학회계 · 시설·운영 지원', color: '#047857',
@@ -7439,6 +7474,24 @@ const UNIV_FUND_PROGRAMS = [
     scheduleNote: '교육부 「국립대학회계 예산편성·집행 기본지침」 별도 운영',
     sourceName: '사용자 제공 자료 (교육부 국립대학회계 지침)',
     sourceUrl: 'https://www.moe.go.kr/boardCnts/listRenew.do?boardID=294&m=020402&s=moe',
+    detail: {
+      overview: '국립대학의 대학회계를 기반으로 시설 확충과 실험실습 기자재 확충 등 교육·연구 기반을 지원하는 국가재정 사업. 국립대학 육성사업 및 국가지원금을 통해 인건비·시설·기자재를 포괄 지원한다.',
+      operation: [
+        '2026년 국립대학 육성사업은 전년 대비 4,493억 원 증액된 8,736억 원으로 편성 (정책브리핑 보도 기준)',
+        '국립대학 시설확충 9,109억 원, 실험실습기자재 확충 2,043억 원 반영으로 보도됨',
+        '국가지원금 구성비: 교직원 인건비 약 62.8% / 시설·기자재 확충 약 32.1% / 기본경비·교수보직경비 약 5.1%',
+        '각 국립대학은 대학회계 예산편성·집행 기본지침에 따라 세입·세출 예산을 편성·운영',
+      ],
+      notes: [
+        '시설·기자재 세부 금액은 언론 보도 인용값 — 기획재정부 예산안 원문 대조 필요 (부분 미확인)',
+        '⚠ 8,736억 원(2026 국립대학 육성사업)은 카드에 표기된 2,239억 원과 산정 범위가 다름. 원문 확인 필요',
+        '국립대학회계 자체(대학별 예산 총칙·집행지침)는 대학마다 상이하여 사업별 배분 세부는 일률적이지 않음',
+      ],
+      links: [
+        { name: '정책브리핑 — 2026년 교육부 예산', url: 'https://www.korea.kr/news/policyNewsView.do?newsId=148955948' },
+        { name: '국립대학 육성사업 정보시스템(NRF)', url: 'https://usps.nrf.re.kr/nat/usps/bizGuid/bizIntroduce.do?baseMenuNo=usps0200000' },
+      ],
+    },
   },
 
   // ── 사립대 중심 ──
@@ -7490,6 +7543,22 @@ const UNIV_FUND_PROGRAMS = [
     schedule: [{ stage: '2026 예산 편성', date: '2026' }],
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
     sourceUrl: 'https://www.moe.go.kr/boardCnts/listRenew.do?boardID=294&m=020402&s=moe',
+    detail: {
+      overview: '사립대학의 경영 여건을 지원하기 위한 교육부 고등·평생교육지원특별회계(고특회계) 사업. 2026년 예산 규모가 크게 축소된 것이 특징이다.',
+      operation: [
+        '2026년 사립대학 경영지원 사업은 4억 원으로 편성 (KCUE 고등교육 포커스 제13호 기준)',
+        '2025년 추경 대비 약 16억 원 감액 — 고특회계 고등교육 부문 주요 감액 사업 중 하나',
+        '신설된 대학 특성화 인센티브(1,190억 원)와는 별개 항목으로 편성',
+      ],
+      notes: [
+        '4억 원은 KCUE 자료 인용값 — 기획재정부 예산안 세부 사업명·집행 방식 추가 확인 필요 (부분 미확인)',
+        '배분 대상·평가·사용 제한 등 운영 방식은 확인된 1차 출처 없음 — 미확인',
+      ],
+      links: [
+        { name: 'KCUE 고등교육 포커스 제13호 (2026.02.26)', url: 'https://www.kcue.or.kr/_upload/pds/2026/03/05/application_9410868ea1e5dc62de2861383edc07ac.pdf' },
+        { name: '정책브리핑 — 2026년 교육부 예산', url: 'https://www.korea.kr/news/policyNewsView.do?newsId=148955948' },
+      ],
+    },
   },
   {
     id: 'sahak', cat: 'priv', target: '사립대·학교법인', name: '사학진흥기금 · 사립대 융자지원', color: '#be185d',
@@ -7501,6 +7570,24 @@ const UNIV_FUND_PROGRAMS = [
     schedule: [{ stage: '수시 신청·심사', date: '상시' }],
     sourceName: '사용자 제공 자료 (한국사학진흥재단)',
     sourceUrl: 'https://www.kasfo.or.kr/',
+    detail: {
+      overview: '한국사학진흥재단이 운영하는 사학진흥기금 융자사업. 사립학교(전문대·원격대 포함) 및 학력인정 평생교육시설의 교육환경 개선과 정책 대응을 위한 저리 융자를 제공한다.',
+      operation: [
+        '융자 대상: 사립학교법 제2조·평생교육법에 따른 학교법인 설치·경영 사립학교 및 학력인정 평생교육시설',
+        '환경개선 융자 — 노후 교사시설 신·증축, 리모델링, 실습장비·전산시스템 개선',
+        '정책지원 융자 — 혁신선도(AI·바이오·반도체), 지역발전(앵커·글로컬대학), 구조개선(학과 통폐합, 유학생 기숙사)',
+        '병원 필수의료 지원 — 사립대 부속병원(상급종합·종합) 의료장비·시설·운영비·대환대출',
+        '2026회계연도 사립대(전문·원격 포함) 예산 제출기간: 2026-02-09 ~ 2026-02-24',
+      ],
+      notes: [
+        '2026년 융자 총 규모·이자율·상환조건은 재단 2026년 신청 안내서 원문 확인 필요 (부분 미확인)',
+        '연도별 융자 배정 대학 명단은 공공데이터포털에 파일로 공개되나 본 조사에서 미열람 — 미확인',
+      ],
+      links: [
+        { name: '한국사학진흥재단 — 융자대상 안내', url: 'https://www.kasfo.or.kr/kasfo/939/subview.do' },
+        { name: '공공데이터포털 — 사학진흥기금 융자 지원현황', url: 'https://www.data.go.kr/data/15033862/fileData.do' },
+      ],
+    },
   },
   {
     id: 'spec-inc', cat: 'priv', target: '사립 일반대·전문대', name: '대학 특성화 인센티브', color: '#f43f5e',
@@ -7513,6 +7600,25 @@ const UNIV_FUND_PROGRAMS = [
     schedule: [{ stage: '2026 신설', date: '2026' }],
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
     sourceUrl: 'https://www.moe.go.kr/boardCnts/listRenew.do?boardID=294&m=020402&s=moe',
+    detail: {
+      overview: '2026년 제3주기 대학·전문대학 혁신지원사업에 신설된 인센티브. 대학 특성화 분야 중심의 학과 구조개편과 교육과정 혁신을 유도하며 일반대 850억 원·전문대 340억 원(합계 1,190억 원)을 지원한다.',
+      operation: [
+        '일반대: 2026~2030년 5년간 비수도권 사립대 15개교 내외 선정, 총 850억 원',
+        '일반대 참여 조건 — 2030학년도까지 입학정원 3% 이상 감축 및 특성화 분야 중심 학과 재구조화 필수',
+        '전문대: 5년간 총 340억 원, 17개교 내외 (수도권 5개교·비수도권 12개교 내외)',
+        '성과등급 차등: 2년 연속 S등급은 정성 성과사업비 30% 추가, 2년 연속 C등급은 정성 성과사업비 미지원 + 정량 성과사업비 30% 감액',
+        '부정수급 시 사업비 환수 + 최대 5배 제재부가금. 2027년부터 D등급 신설',
+      ],
+      notes: [
+        '2026년 특성화 인센티브 선정 대학 명단은 확인된 1차 출처 없음 — 미확인 (기본계획상 선정 규모만 제시)',
+        '혁신지원사업 전체 예산은 일반대 8,191억 원·전문대 5,617억 원이며 특성화 인센티브는 그 내부 항목',
+        '전문대 세부 선정 절차·평가지표는 기본계획 시안 단계로 변경 가능성 있음',
+      ],
+      links: [
+        { name: '정책브리핑 — 대학·전문대학 혁신지원사업 기본계획', url: 'https://www.korea.kr/news/policyNewsView.do?newsId=148961703' },
+        { name: '한국대학신문 — 특성화 인센티브 보도', url: 'https://news.unn.net/news/articleView.html?idxno=591160' },
+      ],
+    },
   },
 
   // ── 지역혁신 ──
@@ -7680,6 +7786,24 @@ const UNIV_FUND_PROGRAMS = [
     scheduleNote: '첨단분야 혁신융합대학·산학협력단지·조기취업형 계약학과·마이스터대 등 8개 내역사업 RISE(앵커) 이관',
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
     sourceUrl: 'https://www.moe.go.kr/boardCnts/listRenew.do?boardID=294&m=020402&s=moe',
+    detail: {
+      overview: '마이스터대(고숙련 전문기술인재 양성 전문대 지원)와 조기취업형 계약학과(입학과 동시에 채용약정, 일·학습 병행)는 교육부의 직업교육 재정지원사업이다. 2026년부터 앵커(구 RISE) 체계로 흡수 이관된다.',
+      operation: [
+        '마이스터대 — 전문대 학과·학위과정을 고도화해 현장 맞춤 고숙련 인재 양성 (2025년 약 47.5억 원 규모)',
+        '조기취업형 계약학과 — 입학과 동시에 기업 채용약정, 3년제 등으로 학업·취업 병행',
+        '조기취업형은 일반대 트랙(2025년 약 258억 원)과 전문대 트랙(약 96억 원)으로 구분 운영',
+        '2026년부터 교육부 출연금 → 지자체 경상보조금 방식으로 전환, 지자체·지역 앵커센터가 배분·관리',
+      ],
+      notes: [
+        '앵커 이관 확인: 2026년 2월 교육부 직접지원 종료 후 앵커 8개 흡수사업에 포함 (한국대학신문 보도)',
+        '조기취업형 계약학과 참여대학 일부는 2026년 2월 지원 종료로 보도 — 대학별 존폐 명단은 1차 출처 없음, 미확인',
+        '연도별 선정 대학 명단·규모는 교육부·한국연구재단 1차 출처에서 확인 못함 — 미확인',
+        '앵커 체계 하 2026년 세부 배분액·운영지침 확인된 1차 출처 없음 — 미확인',
+      ],
+      links: [
+        { name: '한국대학신문 — 8개 재정지원사업 앵커(ANCHOR) 흡수', url: 'https://news.unn.net/news/articleView.html?idxno=592736' },
+      ],
+    },
   },
   {
     id: 'life', cat: 'voc', target: '일반대·전문대', name: 'LiFE 2.0 (대학 평생교육체제)', color: '#84cc16',
@@ -7765,6 +7889,25 @@ const UNIV_FUND_PROGRAMS = [
     schedule: [{ stage: '종합계획 발표', date: '연초' }, { stage: '신규과제 공모', date: '연 1~2회' }],
     sourceName: '사용자 제공 자료 (교육부 학술연구지원사업 종합계획)',
     sourceUrl: 'https://www.nrf.re.kr/',
+    detail: {
+      overview: '교육부가 이공분야와 인문사회분야를 아우르는 대학 학술연구 지원 사업. 2025년 종합계획 기준 총 1조 149억 원 규모로, 이공분야 5,958억 원(전년 대비 811억 증가, 역대 최고)과 인문사회분야 4,191억 원으로 구성된다.',
+      operation: [
+        '지원 단위: 개인연구(석·박사과정생 연구장려금, 박사후연구자, 비전임교원 등)와 집단·인프라 연구로 구분',
+        '이공분야 5,958억 원 (전년 5,147억 대비 15.8% 증가), 인문사회분야 4,191억 원 (일반 R&D 2,996억 원 포함)',
+        '2025년 석·박사과정생 연구장려금 신규 2,700개로 확대, 석사과정생 연구장려금 신설 (100명, 연 1,200만 원)',
+        '신청 접수는 대체로 1월경 시작, 상반기 평가·협약 후 6월경 본격 착수 (사업별 상이)',
+        '교육부가 종합계획 수립 후 한국연구재단 등 전문기관이 세부 시행계획 마련 및 관리·운영',
+      ],
+      notes: [
+        '일부 개별 사업(선도연구센터 등)은 과학기술정보통신부 소관과 구분됨 — 학술연구지원사업 종합계획은 교육부 소관',
+        '연도별 개별 과제 선정 명단은 사업별로 상이하여 종합계획 문서에는 총량만 제시 — 세부 선정명단 미확인',
+        '금액은 2025년 종합계획 발표 기준이며 국회 예산심의 결과에 따라 변동 가능',
+      ],
+      links: [
+        { name: '한국연구재단 웹진 2501호 — 이공분야 학술연구지원사업', url: 'https://webzine.nrf.re.kr/magazine/2501/sub2.php' },
+        { name: '대학지성 In&Out — 2025년 학술연구지원사업 종합계획 1조 149억', url: 'https://www.unipress.co.kr/news/articleView.html?idxno=11757' },
+      ],
+    },
   },
   {
     id: 'hk3', cat: 'research', target: '국립·사립 공통', name: '인문사회연구소지원 · HK 3.0', color: '#9333ea',
@@ -7777,6 +7920,25 @@ const UNIV_FUND_PROGRAMS = [
     scheduleNote: '2026년 종합계획에서 유형 다양화(순수학문·예술체육·교육연계) 및 HK 3.0 신규과제 계속 선정',
     sourceName: '사용자 제공 자료 (2026 학술연구지원사업 종합계획)',
     sourceUrl: 'https://www.nrf.re.kr/',
+    detail: {
+      overview: '문학·사학·철학 등 기초 인문학 분야에서 장기·종합 연구가 필요한 아젠다를 심층 지원하기 위해 우수 대학 연구소를 선정·육성하는 사업. 기존 인문한국(HK)·인문한국플러스(HK+)를 이어받아 2025년 인문한국 3.0(HK3.0)으로 개편되었으며, 인문사회연구소지원사업의 일부로 운영된다.',
+      operation: [
+        '지원 단위: 대학 부설 연구소 (연구소 단위 지원)',
+        '2025년부터 4개 연구소가 참여하는 컨소시엄형 신규 유형을 도입해 협업형 인문학 연구 촉진',
+        'HK3.0 신규 공모는 2025년 1월 공고, 사전신청 접수 후 2월 7일 마감, 3월 1일 연구 개시',
+        '인문사회 학술연구지원사업 공통 참여제한 — 연구자 최대 3개, 연구책임자 최대 2개',
+        '2025년 정부안 기준 신규 10개(거점형 8, 컨소시엄형 2), 2026년에도 신규 10개 선정 예정',
+      ],
+      notes: [
+        '2025년 신규 최종 지원 규모는 연말 국회 예산심의를 거쳐 확정된다고 명시됨',
+        'HK3.0 개별 선정 연구소 명단은 확인된 1차 출처 없음 — 미확인',
+        '지원 기간·단가의 구체 수치는 연도별 공고문에 따라 상이 — 종합 명시 문서 미확인',
+      ],
+      links: [
+        { name: '한국연구재단 — 인문한국지원사업 소개', url: 'https://hk.nrf.re.kr/intro/intro02.do' },
+        { name: '한국연구재단 웹진 2502호 — 인문사회분야 학술연구지원사업 일정', url: 'https://webzine.nrf.re.kr/magazine/2502/sub2.php' },
+      ],
+    },
   },
   {
     id: 'glocallab', cat: 'research', target: '국립·사립 공통', name: '선도연구센터 · 글로컬랩', color: '#7c3aed',
@@ -7788,6 +7950,28 @@ const UNIV_FUND_PROGRAMS = [
     schedule: [{ stage: '신규과제 공모', date: '연 1회' }],
     sourceName: '사용자 제공 자료 (교육부 학술연구지원사업)',
     sourceUrl: 'https://www.nrf.re.kr/',
+    detail: {
+      overview: '글로컬랩은 대학 부설 연구소를 지역 연구 거점으로 육성해 우수 기초연구 성과를 창출하고 학문 후속세대를 양성하는 교육부의 2025년 신규 사업이다. 연구소 자체 과제뿐 아니라 학내외 타 연구자 연구까지 지원하는 개방형 연구소 운영을 지향한다. 선도연구센터(SRC/ERC/MRC)는 과학기술정보통신부 소관의 별도 집단연구지원사업이다.',
+      operation: [
+        '지원 단위: 대학 부설 연구소 (거점형·지역혁신형 등)',
+        '비수도권 대학의 경우 최대 9년간 총 146억 원 (정부지원금 135억 + 지자체 등 11억) 규모',
+        '2025년 이공분야 학술연구지원사업으로 신규 공모, 상반기 선정·협약',
+        '선도연구센터(SRC/ERC/MRC)는 과기정통부 사업으로 매년 1월경 공고·2월 마감, 분야별 별도 안내',
+        '선도연구센터 MRC는 기초의과학(의·치의·한의·약학) 대학원 설치 대학 대상',
+      ],
+      selectedList: [
+        { year: '2025', items: '한국교통대(거점형·비수도권, 9년간 146억 원), 부산대(9년간 135억 원, 이차전지 전주기 순환자원화 융합연구) 등 — 전체 명단 미확인' },
+      ],
+      notes: [
+        '글로컬랩 2025년 전체 선정 대학 수·명단은 교육부 공식 종합명단 미확인 — 개별 대학 보도만 확인',
+        '⚠ 선도연구센터(과기정통부)와 글로컬랩(교육부)은 소관 부처가 다른 별개 사업',
+        '선도연구센터 연도별 신규 선정 명단은 확인된 1차 출처 없음 — 미확인',
+      ],
+      links: [
+        { name: '한국연구재단 웹진 2501호 — 대학연구혁신100(글로컬랩·G-Lamp)', url: 'https://webzine.nrf.re.kr/magazine/2501/sub2.php' },
+        { name: '충북일보 — 한국교통대 2025 글로컬랩 선정 146억', url: 'https://www.inews365.com/news/article.html?no=883333' },
+      ],
+    },
   },
 
   // ── 첨단·교육혁신 ──
@@ -7840,6 +8024,28 @@ const UNIV_FUND_PROGRAMS = [
     schedule: [{ stage: '2026 신규 편성', date: '2026' }],
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
     sourceUrl: 'https://www.moe.go.kr/boardCnts/listRenew.do?boardID=294&m=020402&s=moe',
+    detail: {
+      overview: '전공과 무관하게 모든 대학생이 AI 기본 역량을 갖추도록 대학의 AI 기본교육과정 개발을 지원하는 교육부·한국대학교육협의회의 2026년 신규 사업. 선정 대학은 AI 기초 교양 교과를 개발해 신입생 필수 이수 과목으로 운영하고, 비공학계열 특화 분야에 소단위 전공 과정을 개설·운영한다.',
+      operation: [
+        '지원 단위: 대학 20개교 선정 (수도권 6, 비수도권 14)',
+        '지원 규모: 대학당 매년 3억 원 이내, 총 60억 원',
+        '지원 기간: 2년(1+1), 연장심사로 계속 지원 여부 결정',
+        '선정 절차: 서면평가 + 대면평가 (교육과정 개발·운영 적절성, 교수자 AI 역량 강화전략, 공유·성과확산 계획)',
+        '예비선정 대학(수도권·비수도권 각 3개교) 운영, 5월 AI중심대학 선정 반영 후 6월까지 최종 확정·협약',
+      ],
+      selectedList: [
+        { year: '2026', items: '20개교 최종 선정 (수도권 6, 비수도권 14). 개별 교명은 일부만 보도 확인, 전체 명단 미확인' },
+      ],
+      notes: [
+        '선정 20개교 전체 명단은 교육부 공식 확정 명단 문서로 확인하지 못함 — 미확인',
+        '유사·상위 사업인 AI중심대학(과기정통부, 대학당 연 30억 내외, 최대 8년)과는 별개 사업',
+        '전문대 대상 AID(AI+Digital) 전환 중점 전문대학 지원사업(24개 내외 사업단, 총 240억)과 혼동 주의',
+      ],
+      links: [
+        { name: '한국대학신문 — AI 기본교육과정 20개대 60억', url: 'https://news.unn.net/news/articleView.html?idxno=590106' },
+        { name: '교육부 보도자료 게시판', url: 'https://www.moe.go.kr/boardCnts/listRenew.do?boardID=294&m=020402&s=moe' },
+      ],
+    },
   },
   {
     id: 'teacher-ai', cat: 'future', target: '교대·사범대', name: '교원양성기관 교육과정 개발 지원', color: '#0f766e',
@@ -7851,6 +8057,22 @@ const UNIV_FUND_PROGRAMS = [
     schedule: [{ stage: '2026 신규 편성', date: '2026' }],
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
     sourceUrl: 'https://www.moe.go.kr/boardCnts/listRenew.do?boardID=294&m=020402&s=moe',
+    detail: {
+      overview: '교원양성기관(교육대학·사범대 등)의 교육과정 개발을 지원하는 사업으로, 2026년 신규(예산 약 24억 원)로 제시되었다. 다만 이 명칭·금액에 정확히 부합하는 독립된 공식 1차 출처를 확정하지 못했다 — 아래 유의사항 참조.',
+      operation: [
+        '지원 대상: 교원양성기관의 (AI·디지털 등) 교육과정 개발 — 공식 세부 운영방식 미확인',
+        '2026년 신규 사업으로 알려짐 — 지원 단위·기간·선정 절차는 공식 문서로 미확인',
+      ],
+      notes: [
+        '⚠ 교원양성기관 교육과정 개발 지원 24억 원 사업은 확인된 1차 출처(교육부 공고·보도자료) 없음 — 미확인',
+        '2026년 교육부 업무계획 PDF에 포함 가능성이 있으나 본문 파싱 실패로 직접 확인 불가',
+        '유사 수치(24억)가 전문대 AID 사업(사업단당 10억, 총 240억) 등과 혼동될 수 있음 — 별개 사업일 가능성',
+        '지원 대학 수·선정 명단·일정 모두 미확인 — 공식 공고 확인 필요',
+      ],
+      links: [
+        { name: '2026년 교육부 업무계획 보도자료 (본문 미파싱 — 원문 확인 필요)', url: 'https://www.moe.go.kr/boardCnts/listRenew.do?boardID=294&m=020402&s=moe' },
+      ],
+    },
   },
 
   // ── 산학협력 ──
@@ -7901,6 +8123,28 @@ const UNIV_FUND_PROGRAMS = [
     scheduleNote: '대학 산학협력단지 조성지원 등 앵커 이관 8개 내역사업 포함',
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
     sourceUrl: 'https://www.moe.go.kr/boardCnts/listRenew.do?boardID=294&m=020402&s=moe',
+    detail: {
+      overview: '대학 산학협력단지 조성 지원은 대학 내 산학협력 공간(기업 입주·공동연구)을 조성하는 사업이고, 대학 기술이전(BRIDGE)은 대학 연구성과의 시작품 검증·상용화를 지원해 기술이전과 사업화를 촉진하는 사업이다. 두 사업 모두 2026년부터 앵커(구 RISE) 체계로 흡수된다.',
+      operation: [
+        'BRIDGE — 산학협력단 최고기술사업화책임자(CBO) 중심으로 우수 연구성과 발굴·시작품 검증·상용화 지원',
+        'BRIDGE 3.0 — 기술거점형 등 유형으로 지자체·기업 협력 기반 기술이전 및 창업 연계 지원',
+        '산학협력단지 조성 — 캠퍼스 내 기업 입주·공동활용 공간을 구축해 산학연 협력 거점화',
+        '2026년부터 두 사업 모두 앵커 체계로 편입되어 지자체·지역센터 주도 방식으로 운영 예정',
+      ],
+      selectedList: [
+        { year: '2023', items: 'BRIDGE 3.0 신규 24개교 선정 (보도 기준)' },
+        { year: '2024', items: 'BRIDGE 3.0 기술거점형 전국 6개교 선정, 2년간 13억 원 규모 (보도 기준)' },
+      ],
+      notes: [
+        '앵커 이관: BRIDGE 3.0(2025년 약 210억 원)은 2026년 2월 종료 후 흡수, 산학협력단지 조성(약 140억 원)은 종료 아닌 지속 후 편입 (한국대학신문 보도)',
+        'BRIDGE 연도별 선정 대학 전체 명단은 1차 출처에서 확인 못함 — 보도 기준, 미확인 부분 존재',
+        '산학협력단지 조성 지원의 연도별 선정 대학·규모 상세는 확인된 1차 출처 없음 — 미확인',
+        '2026년 앵커 편입 후 세부 예산·집행지침은 확인된 1차 출처 없음 — 미확인',
+      ],
+      links: [
+        { name: '한국대학신문 — 앵커 흡수 8개 사업', url: 'https://news.unn.net/news/articleView.html?idxno=592736' },
+      ],
+    },
   },
 
   // ── 구조개혁 ──
@@ -7915,6 +8159,23 @@ const UNIV_FUND_PROGRAMS = [
     scheduleNote: '적정규모화·통합·연합·폐교 대응은 국립·사립 모두 대상이나 재정진단·폐교 관리는 주로 사립대',
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
     sourceUrl: 'https://www.moe.go.kr/boardCnts/listRenew.do?boardID=294&m=020402&s=moe',
+    detail: {
+      overview: '학령인구 감소와 재정위기에 대응해 재정위기대학의 구조개선·자율혁신을 지원하는 교육부 사업. 2026년 예산은 전년 대비 대폭 감액 편성되었다.',
+      operation: [
+        '재정위기대학을 대상으로 구조개선·경영개선을 지원하는 재정지원',
+        '별도 사립대학 경영지원 사업(2026년 4억 원)과 병행 운영',
+        '고등·평생교육지원특별회계 내 사업으로 편성·집행',
+      ],
+      notes: [
+        '2026년 예산: 전년 대비 92억 원 감액된 63억 원 (KCUE 고등교육 포커스 제13호 확인)',
+        '2026년 재정위기대학 선정 명단·대학 수는 확인된 1차 출처 없음 — 미확인',
+        '앵커 8개 흡수사업 목록에 포함되지 않음 — 이관 여부 1차 출처 미확인',
+        '연도별 지원 대학·규모 상세는 교육부 1차 출처에서 확인 못함 — 미확인',
+      ],
+      links: [
+        { name: 'KCUE 고등교육 포커스 제13호 (2026.02.26)', url: 'https://www.kcue.or.kr/_upload/pds/2026/03/05/application_9410868ea1e5dc62de2861383edc07ac.pdf' },
+      ],
+    },
   },
 
   // ── 학생지원(간접) ──
@@ -7929,6 +8190,25 @@ const UNIV_FUND_PROGRAMS = [
     scheduleNote: '사립대는 등록금 수준이 높아 체감효과가 크고, 국립대는 낮은 등록금과 결합해 공공 접근성 제고',
     sourceName: '사용자 제공 자료 (한국장학재단)',
     sourceUrl: 'https://www.kosaf.go.kr/',
+    detail: {
+      overview: '한국장학재단(KOSAF)이 운영하는 국가장학금과 학자금대출은 소득연계형 등록금 지원과 등록금·생활비 대출을 통해 대학생의 학비 부담을 완화하는 제도다. 2026학년도에 대출 한도·상환 조건 등 제도 개편이 적용된다.',
+      operation: [
+        '국가장학금 — 소득분위 연계로 등록금 부담을 경감하는 무상 지원',
+        '취업 후 상환 학자금대출(ICL) — 소득 발생 이후 상환, 2026학년도 1학기부터 지원대상 확대',
+        '일반 상환 학자금대출 — 2026학년도 1학기부터 거치기간 산정방식 일원화 (최대 10년 거치)',
+        '생활비대출 — 2026학년도 2학기부터 개인 총한도 도입 (학사 2,400만 원 등 학제별 차등)',
+        'AI학업장려대출 — 2026학년도 2학기 신설 예정, 총한도 1,000만 원 별도 적용',
+      ],
+      notes: [
+        '위 대출 한도·개편 수치는 대학 공지에 게시된 한국장학재단 안내 기준 — 재단 원문 페이지 직접 대조 못함, 최종 확인 필요',
+        '취업 후 상환 대출 이자면제 대상·기간 확대의 구체적 조건은 1차 출처 원문 대조 못함 — 미확인',
+        '2026학년도 국가장학금 지원단가·소득분위별 금액은 확인된 1차 출처 없음 — 미확인',
+        'AI학업장려대출은 2026-2학기 신설 예정으로, 최종 시행 여부·세부 요건 미확정 — 미확인',
+      ],
+      links: [
+        { name: '한국장학재단 공식 홈페이지', url: 'https://www.kosaf.go.kr/' },
+      ],
+    },
   },
 ];
 
@@ -7955,7 +8235,7 @@ function ufOpenDetail(id) {
   const d = p.detail;
   let ov = document.getElementById('ufDetailOverlay');
   if (!ov) {
-    ov = document.createElement('div'); ov.id = 'ufDetailOverlay';
+    ov = document.createElement('div'); ov.id = 'ufDetailOverlay'; ov.className = 'uf-overlay';
     ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
     ov.onclick = e => { if (e.target === ov) ov.remove(); };
     document.body.appendChild(ov);
@@ -7964,7 +8244,7 @@ function ufOpenDetail(id) {
   const ul = arr => `<ul style="margin:0;padding-left:0;list-style:none">${arr.map(x => `<li style="display:flex;gap:6px;font-size:.75rem;line-height:1.65;color:var(--text);margin:3px 0"><span style="color:${p.color};flex-shrink:0">•</span><span>${esc(x)}</span></li>`).join('')}</ul>`;
 
   const meta = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
+    <div class="uf-kv" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
       <div style="background:var(--bg3);border-radius:7px;padding:9px 11px">
         <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:2px">💵 예산</div>
         <div style="font-size:.78rem;font-weight:700;color:var(--text);line-height:1.4">${esc(p.budget)}</div>
@@ -7990,7 +8270,7 @@ function ufOpenDetail(id) {
   const links = (d && d.links ? d.links : [{ name: p.sourceName, url: p.sourceUrl }])
     .map(l => `<a href="${esc(l.url)}" target="_blank" rel="noopener" style="display:inline-block;font-size:.66rem;color:${p.color};background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:4px 10px;text-decoration:none;margin:0 5px 5px 0">📄 ${esc(l.name)} ↗</a>`).join('');
 
-  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-top:4px solid ${p.color};border-radius:12px;max-width:640px;width:100%;max-height:86vh;overflow-y:auto;padding:20px 22px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+  ov.innerHTML = `<div class="uf-modal" style="background:var(--bg2);border:1px solid var(--border);border-top:4px solid ${p.color};border-radius:12px;max-width:640px;width:100%;max-height:86vh;overflow-y:auto;padding:20px 22px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
     <div style="display:flex;align-items:flex-start;gap:10px">
       <div style="flex:1;min-width:0">
         <div style="font-size:1.05rem;font-weight:800;color:var(--text);line-height:1.35">${esc(p.name)}</div>
@@ -8153,7 +8433,7 @@ function renderUnivFundView() {
       const first = Math.min(...pts.map(s => s.v)), last = Math.max(...pts.map(s => s.v));
       const bar = `<div style="position:absolute;left:${pct(first)}%;width:${Math.max(0.6, pct(last)-pct(first))}%;top:50%;transform:translateY(-50%);height:5px;background:${p.color}44;border-radius:3px"></div>`;
       const marks = pts.map(s => `<div title="${esc(p.name)} · ${esc(s.stage)} · ${esc(s.date)}" style="position:absolute;left:${pct(s.v)}%;top:50%;transform:translate(-50%,-50%);width:11px;height:11px;border-radius:50%;background:${p.color};border:2px solid var(--card);cursor:help;z-index:2"></div>`).join('');
-      return `<div style="display:grid;grid-template-columns:190px 1fr;gap:8px;align-items:center;margin-bottom:7px">
+      return `<div class="uf-tl-row" style="display:grid;grid-template-columns:190px 1fr;gap:8px;align-items:center;margin-bottom:7px">
         <div style="font-size:.64rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(p.name)}">
           <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${p.color};margin-right:5px"></span>${esc(p.name)}
         </div>
@@ -8163,8 +8443,8 @@ function renderUnivFundView() {
     const axis = yearTicks.map(y => `<div style="position:absolute;left:${pct(y)}%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted)">${y}</div>`).join('');
     const gridLines = yearTicks.map(y => `<div style="position:absolute;left:${pct(y)}%;top:0;bottom:0;width:1px;background:var(--border);opacity:.5"></div>`).join('');
     timeline = `<div style="overflow-x:auto"><div style="min-width:660px">
-        <div style="display:grid;grid-template-columns:190px 1fr;gap:8px;margin-bottom:6px"><div></div><div style="position:relative;height:16px">${axis}</div></div>
-        <div style="position:relative"><div style="position:absolute;left:198px;right:0;top:0;bottom:0;pointer-events:none">${gridLines}</div>${lanes}</div>
+        <div class="uf-tl-row" style="display:grid;grid-template-columns:190px 1fr;gap:8px;margin-bottom:6px"><div></div><div style="position:relative;height:16px">${axis}</div></div>
+        <div style="position:relative"><div class="uf-tl-grid" style="position:absolute;left:198px;right:0;top:0;bottom:0;pointer-events:none">${gridLines}</div>${lanes}</div>
       </div></div>
       <div style="font-size:.58rem;color:var(--text-muted);margin-top:8px;line-height:1.6">
         ● 마커 = 각 단계(공고·신청마감·선정평가·최종선정 등). 마커에 마우스를 올리면 상세 표시.<br>
@@ -8191,7 +8471,7 @@ function renderUnivFundView() {
           <span style="font-size:.58rem;color:var(--text-dim)">${esc(p.period)} · <b style="color:${p.color}">${esc(p.status)}</b> · ${esc(p.agency)}</span>
         </div>
         ${p.purpose ? `<div style="font-size:.64rem;color:var(--text-dim);line-height:1.5;margin-bottom:8px">🎯 ${esc(p.purpose)}</div>` : ''}
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div class="uf-kv" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
           <div style="background:var(--bg3);border-radius:7px;padding:8px 10px">
             <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:2px">💵 예산</div>
             <div style="font-size:.75rem;font-weight:700;color:var(--text);line-height:1.35">${esc(p.budget)}</div>
@@ -8222,12 +8502,12 @@ function renderUnivFundView() {
     <div class="ai-view-wrap" style="padding:0 .5rem">
       <!-- 사업 AI 챗봇 -->
       <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:.9rem">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
-          <div style="font-size:.82rem;font-weight:800;color:var(--accent2)">🤖 사업 AI</div>
+        <div class="uf-ai-head" style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+          <div style="font-size:.82rem;font-weight:800;color:var(--accent2);white-space:nowrap">🤖 사업 AI</div>
           <div style="font-size:.62rem;color:var(--text-muted);flex:1">등록된 ${UNIV_FUND_PROGRAMS.length}개 사업 데이터 기반 · 데이터에 없는 값은 추정하지 않습니다</div>
           <button onclick="ufAiClear()" style="font-size:.62rem;color:var(--text-muted);background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer">🗑 대화 초기화</button>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px">
+        <div class="uf-presets" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px">
           ${['국립대가 신청할 수 있는 사업을 예산 순으로 정리해줘','2026년에 신규 공고가 예정된 사업은?','글로컬대학30과 앵커사업의 차이는?','예산 규모 상위 5개 사업과 선정 대학 수는?','미확인 데이터가 많은 사업은 무엇이고 왜 그런가?']
             .map(q => `<button onclick="ufAiAsk('${q.replace(/'/g,"\\'")}')" style="font-size:.66rem;color:var(--text);background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:4px 11px;cursor:pointer;font-family:inherit">${esc(q)}</button>`).join('')}
         </div>
@@ -8252,6 +8532,7 @@ function renderUnivFundView() {
       ${sections}
 
       <div style="font-size:.62rem;color:var(--text-muted);line-height:1.7;padding:10px 12px;background:var(--bg3);border-radius:8px">
+        ※ <b>사업명을 클릭</b>하면 개요·운영 방식·연도별 선정 대학·유의사항·출처가 담긴 상세 팝업이 열립니다(24개 사업 전체 제공).<br>
         ※ 각 카드의 <b>출처 링크</b>와 <b>신뢰도 뱃지</b>(확인·부분확인·미확인)를 확인하세요. 확인되지 않은 값은 임의로 채우지 않고 <b>미확인</b>으로 남겼습니다.<br>
         ※ 2026년 수치 다수는 <b>사용자 제공 「2026 고등교육 재정지원계획」 자료</b> 기준이며 교육부 원문 대조가 필요합니다. 국립대학육성사업 예산(2025년 4,243억 vs 2026년 2,239억)처럼 <b>산정 범위가 달라 보이는 상충 값</b>은 카드에 함께 표기했습니다.<br>
         ※ 2026년부터 첨단분야 혁신융합대학·산학협력단지·조기취업형 계약학과·마이스터대 등 <b>8개 내역사업이 앵커(구 RISE)로 이관·통합</b>됩니다.
