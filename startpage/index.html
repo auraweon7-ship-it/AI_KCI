@@ -932,7 +932,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v8.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v8.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3856,7 +3856,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v8.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v8.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7745,9 +7745,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'hive', cat: 'voc', target: '전문대·지자체·산업체', name: 'HiVE (고등직업교육거점지구)', color: '#a855f7',
     period: '2022~2024 (마지막 독립 공모)', status: '앵커(구 RISE) 통합(2025~)',
-    budget: '연 405억 원 (2022년 국비)', budgetNote: '⚠ 405억·30개 지구는 언론·검색 스니펫 근거. 교육부 「HiVE 기본계획」 PDF는 subset CID 폰트로 텍스트 추출 불가, 정책브리핑 본문은 수치가 첨부 HWP에만 존재 — 정부 원문 문장 확보 실패',
-    selected: '30개 지구(연합체)', selectedNote: '30개 지구(연합체). ⚠ 최신 연도(2024~2025) 지구 수와 앵커 이관 문장은 원문 미확인',
-    agency: '교육부 · 한국연구재단', budgetConf: '부분확인', selectedConf: '부분확인', confidence: '부분확인',
+    budget: '총 국비 405억 원 (2022년, 3년간 2022~2024)', budgetNote: '교육부 「고등직업교육거점지구사업 선정 결과 발표」(2022.6.2, boardSeq=91714) 첨부 HWPX 원문 파싱 — "2022년 기준 총 국비 405억 원 지원, 3년간 사업 추진", "연합체당 총사업비 15억 원 내외(총 국비 405억 원, 지방비 45억 원 이상)". ⚠ 2023~2025년 갱신 예산은 교육부 보도자료에 존재하지 않음',
+    selected: '5개 권역 30개 연합체(지구)', selectedNote: '교육부 원문 파싱 — "최종 선정 5개 권역 30개 연합체". 신청 접수는 58개 연합체(전문대 71개교·기초지자체 66개). ⚠ 선정 전문대학 총수는 원문에 총계로 미기재. HiVE 전용 보도자료는 2021~2023년만 존재하고 사업기간이 2022~2024로 명시 — 앵커 이관 여부는 원문 미확인',
+    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', confidence: '부분확인',
     purpose: '전문대–지자체–산업체 연계 직업교육 거점',
     schedule: [
       { stage: '공고', date: '2022 상반기' },
@@ -7778,9 +7778,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'meister', cat: 'voc', target: '전문대', name: '마이스터대 · 조기취업형 계약학과', color: '#d97706',
     period: '~2025 (독립 사업)', status: '앵커(구 RISE) 이관',
-    budget: '마이스터대 47.5억 / 조기취업형 일반대 258억 · 전문대 96억 (2025년)', budgetNote: '교육부 앵커 통합 예산표를 인용한 한국대학신문 보도 기준 — 교육부 원문 PDF 미대조. 3개 별도 트랙이므로 합계 표기 시 주의. 조기취업형 일부(약 183억 규모)는 2026년 2월 지원 종료',
-    selected: '미확인', selectedNote: '⚠ 마이스터대 시범운영 5개교(2021, 교육부 boardSeq=84078 본문 확인 — 명단은 첨부파일에만 존재). 조기취업형 계약학과는 공식 포털 기준 18개교(4년제 10·전문대 8). 최신 연도 선정 대학 수·명단은 정부 원문 미확보',
-    agency: '교육부', budgetConf: '부분확인', selectedConf: '미확인', confidence: '부분확인',
+    budget: '마이스터대 47.5억 / 조기취업형 일반대 258억 · 전문대 96억 (2025년)', budgetNote: '⚠ 2025년 개별액(마이스터대 47.5억 / 조기취업형 일반대 258억 · 전문대 96억)은 한국대학신문 단일 언론 출처. 마이스터대 2024년 예산은 151.2억(KDI 경제정보센터)으로 2025년 47.5억과 큰 차이 — 앵커 이관에 따른 중앙 잔여분으로 보이나 원문 미해소. 8개 내역사업의 앵커 이관 사실만 KCUE 원문 파싱으로 확인',
+    selected: '마이스터대 9개교 / 조기취업형 18개교', selectedNote: '마이스터대 — 2023년 6개교 + 2024년 3개교 = 9개 전문대학 (KDI 경제정보센터). 조기취업형 계약학과 — 18개교(4년제 10 · 전문대 8, 공식포털 earlyuniv.kr). ⚠ 둘 다 교육부 공고 원문 파싱은 아님 — 준원문·공식포털 근거',
+    agency: '교육부', budgetConf: '부분확인', selectedConf: '부분확인', confidence: '부분확인',
     purpose: '고숙련 전문기술인재 양성, 기업 맞춤형 조기취업 연계',
     schedule: [{ stage: '앵커 이관', date: '2026' }],
     scheduleNote: '첨단분야 혁신융합대학·산학협력단지·조기취업형 계약학과·마이스터대 등 8개 내역사업 RISE(앵커) 이관',
@@ -7979,9 +7979,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'coss', cat: 'future', target: '국립·사립 공통', name: 'COSS (첨단분야 혁신융합대학)', color: '#14b8a6',
     period: '2021~2026 (6년)', status: '앵커 이관(2026)',
-    budget: '연합체당 연 102억 원 (18개 연합체)', budgetNote: '정책브리핑 newsId=148929373 원문 확인 — "연합체당 연간 102억 원을 지원", "모두 18개 첨단분야 연합체를 지원", 4년 수행. ⚠ 종전 표기 「연 약 2,000억」은 원문에 없는 계산값(102×18≈1,836억)이라 삭제. 2026년 앵커 이관 여부는 어떤 원문에서도 확인 못함',
-    selected: '18개 연합체', selectedNote: '18개 연합체는 원문 확인. ⚠ 참여대학 「67개교」는 원문에서 확인 못함 — 미확인. 최신 연도(2025~2026) 연합체 수 미갱신',
-    agency: '교육부 · 한국연구재단', budgetConf: '부분확인', selectedConf: '부분확인', confidence: '부분확인',
+    budget: '18개 연합체 총 약 2,000억 원 (연합체당 102억 원)', budgetNote: '교육부 보도자료(2024.3.18, boardSeq=98392) 첨부 HWPX 원문 파싱 — "총 18개 연합체에 약 2천억 원의 예산을 지원할 계획", "연합체 당 102억 원을 지원"(지자체참여형 신규). 사업기간: 대학주도형 2021~2026, 지자체참여형 2023~2026',
+    selected: '18개 연합체 · 66개 대학', selectedNote: '교육부 보도자료(2025.1.21, boardSeq=102400) 원문 파싱 — "첨단분야 인재양성 지원(2021~, 18개 연합체, 총 66개 대학)". ⚠ 종전 표기 「67개교」는 원문과 불일치하여 66개교로 정정. 2026년 앵커 이관 여부는 교육부 원문에 명시 없음 — 미확인',
+    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', confidence: '부분확인',
     purpose: '여러 대학 컨소시엄으로 첨단분야(AI·반도체·바이오 등) 교육과정 공동 운영',
     schedule: [
       { stage: '공고', date: '2024-03-19' },
@@ -8118,9 +8118,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'iuc-park', cat: 'iuc', target: '국립·사립 공통', name: '대학 산학협력단지 · 기술이전(BRIDGE)', color: '#dc2626',
     period: '~2025 (독립 사업)', status: '앵커 이관(2026)',
-    budget: 'BRIDGE 3.0 210억 원 / 산학협력단지 조성 140억 원 (2025년)', budgetNote: '교육부 앵커 통합 예산표를 인용한 한국대학신문 보도 기준 — 교육부 원문 PDF 미대조. ⚠ 과거 산업부(KIAT)의 유사 명칭 사업과 혼동 주의',
-    selected: '미확인', selectedNote: '⚠ KIAT 「대학 산학연협력단지 조성사업 추진계획」 PDF 열람 실패(인코딩·폰트). 선정 대학(강원대·대구한의대·계명대 등)은 언론 스니펫 근거뿐. 「산학협력단지 조성」과 「BRIDGE」는 별개 사업이 카드에 혼재 — 분리 필요',
-    agency: '교육부', budgetConf: '부분확인', selectedConf: '미확인', confidence: '미확인',
+    budget: 'BRIDGE 3.0 168억 (2023) / 산학협력단지 140억 (2024)', budgetNote: '교육부공고 제2023-168호 원문 파싱 — BRIDGE 3.0 "\'23년 168억원" (기술거점형 106억·교당 6.6억 / 지역거점형 62억·교당 7.7억). KIAT 「2024년도 대학 산학연협력단지 조성사업 추진계획(안)」 원문 파싱 — "\'24년 예산기준 140억원(8개교, 교당 20억원 내외)". ⚠ 2025년 값(210억/140억)은 한국대학신문 단일 언론 출처 — 미확인',
+    selected: 'BRIDGE 24개교 / 산학협력단지 8개교', selectedNote: 'BRIDGE 3.0 — 기술거점형 16교 + 지역거점형 8교 = 24교 (교육부공고 원문 파싱). 산학협력단지 — 8개교(계속 4 + 신규 4) + 캠퍼스혁신파크 2개교(강원대·한남대) 별도. 旣선정 4교: 부경대·한양대ERICA(2019), 순천향대·연세대(2020). ⚠ BRIDGE 개별 24개교 대학명과 산학협력단지 2024 신규 4개교 명단은 언론 근거',
+    agency: '교육부', budgetConf: '확인', selectedConf: '확인', confidence: '부분확인',
     purpose: '산학협력단지 조성, 기술이전·사업화, 대학 창업교육',
     schedule: [{ stage: '앵커 이관', date: '2026' }],
     scheduleNote: '대학 산학협력단지 조성지원 등 앵커 이관 8개 내역사업 포함',
@@ -8226,6 +8226,12 @@ function ufParseDate(s) {
 const UF_CONF_MAP = { '확인': ['#10b981','확인'], '부분확인': ['#f59e0b','부분확인'], '미확인': ['#94a3b8','미확인'] };
 // 예산·선정 필드별 신뢰도. 명시가 없으면 카드 전체 confidence를 따른다.
 function ufFieldConf(p, field) { return p[field + 'Conf'] || p.confidence; }
+// 종합 신뢰도 = 두 필드 중 낮은 쪽 (수기값과 어긋나지 않도록 항상 계산)
+const UF_CONF_RANK = { '미확인': 0, '부분확인': 1, '확인': 2 };
+function ufOverallConf(p) {
+  const b = ufFieldConf(p, 'budget'), s = ufFieldConf(p, 'selected');
+  return UF_CONF_RANK[b] <= UF_CONF_RANK[s] ? b : s;
+}
 // 필드 옆에 붙는 작은 점 뱃지
 function ufDot(c) {
   const [col, label] = UF_CONF_MAP[c] || UF_CONF_MAP['미확인'];
@@ -8286,7 +8292,7 @@ function ufOpenDetail(id) {
         <div style="font-size:1.05rem;font-weight:800;color:var(--text);line-height:1.35">${esc(p.name)}</div>
         <div style="display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin-top:6px">
           <span style="font-size:.58rem;font-weight:700;color:#fff;background:${p.color};padding:1px 8px;border-radius:8px">${esc(p.target)}</span>
-          ${ufConfBadge(p.confidence)}
+          ${ufConfBadge(ufOverallConf(p))}
           <span style="font-size:.62rem;color:var(--text-dim)">${esc(p.period)} · <b style="color:${p.color}">${esc(p.status)}</b> · ${esc(p.agency)}</span>
         </div>
       </div>
@@ -8474,7 +8480,7 @@ function renderUnivFundView() {
             style="flex:1;min-width:0;text-align:left;background:none;border:none;padding:0;font-size:.85rem;font-weight:800;color:${p.color};cursor:pointer;font-family:inherit;line-height:1.35">
             ${esc(p.name)} <span style="font-size:.6rem;opacity:.7">▸ 상세</span>
           </button>
-          ${ufConfBadge(p.confidence)}
+          ${ufConfBadge(ufOverallConf(p))}
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
           <span style="font-size:.56rem;font-weight:700;color:#fff;background:${p.color};padding:1px 7px;border-radius:8px">${esc(p.target)}</span>
