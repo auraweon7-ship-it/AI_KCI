@@ -915,7 +915,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v8.3</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v8.4</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3839,7 +3839,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v8.3 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v8.4 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -8014,6 +8014,110 @@ function ufOpenDetail(id) {
     ${!d ? `<div style="font-size:.64rem;color:var(--text-muted);margin-top:14px;padding:9px 11px;background:var(--bg3);border-radius:7px;line-height:1.6">이 사업의 상세 운영·선정 정보는 아직 1차 출처로 확인되지 않았습니다. 위 출처 링크에서 원문을 확인하세요.</div>` : ''}
   </div>`;
 }
+// ═══ 사업 AI 챗봇 (대학지원사업 전용) ═══
+let _ufChat = [];
+let _ufBusy = false;
+
+function ufBuildContext() {
+  return UNIV_FUND_PROGRAMS.map(p => {
+    const d = p.detail;
+    let s = `【${p.name}】 (${p.target} / ${p.agency} / ${p.period} / 상태: ${p.status} / 신뢰도: ${p.confidence})
+- 목적: ${p.purpose || '미기재'}
+- 예산: ${p.budget}${p.budgetNote ? ` (${p.budgetNote})` : ''}
+- 선정 대학: ${p.selected}${p.selectedNote ? ` (${p.selectedNote})` : ''}
+- 일정: ${p.schedule.map(x => `${x.stage} ${x.date}`).join(' / ')}${p.scheduleNote ? ` ※${p.scheduleNote}` : ''}
+- 출처: ${p.sourceName} ${p.sourceUrl}`;
+    if (d) {
+      if (d.overview) s += `\n- 개요: ${d.overview}`;
+      if (d.operation) s += `\n- 운영 방식: ${d.operation.join(' / ')}`;
+      if (d.selectedList) s += `\n- 연도별 선정: ${d.selectedList.map(x => `${x.year} — ${x.items}`).join(' | ')}`;
+      if (d.notes) s += `\n- 유의사항: ${d.notes.join(' / ')}`;
+    }
+    return s;
+  }).join('\n\n———\n\n');
+}
+
+function ufAiRenderLog() {
+  const log = document.getElementById('ufChatLog');
+  if (!log) return;
+  if (!_ufChat.length) {
+    log.innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:.78rem;padding:1.1rem 0">
+      등록된 ${UNIV_FUND_PROGRAMS.length}개 사업 데이터를 근거로 답변합니다.<br>
+      <span style="font-size:.7rem">예) "국립대가 신청할 수 있는 사업만 예산 순으로 정리해줘"</span></div>`;
+    return;
+  }
+  log.innerHTML = _ufChat.map(m => m.role === 'user'
+    ? `<div style="align-self:flex-end;max-width:85%;background:var(--accent2);color:#fff;padding:.5rem .75rem;border-radius:12px 12px 3px 12px;font-size:.8rem;line-height:1.5">${m.content.replace(/</g,'&lt;')}</div>`
+    : `<div style="align-self:flex-start;max-width:92%;background:var(--card);border:1px solid var(--border);padding:.55rem .8rem;border-radius:12px 12px 12px 3px;font-size:.8rem;line-height:1.65;color:var(--text)">${m.content}</div>`
+  ).join('') + (_ufBusy ? `<div style="align-self:flex-start;color:var(--text-muted);font-size:.76rem;padding:.35rem .55rem">💰 사업 데이터 분석 중...</div>` : '');
+  log.scrollTop = log.scrollHeight;
+}
+
+function ufAiAsk(q) {
+  const inp = document.getElementById('ufChatInput');
+  if (inp) { inp.value = q; inp.focus(); }
+  ufAiSend();
+}
+
+function ufAiClear() { _ufChat = []; ufAiRenderLog(); }
+
+async function ufAiSend() {
+  if (_ufBusy) return;
+  const key = (localStorage.getItem('claude_api_key') || '').trim();
+  const inp = document.getElementById('ufChatInput');
+  const q = (inp?.value || '').trim();
+  if (!q) return;
+  if (!key) {
+    _ufChat.push({ role: 'user', content: q });
+    _ufChat.push({ role: 'assistant', content: '⚠️ Claude API 키가 없습니다. <b>설정 → API 키</b>에서 등록하세요.' });
+    if (inp) inp.value = '';
+    ufAiRenderLog();
+    return;
+  }
+  inp.value = '';
+  _ufChat.push({ role: 'user', content: q });
+  _ufBusy = true; ufAiRenderLog();
+  const btn = document.getElementById('ufSendBtn'); if (btn) btn.disabled = true;
+
+  const sys = `당신은 대한민국 대학 재정지원사업 전문 AI 비서입니다. 아래 제공되는 사업 데이터베이스에만 근거하여 답변하세요.
+
+[절대 규칙]
+- 제공된 데이터에 없는 예산·선정대학 수·일정을 절대 지어내지 마세요.
+- 데이터에 "미확인"으로 표기된 값은 그대로 "미확인"이라고 답하고, 추정하지 마세요.
+- 신뢰도가 "부분확인"·"미확인"인 수치를 인용할 때는 반드시 그 사실을 함께 밝히세요.
+- 데이터에 없는 사업을 묻는 경우 "등록된 사업 데이터에 없습니다"라고 답하고 임의로 설명하지 마세요.
+
+[답변 형식]
+- 한국어, 500자 내외. 핵심 수치·사업명은 **별표**로 강조.
+- 사업을 언급할 때마다 【사업명】 형태로 표기.
+- 비교·목록 질문이면 불릿으로 정리.
+- 답변 맨 끝에 "📖 근거: " 로 시작해 인용한 사업명과 출처명을 나열.`;
+
+  const msgs = _ufChat.slice(-6).map(m => ({ role: m.role, content: m.content.replace(/<[^>]+>/g, '') }));
+  msgs[msgs.length - 1] = { role: 'user', content: `질문: ${q}\n\n[대학지원사업 데이터베이스]\n${ufBuildContext()}` };
+
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:2000, system: sys, messages: msgs }),
+    });
+    if (!r.ok) { let em = 'API 오류 ' + r.status; try { const ej = await r.json(); if (ej.error?.message) em = ej.error.message; } catch(_){} throw new Error(em); }
+    const j = await r.json();
+    let txt = (j.content || []).map(c => c.text || '').join('').trim();
+    txt = usHighlight(txt, '#f59e0b');
+    txt = txt.replace(/【([^】]+)】/g, '<b style="color:var(--accent2)">$1</b>');
+    txt = txt.replace(/\n/g, '<br>');
+    _ufChat.push({ role: 'assistant', content: txt });
+  } catch (err) {
+    _ufChat.push({ role: 'assistant', content: '⚠️ 답변 생성 실패: ' + (err.message || '오류').replace(/</g,'&lt;') });
+  } finally {
+    _ufBusy = false;
+    const b = document.getElementById('ufSendBtn'); if (b) b.disabled = false;
+    ufAiRenderLog();
+  }
+}
+
 function renderUnivFundView() {
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
@@ -8116,6 +8220,26 @@ function renderUnivFundView() {
 
   grid.innerHTML = `
     <div class="ai-view-wrap" style="padding:0 .5rem">
+      <!-- 사업 AI 챗봇 -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:.9rem">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:9px">
+          <div style="font-size:.82rem;font-weight:800;color:var(--accent2)">🤖 사업 AI</div>
+          <div style="font-size:.62rem;color:var(--text-muted);flex:1">등록된 ${UNIV_FUND_PROGRAMS.length}개 사업 데이터 기반 · 데이터에 없는 값은 추정하지 않습니다</div>
+          <button onclick="ufAiClear()" style="font-size:.62rem;color:var(--text-muted);background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer">🗑 대화 초기화</button>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px">
+          ${['국립대가 신청할 수 있는 사업을 예산 순으로 정리해줘','2026년에 신규 공고가 예정된 사업은?','글로컬대학30과 앵커사업의 차이는?','예산 규모 상위 5개 사업과 선정 대학 수는?','미확인 데이터가 많은 사업은 무엇이고 왜 그런가?']
+            .map(q => `<button onclick="ufAiAsk('${q.replace(/'/g,"\\'")}')" style="font-size:.66rem;color:var(--text);background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:4px 11px;cursor:pointer;font-family:inherit">${esc(q)}</button>`).join('')}
+        </div>
+        <div id="ufChatLog" style="display:flex;flex-direction:column;gap:8px;max-height:340px;overflow-y:auto;padding:6px 2px;margin-bottom:9px"></div>
+        <div style="display:flex;gap:6px">
+          <input id="ufChatInput" type="text" placeholder="사업 예산·선정 대학·일정·자격 요건을 물어보세요"
+            onkeydown="if(event.key==='Enter'&&!event.isComposing)ufAiSend()"
+            style="flex:1;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:8px 11px;color:var(--text);font-size:.76rem;font-family:inherit;outline:none">
+          <button id="ufSendBtn" onclick="ufAiSend()" style="background:var(--accent2);color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:.76rem;font-weight:700;cursor:pointer;font-family:inherit">전송</button>
+        </div>
+      </div>
+
       <!-- 가로형 선정·선발 타임라인 -->
       <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:.9rem">
         <div style="font-size:.82rem;font-weight:800;color:var(--accent2);margin-bottom:10px">📅 사업별 선정·선발 타임라인</div>
@@ -8133,6 +8257,7 @@ function renderUnivFundView() {
         ※ 2026년부터 첨단분야 혁신융합대학·산학협력단지·조기취업형 계약학과·마이스터대 등 <b>8개 내역사업이 앵커(구 RISE)로 이관·통합</b>됩니다.
       </div>
     </div>`;
+  ufAiRenderLog();
 }
 
 function renderUnivStatsView() {
