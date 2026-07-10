@@ -942,7 +942,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3875,7 +3875,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v9.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v9.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -4244,7 +4244,7 @@ function isLoggedIn() { try { return !!JSON.parse(localStorage.getItem('startpag
 // ── 클라우드 동기화 (Railway Postgres) ──
 let _cloudToken = null, _cloudTokenExp = 0;
 const CLOUD_BASE_KEYS = ['api_keys', 'apps', 'sched_events', 'lectures', 'todo_items'];  // 계정별(__이메일)
-const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden', 'uf_favs'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube
+const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden', 'uf_favs', 'bm_groups', 'bm_group_hidden'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube
 const CLOUD_ALL_KEYS = [...CLOUD_BASE_KEYS, ...CLOUD_PLAIN_KEYS];
 // 로컬 키 결정 — startpage_v7은 프로필별 키(getStateKey) 사용
 function _cloudLocalKey(base) {
@@ -4266,7 +4266,7 @@ function cloudToken() {
   return null;
 }
 // 개인 콘텐츠 키(계정별 데이터) — 로그인 시 초기화 후 해당 계정 것만 pull 복원
-const PERSONAL_CONTENT_KEYS = ['postit_notes','watch_univs','user_poems','poem_favs','poem_hidden','poem_over','poem_notes','user_music','music_favs','music_hidden','music_over','yt_user','yt_favs','yt_channels','yt_hidden','yt_vid_ov','yt_title_ov','yt_user_cats','yt_cat_hidden','uf_favs'];
+const PERSONAL_CONTENT_KEYS = ['postit_notes','watch_univs','user_poems','poem_favs','poem_hidden','poem_over','poem_notes','user_music','music_favs','music_hidden','music_over','yt_user','yt_favs','yt_channels','yt_hidden','yt_vid_ov','yt_title_ov','yt_user_cats','yt_cat_hidden','uf_favs','bm_groups','bm_group_hidden'];
 function clearPersonalData() { PERSONAL_CONTENT_KEYS.forEach(k => localStorage.removeItem(k)); }
 // 서버 → 로컬 (로그인 직후)
 async function cloudPull() {
@@ -10326,6 +10326,7 @@ function renderLinks() {
     bar.innerHTML = `
       <button onclick="bmImport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">📥 가져오기(HTML)</button>
       <button onclick="bmExport()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">📤 내보내기(HTML)</button>
+      <button onclick="bmGroupManageOpen()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;cursor:pointer">🏷 하위 카테고리 관리</button>
       <button onclick="bmClearAll()" style="padding:6px 12px;background:var(--bg3);border:1px solid var(--danger,#e74c3c);border-radius:6px;color:var(--danger,#e74c3c);font-size:.74rem;cursor:pointer">🗑 전체 초기화</button>
       <span style="margin-left:auto;font-size:.68rem;color:var(--text-dim);align-self:center">${links.length}개 북마크</span>`;
     grid.appendChild(bar);
@@ -24190,6 +24191,145 @@ const GROUPED_CATS = { ai: 'AI 하위 그룹', mybm: '하위 카테고리' };
 const BM_DEFAULT_GROUPS = ['🔍 포털·검색', '🤖 AI', '🎓 학술·교육', '🏛 정부·공공·기관', '📰 뉴스',
   '💻 개발', '📺 동영상', '✍️ 블로그·문서', '🛒 쇼핑', '🌐 기타'];
 
+// ── 내 북마크 하위 카테고리 관리 (빈 그룹도 남아야 하므로 별도 저장) ──
+function bmUserGroups() { try { return JSON.parse(localStorage.getItem('bm_groups') || '[]'); } catch(_) { return []; } }
+function bmSaveUserGroups(v) { localStorage.setItem('bm_groups', JSON.stringify(v)); cloudPush('bm_groups'); }
+function bmHiddenGroups() { try { return JSON.parse(localStorage.getItem('bm_group_hidden') || '[]'); } catch(_) { return []; } }
+function bmSaveHiddenGroups(v) { localStorage.setItem('bm_group_hidden', JSON.stringify(v)); cloudPush('bm_group_hidden'); }
+// 선택지에 보여줄 전체 목록: 기본(숨김 제외) + 사용자 정의 + 실제 쓰이는 값
+function bmAllGroups() {
+  const hidden = new Set(bmHiddenGroups());
+  const used = state.links.filter(l => l.catId === 'mybm' && l.group).map(l => l.group);
+  return [...new Set([...BM_DEFAULT_GROUPS.filter(g => !hidden.has(g)), ...bmUserGroups(), ...used])];
+}
+function bmGroupCount(name) { return state.links.filter(l => l.catId === 'mybm' && l.group === name).length; }
+
+function bmGroupAdd() {
+  const inp = document.getElementById('bmGroupNewInput');
+  const name = (inp?.value || '').trim();
+  if (!name) { showToast('이름을 입력하세요', '⚠️'); return; }
+  if (bmAllGroups().includes(name)) { showToast('이미 있는 하위 카테고리입니다', 'ℹ️'); return; }
+  bmSaveUserGroups([...bmUserGroups(), name]);
+  // 기본을 지웠다가 같은 이름으로 다시 추가하는 경우 숨김 해제
+  bmSaveHiddenGroups(bmHiddenGroups().filter(g => g !== name));
+  if (inp) inp.value = '';
+  bmGroupManageRender();
+}
+
+function bmGroupRenameSave(oldName) {
+  const nv = (document.getElementById('bmGroupEditInput')?.value || '').trim();
+  window._bmGroupEdit = null;
+  if (!nv || nv === oldName) { bmGroupManageRender(); return; }
+  if (bmAllGroups().includes(nv)) { showToast('이미 있는 하위 카테고리입니다', 'ℹ️'); bmGroupManageRender(); return; }
+
+  const isDefault = BM_DEFAULT_GROUPS.includes(oldName);
+  if (isDefault) {
+    // 기본은 지울 수 없으니 숨기고, 새 이름을 사용자 정의로 등록
+    const hidden = bmHiddenGroups();
+    if (!hidden.includes(oldName)) bmSaveHiddenGroups([...hidden, oldName]);
+    bmSaveUserGroups([...bmUserGroups(), nv]);
+  } else {
+    bmSaveUserGroups(bmUserGroups().map(g => g === oldName ? nv : g));
+  }
+  // 이 그룹을 쓰던 링크들을 새 이름으로 옮긴다
+  state.links.forEach(l => { if (l.catId === 'mybm' && l.group === oldName) l.group = nv; });
+  saveState(); render();
+  bmGroupManageRender();
+  showToast(`"${oldName}" → "${nv}" 변경됨`);
+}
+
+function bmGroupDelete(name) {
+  const cnt = bmGroupCount(name);
+  const msg = cnt
+    ? `"${name}"에 북마크 ${cnt}개가 있습니다. 삭제하면 해당 북마크는 URL 기반 자동 분류로 되돌아갑니다. 삭제할까요?`
+    : `"${name}" 하위 카테고리를 삭제할까요?`;
+  if (!confirm(msg)) return;
+
+  if (BM_DEFAULT_GROUPS.includes(name)) {
+    const hidden = bmHiddenGroups();
+    if (!hidden.includes(name)) bmSaveHiddenGroups([...hidden, name]);
+  } else {
+    bmSaveUserGroups(bmUserGroups().filter(g => g !== name));
+  }
+  // 링크는 지우지 않는다 — group만 떼면 bmCategory()가 URL로 다시 분류한다
+  state.links.forEach(l => { if (l.catId === 'mybm' && l.group === name) delete l.group; });
+  saveState(); render();
+  bmGroupManageRender();
+  showToast(`"${name}" 삭제됨`, '🗑');
+}
+
+function bmGroupRestoreDefaults() {
+  if (!confirm('숨긴 기본 하위 카테고리를 모두 되살릴까요?')) return;
+  bmSaveHiddenGroups([]);
+  bmGroupManageRender();
+  showToast('기본 하위 카테고리 복원됨');
+}
+
+function bmGroupManageOpen() {
+  if (!isLoggedIn()) { showToast('로그인 후 이용할 수 있습니다 🔒'); return; }
+  let ov = document.getElementById('bmGroupOverlay');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'bmGroupOverlay'; ov.className = 'uf-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.onclick = e => { if (e.target === ov) { window._bmGroupEdit = null; ov.remove(); } };
+    document.body.appendChild(ov);
+  }
+  bmGroupManageRender();
+}
+
+function bmGroupManageRender() {
+  const ov = document.getElementById('bmGroupOverlay'); if (!ov) return;
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const groups = bmAllGroups();
+  const hiddenCnt = bmHiddenGroups().length;
+  const editing = window._bmGroupEdit;
+
+  const rows = groups.map(g => {
+    const cnt = bmGroupCount(g);
+    const isDefault = BM_DEFAULT_GROUPS.includes(g);
+    if (editing === g) {
+      return `<div style="display:flex;align-items:center;gap:6px;padding:7px 10px;background:var(--bg3);border:1.5px solid var(--accent);border-radius:8px">
+        <input id="bmGroupEditInput" value="${esc(g).replace(/"/g,'&quot;')}" maxlength="30"
+          onkeydown="if(event.key==='Enter'&&!event.isComposing)bmGroupRenameSave('${esc(g).replace(/'/g,"\\'")}');if(event.key==='Escape'){window._bmGroupEdit=null;bmGroupManageRender()}"
+          style="flex:1;min-width:0;padding:4px 8px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;outline:none;font-family:inherit">
+        <button onclick="bmGroupRenameSave('${esc(g).replace(/'/g,"\\'")}')" style="padding:4px 10px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.68rem;cursor:pointer;font-family:inherit">저장</button>
+        <button onclick="window._bmGroupEdit=null;bmGroupManageRender()" style="padding:4px 10px;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.68rem;cursor:pointer;font-family:inherit">취소</button>
+      </div>`;
+    }
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">
+      <span style="flex:1;min-width:0;font-size:.76rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(g)}</span>
+      ${isDefault ? '<span title="기본 제공" style="font-size:.56rem;color:var(--text-muted);flex-shrink:0">기본</span>' : ''}
+      <span style="font-size:.64rem;color:var(--text-dim);flex-shrink:0">${cnt}개</span>
+      <button onclick="window._bmGroupEdit='${esc(g).replace(/'/g,"\\'")}';bmGroupManageRender()" title="이름 변경" style="background:none;border:none;cursor:pointer;font-size:.72rem;flex-shrink:0">✏️</button>
+      <button onclick="bmGroupDelete('${esc(g).replace(/'/g,"\\'")}')" title="삭제" style="background:none;border:none;color:var(--danger,#e74c3c);cursor:pointer;font-size:.72rem;flex-shrink:0">✕</button>
+    </div>`;
+  }).join('');
+
+  ov.innerHTML = `<div class="uf-modal" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:460px;width:100%;max-height:86vh;overflow-y:auto;padding:18px 20px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="flex:1;font-size:.95rem;font-weight:800;color:var(--text)">🏷 하위 카테고리 관리</div>
+      <button onclick="window._bmGroupEdit=null;document.getElementById('bmGroupOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.15rem;color:var(--text-muted)">✕</button>
+    </div>
+
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <input id="bmGroupNewInput" placeholder="새 하위 카테고리 (예: 📚 자주 보는 논문)" maxlength="30"
+        onkeydown="if(event.key==='Enter'&&!event.isComposing)bmGroupAdd()"
+        style="flex:1;min-width:0;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:.74rem;outline:none;font-family:inherit">
+      <button onclick="bmGroupAdd()" style="padding:7px 14px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit">+ 추가</button>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:5px">${rows || '<div style="text-align:center;color:var(--text-muted);font-size:.74rem;padding:16px">하위 카테고리가 없습니다</div>'}</div>
+
+    ${hiddenCnt ? `<button onclick="bmGroupRestoreDefaults()" style="margin-top:10px;width:100%;padding:6px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text-dim);font-size:.68rem;cursor:pointer;font-family:inherit">↩ 숨긴 기본 카테고리 ${hiddenCnt}개 복원</button>` : ''}
+
+    <div style="font-size:.62rem;color:var(--text-muted);margin-top:12px;line-height:1.6;padding:8px 10px;background:var(--bg3);border-radius:7px">
+      ※ 삭제해도 <b>북마크는 지워지지 않습니다</b>. 하위 카테고리만 떨어지고 URL 기반 자동 분류로 되돌아갑니다.<br>
+      ※ 기본 카테고리는 완전히 지워지지 않고 숨겨집니다 — 언제든 복원할 수 있습니다.
+    </div>
+  </div>`;
+  setTimeout(() => document.getElementById('bmGroupEditInput')?.focus(), 30);
+}
+
 function linkSyncGroupRow(selectedGroup) {
   const row = document.getElementById('linkGroupRow');
   const gsel = document.getElementById('linkGroup');
@@ -24201,10 +24341,10 @@ function linkSyncGroupRow(selectedGroup) {
   if (!label) return;
   if (glabel) glabel.textContent = label;
 
-  // 이미 쓰이고 있는 그룹 + (내 북마크면) 자동 분류 기본값
-  const used = [...new Set(state.links.filter(l => l.catId === catId && l.group).map(l => l.group))];
-  const base = catId === 'mybm' ? BM_DEFAULT_GROUPS : [];
-  const groups = [...new Set([...used, ...base])];
+  // 내 북마크는 관리자에서 정한 목록, AI는 실제 쓰이는 그룹
+  const groups = catId === 'mybm'
+    ? bmAllGroups()
+    : [...new Set(state.links.filter(l => l.catId === catId && l.group).map(l => l.group))];
 
   const auto = catId === 'mybm' ? `<option value=""${!selectedGroup ? ' selected' : ''}>🪄 자동 분류 (URL로 판단)</option>` : '';
   const cur = selectedGroup || gsel.value || (catId === 'ai' ? (groups[0] || '💬 대화형 AI') : '');
