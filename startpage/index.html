@@ -929,7 +929,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.5</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.6</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3883,7 +3883,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v7.5 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v7.6 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -4085,12 +4085,12 @@ function addWatchUniv() {
   const list = getWatchUnivs();
   if (list.includes(name)) { showToast('이미 등록된 대학'); return; }
   list.push(name);
-  localStorage.setItem('watch_univs', JSON.stringify(list));
+  localStorage.setItem('watch_univs', JSON.stringify(list)); try { cloudPush('watch_univs'); } catch(_) {}
   inp.value = ''; renderWatchUnivs();
 }
 function delWatchUniv(i) {
   const list = getWatchUnivs(); list.splice(i, 1);
-  localStorage.setItem('watch_univs', JSON.stringify(list)); renderWatchUnivs();
+  localStorage.setItem('watch_univs', JSON.stringify(list)); try { cloudPush('watch_univs'); } catch(_) {} renderWatchUnivs();
 }
 function renderWatchUnivs() {
   const box = document.getElementById('watchUnivList');
@@ -4123,12 +4123,12 @@ function addKciKeyword() {
   const list = getKciKeywords();
   if (list.includes(kw)) return;
   list.push(kw);
-  localStorage.setItem('kci_keywords', JSON.stringify(list.slice(0, 5)));
+  localStorage.setItem('kci_keywords', JSON.stringify(list.slice(0, 5))); try { cloudPush('kci_keywords'); } catch(_) {}
   inp.value = ''; kciWatchLoad();
 }
 function delKciKeyword(i) {
   const list = getKciKeywords(); list.splice(i, 1);
-  localStorage.setItem('kci_keywords', JSON.stringify(list)); kciWatchLoad();
+  localStorage.setItem('kci_keywords', JSON.stringify(list)); try { cloudPush('kci_keywords'); } catch(_) {} kciWatchLoad();
 }
 async function kciWatchLoad() {
   const chips = document.getElementById('kciKeywordChips');
@@ -4205,14 +4205,20 @@ function isLoggedIn() { try { return !!JSON.parse(localStorage.getItem('startpag
 // ── 클라우드 동기화 (Railway Postgres) ──
 let _cloudToken = null, _cloudTokenExp = 0;
 const CLOUD_BASE_KEYS = ['api_keys', 'apps', 'sched_events', 'lectures', 'todo_items'];  // 계정별(__이메일)
-const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·좋아하는 시·감상메모·좋아하는 음악·YouTube(등록영상·즐겨찾기·채널·숨김·수정)
+const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube
 const CLOUD_ALL_KEYS = [...CLOUD_BASE_KEYS, ...CLOUD_PLAIN_KEYS];
-function _cloudLocalKey(base) { return CLOUD_PLAIN_KEYS.includes(base) ? base : base + '__' + userEmail(); }
+// 로컬 키 결정 — startpage_v7은 프로필별 키(getStateKey) 사용
+function _cloudLocalKey(base) {
+  if (base === 'startpage_v7') { try { return getStateKey(); } catch(_) { return 'startpage_v7'; } }
+  return CLOUD_PLAIN_KEYS.includes(base) ? base : base + '__' + userEmail();
+}
 function cloudSetToken(token, expiresIn) {
   _cloudToken = token;
   _cloudTokenExp = Date.now() + ((expiresIn || 3600) - 60) * 1000;
   sessionStorage.setItem('cloud_token', token);
   sessionStorage.setItem('cloud_token_exp', String(_cloudTokenExp));
+  // 토큰 확보 → 만료 중 쌓인 미전송 변경분 재전송
+  setTimeout(() => { try { cloudFlushPending(); } catch(_) {} }, 300);
 }
 function cloudToken() {
   if (_cloudToken && Date.now() < _cloudTokenExp) return _cloudToken;
@@ -4254,24 +4260,63 @@ async function cloudPushNow(base) {
     });
   } catch(_) {}
 }
-// 로컬 → 서버 (저장 시, debounce)
+// 로컬 → 서버 (저장 시, debounce) + 미전송 큐(토큰 만료·오프라인 대비)
 const _cloudPushTimers = {};
+const CLOUD_PENDING_KEY = 'cloud_pending_push';
+function cloudPendingGet() { try { return JSON.parse(sessionStorage.getItem(CLOUD_PENDING_KEY) || '[]'); } catch(_) { return []; } }
+function cloudPendingAdd(base) {
+  const p = cloudPendingGet();
+  if (!p.includes(base)) { p.push(base); sessionStorage.setItem(CLOUD_PENDING_KEY, JSON.stringify(p)); }
+}
+function cloudPendingClear(base) {
+  sessionStorage.setItem(CLOUD_PENDING_KEY, JSON.stringify(cloudPendingGet().filter(b => b !== base)));
+}
+// 대기 중인 키 전부 재전송(토큰 확보 후 호출)
+async function cloudFlushPending() {
+  const p = cloudPendingGet();
+  if (!p.length || !cloudToken() || !isLoggedIn()) return;
+  for (const b of p) { try { await cloudPushNow(b); cloudPendingClear(b); } catch(_) {} }
+}
 function cloudPush(base) {
   if (!CLOUD_ALL_KEYS.includes(base)) return;
-  const token = cloudToken(); if (!token || !isLoggedIn()) return;
+  if (!isLoggedIn()) return;
+  if (!cloudToken()) { cloudPendingAdd(base); return; }   // 토큰 만료 → 큐에 적재, 재인증 후 전송
   clearTimeout(_cloudPushTimers[base]);
+  cloudPendingAdd(base);                                   // 전송 완료 전까지 대기 표시
   _cloudPushTimers[base] = setTimeout(async () => {
+    const token = cloudToken();
+    if (!token) return;                                    // 여전히 없으면 큐에 남겨둠
     let value;
     try { value = JSON.parse(localStorage.getItem(_cloudLocalKey(base)) || 'null'); } catch(_) { return; }
     try {
-      await fetch('/api/sync/' + base, {
+      const r = await fetch('/api/sync/' + base, {
         method: 'PUT',
         headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
         body: JSON.stringify({ value })
       });
+      if (r.ok) cloudPendingClear(base);
     } catch(_) {}
   }, 800);
 }
+// 탭 종료 직전 미전송분 즉시 전송(debounce 대기분 유실 방지)
+window.addEventListener('beforeunload', () => {
+  const token = cloudToken(); if (!token || !isLoggedIn()) return;
+  const pending = cloudPendingGet();
+  const bases = new Set([...pending, ...Object.keys(_cloudPushTimers)]);
+  bases.forEach(base => {
+    if (!CLOUD_ALL_KEYS.includes(base)) return;
+    let value;
+    try { value = JSON.parse(localStorage.getItem(_cloudLocalKey(base)) || 'null'); } catch(_) { return; }
+    try {
+      // keepalive fetch — 언로드 중에도 전송 보장
+      fetch('/api/sync/' + base, {
+        method: 'PUT', keepalive: true,
+        headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ value })
+      });
+    } catch(_) {}
+  });
+});
 // 페이지 재방문 시 조용히 토큰 재발급 → pull (백그라운드)
 let _cloudSilentClient = null;
 function cloudSilentSync() {
