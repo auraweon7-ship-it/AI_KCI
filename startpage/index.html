@@ -903,6 +903,12 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 @media (max-width: 960px) { .music-grid { grid-template-columns: repeat(3, 1fr) !important; } }
 @media (max-width: 560px) { .music-grid { grid-template-columns: 1fr !important; } }
 .yt-thumb.playing { outline: 2px solid var(--accent2); outline-offset: 1px; box-shadow: 0 0 0 3px rgba(236,72,153,.35); }
+/* 📌 오늘의 브리핑 */
+.brief-line { font-size:.68rem; color:var(--text); line-height:1.45; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
+.brief-line[onclick]:hover { text-decoration:underline; }
+@media (max-width: 1100px) { .brief-grid { grid-template-columns: repeat(2,1fr) !important; } }
+@media (max-width: 620px)  { .brief-grid { grid-template-columns: 1fr !important; } }
+
 @media (max-width: 900px) {
   .uf-cards { grid-template-columns: 1fr !important; }
   /* 타임라인: 사업명 레인 폭 축소(가로 스크롤 유지) */
@@ -932,7 +938,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.0</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.1</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3856,7 +3862,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v9.0 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v9.1 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -4178,7 +4184,7 @@ function isLoggedIn() { try { return !!JSON.parse(localStorage.getItem('startpag
 // ── 클라우드 동기화 (Railway Postgres) ──
 let _cloudToken = null, _cloudTokenExp = 0;
 const CLOUD_BASE_KEYS = ['api_keys', 'apps', 'sched_events', 'lectures', 'todo_items'];  // 계정별(__이메일)
-const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube
+const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden', 'uf_favs'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube
 const CLOUD_ALL_KEYS = [...CLOUD_BASE_KEYS, ...CLOUD_PLAIN_KEYS];
 // 로컬 키 결정 — startpage_v7은 프로필별 키(getStateKey) 사용
 function _cloudLocalKey(base) {
@@ -4200,7 +4206,7 @@ function cloudToken() {
   return null;
 }
 // 개인 콘텐츠 키(계정별 데이터) — 로그인 시 초기화 후 해당 계정 것만 pull 복원
-const PERSONAL_CONTENT_KEYS = ['postit_notes','watch_univs','user_poems','poem_favs','poem_hidden','poem_over','poem_notes','user_music','music_favs','music_hidden','music_over','yt_user','yt_favs','yt_channels','yt_hidden','yt_vid_ov','yt_title_ov','yt_user_cats','yt_cat_hidden'];
+const PERSONAL_CONTENT_KEYS = ['postit_notes','watch_univs','user_poems','poem_favs','poem_hidden','poem_over','poem_notes','user_music','music_favs','music_hidden','music_over','yt_user','yt_favs','yt_channels','yt_hidden','yt_vid_ov','yt_title_ov','yt_user_cats','yt_cat_hidden','uf_favs'];
 function clearPersonalData() { PERSONAL_CONTENT_KEYS.forEach(k => localStorage.removeItem(k)); }
 // 서버 → 로컬 (로그인 직후)
 async function cloudPull() {
@@ -7403,7 +7409,7 @@ const UNIV_FUND_PROGRAMS = [
     budget: '7,201억 원 (2026년 기본계획 총액)',
     budgetNote: '거점국립대 4,962억 + 국가중심대·교대 27개교 2,239억 = 7,201억 (교수신문 2026 기본계획). ⚠ 예산안상 별도 라인 「거점국립대 집중 육성」은 8,855억 원(2025년 4,243억 → +4,614억, 정책브리핑)으로 집계 층위가 다름 — 상충이 아니라 정의가 다른 값. 종전 표기 "2026년 2,239억"은 국가중심대·교대 몫이므로 사업 총액이 아님',
     selected: '36개교', selectedNote: '거점국립대 9 (강원·경북·경상국립·부산·전남·전북·제주·충남·충북) + 국가중심대 16 + 교대 11 · 기본배분 40% : 성과배분 60%',
-    agency: '교육부 · 한국연구재단', confidence: '확인',
+    agency: '교육부 · 한국연구재단', verifiedAt: '2026-07-10', confidence: '확인',
     purpose: '지역 교육·연구·혁신 거점 육성, 국가균형발전 기여, 기초·보호학문 육성',
     schedule: [
       { stage: '기본계획 발표', date: '2025-03-20' },
@@ -7438,7 +7444,7 @@ const UNIV_FUND_PROGRAMS = [
     budget: '2,000억 원 (거점국립대 지원분 1,200억 원)',
     budgetNote: 'KCUE 「고등교육 포커스」 제13호(출처: 2026년 교육부 예산안) 표에서 직접 확인. 2026 신규 인센티브',
     selected: '미확인', selectedNote: '2026 신규 사업으로 선정 대학 수·명단 미공고. 보도상 3개 거점국립대 선정 예정이나 1차 출처 없음',
-    agency: '교육부', budgetConf: '확인', selectedConf: '미확인', confidence: '부분확인',
+    agency: '교육부', budgetConf: '확인', selectedConf: '미확인', verifiedAt: '2026-07-10', confidence: '부분확인',
     purpose: '거점국립대를 지역 고등교육 생태계 중심축으로 육성, 대학 간 공유·협력',
     schedule: [{ stage: '2026 예산 편성', date: '2026' }],
     scheduleNote: '국립대학육성사업·앵커와 연계 운영',
@@ -7468,7 +7474,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '상시', status: '상시 운영',
     budget: '국립대학 운영지원 프로그램 5조 2,399억 원 (2026년)', budgetNote: '세부사업 구분: 국립대학육성사업 8,736억 / 시설확충 9,109억 / 실험실습기자재확충 2,043억 (KCUE 「고등교육 포커스」 제13호, 교육부 각목명세서 p.82-98 기준). 세 값은 서로 다른 세부사업이므로 합산·대체 금지',
     selected: '전체 국립대학', selectedNote: '기관 총수는 원문에 미기재 — 대학 수 미확인. 국립대학회계 예산편성·집행 기본지침 별도 적용',
-    agency: '교육부', confidence: '확인',
+    agency: '교육부', verifiedAt: '2026-07-10', confidence: '확인',
     purpose: '국가 설립대학 운영 안정, 시설 확충, 공공성 강화(지역사회 개방·기초학문 보호)',
     schedule: [{ stage: '예산편성·집행 기본지침', date: '연 1회' }],
     scheduleNote: '교육부 「국립대학회계 예산편성·집행 기본지침」 별도 운영',
@@ -7502,7 +7508,7 @@ const UNIV_FUND_PROGRAMS = [
     budgetNote: '특성화 인센티브 850억 원 포함 (정책브리핑, 2026 대학·전문대학 혁신지원사업 기본계획). 2025년은 7,955억 원',
     selected: '141개교 (2026년)',
     selectedNote: '사립·국립·법인·공립 일반대학. 2025년 138개교 → 2026년 141개교',
-    agency: '교육부 · 한국연구재단', confidence: '확인',
+    agency: '교육부 · 한국연구재단', verifiedAt: '2026-07-10', confidence: '확인',
     purpose: '대학 자율혁신, 교육의 질 제고, 학과구조 개편, 미래인재 양성',
     schedule: [
       { stage: '기본계획 발표', date: '2025-03-20' },
@@ -7538,7 +7544,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '2026', status: '감액 편성(2026)',
     budget: '4억 원 (2026년)', budgetNote: 'KCUE 「고등교육 포커스」 제13호 예산표 확인 — 2025년 20억 → 2026년 4억 (△16억, △79.1%)',
     selected: '미확인', selectedNote: '사립대학·학교법인 대상. 지원 대상 규모는 예산표에 미기재 — 미확인',
-    agency: '교육부', budgetConf: '확인', selectedConf: '미확인', confidence: '부분확인',
+    agency: '교육부', budgetConf: '확인', selectedConf: '미확인', verifiedAt: '2026-07-10', confidence: '부분확인',
     purpose: '사립대 경영 안정, 재정 취약대학 관리',
     schedule: [{ stage: '2026 예산 편성', date: '2026' }],
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
@@ -7565,7 +7571,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '상시', status: '상시 운영',
     budget: '교육환경개선 융자 1,786.5억 원 (2026년)', budgetNote: '한국사학진흥재단 「2026년 사학진흥기금 사업별 설명자료」 PDF 원문 파싱(p.18 지출계획 총괄표) — 2026년 178,646백만원, 2025년 218,063백만원 대비 △39,417백만원(△18.1%). 이자율은 고정값이 아닌 분기별 변동(2025년 4분기 기준 연 2.43%, 수익사업·대환 +0.2%p 가산, 연체 +3%p). 상환 10년 범위·거치 5년 이내. 행복기숙사 융자는 연 1.8% 수준(주택도시기금 재원) 별도',
     selected: '미확인', selectedNote: '재정난 사립대·학교법인 대상. ⚠ 융자 배정 대학 수는 사업별 설명자료에 미기재 — 미확인',
-    agency: '한국사학진흥재단', budgetConf: '확인', selectedConf: '미확인', confidence: '미확인',
+    agency: '한국사학진흥재단', budgetConf: '확인', selectedConf: '미확인', verifiedAt: '2026-07-10', confidence: '미확인',
     purpose: '사립대 시설 개선·경영 안정, 통폐합·적정규모화 연동',
     schedule: [{ stage: '수시 신청·심사', date: '상시' }],
     sourceName: '사용자 제공 자료 (한국사학진흥재단)',
@@ -7595,7 +7601,7 @@ const UNIV_FUND_PROGRAMS = [
     budget: '1,190억 원 (일반대 850억 + 전문대 340억)',
     budgetNote: 'KCUE 「고등교육 포커스」 제13호 예산표 확인 — 2026 신규(+1,190억). 850 + 340 = 1,190 구성 검증',
     selected: '미확인', selectedNote: '2026 신규 사업으로 선정 대학 명단 미공고. 기본계획상 일반대 15개교 내외·전문대 17개교 내외 선정 예정',
-    agency: '교육부', budgetConf: '확인', selectedConf: '미확인', confidence: '부분확인',
+    agency: '교육부', budgetConf: '확인', selectedConf: '미확인', verifiedAt: '2026-07-10', confidence: '부분확인',
     purpose: '지역사회 연계 인재양성–취·창업–정주 생태계 조성',
     schedule: [{ stage: '2026 신설', date: '2026' }],
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
@@ -7628,7 +7634,7 @@ const UNIV_FUND_PROGRAMS = [
     budget: '2026년 2조 1,403억 원',
     budgetNote: 'KCUE 「고등교육 포커스」 제13호 예산표 확인 — 2025년 1조 9,410억 → 2026년 2조 1,403억 (+1,993억, +10.3%)',
     selected: '17개 시도 전부 (중앙 공모형 아님)', selectedNote: '교육부 보도자료(boardSeq=102182) 첨부 HWPX 원문 파싱 — "올해 5월, 17개 모든 시도가 시·도청 내 대학 관련 업무 담당 부서 정비와 지역라이즈센터 지정을 완료하였다". ⚠ 참여 대학 수는 사업 구조상 단일 확정 숫자가 존재하지 않음(해당 시도 내 대학 전반 대상)',
-    agency: '교육부 · 17개 광역지자체', budgetConf: '확인', selectedConf: '확인', confidence: '확인',
+    agency: '교육부 · 17개 광역지자체', budgetConf: '확인', selectedConf: '확인', verifiedAt: '2026-07-10', confidence: '확인',
     purpose: '지역산업 연계 인재양성·지역 정주·지역혁신, 중앙부처 개별사업의 지역 단위 통합·조정',
     schedule: [
       { stage: 'RISE센터 지정', date: '2024-05' },
@@ -7669,7 +7675,7 @@ const UNIV_FUND_PROGRAMS = [
     budget: '대학(모델)당 5년간 최대 1,000억 원',
     budgetNote: '정책브리핑 「글로컬대학 본지정 선정 결과 발표」(2023.11.13, newsId=156599407) 원문 확인 — "대학당 5년간 최대 1,000억 원 지원". 종전 표기 「통합모델 평균 1,500억」은 1차 출처에 없어 삭제함',
     selected: '27개 모델 · 39개 대학 (누적)', selectedNote: '교육부 보도자료(2025.9.28, boardSeq=104382) 첨부 HWP 원문 파싱 — "2023년 10개 모델(13개 대학), 2024년 10개 모델(17개 대학)을 포함하여 특성화 지방대학으로 지정되는 대학은 총 27개 모델, 39개 대학이 된다". 2025년은 7개 모델(9개 대학)',
-    agency: '교육부(글로컬대학위원회)', budgetConf: '확인', selectedConf: '확인', confidence: '확인',
+    agency: '교육부(글로컬대학위원회)', budgetConf: '확인', selectedConf: '확인', verifiedAt: '2026-07-10', confidence: '확인',
     purpose: '지역대학의 과감한 구조혁신·세계적 경쟁력 확보 (통합·연합·특성화·지역산업 연계·규제혁신)',
     schedule: [
       { stage: '공고', date: '2025-04-03' },
@@ -7712,7 +7718,7 @@ const UNIV_FUND_PROGRAMS = [
     budget: '5,617억 원 (2026년)', budgetNote: '특성화 인센티브 340억 원 포함 (정책브리핑, 2026 기본계획). 2025년은 5,555억 원',
     selected: '116개교 (2026년)',
     selectedNote: '공·사립 전문대학. 2025년 118개교 → 2026년 116개교',
-    agency: '교육부 · 한국연구재단', confidence: '확인',
+    agency: '교육부 · 한국연구재단', verifiedAt: '2026-07-10', confidence: '확인',
     purpose: '직업교육 혁신, 현장실무형 인재 양성, 실습환경 개선, 성인학습자 지원',
     schedule: [
       { stage: '기본계획 발표', date: '2025-03-20' },
@@ -7747,7 +7753,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '2022~2024 (마지막 독립 공모)', status: '앵커(구 RISE) 통합(2025~)',
     budget: '총 국비 405억 원 (2022년, 3년간 2022~2024)', budgetNote: '교육부 「고등직업교육거점지구사업 선정 결과 발표」(2022.6.2, boardSeq=91714) 첨부 HWPX 원문 파싱 — "2022년 기준 총 국비 405억 원 지원, 3년간 사업 추진", "연합체당 총사업비 15억 원 내외(총 국비 405억 원, 지방비 45억 원 이상)". ⚠ 2023~2025년 갱신 예산은 교육부 보도자료에 존재하지 않음',
     selected: '5개 권역 30개 연합체(지구)', selectedNote: '교육부 원문 파싱 — "최종 선정 5개 권역 30개 연합체". 신청 접수는 58개 연합체(전문대 71개교·기초지자체 66개). ⚠ 선정 전문대학 총수는 원문에 총계로 미기재. HiVE 전용 보도자료는 2021~2023년만 존재하고 사업기간이 2022~2024로 명시 — 앵커 이관 여부는 원문 미확인',
-    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', confidence: '부분확인',
+    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', verifiedAt: '2026-07-10', confidence: '부분확인',
     purpose: '전문대–지자체–산업체 연계 직업교육 거점',
     schedule: [
       { stage: '공고', date: '2022 상반기' },
@@ -7780,7 +7786,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '~2025 (독립 사업)', status: '앵커(구 RISE) 이관',
     budget: '마이스터대 47.5억 / 조기취업형 일반대 258억 · 전문대 96억 (2025년)', budgetNote: '⚠ 2025년 개별액(마이스터대 47.5억 / 조기취업형 일반대 258억 · 전문대 96억)은 한국대학신문 단일 언론 출처. 마이스터대 2024년 예산은 151.2억(KDI 경제정보센터)으로 2025년 47.5억과 큰 차이 — 앵커 이관에 따른 중앙 잔여분으로 보이나 원문 미해소. 8개 내역사업의 앵커 이관 사실만 KCUE 원문 파싱으로 확인',
     selected: '마이스터대 9개교 / 조기취업형 18개교', selectedNote: '마이스터대 — 2023년 6개교 + 2024년 3개교 = 9개 전문대학 (KDI 경제정보센터). 조기취업형 계약학과 — 18개교(4년제 10 · 전문대 8, 공식포털 earlyuniv.kr). ⚠ 둘 다 교육부 공고 원문 파싱은 아님 — 준원문·공식포털 근거',
-    agency: '교육부', budgetConf: '부분확인', selectedConf: '부분확인', confidence: '부분확인',
+    agency: '교육부', budgetConf: '부분확인', selectedConf: '부분확인', verifiedAt: '2026-07-10', confidence: '부분확인',
     purpose: '고숙련 전문기술인재 양성, 기업 맞춤형 조기취업 연계',
     schedule: [{ stage: '앵커 이관', date: '2026' }],
     scheduleNote: '첨단분야 혁신융합대학·산학협력단지·조기취업형 계약학과·마이스터대 등 8개 내역사업 RISE(앵커) 이관',
@@ -7810,7 +7816,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '2023~2024 (2주기)', status: '앵커(구 RISE) 통합(2025~)',
     budget: '연 510억 원 (2주기 2023~2024)', budgetNote: '정책브리핑 newsId=148916624 원문 확인 — "2주기에는 일반대 30개교, 전문대 20개교에 연 510억 원을 지원한다". 대학당 평균 10억 원 내외',
     selected: '50개교 (일반대 30 · 전문대 20)', selectedNote: '교육부 보도자료(boardSeq=95403) 원문 확인 — 일반대 30개교(광역지자체-일반대 연합체 5개 포함) + 전문대 20개교. 앵커 이관은 원문 문장 미확보',
-    agency: '교육부 · 국가평생교육진흥원', budgetConf: '확인', selectedConf: '확인', confidence: '확인',
+    agency: '교육부 · 국가평생교육진흥원', budgetConf: '확인', selectedConf: '확인', verifiedAt: '2026-07-10', confidence: '확인',
     purpose: '성인학습자 대상 평생교육체제 구축',
     schedule: [
       { stage: '공고', date: '2023 상반기' },
@@ -7847,7 +7853,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '2020.9~2027.8 (7년)', status: '진행 중',
     budget: '2025년 5,238억 원 (연간)', budgetNote: '교육부 보도자료(2025.9, boardSeq=104164) 첨부 HWP 원문 파싱 — "(사업 기간/예산) \'20.9.~\'27.8.(7년) / \'25년 5,238억원". 대학원혁신지원은 27개교에 연간 807억 원 별도. ⚠ 종전 표기 「연 4,080억」은 2020년 최초 선정 시점 값이라 부정확 — 교체함. 7년 총사업비 최신치는 이 문서에 없어 미확인',
     selected: '591개 교육연구단·팀 (2025년 기준)', selectedNote: '교육부 원문 파싱 — 미래인재 양성 373개 + 혁신인재 양성 218개 = 591개 교육연구단(팀), 대학원혁신지원 27개교. ⚠ 종전 표기 「68개교·562개」는 2020년 최초 선정값(68개 대학·578개 단·팀)이라 부정확 — 2023년 중간평가로 재편되어 현재 수치가 다름',
-    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', confidence: '확인',
+    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', verifiedAt: '2026-07-10', confidence: '확인',
     purpose: '석박사급 연구인력 양성, 대학원 중심 연구대학 육성',
     schedule: [
       { stage: '공고', date: '2020-02' },
@@ -7885,7 +7891,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '연간', status: '진행 중',
     budget: '1조 712억 원 (2026년)', budgetNote: '정책브리핑 newsId=148957292 「2026년 학술연구 지원사업 종합계획」 원문 확인 — 인문사회 4,489억(+298억) + 이공 6,223억(+265억) = 1조 712억. 2025년은 1조 149억',
     selected: '개인·집단 연구자 (대학 단위 아님)', selectedNote: '개인연구(석·박사과정생 연구장려금, 박사후연구자, 비전임교원)와 집단·인프라 연구로 구분. 고정 선정 대학 명단이 없는 사업 구조',
-    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', confidence: '확인',
+    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', verifiedAt: '2026-07-10', confidence: '확인',
     purpose: '개인·집단 연구지원, 학문후속세대 육성, 대학부설연구소 기반 강화',
     schedule: [{ stage: '종합계획 발표', date: '연초' }, { stage: '신규과제 공모', date: '연 1~2회' }],
     sourceName: '사용자 제공 자료 (교육부 학술연구지원사업 종합계획)',
@@ -7915,7 +7921,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '2026 종합계획', status: '진행 중',
     budget: 'HK 3.0 156억 원 · 20과제 (2026년)', budgetNote: '연구거점형 96억(16과제, 연 8억 이내) + 컨소시엄형 60억(4과제, 연 20억 이내). 2025년 104억·10과제에서 확대. ⚠ 상위 「인문사회연구소」 사업 524.5억, 「인문사회 기초연구(R&D)」 2,884억과 층위가 다름 — 혼동 주의',
     selected: 'HK 3.0 20개 연구소 (신규 10)', selectedNote: '연구거점형 16 (계속 8 + 신규 8) · 컨소시엄형 4 (계속 2 + 신규 2). HK+는 종료 수순(2026년 9과제 64.5억)',
-    agency: '교육부 · 한국연구재단', confidence: '확인',
+    agency: '교육부 · 한국연구재단', verifiedAt: '2026-07-10', confidence: '확인',
     purpose: '인문학 연구거점 육성, 대학부설연구소 기반 강화, 학술연구교수·저술출판 지원',
     schedule: [{ stage: '2026 종합계획', date: '2026' }, { stage: '신규과제 선정', date: '연 1회' }],
     scheduleNote: '2026년 종합계획에서 유형 다양화(순수학문·예술체육·교육연계) 및 HK 3.0 신규과제 계속 선정',
@@ -7946,7 +7952,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '연간', status: '진행 중',
     budget: '거점형 연 15억 · 컨소시엄형 연 24억 (9년, 3+3+3)', budgetNote: '교육부 「글로컬랩 사업 추진계획」(2025.4) PDF 원문 확인 — "(거점형)11개 내외, 연 15억원 내외 / (컨소시엄형)3개 내외, 연 24억원 내외", 2025년 사업예산 총 119억. ⚠ 종전 표기 「평균 연 17억」은 오류 — 원문에서 17억은 대학중점연구소 자율운영형 개편 문맥의 수치. 선도연구센터(과기정통부)는 별개 사업으로 센터별 연 15~50억·7~10년',
     selected: '14개 내외 (거점형 11 · 컨소시엄형 3)', selectedNote: '추진계획상 계획치 — 거점형 11개 내외(비수도권 6·수도권 5), 컨소시엄형 3개 내외(전국단위 경쟁). ⚠ 선정 확정 명단은 정부 1차 원문 미확보. 사례(부산대 9년 135억 등)는 언론 근거',
-    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '부분확인', confidence: '부분확인',
+    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '부분확인', verifiedAt: '2026-07-10', confidence: '부분확인',
     purpose: '우수 연구집단 육성, 지역 기반 연구거점 조성',
     schedule: [{ stage: '신규과제 공모', date: '연 1회' }],
     sourceName: '사용자 제공 자료 (교육부 학술연구지원사업)',
@@ -7982,7 +7988,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '2021~2026 (6년)', status: '앵커 이관(2026)',
     budget: '18개 연합체 총 약 2,000억 원 (연합체당 102억 원)', budgetNote: '교육부 보도자료(2024.3.18, boardSeq=98392) 첨부 HWPX 원문 파싱 — "총 18개 연합체에 약 2천억 원의 예산을 지원할 계획", "연합체 당 102억 원을 지원"(지자체참여형 신규). 사업기간: 대학주도형 2021~2026, 지자체참여형 2023~2026',
     selected: '18개 연합체 · 66개 대학', selectedNote: '교육부 보도자료(2025.1.21, boardSeq=102400) 원문 파싱 — "첨단분야 인재양성 지원(2021~, 18개 연합체, 총 66개 대학)". ⚠ 종전 표기 「67개교」는 원문과 불일치하여 66개교로 정정. 2026년 앵커 이관 여부는 교육부 원문에 명시 없음 — 미확인',
-    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', confidence: '부분확인',
+    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', verifiedAt: '2026-07-10', confidence: '부분확인',
     purpose: '여러 대학 컨소시엄으로 첨단분야(AI·반도체·바이오 등) 교육과정 공동 운영',
     schedule: [
       { stage: '공고', date: '2024-03-19' },
@@ -8021,7 +8027,7 @@ const UNIV_FUND_PROGRAMS = [
     budget: '대학당 연 3억 원 이내 · 2년(1+1)',
     budgetNote: '교육부 보도자료(boardSeq=105957, 2026.4.23) 원문 확인 — "매년 교당 3억 원 이내", 지원기간 2년(1+1). 총 60억 규모. AI 부트캠프 예산은 별도',
     selected: '20개교 (수도권 6 · 비수도권 14)', selectedNote: '교육부 보도자료 원문 명단 확인. 수도권 — 덕성여대·동국대(서울)·서울여대·세종대·용인대·한국외대 / 비수도권 — 건국대(GLOCAL)·경운대·국립경국대·국립한밭대·동국대(WISE)·동명대·동신대·동의대·부산외대·송원대·순천향대·전주대·창신대·한라대. ※ 언론의 「국립경주대」는 오기 — 원문은 「국립경국대학교」',
-    agency: '교육부', budgetConf: '확인', selectedConf: '확인', confidence: '확인',
+    agency: '교육부', budgetConf: '확인', selectedConf: '확인', verifiedAt: '2026-07-10', confidence: '확인',
     purpose: 'AI·디지털 기본역량 교육 확산, 첨단분야 인재양성',
     schedule: [{ stage: '2026 신규 편성', date: '2026' }],
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
@@ -8056,7 +8062,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '2026', status: '2026 신규',
     budget: '미확인 (사업 실재 미확인)', budgetNote: '⚠ 교육부 「2026년 교육부 업무계획」 PDF 전문을 판독했으나 「교원양성기관 교육과정 개발」 사업명도 「24억」도 존재하지 않음. 「24」는 AID(AI+Digital) 중점 전문대학 사업의 「24개 내외 사업단」에서 온 혼동으로 추정됨. 별건인 「대학 AI 기본교육과정 개발 지원」은 20개교·교당 3억 원',
     selected: '미확인 (사업 실재 미확인)', selectedNote: '교육부 보도자료·업무계획 어디에도 교원양성기관 대상 AI 교육과정 개발 지원사업이 확인되지 않음. 사업명 수정 또는 카드 삭제 검토 필요',
-    agency: '교육부', budgetConf: '미확인', selectedConf: '미확인', confidence: '미확인',
+    agency: '교육부', budgetConf: '미확인', selectedConf: '미확인', verifiedAt: '2026-07-10', confidence: '미확인',
     purpose: '예비교원 AI·디지털 교육역량 강화',
     schedule: [{ stage: '2026 신규 편성', date: '2026' }],
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
@@ -8085,7 +8091,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '2022~2027 (일반대 최대 4+2년)', status: '진행 중',
     budget: '3,025억 원 (2022년 일반대)', budgetNote: '교육부 보도자료(boardSeq=91440) 원문 확인 — "2022년 예산 기준 총 3,025억 원, 최대 6년 지원(3+3)". 일반대+전문대 합산은 4,070억(boardSeq=90756). 2025~2026년 예산은 미확인. 사업은 2027년까지 지속',
     selected: '일반대 76개교', selectedNote: '교육부 보도자료 원문 확인 — 기술혁신선도형 13 + 수요맞춤성장형 53 + 협력기반구축형 10 = 76개교 (전문대 59교 별도 트랙)',
-    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', confidence: '확인',
+    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', verifiedAt: '2026-07-10', confidence: '확인',
     purpose: '산학협력 교육과정, 기업협업센터, 캡스톤디자인, 기술이전·사업화',
     schedule: [
       { stage: '공고', date: '2022-01-13' },
@@ -8121,7 +8127,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '~2025 (독립 사업)', status: '앵커 이관(2026)',
     budget: 'BRIDGE 3.0 168억 (2023) / 산학협력단지 140억 (2024)', budgetNote: '교육부공고 제2023-168호 원문 파싱 — BRIDGE 3.0 "\'23년 168억원" (기술거점형 106억·교당 6.6억 / 지역거점형 62억·교당 7.7억). KIAT 「2024년도 대학 산학연협력단지 조성사업 추진계획(안)」 원문 파싱 — "\'24년 예산기준 140억원(8개교, 교당 20억원 내외)". ⚠ 2025년 값(210억/140억)은 한국대학신문 단일 언론 출처 — 미확인',
     selected: 'BRIDGE 24개교 / 산학협력단지 8개교', selectedNote: 'BRIDGE 3.0 — 기술거점형 16교 + 지역거점형 8교 = 24교 (교육부공고 원문 파싱). 산학협력단지 — 8개교(계속 4 + 신규 4) + 캠퍼스혁신파크 2개교(강원대·한남대) 별도. 旣선정 4교: 부경대·한양대ERICA(2019), 순천향대·연세대(2020). ⚠ BRIDGE 개별 24개교 대학명과 산학협력단지 2024 신규 4개교 명단은 언론 근거',
-    agency: '교육부', budgetConf: '확인', selectedConf: '확인', confidence: '부분확인',
+    agency: '교육부', budgetConf: '확인', selectedConf: '확인', verifiedAt: '2026-07-10', confidence: '부분확인',
     purpose: '산학협력단지 조성, 기술이전·사업화, 대학 창업교육',
     schedule: [{ stage: '앵커 이관', date: '2026' }],
     scheduleNote: '대학 산학협력단지 조성지원 등 앵커 이관 8개 내역사업 포함',
@@ -8157,7 +8163,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '2026', status: '감액 편성(2026)',
     budget: '63억 원 (2026년)', budgetNote: 'KCUE 「고등교육 포커스」 제13호 예산표 확인 — 2025년 155억 → 2026년 63억 (△92억, △59.5%)',
     selected: '미확인', selectedNote: '재정위기대학 대상. 지원 대상 대학 수는 예산표에 미기재 — 미확인',
-    agency: '교육부', budgetConf: '확인', selectedConf: '미확인', confidence: '부분확인',
+    agency: '교육부', budgetConf: '확인', selectedConf: '미확인', verifiedAt: '2026-07-10', confidence: '부분확인',
     purpose: '학령인구 감소 대응, 적정규모화(정원 감축·학과 통폐합), 폐교대학 관리(학생 보호·기록물·청산)',
     schedule: [{ stage: '2026 예산 편성', date: '2026' }],
     scheduleNote: '적정규모화·통합·연합·폐교 대응은 국립·사립 모두 대상이나 재정진단·폐교 관리는 주로 사립대',
@@ -8188,7 +8194,7 @@ const UNIV_FUND_PROGRAMS = [
     period: '상시', status: '상시 운영',
     budget: '국가장학금 5조 1,161억 원 (2026년)', budgetNote: '정책브리핑 newsId=148959345 원문 확인 — 맞춤형 국가장학금 총 5조 1,161억. 한국장학재단 출연 4,210억 별도. ⚠ 학자금대출은 기금 운용 방식이라 예산 라인이 없어 총 규모 미확인',
     selected: '전체 대학 재학생', selectedNote: '교육부 보도자료(2026학년도 1학기 신청)상 대상은 "신입생·편입생·재입학생·복학생 등 모든 대학생". ⚠ 수혜인원 「약 150만 명」은 1차 출처 본문에 없음 — 언론 근거, 미확인',
-    agency: '교육부 · 한국장학재단', budgetConf: '확인', selectedConf: '미확인', confidence: '부분확인',
+    agency: '교육부 · 한국장학재단', budgetConf: '확인', selectedConf: '미확인', verifiedAt: '2026-07-10', confidence: '부분확인',
     purpose: '등록금 부담 완화 → 대학 등록금 수입 안정성에 간접 기여',
     schedule: [{ stage: '학기별 신청·심사', date: '연 2회' }],
     scheduleNote: '사립대는 등록금 수준이 높아 체감효과가 크고, 국립대는 낮은 등록금과 결합해 공공 접근성 제고',
@@ -8243,7 +8249,165 @@ function ufConfBadge(c) {
   return `<span style="font-size:.55rem;font-weight:700;color:#fff;background:${col};padding:1px 6px;border-radius:8px">${label}</span>`;
 }
 
+// ═══ 마감 추적 ═══
+// schedule.date는 형식이 제각각(2025-03-20 / 2025-03 / 연 1회 / 상시 …).
+// 달력에 올릴 수 있는 것만 뽑는다. YYYY-MM은 말일을 쓰고 approx로 표시.
+function ufExactDate(s) {
+  let m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s || '');
+  if (m) return { d: new Date(+m[1], +m[2] - 1, +m[3]), approx: false, iso: s };
+  m = /^(\d{4})-(\d{2})$/.exec(s || '');
+  if (m) {
+    const last = new Date(+m[1], +m[2], 0);
+    const iso = `${m[1]}-${m[2]}-${String(last.getDate()).padStart(2,'0')}`;
+    return { d: last, approx: true, iso };
+  }
+  return null;
+}
+function ufDaysLeft(dt) {
+  const t = new Date(); t.setHours(0,0,0,0);
+  return Math.round((dt - t) / 86400000);
+}
+function ufDdayLabel(n) { return n === 0 ? 'D-Day' : n > 0 ? 'D-' + n : 'D+' + Math.abs(n); }
+// 사업의 다가오는 일정(미래 + 오늘). 없으면 null
+function ufNextStage(p) {
+  const cands = p.schedule
+    .map(s => ({ s, e: ufExactDate(s.date) }))
+    .filter(x => x.e && ufDaysLeft(x.e.d) >= 0)
+    .sort((a, b) => a.e.d - b.e.d);
+  return cands.length ? { stage: cands[0].s.stage, ...cands[0].e, days: ufDaysLeft(cands[0].e.d) } : null;
+}
+function ufUpcoming(limit) {
+  return UNIV_FUND_PROGRAMS
+    .map(p => ({ p, n: ufNextStage(p) }))
+    .filter(x => x.n)
+    .sort((a, b) => a.n.days - b.n.days)
+    .slice(0, limit || 99);
+}
+
+// ═══ 관심 사업 즐겨찾기 ═══
+function ufFavs() { try { return JSON.parse(localStorage.getItem('uf_favs') || '[]'); } catch(_) { return []; } }
+function ufIsFav(id) { return ufFavs().includes(id); }
+function ufToggleFav(id, ev) {
+  if (ev) ev.stopPropagation();
+  const f = ufFavs(); const i = f.indexOf(id);
+  if (i >= 0) f.splice(i, 1); else f.push(id);
+  localStorage.setItem('uf_favs', JSON.stringify(f));
+  cloudPush('uf_favs');
+  renderUnivFundView();
+  if (typeof ufBriefLoad === 'function') ufBriefLoad();
+}
+
+// ═══ 내 일정에 추가 (TO-DO + 캘린더) ═══
+function ufAddToSchedule(id, ev) {
+  if (ev) ev.stopPropagation();
+  if (!isLoggedIn()) { showToast('로그인 후 이용할 수 있습니다 🔒'); return; }
+  const p = UNIV_FUND_PROGRAMS.find(x => x.id === id);
+  if (!p) return;
+  const n = ufNextStage(p);
+  if (!n) { showToast('달력에 올릴 수 있는 향후 일정이 없습니다'); return; }
+  const text = `[${p.name}] ${n.stage}${n.approx ? ' (월 단위 추정)' : ''}`;
+  todoAddItem(text, n.iso, '대학지원사업', 1);
+  const all = schedGetAll();
+  if (!all[n.iso]) all[n.iso] = [];
+  if (!all[n.iso].some(e => e.text === text)) {
+    all[n.iso].push({ id: 'ev' + Date.now(), text: text.slice(0, 60), time: '', repeat: '', cat: '기타', fromTodo: true });
+    all[n.iso].sort((a, b) => (a.time || '99:99').localeCompare(b.time || '99:99'));
+    schedSaveAll(all);
+  }
+  if (typeof schedRender === 'function') schedRender();
+  showToast(`일정 추가: ${n.stage} (${ufDdayLabel(n.days)}) 📅`);
+}
+
+// ═══ 검증 신선도 ═══
+// confidence(근거의 질)와 verifiedAt(확인 시점)은 다른 축이다.
+function ufFreshBadge(p) {
+  if (!p.verifiedAt) return '';
+  const v = new Date(p.verifiedAt);
+  if (isNaN(v)) return '';
+  const months = (Date.now() - v) / 86400000 / 30.44;
+  let col = 'var(--text-muted)', txt = `검증 ${p.verifiedAt}`;
+  if (months >= 12) { col = '#f59e0b'; txt += ' · 1년 경과'; }
+  else if (months >= 6) { col = '#94a3b8'; txt += ' · 6개월 경과'; }
+  else return `<span title="${txt}" style="font-size:.55rem;color:var(--text-muted)">🕗 ${p.verifiedAt}</span>`;
+  return `<span title="${txt}" style="font-size:.55rem;color:${col};font-weight:700">🕗 ${p.verifiedAt} ⚠</span>`;
+}
+
+// ═══ 사업 비교 ═══
+let ufCmp = [];
+function ufToggleCmp(id, ev) {
+  if (ev) ev.stopPropagation();
+  const i = ufCmp.indexOf(id);
+  if (i >= 0) ufCmp.splice(i, 1);
+  else {
+    if (ufCmp.length >= 4) { showToast('최대 4개까지 비교할 수 있습니다'); renderUnivFundView(); return; }
+    ufCmp.push(id);
+  }
+  renderUnivFundView();
+}
+function ufClearCmp() { ufCmp = []; renderUnivFundView(); }
+function ufOpenCompare() {
+  if (ufCmp.length < 2) { showToast('2개 이상 선택하세요'); return; }
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const ps = ufCmp.map(id => UNIV_FUND_PROGRAMS.find(p => p.id === id)).filter(Boolean);
+  let ov = document.getElementById('ufCmpOverlay');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'ufCmpOverlay'; ov.className = 'uf-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  const row = (label, fn) => `<tr>
+    <th style="text-align:left;font-size:.62rem;color:var(--text-muted);font-weight:700;padding:8px 10px;border-top:1px solid var(--border);white-space:nowrap;vertical-align:top">${label}</th>
+    ${ps.map(p => `<td style="font-size:.7rem;color:var(--text);padding:8px 10px;border-top:1px solid var(--border);line-height:1.5;vertical-align:top">${fn(p)}</td>`).join('')}
+  </tr>`;
+  ov.innerHTML = `<div class="uf-modal" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:1000px;width:100%;max-height:88vh;overflow:auto;padding:18px 20px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="font-size:1rem;font-weight:800;color:var(--text);flex:1">⚖️ 사업 비교 (${ps.length}개)</div>
+      <button onclick="document.getElementById('ufCmpOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.15rem;color:var(--text-muted)">✕</button>
+    </div>
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;min-width:${140 + ps.length * 190}px">
+      <tr><th style="width:110px"></th>${ps.map(p => `<td style="padding:0 10px 8px;vertical-align:top">
+        <div style="font-size:.78rem;font-weight:800;color:${p.color};line-height:1.35">${esc(p.name)}</div>
+        <div style="margin-top:4px">${ufConfBadge(ufOverallConf(p))}</div>
+      </td>`).join('')}</tr>
+      ${row('대상', p => `<span style="font-size:.58rem;font-weight:700;color:#fff;background:${p.color};padding:1px 7px;border-radius:8px">${esc(p.target)}</span>`)}
+      ${row('예산', p => `${esc(p.budget)} ${ufDot(ufFieldConf(p,'budget'))}`)}
+      ${row('선정 대학', p => `${esc(p.selected)} ${ufDot(ufFieldConf(p,'selected'))}`)}
+      ${row('기간', p => esc(p.period))}
+      ${row('상태', p => `<b style="color:${p.color}">${esc(p.status)}</b>`)}
+      ${row('주관기관', p => esc(p.agency))}
+      ${row('다가오는 일정', p => { const n = ufNextStage(p); return n ? `<b>${ufDdayLabel(n.days)}</b> · ${esc(n.stage)}<br><span style="font-size:.62rem;color:var(--text-muted)">${esc(n.iso)}</span>` : '<span style="color:var(--text-muted)">예정 일정 없음</span>'; })}
+      ${row('목적', p => `<span style="font-size:.66rem;color:var(--text-dim)">${esc(p.purpose || '—')}</span>`)}
+      ${row('출처', p => `<a href="${esc(p.sourceUrl)}" target="_blank" rel="noopener" style="font-size:.62rem;color:${p.color};text-decoration:none">📄 ${esc(p.sourceName)} ↗</a><div style="margin-top:4px">${ufFreshBadge(p)}</div>`)}
+    </table>
+    </div>
+    <div style="font-size:.6rem;color:var(--text-muted);margin-top:12px;line-height:1.6">
+      ※ 예산·선정 대학 옆의 점은 필드별 신뢰도입니다. 산정 범위가 다른 값이 섞일 수 있으니 각 사업의 상세 팝업에서 각주를 확인하세요.
+    </div>
+  </div>`;
+}
+
+// target 문자열이 자유형식이라 키워드로 판정한다("국립·사립 공통" 같은 값이 섞여 있다)
+const UF_TARGETS = [
+  { id: 'all',  name: '전체' },
+  { id: 'natl', name: '국립대' },
+  { id: 'priv', name: '사립대' },
+  { id: 'voc',  name: '전문대' },
+];
+function ufMatchTarget(p, t) {
+  if (t === 'all') return true;
+  const s = p.target;
+  if (s.includes('공통')) return true;                       // 국립·사립 공통
+  if (t === 'natl') return /국립/.test(s);
+  if (t === 'priv') return /사립|공립|법인/.test(s);
+  if (t === 'voc')  return /전문대/.test(s);
+  return true;
+}
+
 let ufCat = 'all';
+let ufTarget = 'all';   // 지원 가능 대학 유형 필터
+function ufSetTarget(t) { ufTarget = t; renderUnivFundView(); }
 function ufSetCat(c) { ufCat = c; renderUnivFundView(); }
 // 사업 상세 팝업
 function ufOpenDetail(id) {
@@ -8424,15 +8588,50 @@ function renderUnivFundView() {
   if (title) title.textContent = '💰 대학지원사업';
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-  const shown = ufCat === 'all' ? UNIV_FUND_PROGRAMS : UNIV_FUND_PROGRAMS.filter(p => p.cat === ufCat);
+  const inTarget = UNIV_FUND_PROGRAMS.filter(p => ufMatchTarget(p, ufTarget));
+  const shown = ufCat === 'all' ? inTarget : inTarget.filter(p => p.cat === ufCat);
 
   // ── 카테고리 칩 ──
-  const cnt = {}; UNIV_FUND_PROGRAMS.forEach(p => { cnt[p.cat] = (cnt[p.cat]||0)+1; });
+  const cnt = {}; inTarget.forEach(p => { cnt[p.cat] = (cnt[p.cat]||0)+1; });
   const chips = UNIV_FUND_CATS.filter(c => c.id === 'all' || cnt[c.id]).map(c => {
-    const n = c.id === 'all' ? UNIV_FUND_PROGRAMS.length : (cnt[c.id]||0);
+    const n = c.id === 'all' ? inTarget.length : (cnt[c.id]||0);
     const on = ufCat === c.id;
     return `<button onclick="ufSetCat('${c.id}')" style="padding:.32rem .8rem;border-radius:16px;border:1.5px solid ${on?c.color:'var(--border)'};background:${on?c.color:'var(--card)'};color:${on?'#fff':'var(--text)'};font-size:.72rem;font-weight:${on?700:500};cursor:pointer;white-space:nowrap">${esc(c.name)} <span style="opacity:.75">${n}</span></button>`;
   }).join('');
+
+  // ── 대상 필터 · 비교 바 · 마감 임박 ──
+  const tgtChips = UF_TARGETS.map(t => {
+    const on = ufTarget === t.id;
+    return `<button onclick="ufSetTarget('${t.id}')" style="padding:.26rem .7rem;border-radius:14px;border:1.5px solid ${on?'var(--accent2)':'var(--border)'};background:${on?'var(--accent2)':'var(--card)'};color:${on?'#fff':'var(--text)'};font-size:.68rem;font-weight:${on?700:500};cursor:pointer;white-space:nowrap;font-family:inherit">${esc(t.name)}</button>`;
+  }).join('');
+
+  const up = ufUpcoming(5);
+  const favs = ufFavs();
+  const upFav = up.filter(x => favs.includes(x.p.id));
+  const upList = (upFav.length ? upFav : up);
+  const deadlineBox = upList.length ? `
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px 14px;margin-bottom:.9rem">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <div style="font-size:.78rem;font-weight:800;color:var(--accent2)">⏳ 다가오는 공고·마감</div>
+        <div style="font-size:.6rem;color:var(--text-muted)">${upFav.length ? '관심 사업 기준' : '전체 사업 기준 · ⭐를 누르면 관심 사업만 표시'}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        ${upList.map(({p, n}) => `<div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:.58rem;font-weight:800;color:#fff;background:${n.days <= 14 ? '#dc2626' : '#0f172a'};padding:2px 8px;border-radius:8px;flex-shrink:0">${ufDdayLabel(n.days)}</span>
+          <button onclick="ufOpenDetail('${p.id}')" style="background:none;border:none;padding:0;font-size:.7rem;font-weight:700;color:${p.color};cursor:pointer;font-family:inherit;text-align:left;flex-shrink:0">${esc(p.name)}</button>
+          <span style="font-size:.64rem;color:var(--text-dim);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(n.stage)} · ${esc(n.iso)}${n.approx ? ' (추정)' : ''}</span>
+          <button onclick="ufAddToSchedule('${p.id}',event)" style="font-size:.58rem;color:var(--text);background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:2px 7px;cursor:pointer;flex-shrink:0">📅 내 일정</button>
+        </div>`).join('')}
+      </div>
+    </div>` : '';
+
+  const cmpBar = ufCmp.length ? `
+    <div style="display:flex;align-items:center;gap:8px;background:var(--accent2);color:#fff;border-radius:10px;padding:8px 12px;margin-bottom:.8rem;flex-wrap:wrap">
+      <span style="font-size:.7rem;font-weight:700">⚖️ 비교 대상 ${ufCmp.length}개</span>
+      <span style="font-size:.64rem;opacity:.9;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ufCmp.map(id => esc((UNIV_FUND_PROGRAMS.find(p=>p.id===id)||{}).name || '')).join(' · ')}</span>
+      <button onclick="ufOpenCompare()" ${ufCmp.length < 2 ? 'disabled' : ''} style="font-size:.66rem;font-weight:700;color:var(--accent2);background:#fff;border:none;border-radius:7px;padding:4px 12px;cursor:pointer;opacity:${ufCmp.length<2?.5:1};font-family:inherit">비교하기</button>
+      <button onclick="ufClearCmp()" style="font-size:.66rem;color:#fff;background:rgba(255,255,255,.2);border:none;border-radius:7px;padding:4px 10px;cursor:pointer;font-family:inherit">해제</button>
+    </div>` : '';
 
   // ── 가로형 타임라인 (일정 좌표가 잡히는 사업만) ──
   const tlProgs = shown.filter(p => p.schedule.some(s => ufParseDate(s.date) != null));
@@ -8472,17 +8671,26 @@ function renderUnivFundView() {
   // ── 사업 카드(카테고리별 섹션) ──
   const catsToRender = ufCat === 'all' ? UNIV_FUND_CATS.filter(c => c.id !== 'all' && cnt[c.id]) : UNIV_FUND_CATS.filter(c => c.id === ufCat);
   const sections = catsToRender.map(c => {
-    const list = UNIV_FUND_PROGRAMS.filter(p => p.cat === c.id);
+    const list = inTarget.filter(p => p.cat === c.id);
     if (!list.length) return '';
     const cards = list.map(p => `
       <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid ${p.color};border-radius:10px;padding:12px 14px">
-        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:5px">
+        <div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:5px">
+          <input type="checkbox" onclick="ufToggleCmp('${p.id}',event)" ${ufCmp.includes(p.id) ? 'checked' : ''}
+            title="비교 대상 선택 (최대 4개)" style="margin-top:3px;cursor:pointer;flex-shrink:0">
+          <button onclick="ufToggleFav('${p.id}',event)" title="${ufIsFav(p.id) ? '관심 해제' : '관심 사업으로 등록'}"
+            style="background:none;border:none;padding:0;font-size:.85rem;cursor:pointer;flex-shrink:0;line-height:1;opacity:${ufIsFav(p.id) ? 1 : .35}">${ufIsFav(p.id) ? '⭐' : '☆'}</button>
           <button onclick="ufOpenDetail('${p.id}')" title="상세 정보 보기"
             style="flex:1;min-width:0;text-align:left;background:none;border:none;padding:0;font-size:.85rem;font-weight:800;color:${p.color};cursor:pointer;font-family:inherit;line-height:1.35">
             ${esc(p.name)} <span style="font-size:.6rem;opacity:.7">▸ 상세</span>
           </button>
           ${ufConfBadge(ufOverallConf(p))}
         </div>
+        ${(() => { const n = ufNextStage(p); return n ? `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span style="font-size:.58rem;font-weight:800;color:#fff;background:${n.days <= 14 ? '#dc2626' : '#0f172a'};padding:2px 8px;border-radius:8px">${ufDdayLabel(n.days)}</span>
+          <span style="font-size:.6rem;color:var(--text-dim);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(n.stage)} · ${esc(n.iso)}${n.approx ? ' (월 단위 추정)' : ''}</span>
+          <button onclick="ufAddToSchedule('${p.id}',event)" title="TO-DO·캘린더에 추가" style="font-size:.58rem;color:var(--text);background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:2px 7px;cursor:pointer;flex-shrink:0">📅 내 일정</button>
+        </div>` : ''; })()}
         <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">
           <span style="font-size:.56rem;font-weight:700;color:#fff;background:${p.color};padding:1px 7px;border-radius:8px">${esc(p.target)}</span>
           <span style="font-size:.58rem;color:var(--text-dim)">${esc(p.period)} · <b style="color:${p.color}">${esc(p.status)}</b> · ${esc(p.agency)}</span>
@@ -8504,7 +8712,10 @@ function renderUnivFundView() {
           ${p.schedule.map(s => `<span style="font-size:.57rem;color:var(--text-dim);background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:2px 7px"><b style="color:${p.color}">${esc(s.stage)}</b> ${esc(s.date)}</span>`).join('')}
         </div>
         ${p.scheduleNote ? `<div style="font-size:.57rem;color:var(--text-muted);margin-bottom:8px;line-height:1.5">※ ${esc(p.scheduleNote)}</div>` : ''}
-        <a href="${esc(p.sourceUrl)}" target="_blank" rel="noopener" style="font-size:.63rem;color:${p.color};text-decoration:none;font-weight:600">📄 ${esc(p.sourceName)} ↗</a>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <a href="${esc(p.sourceUrl)}" target="_blank" rel="noopener" style="font-size:.63rem;color:${p.color};text-decoration:none;font-weight:600">📄 ${esc(p.sourceName)} ↗</a>
+          <span style="margin-left:auto">${ufFreshBadge(p)}</span>
+        </div>
       </div>`).join('');
     return `<div style="margin-bottom:1.1rem">
       <div style="display:flex;align-items:center;gap:8px;padding:5px 10px;border-left:3px solid ${c.color};background:${c.color}18;border-radius:5px;margin-bottom:8px">
@@ -8543,13 +8754,26 @@ function renderUnivFundView() {
         ${timeline}
       </div>
 
+      ${deadlineBox}
+
+      <!-- 지원 가능 대학 유형 -->
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:.6rem">
+        <span style="font-size:.64rem;color:var(--text-muted);font-weight:700">🎓 지원 가능</span>
+        ${tgtChips}
+      </div>
+
       <!-- 카테고리 필터 -->
-      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem">${chips}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:.8rem">${chips}</div>
+
+      ${cmpBar}
 
       ${sections}
 
       <div style="font-size:.62rem;color:var(--text-muted);line-height:1.7;padding:10px 12px;background:var(--bg3);border-radius:8px">
         ※ <b>사업명을 클릭</b>하면 개요·운영 방식·연도별 선정 대학·유의사항·출처가 담긴 상세 팝업이 열립니다(24개 사업 전체 제공).<br>
+        ※ <b>☆</b>를 눌러 관심 사업으로 등록하면 상단 「다가오는 공고·마감」과 전체 화면의 「오늘의 브리핑」에 D-day가 표시됩니다. <b>📅 내 일정</b>은 TO-DO와 캘린더에 함께 등록합니다.<br>
+        ※ <b>체크박스</b>로 2~4개를 골라 <b>비교하기</b>를 누르면 예산·선정 규모·기간·주관기관을 나란히 볼 수 있습니다.<br>
+        ※ <b>🕗 날짜</b>는 해당 수치를 원문으로 마지막 확인한 날입니다. 6개월·1년이 지나면 경고 표시가 붙습니다 — 신뢰도 뱃지(근거의 질)와는 다른 축입니다.<br>
         ※ <b>💵 예산 · 🏫 선정 대학 라벨 옆의 점</b>은 필드별 신뢰도입니다 — <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#10b981;vertical-align:middle"></span> 정부 1차 출처 원문 확인 · <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#f59e0b;vertical-align:middle"></span> 언론·간접 근거 · <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#94a3b8;vertical-align:middle"></span> 미확인. 예산은 확인됐지만 선정 대학은 미공고인 사업이 많아 필드별로 구분했습니다.<br>
         ※ 각 카드의 <b>출처 링크</b>와 <b>신뢰도 뱃지</b>(확인·부분확인·미확인)를 확인하세요. 확인되지 않은 값은 임의로 채우지 않고 <b>미확인</b>으로 남겼습니다.<br>
         ※ 2026년 수치는 <b>교육부 각목명세서·기본계획·정책브리핑·KCUE 고등교육 포커스</b> 원문으로 재검증했습니다. 국립대학육성사업의 4,243억(2025 거점 라인) / 8,855억(2026 거점 라인) / 2,239억(국가중심대·교대 27교 몫) / 7,201억(기본계획 총액)은 <b>상충이 아니라 집계 층위가 다른 값</b>이므로 카드에 정의를 병기했습니다.<br>
@@ -9277,6 +9501,89 @@ async function lawSend() {
   }
 }
 
+// ═══ 📌 오늘의 브리핑 (전체 뷰 상단) ═══
+function briefToday() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function briefRender() {
+  const el = document.getElementById('briefPanel');
+  if (!el) return;
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const today = briefToday();
+
+  // 1) 오늘 일정
+  let evs = [];
+  try { evs = (schedGetAll()[today] || []).slice(0, 4); } catch(_) {}
+
+  // 2) 마감 임박 TO-DO (미완료, 7일 이내)
+  let todos = [];
+  try {
+    todos = todoGetAll().filter(t => !t.done).map(t => {
+      const dt = new Date(t.due); dt.setHours(0,0,0,0);
+      return { t, days: ufDaysLeft(dt) };
+    }).filter(x => !isNaN(x.days) && x.days <= 7).sort((a,b) => a.days - b.days).slice(0, 4);
+  } catch(_) {}
+
+  // 3) 관심 사업 D-day (없으면 전체 사업 기준)
+  let uf = [];
+  try {
+    const favs = ufFavs();
+    const all = ufUpcoming(20);
+    const mine = all.filter(x => favs.includes(x.p.id));
+    uf = (mine.length ? mine : all).slice(0, 3);
+  } catch(_) {}
+
+  // 4) D-day 위젯 항목
+  let dd = [];
+  try {
+    dd = JSON.parse(localStorage.getItem('ddays') || '[]')
+      .map(x => ({ ...x, days: ufDaysLeft((() => { const t = new Date(x.date); t.setHours(0,0,0,0); return t; })()) }))
+      .filter(x => x.days >= 0).sort((a,b) => a.days - b.days).slice(0, 3);
+  } catch(_) {}
+
+  if (!evs.length && !todos.length && !uf.length && !dd.length) { el.innerHTML = ''; return; }
+
+  const col = (title, body) => `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:10px 12px;min-width:0">
+    <div style="font-size:.66rem;font-weight:800;color:var(--accent2);margin-bottom:6px">${title}</div>${body}</div>`;
+  const empty = t => `<div style="font-size:.66rem;color:var(--text-muted)">${t}</div>`;
+  const line = (badge, badgeCol, text, onclick) =>
+    `<div style="display:flex;align-items:center;gap:6px;margin:3px 0;min-width:0">
+      ${badge ? `<span style="font-size:.55rem;font-weight:800;color:#fff;background:${badgeCol};padding:1px 6px;border-radius:7px;flex-shrink:0">${badge}</span>` : ''}
+      <span ${onclick ? `onclick="${onclick}" style="cursor:pointer;"` : 'style="cursor:default;"'} class="brief-line">${text}</span>
+    </div>`;
+
+  el.innerHTML = `
+    <div style="background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <div style="font-size:.82rem;font-weight:800;color:var(--text)">📌 오늘의 브리핑</div>
+        <div style="font-size:.62rem;color:var(--text-muted);flex:1">${today}</div>
+        <button onclick="briefRender()" title="새로고침" style="font-size:.62rem;color:var(--text-muted);background:var(--card);border:1px solid var(--border);border-radius:6px;padding:2px 8px;cursor:pointer">↻</button>
+      </div>
+      <div class="brief-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+        ${col('🗓 오늘 일정', evs.length
+          ? evs.map(e => line(e.time || '', '#0f172a', esc(e.text))).join('')
+          : empty('오늘 등록된 일정이 없습니다'))}
+        ${col('✅ 마감 임박 TO-DO', todos.length
+          ? todos.map(({t, days}) => line(ufDdayLabel(days), days <= 1 ? '#dc2626' : '#0f172a', esc(t.text))).join('')
+          : empty('7일 내 마감 항목이 없습니다'))}
+        ${col('💰 관심 사업 공고', uf.length
+          ? uf.map(({p, n}) => line(ufDdayLabel(n.days), n.days <= 14 ? '#dc2626' : p.color, esc(p.name), `ufJumpTo('${p.id}')`)).join('')
+          : empty('예정된 공고가 없습니다'))}
+        ${col('⏳ D-day', dd.length
+          ? dd.map(x => line(ufDdayLabel(x.days), x.days <= 7 ? '#dc2626' : '#0f172a', esc(x.name))).join('')
+          : empty('D-day를 추가하세요'))}
+      </div>
+    </div>`;
+}
+// 브리핑에서 사업 카드로 이동
+function ufJumpTo(id) {
+  state.activeCat = 'univfund';
+  saveState();
+  render();
+  setTimeout(() => { try { ufOpenDetail(id); } catch(_) {} }, 60);
+}
+
 function renderLinks() {
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
@@ -9413,6 +9720,15 @@ function renderLinks() {
     ctrlRow.appendChild(filterBox);
     ctrlRow.appendChild(sortSel);
     grid.appendChild(ctrlRow);
+
+    // 📌 오늘의 브리핑 — 로그인 사용자에게만. 링크 그리드보다 위에 온다.
+    if (isLoggedIn()) {
+      const brief = document.createElement('div');
+      brief.id = 'briefPanel';
+      brief.style.cssText = 'grid-column:1/-1;margin-bottom:.6rem';
+      grid.appendChild(brief);
+      briefRender();
+    }
 
     // 헬퍼: 미니 섹션 헤더 + 링크 카드 목록
     const miniSection = (label, color, links, secId) => {
