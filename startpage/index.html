@@ -942,7 +942,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.7</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.8</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3875,7 +3875,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v9.7 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v9.8 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -24139,8 +24139,8 @@ function openAddLink() {
   document.getElementById('linkDesc').value = '';
   selectedEmoji = '';
   document.getElementById('linkCatRow').style.display = '';   // 상위 카테고리 표시
-  document.getElementById('linkGroupLabel').textContent = 'AI 하위 그룹';
   populateLinkCatSelect();
+  linkSyncGroupRow();   // 현재 카테고리에 맞춰 하위 그룹 행 표시/숨김
   buildEmojiPicker();
   openModal('linkModal');
 }
@@ -24171,9 +24171,8 @@ function openEditLink(id, e) {
   document.getElementById('linkDesc').value = link.desc || '';
   selectedEmoji = link.emoji || '';
   document.getElementById('linkCatRow').style.display = '';
-  document.getElementById('linkGroupLabel').textContent = 'AI 하위 그룹';
   populateLinkCatSelect(link.catId);
-  if (link.catId === 'ai') linkSyncGroupRow(link.group);
+  linkSyncGroupRow(link.group);
   buildEmojiPicker();
   openModal('linkModal');
 }
@@ -24185,16 +24184,32 @@ function populateLinkCatSelect(selectedId) {
   linkSyncGroupRow();
 }
 // 카테고리가 'ai'면 AI 하위 그룹 선택 표시
+// 하위 그룹을 지원하는 카테고리
+const GROUPED_CATS = { ai: 'AI 하위 그룹', mybm: '하위 카테고리' };
+// 내 북마크 기본 하위 카테고리 — bmCategory()의 자동 분류와 같은 이름을 쓴다
+const BM_DEFAULT_GROUPS = ['🔍 포털·검색', '🤖 AI', '🎓 학술·교육', '🏛 정부·공공·기관', '📰 뉴스',
+  '💻 개발', '📺 동영상', '✍️ 블로그·문서', '🛒 쇼핑', '🌐 기타'];
+
 function linkSyncGroupRow(selectedGroup) {
   const row = document.getElementById('linkGroupRow');
   const gsel = document.getElementById('linkGroup');
+  const glabel = document.getElementById('linkGroupLabel');
   if (!row || !gsel) return;
-  const isAi = document.getElementById('linkCat').value === 'ai';
-  row.style.display = isAi ? '' : 'none';
-  if (!isAi) return;
-  const groups = [...new Set(state.links.filter(l => l.catId === 'ai' && l.group).map(l => l.group))];
-  const cur = selectedGroup || gsel.value || groups[0] || '💬 대화형 AI';
-  gsel.innerHTML = groups.map(g => `<option value="${g.replace(/"/g,'&quot;')}"${g===cur?' selected':''}>${g}</option>`).join('')
+  const catId = document.getElementById('linkCat').value;
+  const label = GROUPED_CATS[catId];
+  row.style.display = label ? '' : 'none';
+  if (!label) return;
+  if (glabel) glabel.textContent = label;
+
+  // 이미 쓰이고 있는 그룹 + (내 북마크면) 자동 분류 기본값
+  const used = [...new Set(state.links.filter(l => l.catId === catId && l.group).map(l => l.group))];
+  const base = catId === 'mybm' ? BM_DEFAULT_GROUPS : [];
+  const groups = [...new Set([...used, ...base])];
+
+  const auto = catId === 'mybm' ? `<option value=""${!selectedGroup ? ' selected' : ''}>🪄 자동 분류 (URL로 판단)</option>` : '';
+  const cur = selectedGroup || gsel.value || (catId === 'ai' ? (groups[0] || '💬 대화형 AI') : '');
+  gsel.innerHTML = auto
+    + groups.map(g => `<option value="${g.replace(/"/g,'&quot;')}"${g===cur?' selected':''}>${g}</option>`).join('')
     + `<option value="__new__"${cur==='__new__'?' selected':''}>➕ 새 그룹...</option>`;
 }
 
@@ -24217,24 +24232,28 @@ function saveLink() {
   if (!name || !url) { showToast('이름과 URL을 입력하세요', '⚠️'); return; }
   let finalUrl = url;
   if (!/^https?:\/\//i.test(finalUrl)) finalUrl = 'https://' + finalUrl;
-  // AI 카테고리: 하위 그룹 지정
+  // 하위 그룹을 지원하는 카테고리(AI · 내 북마크)
   let group;
-  if (catId === 'ai') {
+  const grouped = !!GROUPED_CATS[catId];
+  if (grouped) {
     group = document.getElementById('linkGroup').value;
     if (group === '__new__') {
-      const ng = (prompt('새 AI 그룹 이름 (이모지 포함 가능, 예: 🧪 AI 실험실)') || '').trim();
+      const hint = catId === 'ai' ? '예: 🧪 AI 실험실' : '예: 📚 자주 보는 논문';
+      const ng = (prompt(`새 하위 카테고리 이름 (이모지 포함 가능, ${hint})`) || '').trim();
       if (!ng) { showToast('그룹 이름을 입력하세요', '⚠️'); return; }
       group = ng;
     }
+    // 내 북마크의 빈 값 = 자동 분류(URL로 판단) → group을 심지 않는다
+    if (catId === 'mybm' && !group) group = undefined;
   }
 
   if (editingLinkId) {
     const link = state.links.find(l => l.id === editingLinkId);
-    if (link) { Object.assign(link, { name, url: finalUrl, desc, catId, emoji: selectedEmoji }); if (catId === 'ai') link.group = group; else delete link.group; }
+    if (link) { Object.assign(link, { name, url: finalUrl, desc, catId, emoji: selectedEmoji }); if (grouped && group) link.group = group; else delete link.group; }
     showToast('링크 수정됨');
   } else {
     const nl = { id: 'l_' + Date.now(), catId, name, url: finalUrl, desc, emoji: selectedEmoji };
-    if (catId === 'ai') nl.group = group;
+    if (grouped && group) nl.group = group;
     state.links.push(nl);
     showToast('링크 추가됨');
   }
