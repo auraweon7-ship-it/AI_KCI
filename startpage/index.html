@@ -903,6 +903,10 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 @media (max-width: 960px) { .music-grid { grid-template-columns: repeat(3, 1fr) !important; } }
 @media (max-width: 560px) { .music-grid { grid-template-columns: 1fr !important; } }
 .yt-thumb.playing { outline: 2px solid var(--accent2); outline-offset: 1px; box-shadow: 0 0 0 3px rgba(236,72,153,.35); }
+/* 전체 메뉴 전용 섹션 — 다른 메뉴에서는 숨긴다.
+   각 위젯이 스스로 display를 조작하므로 클래스로 덮어써야 한다. */
+.all-only-hidden { display: none !important; }
+
 /* 📌 오늘의 브리핑 */
 .brief-line { font-size:.68rem; color:var(--text); line-height:1.45; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; }
 .brief-line[onclick]:hover { text-decoration:underline; }
@@ -938,7 +942,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.2</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.3</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3094,7 +3098,8 @@ function loadState() {
   if (saved) {
     try {
       const parsed = JSON.parse(saved);
-      if (parsed.activeCat) state.activeCat = parsed.activeCat;
+      // activeCat은 복원하지 않는다 — 새로고침·재방문 시 항상 '전체'로 시작한다.
+      state.activeCat = 'all';
       if (parsed.settings) Object.assign(state.settings, parsed.settings);
       if (parsed.searchEngine) state.searchEngine = parsed.searchEngine;
       const defaultCatIds = new Set(state.categories.map(c=>c.id));
@@ -3862,7 +3867,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v9.2 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v9.3 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5297,9 +5302,20 @@ document.addEventListener('click', e => {
 }, true);
 
 // ── RENDER ──
+// 전체 메뉴에서만 보이는 상단 섹션들
+const ALL_ONLY_SECTIONS = ['todayBriefing', 'univNoticeWidget', 'newsWidget', 'schedWidget', 'todoWidget'];
+function renderAllOnlySections() {
+  const show = state.activeCat === 'all';
+  ALL_ONLY_SECTIONS.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.classList.toggle('all-only-hidden', !show);
+  });
+}
+
 function render() {
   renderCats();
   renderLinks();
+  renderAllOnlySections();
   renderEngineDropdown();
   renderEngineSettings();
   applySettings();
