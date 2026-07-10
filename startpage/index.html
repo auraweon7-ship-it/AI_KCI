@@ -942,7 +942,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.4</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.5</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1014,33 +1014,6 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
     <div class="clock-widget" id="clockWidget">
       <div class="clock-time" id="clockTime">00:00:00</div>
       <div class="clock-date" id="clockDate"></div>
-    </div>
-
-    <!-- 📌 오늘의 브리핑 (4열 패널) — 페이지 최상단. 로그인 시에만 채워진다. -->
-    <div id="briefPanel" style="margin-bottom:.8rem"></div>
-
-    <!-- 오늘 브리핑 -->
-    <div id="todayBriefing" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:.8rem;font-size:.72rem;color:var(--text-dim);"></div>
-
-
-    <!-- 대학 공지 RSS -->
-    <div id="univNoticeWidget" class="news-widget" style="display:none">
-      <div class="news-widget-header">
-        <span>🏫 <span id="univNoticeTitle">우리 대학 공지</span></span>
-        <button class="news-refresh-btn" onclick="loadUnivNotice()" title="새로고침">↻</button>
-      </div>
-      <div class="news-grid" id="univNoticeGrid"><div class="skel" style="height:44px"></div></div>
-    </div>
-
-    <!-- News widget -->
-    <div class="news-widget" id="newsWidget">
-      <div class="news-widget-header">
-        <span>📰 고등교육 뉴스</span>
-        <button class="news-refresh-btn" onclick="loadNews()" title="새로고침">↻</button>
-      </div>
-      <div class="news-grid" id="newsGrid">
-        <div class="skel" style="height:44px"></div>
-      </div>
     </div>
 
     <!-- 스케줄 캘린더 -->
@@ -1134,6 +1107,33 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       <div id="todoStats" style="margin-top:12px;border-top:1px solid var(--border);padding-top:10px;">
         <div style="font-size:.72rem;font-weight:700;color:var(--text-dim);margin-bottom:8px;">📊 일정 분류 통계</div>
         <div id="todoDonuts" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
+      </div>
+    </div>
+
+    <!-- 📌 오늘의 브리핑 (4열 패널) — 페이지 최상단. 로그인 시에만 채워진다. -->
+    <div id="briefPanel" style="margin-bottom:.8rem"></div>
+
+    <!-- 오늘 브리핑 -->
+    <div id="todayBriefing" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:.8rem;font-size:.72rem;color:var(--text-dim);"></div>
+
+
+    <!-- 대학 공지 RSS -->
+    <div id="univNoticeWidget" class="news-widget" style="display:none">
+      <div class="news-widget-header">
+        <span>🏫 <span id="univNoticeTitle">우리 대학 공지</span></span>
+        <button class="news-refresh-btn" onclick="loadUnivNotice()" title="새로고침">↻</button>
+      </div>
+      <div class="news-grid" id="univNoticeGrid"><div class="skel" style="height:44px"></div></div>
+    </div>
+
+    <!-- News widget -->
+    <div class="news-widget" id="newsWidget">
+      <div class="news-widget-header">
+        <span>📰 고등교육 뉴스</span>
+        <button class="news-refresh-btn" onclick="loadNews()" title="새로고침">↻</button>
+      </div>
+      <div class="news-grid" id="newsGrid">
+        <div class="skel" style="height:44px"></div>
       </div>
     </div>
 
@@ -3870,7 +3870,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v9.4 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v9.5 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
