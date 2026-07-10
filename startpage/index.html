@@ -903,6 +903,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 @media (max-width: 960px) { .music-grid { grid-template-columns: repeat(3, 1fr) !important; } }
 @media (max-width: 560px) { .music-grid { grid-template-columns: 1fr !important; } }
 .yt-thumb.playing { outline: 2px solid var(--accent2); outline-offset: 1px; box-shadow: 0 0 0 3px rgba(236,72,153,.35); }
+@media (max-width: 900px) { .uf-cards { grid-template-columns: 1fr !important; } }
 @media (max-width: 1100px) { .yt-grid { grid-template-columns: repeat(3, 1fr) !important; } }
 @media (max-width: 760px) { .yt-grid { grid-template-columns: repeat(2, 1fr) !important; } }
 @media (max-width: 520px) { .yt-grid { grid-template-columns: 1fr !important; } }
@@ -914,7 +915,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v7.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -2115,6 +2116,7 @@ let state = {
     { id: 'gov',      name: '정부·정책',   emoji: '🏛' },
     { id: 'nl',       name: '뉴스·법령',   emoji: '📰', merged: ['news','law'] },
     { id: 'uinfo',    name: '대학 행정·평가', emoji: '🏫', merged: ['research','employ','finance','eval','stat','univ','rank','inst','admis','hire','inter'] },
+    { id: 'univfund', name: '대학지원사업', emoji: '💰', special: 'univfund' },
     { id: 'ai',       name: 'AI',          emoji: '🤖' },
     { id: 'univstats', name: '대학통계',   emoji: '📈', special: 'univstats' },
     { id: 'lawai',    name: '법령 AI',     emoji: '⚖️', special: 'lawai' },
@@ -3837,7 +3839,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v7.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v7.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7359,6 +7361,289 @@ async function usCompareAiSummary(univs) {
   }
 }
 
+// ══ 대학지원사업 (예산·선정대학수·일정·출처) ══
+// 모든 수치는 공식 출처 기준. 확인 못 한 값은 '미확인'으로 표기(임의 추정 금지).
+const UNIV_FUND_PROGRAMS = [
+  {
+    id: 'glocal', name: '글로컬대학30', color: '#8b5cf6',
+    period: '2023~2025 지정 (대학별 지원 5년)', status: '지정 종료(2025 마지막 차수)',
+    budget: '대학당 5년간 최대 1,000억 원', budgetNote: '연간 총액은 차수·대학 수에 따라 변동 — 총액 미확인',
+    selected: '누적 27개 모델 · 39개교', selectedNote: '2023년 13교, 2024년 17교, 2025년 9교',
+    agency: '교육부(글로컬대학위원회)',
+    confidence: '부분확인',
+    schedule: [
+      { stage: '공고', date: '2025-04-03' },
+      { stage: '신청마감', date: '2025-05-02' },
+      { stage: '예비지정', date: '2025-05-27' },
+      { stage: '본지정', date: '2025-09' },
+    ],
+    sourceName: '교육부 RISE·글로컬대학',
+    sourceUrl: 'https://www.moe.go.kr/boardCnts/listRenew.do?boardID=72775&renew=72775&m=0316&s=moe',
+  },
+  {
+    id: 'rise', name: 'RISE (지역혁신중심 대학지원체계)', color: '#0ea5e9',
+    period: '2025~2029 (1차 기본계획 5년)', status: '2025 전국 시행',
+    budget: '2025년 국비 2조 10억 원 (지방비 포함 총 약 2.4조 원)', budgetNote: '국회 확정(2024.12)',
+    selected: '17개 시도 주도 (중앙 공모형 아님)', selectedNote: '시도별 자체 공모로 지역대학 선정',
+    agency: '교육부 · 17개 광역지자체(RISE센터)',
+    confidence: '부분확인',
+    schedule: [
+      { stage: 'RISE센터 지정', date: '2024-05' },
+      { stage: '기본계획 수립', date: '2024-12' },
+      { stage: '전국 시행', date: '2025-01' },
+      { stage: '시도별 선정', date: '2025 연중' },
+    ],
+    sourceName: 'NABIS 정책정보 / 교육부 보도자료',
+    sourceUrl: 'https://www.nabis.go.kr/policyDetailView.do?menucd=20&gbnCode=P50&refCode=20&poIdx=11724',
+  },
+  {
+    id: 'innov', name: '대학혁신지원사업 (일반대, 3주기)', color: '#ec4899',
+    period: '2025~2027 (3주기)', status: '진행 중',
+    budget: '7,955억 원 (2025년)', budgetNote: '2주기(2022~2024)는 117개교 8,852억 원',
+    selected: '138개교', selectedNote: '일반대(교대·국립대 제외)',
+    agency: '교육부 · 한국연구재단',
+    confidence: '부분확인',
+    schedule: [
+      { stage: '기본계획 발표', date: '2025-03-20' },
+      { stage: '지원대상 확정', date: '2025-03' },
+      { stage: '연차 성과평가', date: '연 1회(차등 배분)' },
+    ],
+    scheduleNote: '일반재정지원(공식 배분) — 경쟁형 공고·신청마감 절차 없음',
+    sourceName: '교육부 보도자료(2025.3.20)',
+    sourceUrl: 'https://www.moe.go.kr/boardCnts/viewRenew.do?boardID=294&boardSeq=102894&lev=0&m=020402',
+  },
+  {
+    id: 'natl', name: '국립대학 육성사업', color: '#10b981',
+    period: '2025 (2025~2027 기본계획 틀)', status: '진행 중',
+    budget: '4,243억 원 (2025년)', budgetNote: '기본배분 40% : 성과배분 60%',
+    selected: '37개교', selectedNote: '전체 국립대학',
+    agency: '교육부 · 한국연구재단',
+    confidence: '부분확인',
+    schedule: [
+      { stage: '기본계획 발표', date: '2025-03-20' },
+      { stage: '지원대상 확정', date: '2025-03' },
+      { stage: '성과평가 배분', date: '연 1회' },
+    ],
+    scheduleNote: '전체 국립대 대상 일반재정지원 — 경쟁 선정 절차 없음',
+    sourceName: '정책브리핑(korea.kr)',
+    sourceUrl: 'https://www.korea.kr/briefing/pressReleaseView.do?newsId=156679951',
+  },
+  {
+    id: 'ctech', name: '전문대학 혁신지원사업 (3주기)', color: '#f59e0b',
+    period: '2025~2027 (3주기)', status: '진행 중',
+    budget: '5,555억 원 (2025년)', budgetNote: '2025년 210억 원 추가 지원 포함',
+    selected: '118개교', selectedNote: '전문대학',
+    agency: '교육부 · 한국연구재단',
+    confidence: '부분확인',
+    schedule: [
+      { stage: '기본계획 발표', date: '2025-03-20' },
+      { stage: '지원대상 확정', date: '2025-03' },
+      { stage: '연차 성과평가', date: '연 1회' },
+    ],
+    scheduleNote: '일반재정지원 — 경쟁형 선정평가 아님',
+    sourceName: '정책브리핑(korea.kr)',
+    sourceUrl: 'https://www.korea.kr/briefing/pressReleaseView.do?newsId=156679951',
+  },
+  {
+    id: 'linc', name: 'LINC 3.0 (산학연협력 선도대학)', color: '#ef4444',
+    period: '2022~2027 (일반대 최대 4+2년)', status: '진행 중',
+    budget: '3,025억 원 (2022년 일반대)', budgetNote: '2025년 단년도 예산 미확인 · 일반대+전문대 합산 2022년 약 4,070억 원',
+    selected: '일반대 76개교', selectedNote: '기술혁신선도형 13 · 수요맞춤성장형 53 · 협력기반구축형 10 (전문대 59교 별도 트랙)',
+    agency: '교육부 · 한국연구재단',
+    confidence: '부분확인',
+    schedule: [
+      { stage: '공고', date: '2022-01-13' },
+      { stage: '신청마감', date: '2022-03-03' },
+      { stage: '선정평가', date: '2022-03~04' },
+      { stage: '최종선정', date: '2022-04-28' },
+    ],
+    scheduleNote: '2022년 1차 선정 기준',
+    sourceName: '한국대학신문 / 교육부 보도자료',
+    sourceUrl: 'https://news.unn.net/news/articleView.html?idxno=527423',
+  },
+  {
+    id: 'bk21', name: 'BK21 4단계 (두뇌한국21)', color: '#6366f1',
+    period: '2020.9~2027.8 (7년)', status: '진행 중',
+    budget: '연 약 4,080억 원 (총 약 2.9조 원)', budgetNote: '연도별 실제 예산 변동 · 하위 「대학원혁신지원비」(19개 대학) 금액은 미확인',
+    selected: '68개교 · 562개 교육연구단·팀', selectedNote: '교육연구단 386 · 교육연구팀 176 (예비선정 시점 기준, 이후 중간평가 재선정)',
+    agency: '교육부 · 한국연구재단',
+    confidence: '부분확인',
+    schedule: [
+      { stage: '공고', date: '2020-02' },
+      { stage: '신청마감', date: '2020-05' },
+      { stage: '선정평가', date: '2020-06~07' },
+      { stage: '최종선정', date: '2020-09' },
+    ],
+    scheduleNote: '2020년 최초 선정 기준',
+    sourceName: '한국연구재단 BK21 FOUR',
+    sourceUrl: 'https://bk21four.nrf.re.kr/sub01/sub101/list.do',
+  },
+  {
+    id: 'coss', name: 'COSS (첨단분야 혁신융합대학)', color: '#14b8a6',
+    period: '2021~2026 (6년)', status: '진행 중',
+    budget: '연합체당 연 약 102억 원 (18개 연합체 기준 연 약 2,000억 원)', budgetNote: '2021년 초기 연 약 816억 원 → 지자체참여형 확대로 증가',
+    selected: '67개교 · 18개 연합체', selectedNote: '대학주도형 8 · 지자체참여형 10',
+    agency: '교육부 · 한국연구재단',
+    confidence: '부분확인',
+    schedule: [
+      { stage: '공고', date: '2024-03-19' },
+      { stage: '신청마감', date: '2024-04-24' },
+      { stage: '선정평가', date: '2024-05' },
+      { stage: '최종선정', date: '2024-06' },
+    ],
+    scheduleNote: '2024년 지자체참여형 신규 공모 기준',
+    sourceName: '정책브리핑 / COSS 공식',
+    sourceUrl: 'https://www.cossnet.com/',
+  },
+  {
+    id: 'hive', name: 'HiVE (고등직업교육거점지구)', color: '#a855f7',
+    period: '2022~2024 (마지막 독립 공모)', status: 'RISE 통합(2025~)',
+    budget: '연 405억 원 (2022년 국비)', budgetNote: '지구당 3년 총 15억 원 내외 + 지방비 10% 이상',
+    selected: '30개 지구(연합체)', selectedNote: '전국 6개 권역 각 5~6개',
+    agency: '교육부 · 한국연구재단',
+    confidence: '부분확인',
+    schedule: [
+      { stage: '공고', date: '2022 상반기' },
+      { stage: '신청마감', date: '2022-05-12' },
+      { stage: '선정평가', date: '2022-05-23~27' },
+      { stage: '최종선정', date: '2022-06-02' },
+    ],
+    scheduleNote: '2022년 최초 30개 지구 선정 기준 · 2025년부터 RISE로 이관',
+    sourceName: '한국대학신문',
+    sourceUrl: 'http://news.unn.net/news/articleView.html?idxno=529018',
+  },
+  {
+    id: 'life', name: 'LiFE 2.0 (대학 평생교육체제)', color: '#84cc16',
+    period: '2023~2024 (2주기)', status: 'RISE 통합(2025~)',
+    budget: '연 510억 원', budgetNote: '언론 인용치 — 교육부 원문 미확인 · 대학별 평균 약 10억 원',
+    selected: '50개교', selectedNote: '일반대 30 · 전문대 20',
+    agency: '교육부 · 국가평생교육진흥원',
+    confidence: '부분확인',
+    schedule: [
+      { stage: '공고', date: '2023 상반기' },
+      { stage: '신청마감', date: '미확인' },
+      { stage: '선정평가', date: '미확인' },
+      { stage: '최종선정', date: '2023-06-21' },
+    ],
+    scheduleNote: '2주기 기준 · 2025년부터 RISE로 이관',
+    sourceName: '교육부 보도자료(2023.6.21)',
+    sourceUrl: 'https://www.moe.go.kr/boardCnts/viewRenew.do?boardID=294&boardSeq=95403&lev=0&s=moe&m=020402&opType=N',
+  },
+];
+
+// 일정 문자열 → 타임라인 위치용 소수 연도(예: '2025-05-27' → 2025.4). 실패 시 null
+function ufParseDate(s) {
+  if (!s) return null;
+  const m = String(s).match(/(20\d{2})(?:[-.\s]*(\d{1,2}))?/);
+  if (!m) return null;
+  const y = +m[1], mo = m[2] ? Math.min(12, +m[2]) : 6;
+  return y + (mo - 1) / 12;
+}
+function ufConfBadge(c) {
+  const map = { '확인': ['#10b981','확인'], '부분확인': ['#f59e0b','부분확인'], '미확인': ['#94a3b8','미확인'] };
+  const [col, label] = map[c] || map['미확인'];
+  return `<span style="font-size:.55rem;font-weight:700;color:#fff;background:${col};padding:1px 6px;border-radius:8px">${label}</span>`;
+}
+
+function renderUnivFundView() {
+  const grid = document.getElementById('linksGrid');
+  const title = document.getElementById('sectionTitle');
+  const addBtn = document.getElementById('addLinkHeaderBtn');
+  if (addBtn) addBtn.style.display = 'none';
+  grid.classList.add('univall-mode');
+  if (title) title.textContent = '💰 대학지원사업';
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // ── 가로형 타임라인 축 범위 ──
+  const allPts = UNIV_FUND_PROGRAMS.flatMap(p => p.schedule.map(s => ufParseDate(s.date)).filter(v => v != null));
+  const minY = Math.floor(Math.min(...allPts));
+  const maxY = Math.ceil(Math.max(...allPts));
+  const span = Math.max(1, maxY - minY);
+  const pct = v => ((v - minY) / span) * 100;
+
+  const yearTicks = [];
+  for (let y = minY; y <= maxY; y++) yearTicks.push(y);
+
+  const lanes = UNIV_FUND_PROGRAMS.map(p => {
+    const pts = p.schedule.map(s => ({ ...s, v: ufParseDate(s.date) })).filter(s => s.v != null);
+    if (!pts.length) return '';
+    const first = Math.min(...pts.map(s => s.v)), last = Math.max(...pts.map(s => s.v));
+    const bar = `<div style="position:absolute;left:${pct(first)}%;width:${Math.max(0.6, pct(last)-pct(first))}%;top:50%;transform:translateY(-50%);height:5px;background:${p.color}44;border-radius:3px"></div>`;
+    const marks = pts.map(s => `
+      <div title="${esc(p.name)} · ${esc(s.stage)} · ${esc(s.date)}"
+        style="position:absolute;left:${pct(s.v)}%;top:50%;transform:translate(-50%,-50%);width:11px;height:11px;border-radius:50%;background:${p.color};border:2px solid var(--card);cursor:help;z-index:2"></div>`).join('');
+    return `
+      <div style="display:grid;grid-template-columns:170px 1fr;gap:8px;align-items:center;margin-bottom:7px">
+        <div style="font-size:.66rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(p.name)}">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:${p.color};margin-right:5px"></span>${esc(p.name)}
+        </div>
+        <div style="position:relative;height:22px;background:var(--bg3);border-radius:4px">${bar}${marks}</div>
+      </div>`;
+  }).join('');
+
+  const axis = yearTicks.map(y => `<div style="position:absolute;left:${pct(y)}%;transform:translateX(-50%);font-size:.6rem;color:var(--text-muted)">${y}</div>`).join('');
+  const gridLines = yearTicks.map(y => `<div style="position:absolute;left:${pct(y)}%;top:0;bottom:0;width:1px;background:var(--border);opacity:.5"></div>`).join('');
+
+  // ── 사업 카드 ──
+  const cards = UNIV_FUND_PROGRAMS.map(p => `
+    <div style="background:var(--card);border:1px solid var(--border);border-left:4px solid ${p.color};border-radius:10px;padding:12px 14px">
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:6px">
+        <div style="flex:1;min-width:0;font-size:.86rem;font-weight:800;color:var(--text)">${esc(p.name)}</div>
+        ${ufConfBadge(p.confidence)}
+      </div>
+      <div style="font-size:.64rem;color:var(--text-dim);margin-bottom:8px">${esc(p.period)} · <span style="color:${p.color};font-weight:700">${esc(p.status)}</span> · ${esc(p.agency)}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+        <div style="background:var(--bg3);border-radius:7px;padding:8px 10px">
+          <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:2px">💵 예산</div>
+          <div style="font-size:.76rem;font-weight:700;color:var(--text);line-height:1.35">${esc(p.budget)}</div>
+          ${p.budgetNote ? `<div style="font-size:.58rem;color:var(--text-dim);margin-top:3px;line-height:1.4">${esc(p.budgetNote)}</div>` : ''}
+        </div>
+        <div style="background:var(--bg3);border-radius:7px;padding:8px 10px">
+          <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:2px">🏫 선정 대학</div>
+          <div style="font-size:.76rem;font-weight:700;color:var(--text);line-height:1.35">${esc(p.selected)}</div>
+          ${p.selectedNote ? `<div style="font-size:.58rem;color:var(--text-dim);margin-top:3px;line-height:1.4">${esc(p.selectedNote)}</div>` : ''}
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">
+        ${p.schedule.map(s => `<span style="font-size:.58rem;color:var(--text-dim);background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:2px 7px"><b style="color:${p.color}">${esc(s.stage)}</b> ${esc(s.date)}</span>`).join('')}
+      </div>
+      ${p.scheduleNote ? `<div style="font-size:.58rem;color:var(--text-muted);margin-bottom:8px">※ ${esc(p.scheduleNote)}</div>` : ''}
+      <a href="${esc(p.sourceUrl)}" target="_blank" rel="noopener" style="font-size:.64rem;color:${p.color};text-decoration:none;font-weight:600">📄 ${esc(p.sourceName)} ↗</a>
+    </div>`).join('');
+
+  grid.innerHTML = `
+    <div class="ai-view-wrap" style="padding:0 .5rem">
+      <!-- 가로형 선정·선발 타임라인 -->
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:1rem">
+        <div style="font-size:.82rem;font-weight:800;color:var(--accent2);margin-bottom:10px">📅 사업별 선정·선발 타임라인 (${minY}~${maxY})</div>
+        <div style="overflow-x:auto">
+          <div style="min-width:640px">
+            <div style="display:grid;grid-template-columns:170px 1fr;gap:8px;margin-bottom:6px">
+              <div></div>
+              <div style="position:relative;height:16px">${axis}</div>
+            </div>
+            <div style="position:relative">
+              <div style="position:absolute;left:178px;right:0;top:0;bottom:0;pointer-events:none">${gridLines}</div>
+              ${lanes}
+            </div>
+          </div>
+        </div>
+        <div style="font-size:.58rem;color:var(--text-muted);margin-top:8px;line-height:1.6">
+          ● 마커 = 각 단계(공고·신청마감·선정평가·최종선정). 마커에 마우스를 올리면 상세 표시.<br>
+          ※ 일반재정지원(대학혁신지원·국립대육성·전문대혁신)은 경쟁형 공고·선정 절차가 없어 기본계획 발표·확정 시점으로 표기.
+        </div>
+      </div>
+
+      <!-- 사업 카드 -->
+      <div class="uf-cards" style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:1rem">${cards}</div>
+
+      <div style="font-size:.62rem;color:var(--text-muted);line-height:1.7;padding:10px 12px;background:var(--bg3);border-radius:8px">
+        ※ 모든 수치는 각 카드의 <b>출처 링크</b> 기준이며, 신뢰도 뱃지(확인·부분확인·미확인)를 함께 표기했습니다.
+        확인되지 않은 값은 임의로 채우지 않고 <b>미확인</b>으로 남겨 두었습니다. 예산·선정 결과는 연도·차수에 따라 변동되므로 반드시 원문을 확인하세요.
+      </div>
+    </div>`;
+}
+
 function renderUnivStatsView() {
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
@@ -8086,7 +8371,7 @@ function renderLinks() {
   // 헤더 정렬 셀렉트 — 정렬 가능한 뷰에서만 표시
   const sortSel = document.getElementById('sortSelHeader');
   if (sortSel) {
-    const sortable = !['univall','youtube','ai','gov','univstats','lawai'].includes(state.activeCat);
+    const sortable = !['univall','youtube','ai','gov','univstats','lawai','univfund'].includes(state.activeCat);
     sortSel.style.display = sortable ? '' : 'none';
     sortSel.value = state.sortMode || 'default';
   }
@@ -8105,6 +8390,12 @@ function renderLinks() {
       </div>`;
       return;
     }
+  }
+
+  // Special: 대학지원사업 뷰
+  if (state.activeCat === 'univfund') {
+    renderUnivFundView();
+    return;
   }
 
   // Special: 대학 전체 뷰
