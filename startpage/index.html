@@ -932,7 +932,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v8.7</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v8.8</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3856,7 +3856,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v8.7 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v8.8 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7436,9 +7436,9 @@ const UNIV_FUND_PROGRAMS = [
     id: 'hub-natl', cat: 'natl', target: '거점국립대', name: '지역혁신 허브화 인센티브 (거점국립대)', color: '#059669',
     period: '2026', status: '2026 편성',
     budget: '2,000억 원 (거점국립대 지원분 1,200억 원)',
-    budgetNote: '사용자 제공 「2026 고등교육 재정지원계획」 자료 기준. 교육부 원문 보도자료 미대조 → 부분확인',
-    selected: '거점국립대 (교수는 미확인)', selectedNote: '권역별 고등교육·연구·의료·산학협력 중심대학',
-    agency: '교육부', confidence: '부분확인',
+    budgetNote: 'KCUE 「고등교육 포커스」 제13호(출처: 2026년 교육부 예산안) 표에서 직접 확인. 2026 신규 인센티브',
+    selected: '미확인', selectedNote: '2026 신규 사업으로 선정 대학 수·명단 미공고. 보도상 3개 거점국립대 선정 예정이나 1차 출처 없음',
+    agency: '교육부', budgetConf: '확인', selectedConf: '미확인', confidence: '부분확인',
     purpose: '거점국립대를 지역 고등교육 생태계 중심축으로 육성, 대학 간 공유·협력',
     schedule: [{ stage: '2026 예산 편성', date: '2026' }],
     scheduleNote: '국립대학육성사업·앵커와 연계 운영',
@@ -7536,9 +7536,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'priv-mgmt', cat: 'priv', target: '사립대·학교법인', name: '사립대학 경영지원', color: '#db2777',
     period: '2026', status: '감액 편성(2026)',
-    budget: '4억 원 (2026년)', budgetNote: '전년 대비 감액. 주요 감액 세부사업으로 제시 — 사용자 제공 2026 자료 기준',
-    selected: '사립대학·학교법인 (교수 미확인)', selectedNote: '경영 컨설팅·회계 투명성·재정진단·구조개선 지원',
-    agency: '교육부', confidence: '부분확인',
+    budget: '4억 원 (2026년)', budgetNote: 'KCUE 「고등교육 포커스」 제13호 예산표 확인 — 2025년 20억 → 2026년 4억 (△16억, △79.1%)',
+    selected: '미확인', selectedNote: '사립대학·학교법인 대상. 지원 대상 규모는 예산표에 미기재 — 미확인',
+    agency: '교육부', budgetConf: '확인', selectedConf: '미확인', confidence: '부분확인',
     purpose: '사립대 경영 안정, 재정 취약대학 관리',
     schedule: [{ stage: '2026 예산 편성', date: '2026' }],
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
@@ -7563,9 +7563,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'sahak', cat: 'priv', target: '사립대·학교법인', name: '사학진흥기금 · 사립대 융자지원', color: '#be185d',
     period: '상시', status: '상시 운영',
-    budget: '사립학교 교육환경개선 융자 2,180.6억 원 (2025년)', budgetNote: '이자율 분기별 변동(2025년 4분기 연 2.43%), 상환 10년 범위·거치 5년 이내. 융자한도 대학당 200~300억(누적 600~900억). 병원 필수의료 융자 1,200.5억·행복기숙사 297.4억은 별도 사업. 2026년 값은 재단 설명자료 미공개 — 미확인',
-    selected: '재정난 사립대·학교법인', selectedNote: '배정 대학 수는 설명자료에 미기재 — 미확인. 교육환경개선·정책지원(혁신선도/지역발전/구조개선)·병원 필수의료 융자',
-    agency: '한국사학진흥재단', confidence: '부분확인',
+    budget: '사립학교 교육환경개선 융자 2,180.6억 원 (2025년)', budgetNote: '2025년도 사업별 설명자료 기준. ⚠ 2026년 총액·이자율은 기금운용계획 1차 문서 미확보 — 미확인. 융자한도 「당해연도 250억」은 개별 신청자 한도이지 사업 총액 아님. 이자율은 기재부 공자기금 차입 이자율 연동 분기 조정',
+    selected: '재정난 사립대·학교법인', selectedNote: '융자 배정 대학 수는 1차 출처 미확보 — 미확인',
+    agency: '한국사학진흥재단', budgetConf: '부분확인', selectedConf: '미확인', confidence: '부분확인',
     purpose: '사립대 시설 개선·경영 안정, 통폐합·적정규모화 연동',
     schedule: [{ stage: '수시 신청·심사', date: '상시' }],
     sourceName: '사용자 제공 자료 (한국사학진흥재단)',
@@ -7593,9 +7593,9 @@ const UNIV_FUND_PROGRAMS = [
     id: 'spec-inc', cat: 'priv', target: '사립 일반대·전문대', name: '대학 특성화 인센티브', color: '#f43f5e',
     period: '2026', status: '2026 신설',
     budget: '1,190억 원 (일반대 850억 + 전문대 340억)',
-    budgetNote: '사용자 제공 2026 고등교육 예산 분석 기준 — 교육부 원문 미대조',
-    selected: '미확인', selectedNote: '학령인구 감소 대응, 학과 구조혁신·특성화',
-    agency: '교육부', confidence: '부분확인',
+    budgetNote: 'KCUE 「고등교육 포커스」 제13호 예산표 확인 — 2026 신규(+1,190억). 850 + 340 = 1,190 구성 검증',
+    selected: '미확인', selectedNote: '2026 신규 사업으로 선정 대학 명단 미공고. 기본계획상 일반대 15개교 내외·전문대 17개교 내외 선정 예정',
+    agency: '교육부', budgetConf: '확인', selectedConf: '미확인', confidence: '부분확인',
     purpose: '지역사회 연계 인재양성–취·창업–정주 생태계 조성',
     schedule: [{ stage: '2026 신설', date: '2026' }],
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
@@ -7626,9 +7626,9 @@ const UNIV_FUND_PROGRAMS = [
     id: 'anchor', cat: 'region', target: '국립·사립·전문대', name: '앵커(ANCHOR, 지역성장 인재양성체계)', color: '#0ea5e9',
     period: '2025~2029 (1차 기본계획 5년)', status: 'RISE → 앵커 재구조화(2026.4)',
     budget: '2026년 2조 1,403억 원',
-    budgetNote: '성과평가 인센티브 약 4,000억 원 포함(2025년 지자체 성과 평가 → 2026년 차등 지원) · 2025년 국비 2조 10억 원(지방비 포함 총 약 2.4조 원)',
-    selected: '17개 시도 주도 (중앙 공모형 아님)', selectedNote: '시도별 자체 공모로 지역대학 선정 · 지역 취업·정주 연계 강화',
-    agency: '교육부 · 17개 광역지자체', confidence: '부분확인',
+    budgetNote: 'KCUE 「고등교육 포커스」 제13호 예산표 확인 — 2025년 1조 9,410억 → 2026년 2조 1,403억 (+1,993억, +10.3%)',
+    selected: '17개 시도 주도 (중앙 공모형 아님)', selectedNote: '17개 시도 참여·참여 대학 수는 예산표에 미기재 — 문장 단위 1차 출처 미확인',
+    agency: '교육부 · 17개 광역지자체', budgetConf: '확인', selectedConf: '부분확인', confidence: '부분확인',
     purpose: '지역산업 연계 인재양성·지역 정주·지역혁신, 중앙부처 개별사업의 지역 단위 통합·조정',
     schedule: [
       { stage: 'RISE센터 지정', date: '2024-05' },
@@ -7667,9 +7667,9 @@ const UNIV_FUND_PROGRAMS = [
     id: 'glocal', cat: 'region', target: '국립·사립·전문대', name: '글로컬대학30', color: '#8b5cf6',
     period: '2023~2025 지정 (대학별 지원 5년)', status: '지정 종료 · 기지정 대학 계속 지원',
     budget: '대학(모델)당 5년간 최대 1,000억 원',
-    budgetNote: '통합모델은 원문상 "더 큰 규모"로만 서술 — 종전 표기 「평균 1,500억 원」은 1차 출처에 없어 삭제함. 연간 총액 미확인',
-    selected: '누적 27개 모델 · 39개교', selectedNote: '2023년 10모델 13교 + 2024년 10모델 17교 + 2025년 7모델 9교 = 27모델 39교 (합산 검증 완료)',
-    agency: '교육부(글로컬대학위원회)', confidence: '부분확인',
+    budgetNote: '정책브리핑 「글로컬대학 본지정 선정 결과 발표」(2023.11.13, newsId=156599407) 원문 확인 — "대학당 5년간 최대 1,000억 원 지원". 종전 표기 「통합모델 평균 1,500억」은 1차 출처에 없어 삭제함',
+    selected: '누적 27개 모델 (참여대학 39개교)', selectedNote: '27개 모델은 1차 출처 합산 확정 — 2023년 10모델 + 2024년 10모델 + 2025년 7모델(경성대·순천향대·전남대·제주대·한서대 단독 5 + 조선대-조선간호대 + 충남대-국립공주대 통합 2). 「39개교」는 단일 1차 문장으로 미확인',
+    agency: '교육부(글로컬대학위원회)', budgetConf: '확인', selectedConf: '부분확인', confidence: '부분확인',
     purpose: '지역대학의 과감한 구조혁신·세계적 경쟁력 확보 (통합·연합·특성화·지역산업 연계·규제혁신)',
     schedule: [
       { stage: '공고', date: '2025-04-03' },
@@ -7745,9 +7745,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'hive', cat: 'voc', target: '전문대·지자체·산업체', name: 'HiVE (고등직업교육거점지구)', color: '#a855f7',
     period: '2022~2024 (마지막 독립 공모)', status: '앵커(구 RISE) 통합(2025~)',
-    budget: '연 405억 원 (2022년 국비)', budgetNote: '지구당 3년 총 15억 원 내외 + 지방비 10% 이상',
-    selected: '30개 지구(연합체)', selectedNote: '전국 6개 권역 각 5~6개',
-    agency: '교육부 · 한국연구재단', confidence: '부분확인',
+    budget: '연 405억 원 (2022년 국비)', budgetNote: '⚠ 405억·30개 지구는 언론·검색 스니펫 근거. 교육부 「HiVE 기본계획」 PDF는 subset CID 폰트로 텍스트 추출 불가, 정책브리핑 본문은 수치가 첨부 HWP에만 존재 — 정부 원문 문장 확보 실패',
+    selected: '30개 지구(연합체)', selectedNote: '30개 지구(연합체). ⚠ 최신 연도(2024~2025) 지구 수와 앵커 이관 문장은 원문 미확인',
+    agency: '교육부 · 한국연구재단', budgetConf: '부분확인', selectedConf: '부분확인', confidence: '부분확인',
     purpose: '전문대–지자체–산업체 연계 직업교육 거점',
     schedule: [
       { stage: '공고', date: '2022 상반기' },
@@ -7779,8 +7779,8 @@ const UNIV_FUND_PROGRAMS = [
     id: 'meister', cat: 'voc', target: '전문대', name: '마이스터대 · 조기취업형 계약학과', color: '#d97706',
     period: '~2025 (독립 사업)', status: '앵커(구 RISE) 이관',
     budget: '마이스터대 47.5억 / 조기취업형 일반대 258억 · 전문대 96억 (2025년)', budgetNote: '교육부 앵커 통합 예산표를 인용한 한국대학신문 보도 기준 — 교육부 원문 PDF 미대조. 3개 별도 트랙이므로 합계 표기 시 주의. 조기취업형 일부(약 183억 규모)는 2026년 2월 지원 종료',
-    selected: '미확인', selectedNote: '참여·선정 대학 수를 명시한 1차 출처 미확보 (2023년 조기취업형 15개 기관이라는 과거 자료만 존재)',
-    agency: '교육부', confidence: '부분확인',
+    selected: '미확인', selectedNote: '⚠ 마이스터대 시범운영 5개교(2021, 교육부 boardSeq=84078 본문 확인 — 명단은 첨부파일에만 존재). 조기취업형 계약학과는 공식 포털 기준 18개교(4년제 10·전문대 8). 최신 연도 선정 대학 수·명단은 정부 원문 미확보',
+    agency: '교육부', budgetConf: '부분확인', selectedConf: '미확인', confidence: '부분확인',
     purpose: '고숙련 전문기술인재 양성, 기업 맞춤형 조기취업 연계',
     schedule: [{ stage: '앵커 이관', date: '2026' }],
     scheduleNote: '첨단분야 혁신융합대학·산학협력단지·조기취업형 계약학과·마이스터대 등 8개 내역사업 RISE(앵커) 이관',
@@ -7808,9 +7808,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'life', cat: 'voc', target: '일반대·전문대', name: 'LiFE 2.0 (대학 평생교육체제)', color: '#84cc16',
     period: '2023~2024 (2주기)', status: '앵커(구 RISE) 통합(2025~)',
-    budget: '연 510억 원', budgetNote: '언론 인용치 — 교육부 원문 미확인 · 대학별 평균 약 10억 원',
-    selected: '50개교', selectedNote: '일반대 30 · 전문대 20',
-    agency: '교육부 · 국가평생교육진흥원', confidence: '부분확인',
+    budget: '연 510억 원 (2주기 2023~2024)', budgetNote: '정책브리핑 newsId=148916624 원문 확인 — "2주기에는 일반대 30개교, 전문대 20개교에 연 510억 원을 지원한다". 대학당 평균 10억 원 내외',
+    selected: '50개교 (일반대 30 · 전문대 20)', selectedNote: '교육부 보도자료(boardSeq=95403) 원문 확인 — 일반대 30개교(광역지자체-일반대 연합체 5개 포함) + 전문대 20개교. 앵커 이관은 원문 문장 미확보',
+    agency: '교육부 · 국가평생교육진흥원', budgetConf: '확인', selectedConf: '확인', confidence: '확인',
     purpose: '성인학습자 대상 평생교육체제 구축',
     schedule: [
       { stage: '공고', date: '2023 상반기' },
@@ -7845,9 +7845,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'bk21', cat: 'research', target: '국립·사립 대학원', name: 'BK21 4단계 (두뇌한국21)', color: '#6366f1',
     period: '2020.9~2027.8 (7년)', status: '진행 중',
-    budget: '연 약 4,080억 원 (7년간 총 약 2.9조 원)', budgetNote: '⚠ 2020년 최초 선정 시점 기준. 2025~2026년 연도별 확정 예산은 한국연구재단 1차 출처로 확인하지 못함 — 현재 수치로 단정 불가',
-    selected: '68개교 · 562개 교육연구단·팀', selectedNote: '교육연구단 386 · 교육연구팀 176. ⚠ 2020년 예비선정 기준이며 이후 중간평가 재선정 반영 여부 미확인',
-    agency: '교육부 · 한국연구재단', confidence: '부분확인',
+    budget: '연 약 4,080억 원 (7년간 총 약 2.9조 원)', budgetNote: '⚠ 2020년 최초 선정 시점 기준. 2025~2026년 연도별 확정 예산은 한국연구재단·교육부 1차 출처에서 확인 실패 — 현재 수치로 단정 불가',
+    selected: '68개교 · 562개 교육연구단·팀', selectedNote: '교육연구단 386 · 교육연구팀 176 (2020년 예비선정). ⚠ 2023년 중간평가 결과 평가대상 369개 중 129개 탈락·133개 재선정(교육부 boardSeq=97463 확인)되어 현재 활성 단·팀 수는 다름. 사업기간 2024.3~2027.8',
+    agency: '교육부 · 한국연구재단', budgetConf: '부분확인', selectedConf: '부분확인', confidence: '부분확인',
     purpose: '석박사급 연구인력 양성, 대학원 중심 연구대학 육성',
     schedule: [
       { stage: '공고', date: '2020-02' },
@@ -7882,9 +7882,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'acad', cat: 'research', target: '국립·사립 공통', name: '학술연구지원사업 (이공 + 인문사회)', color: '#a855f7',
     period: '연간', status: '진행 중',
-    budget: '1조 149억 원 (2025년)', budgetNote: '이공·인문사회 분야 합계. 사용자 제공 자료 기준 — 교육부 종합계획 원문 대조 권장',
-    selected: '개인·집단 연구자 (교수 단위 아님)', selectedNote: '개인기초연구(신진·중견·우수학자·저술), 학문후속세대, 석박사 연구장려금',
-    agency: '교육부 · 한국연구재단', confidence: '부분확인',
+    budget: '1조 712억 원 (2026년)', budgetNote: '정책브리핑 newsId=148957292 「2026년 학술연구 지원사업 종합계획」 원문 확인 — 인문사회 4,489억(+298억) + 이공 6,223억(+265억) = 1조 712억. 2025년은 1조 149억',
+    selected: '개인·집단 연구자 (대학 단위 아님)', selectedNote: '개인연구(석·박사과정생 연구장려금, 박사후연구자, 비전임교원)와 집단·인프라 연구로 구분. 고정 선정 대학 명단이 없는 사업 구조',
+    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', confidence: '확인',
     purpose: '개인·집단 연구지원, 학문후속세대 육성, 대학부설연구소 기반 강화',
     schedule: [{ stage: '종합계획 발표', date: '연초' }, { stage: '신규과제 공모', date: '연 1~2회' }],
     sourceName: '사용자 제공 자료 (교육부 학술연구지원사업 종합계획)',
@@ -7943,9 +7943,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'glocallab', cat: 'research', target: '국립·사립 공통', name: '선도연구센터 · 글로컬랩', color: '#7c3aed',
     period: '연간', status: '진행 중',
-    budget: '글로컬랩 9년(3+3+3) · 지원단가 평균 연 17억 원', budgetNote: '총예산 미확인 (교육부 「글로컬랩 사업 추진계획」 PDF 열람 실패). 사례: 부산대 9년 135억, 충남대 컨소시엄 9년 216억. ⚠ 선도연구센터(과기정통부)는 별개 사업 — 센터별 연 15~50억, 7~10년, 2025년 신규 12개 지정',
-    selected: '글로컬랩 14개 과제', selectedNote: '거점형 수도권 5 · 거점형 비수도권 6 · 컨소시엄형 3. 선도연구센터 2025년 신규 12개(SRC 3·ERC 3·MRC 4·RLRC 1·IRC 1)는 별도 집계',
-    agency: '교육부 · 한국연구재단', confidence: '부분확인',
+    budget: '거점형 연 15억 · 컨소시엄형 연 24억 (9년, 3+3+3)', budgetNote: '교육부 「글로컬랩 사업 추진계획」(2025.4) PDF 원문 확인 — "(거점형)11개 내외, 연 15억원 내외 / (컨소시엄형)3개 내외, 연 24억원 내외", 2025년 사업예산 총 119억. ⚠ 종전 표기 「평균 연 17억」은 오류 — 원문에서 17억은 대학중점연구소 자율운영형 개편 문맥의 수치. 선도연구센터(과기정통부)는 별개 사업으로 센터별 연 15~50억·7~10년',
+    selected: '14개 내외 (거점형 11 · 컨소시엄형 3)', selectedNote: '추진계획상 계획치 — 거점형 11개 내외(비수도권 6·수도권 5), 컨소시엄형 3개 내외(전국단위 경쟁). ⚠ 선정 확정 명단은 정부 1차 원문 미확보. 사례(부산대 9년 135억 등)는 언론 근거',
+    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '부분확인', confidence: '부분확인',
     purpose: '우수 연구집단 육성, 지역 기반 연구거점 조성',
     schedule: [{ stage: '신규과제 공모', date: '연 1회' }],
     sourceName: '사용자 제공 자료 (교육부 학술연구지원사업)',
@@ -7979,9 +7979,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'coss', cat: 'future', target: '국립·사립 공통', name: 'COSS (첨단분야 혁신융합대학)', color: '#14b8a6',
     period: '2021~2026 (6년)', status: '앵커 이관(2026)',
-    budget: '연합체당 연 약 102억 원 (18개 연합체 기준 연 약 2,000억 원)', budgetNote: '2021년 초기 연 약 816억 원 → 지자체참여형 확대로 증가 · 2026년 앵커로 이관',
-    selected: '67개교 · 18개 연합체', selectedNote: '대학주도형 8 · 지자체참여형 10',
-    agency: '교육부 · 한국연구재단', confidence: '부분확인',
+    budget: '연합체당 연 102억 원 (18개 연합체)', budgetNote: '정책브리핑 newsId=148929373 원문 확인 — "연합체당 연간 102억 원을 지원", "모두 18개 첨단분야 연합체를 지원", 4년 수행. ⚠ 종전 표기 「연 약 2,000억」은 원문에 없는 계산값(102×18≈1,836억)이라 삭제. 2026년 앵커 이관 여부는 어떤 원문에서도 확인 못함',
+    selected: '18개 연합체', selectedNote: '18개 연합체는 원문 확인. ⚠ 참여대학 「67개교」는 원문에서 확인 못함 — 미확인. 최신 연도(2025~2026) 연합체 수 미갱신',
+    agency: '교육부 · 한국연구재단', budgetConf: '부분확인', selectedConf: '부분확인', confidence: '부분확인',
     purpose: '여러 대학 컨소시엄으로 첨단분야(AI·반도체·바이오 등) 교육과정 공동 운영',
     schedule: [
       { stage: '공고', date: '2024-03-19' },
@@ -8017,10 +8017,10 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'ai-edu', cat: 'future', target: '국립·사립 공통', name: 'AI 인재양성 (부트캠프·기본교육과정)', color: '#0d9488',
     period: '2026', status: '2026 신규·확대',
-    budget: '60억 원 · 대학당 연 3억 원 이내 (2026년)',
-    budgetNote: '2년(1+1) 지원, 연장심사로 계속지원 결정. AI 부트캠프·AI+X 부트캠프 예산은 별도 — 총액 미확인',
-    selected: '20개교 (수도권 6 · 비수도권 14)', selectedNote: '수도권 — 덕성여대·동국대(서울)·서울여대·세종대·용인대·한국외대 / 비수도권 — 건국대(GLOCAL)·경운대·국립경주대·국립한밭대·동국대(WISE)·동명대·동신대·동의대·부산외대·송원대·순천향대·전주대·창신대·한라대. ⚠ 명단은 언론(서울경제) 근거, 교육부·대교협 원문 미대조. 「국립경주대」는 「국립경국대」 표기 상충 있음',
-    agency: '교육부', confidence: '부분확인',
+    budget: '대학당 연 3억 원 이내 · 2년(1+1)',
+    budgetNote: '교육부 보도자료(boardSeq=105957, 2026.4.23) 원문 확인 — "매년 교당 3억 원 이내", 지원기간 2년(1+1). 총 60억 규모. AI 부트캠프 예산은 별도',
+    selected: '20개교 (수도권 6 · 비수도권 14)', selectedNote: '교육부 보도자료 원문 명단 확인. 수도권 — 덕성여대·동국대(서울)·서울여대·세종대·용인대·한국외대 / 비수도권 — 건국대(GLOCAL)·경운대·국립경국대·국립한밭대·동국대(WISE)·동명대·동신대·동의대·부산외대·송원대·순천향대·전주대·창신대·한라대. ※ 언론의 「국립경주대」는 오기 — 원문은 「국립경국대학교」',
+    agency: '교육부', budgetConf: '확인', selectedConf: '확인', confidence: '확인',
     purpose: 'AI·디지털 기본역량 교육 확산, 첨단분야 인재양성',
     schedule: [{ stage: '2026 신규 편성', date: '2026' }],
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
@@ -8036,10 +8036,11 @@ const UNIV_FUND_PROGRAMS = [
       ],
       selectedList: [
         { year: '2026 · 수도권 6', items: '덕성여대, 동국대(서울), 서울여대, 세종대, 용인대, 한국외대' },
-        { year: '2026 · 비수도권 14', items: '건국대(GLOCAL), 경운대, 국립경주대, 국립한밭대, 동국대(WISE), 동명대, 동신대, 동의대, 부산외대, 송원대, 순천향대, 전주대, 창신대, 한라대' },
+        { year: '2026 · 비수도권 14', items: '건국대(GLOCAL), 경운대, 국립경국대, 국립한밭대, 동국대(WISE), 동명대, 동신대, 동의대, 부산외대, 송원대, 순천향대, 전주대, 창신대, 한라대' },
       ],
       notes: [
-        '선정 20개교 전체 명단은 교육부 공식 확정 명단 문서로 확인하지 못함 — 미확인',
+        '선정 20개교 전체 명단은 교육부 보도자료(boardSeq=105957, 2026.4.23) 원문으로 확인 완료',
+        '언론이 표기한 「국립경주대」는 오기 — 교육부 원문은 「국립경국대학교」(2024년 경주대 통합·교명 변경)',
         '유사·상위 사업인 AI중심대학(과기정통부, 대학당 연 30억 내외, 최대 8년)과는 별개 사업',
         '전문대 대상 AID(AI+Digital) 전환 중점 전문대학 지원사업(24개 내외 사업단, 총 240억)과 혼동 주의',
       ],
@@ -8052,9 +8053,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'teacher-ai', cat: 'future', target: '교대·사범대', name: '교원양성기관 교육과정 개발 지원', color: '#0f766e',
     period: '2026', status: '2026 신규',
-    budget: '24억 원 (2026 신규)', budgetNote: '사용자 제공 2026 예산 자료 기준 — 교육부 원문 미대조',
-    selected: '교대·사범대 등 교원양성기관', selectedNote: '예비교원 AI·디지털 교육역량 강화',
-    agency: '교육부', confidence: '부분확인',
+    budget: '미확인 (사업 실재 미확인)', budgetNote: '⚠ 교육부 「2026년 교육부 업무계획」 PDF 전문을 판독했으나 「교원양성기관 교육과정 개발」 사업명도 「24억」도 존재하지 않음. 「24」는 AID(AI+Digital) 중점 전문대학 사업의 「24개 내외 사업단」에서 온 혼동으로 추정됨. 별건인 「대학 AI 기본교육과정 개발 지원」은 20개교·교당 3억 원',
+    selected: '미확인 (사업 실재 미확인)', selectedNote: '교육부 보도자료·업무계획 어디에도 교원양성기관 대상 AI 교육과정 개발 지원사업이 확인되지 않음. 사업명 수정 또는 카드 삭제 검토 필요',
+    agency: '교육부', budgetConf: '미확인', selectedConf: '미확인', confidence: '미확인',
     purpose: '예비교원 AI·디지털 교육역량 강화',
     schedule: [{ stage: '2026 신규 편성', date: '2026' }],
     sourceName: '사용자 제공 2026 고등교육 예산 자료',
@@ -8081,9 +8082,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'linc', cat: 'iuc', target: '국립·사립 공통', name: 'LINC 3.0 (산학연협력 선도대학)', color: '#ef4444',
     period: '2022~2027 (일반대 최대 4+2년)', status: '진행 중',
-    budget: '3,025억 원 (2022년 일반대)', budgetNote: '2025~2026년 단년도 예산 미확인 · 일반대+전문대 합산 2022년 약 4,070억 원',
-    selected: '일반대 76개교', selectedNote: '기술혁신선도형 13 · 수요맞춤성장형 53 · 협력기반구축형 10 (전문대 59교 별도 트랙)',
-    agency: '교육부 · 한국연구재단', confidence: '부분확인',
+    budget: '3,025억 원 (2022년 일반대)', budgetNote: '교육부 보도자료(boardSeq=91440) 원문 확인 — "2022년 예산 기준 총 3,025억 원, 최대 6년 지원(3+3)". 일반대+전문대 합산은 4,070억(boardSeq=90756). 2025~2026년 예산은 미확인. 사업은 2027년까지 지속',
+    selected: '일반대 76개교', selectedNote: '교육부 보도자료 원문 확인 — 기술혁신선도형 13 + 수요맞춤성장형 53 + 협력기반구축형 10 = 76개교 (전문대 59교 별도 트랙)',
+    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', confidence: '확인',
     purpose: '산학협력 교육과정, 기업협업센터, 캡스톤디자인, 기술이전·사업화',
     schedule: [
       { stage: '공고', date: '2022-01-13' },
@@ -8118,8 +8119,8 @@ const UNIV_FUND_PROGRAMS = [
     id: 'iuc-park', cat: 'iuc', target: '국립·사립 공통', name: '대학 산학협력단지 · 기술이전(BRIDGE)', color: '#dc2626',
     period: '~2025 (독립 사업)', status: '앵커 이관(2026)',
     budget: 'BRIDGE 3.0 210억 원 / 산학협력단지 조성 140억 원 (2025년)', budgetNote: '교육부 앵커 통합 예산표를 인용한 한국대학신문 보도 기준 — 교육부 원문 PDF 미대조. ⚠ 과거 산업부(KIAT)의 유사 명칭 사업과 혼동 주의',
-    selected: '미확인', selectedNote: '선정 대학 수를 명시한 1차 출처 미확보 (2024년 BRIDGE 기술거점형 6개교 등 부분 정보만 존재)',
-    agency: '교육부', confidence: '부분확인',
+    selected: '미확인', selectedNote: '⚠ KIAT 「대학 산학연협력단지 조성사업 추진계획」 PDF 열람 실패(인코딩·폰트). 선정 대학(강원대·대구한의대·계명대 등)은 언론 스니펫 근거뿐. 「산학협력단지 조성」과 「BRIDGE」는 별개 사업이 카드에 혼재 — 분리 필요',
+    agency: '교육부', budgetConf: '부분확인', selectedConf: '미확인', confidence: '미확인',
     purpose: '산학협력단지 조성, 기술이전·사업화, 대학 창업교육',
     schedule: [{ stage: '앵커 이관', date: '2026' }],
     scheduleNote: '대학 산학협력단지 조성지원 등 앵커 이관 8개 내역사업 포함',
@@ -8153,9 +8154,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'restr', cat: 'restr', target: '주로 사립대', name: '대학구조개혁지원', color: '#64748b',
     period: '2026', status: '감액 편성(2026)',
-    budget: '63억 원 (2026년)', budgetNote: '전년 대비 감액 — 사용자 제공 2026 예산 자료 기준',
-    selected: '재정위기대학 (교수 미확인)', selectedNote: '재정위기대학 관리, 컨설팅, 구조개선',
-    agency: '교육부', confidence: '부분확인',
+    budget: '63억 원 (2026년)', budgetNote: 'KCUE 「고등교육 포커스」 제13호 예산표 확인 — 2025년 155억 → 2026년 63억 (△92억, △59.5%)',
+    selected: '미확인', selectedNote: '재정위기대학 대상. 지원 대상 대학 수는 예산표에 미기재 — 미확인',
+    agency: '교육부', budgetConf: '확인', selectedConf: '미확인', confidence: '부분확인',
     purpose: '학령인구 감소 대응, 적정규모화(정원 감축·학과 통폐합), 폐교대학 관리(학생 보호·기록물·청산)',
     schedule: [{ stage: '2026 예산 편성', date: '2026' }],
     scheduleNote: '적정규모화·통합·연합·폐교 대응은 국립·사립 모두 대상이나 재정진단·폐교 관리는 주로 사립대',
@@ -8184,9 +8185,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'scholar', cat: 'student', target: '국립·사립 공통', name: '국가장학금 · 학자금대출', color: '#84cc16',
     period: '상시', status: '상시 운영',
-    budget: '국가장학금 5조 1,161억 원 (2026년)', budgetNote: '한국장학재단 출연 4,210억 별도. 맞춤형 국가장학제도 기반조성 프로그램 총액 5조 5,371억 (KCUE 「고등교육 포커스」 제13호). ⚠ 학자금대출은 기금 운용 방식이라 예산 라인이 없어 총 규모 미확인',
-    selected: '전체 대학 재학생', selectedNote: '수혜인원 약 150만 명은 언론 보도 근거 — 교육부 「2026 맞춤형 장학 지원 기본계획」 원문 미대조',
-    agency: '교육부 · 한국장학재단', confidence: '부분확인',
+    budget: '국가장학금 5조 1,161억 원 (2026년)', budgetNote: '정책브리핑 newsId=148959345 원문 확인 — 맞춤형 국가장학금 총 5조 1,161억. 한국장학재단 출연 4,210억 별도. ⚠ 학자금대출은 기금 운용 방식이라 예산 라인이 없어 총 규모 미확인',
+    selected: '전체 대학 재학생', selectedNote: '교육부 보도자료(2026학년도 1학기 신청)상 대상은 "신입생·편입생·재입학생·복학생 등 모든 대학생". ⚠ 수혜인원 「약 150만 명」은 1차 출처 본문에 없음 — 언론 근거, 미확인',
+    agency: '교육부 · 한국장학재단', budgetConf: '확인', selectedConf: '미확인', confidence: '부분확인',
     purpose: '등록금 부담 완화 → 대학 등록금 수입 안정성에 간접 기여',
     schedule: [{ stage: '학기별 신청·심사', date: '연 2회' }],
     scheduleNote: '사립대는 등록금 수준이 높아 체감효과가 크고, 국립대는 낮은 등록금과 결합해 공공 접근성 제고',
@@ -8222,9 +8223,16 @@ function ufParseDate(s) {
   const y = +m[1], mo = m[2] ? Math.min(12, +m[2]) : 6;
   return y + (mo - 1) / 12;
 }
+const UF_CONF_MAP = { '확인': ['#10b981','확인'], '부분확인': ['#f59e0b','부분확인'], '미확인': ['#94a3b8','미확인'] };
+// 예산·선정 필드별 신뢰도. 명시가 없으면 카드 전체 confidence를 따른다.
+function ufFieldConf(p, field) { return p[field + 'Conf'] || p.confidence; }
+// 필드 옆에 붙는 작은 점 뱃지
+function ufDot(c) {
+  const [col, label] = UF_CONF_MAP[c] || UF_CONF_MAP['미확인'];
+  return `<span title="${label}" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${col};margin-left:5px;vertical-align:middle"></span>`;
+}
 function ufConfBadge(c) {
-  const map = { '확인': ['#10b981','확인'], '부분확인': ['#f59e0b','부분확인'], '미확인': ['#94a3b8','미확인'] };
-  const [col, label] = map[c] || map['미확인'];
+  const [col, label] = UF_CONF_MAP[c] || UF_CONF_MAP['미확인'];
   return `<span style="font-size:.55rem;font-weight:700;color:#fff;background:${col};padding:1px 6px;border-radius:8px">${label}</span>`;
 }
 
@@ -8248,12 +8256,12 @@ function ufOpenDetail(id) {
   const meta = `
     <div class="uf-kv" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px">
       <div style="background:var(--bg3);border-radius:7px;padding:9px 11px">
-        <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:2px">💵 예산</div>
+        <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:2px">💵 예산${ufDot(ufFieldConf(p,'budget'))}</div>
         <div style="font-size:.78rem;font-weight:700;color:var(--text);line-height:1.4">${esc(p.budget)}</div>
         ${p.budgetNote ? `<div style="font-size:.6rem;color:var(--text-dim);margin-top:4px;line-height:1.5">${esc(p.budgetNote)}</div>` : ''}
       </div>
       <div style="background:var(--bg3);border-radius:7px;padding:9px 11px">
-        <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:2px">🏫 선정 대학</div>
+        <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:2px">🏫 선정 대학${ufDot(ufFieldConf(p,'selected'))}</div>
         <div style="font-size:.78rem;font-weight:700;color:var(--text);line-height:1.4">${esc(p.selected)}</div>
         ${p.selectedNote ? `<div style="font-size:.6rem;color:var(--text-dim);margin-top:4px;line-height:1.5">${esc(p.selectedNote)}</div>` : ''}
       </div>
@@ -8475,12 +8483,12 @@ function renderUnivFundView() {
         ${p.purpose ? `<div style="font-size:.64rem;color:var(--text-dim);line-height:1.5;margin-bottom:8px">🎯 ${esc(p.purpose)}</div>` : ''}
         <div class="uf-kv" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
           <div style="background:var(--bg3);border-radius:7px;padding:8px 10px">
-            <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:2px">💵 예산</div>
+            <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:2px">💵 예산${ufDot(ufFieldConf(p,'budget'))}</div>
             <div style="font-size:.75rem;font-weight:700;color:var(--text);line-height:1.35">${esc(p.budget)}</div>
             ${p.budgetNote ? `<div style="font-size:.57rem;color:var(--text-dim);margin-top:3px;line-height:1.45">${esc(p.budgetNote)}</div>` : ''}
           </div>
           <div style="background:var(--bg3);border-radius:7px;padding:8px 10px">
-            <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:2px">🏫 선정 대학</div>
+            <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:2px">🏫 선정 대학${ufDot(ufFieldConf(p,'selected'))}</div>
             <div style="font-size:.75rem;font-weight:700;color:var(--text);line-height:1.35">${esc(p.selected)}</div>
             ${p.selectedNote ? `<div style="font-size:.57rem;color:var(--text-dim);margin-top:3px;line-height:1.45">${esc(p.selectedNote)}</div>` : ''}
           </div>
@@ -8535,6 +8543,7 @@ function renderUnivFundView() {
 
       <div style="font-size:.62rem;color:var(--text-muted);line-height:1.7;padding:10px 12px;background:var(--bg3);border-radius:8px">
         ※ <b>사업명을 클릭</b>하면 개요·운영 방식·연도별 선정 대학·유의사항·출처가 담긴 상세 팝업이 열립니다(24개 사업 전체 제공).<br>
+        ※ <b>💵 예산 · 🏫 선정 대학 라벨 옆의 점</b>은 필드별 신뢰도입니다 — <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#10b981;vertical-align:middle"></span> 정부 1차 출처 원문 확인 · <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#f59e0b;vertical-align:middle"></span> 언론·간접 근거 · <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#94a3b8;vertical-align:middle"></span> 미확인. 예산은 확인됐지만 선정 대학은 미공고인 사업이 많아 필드별로 구분했습니다.<br>
         ※ 각 카드의 <b>출처 링크</b>와 <b>신뢰도 뱃지</b>(확인·부분확인·미확인)를 확인하세요. 확인되지 않은 값은 임의로 채우지 않고 <b>미확인</b>으로 남겼습니다.<br>
         ※ 2026년 수치는 <b>교육부 각목명세서·기본계획·정책브리핑·KCUE 고등교육 포커스</b> 원문으로 재검증했습니다. 국립대학육성사업의 4,243억(2025 거점 라인) / 8,855억(2026 거점 라인) / 2,239억(국가중심대·교대 27교 몫) / 7,201억(기본계획 총액)은 <b>상충이 아니라 집계 층위가 다른 값</b>이므로 카드에 정의를 병기했습니다.<br>
         ※ 2026년부터 첨단분야 혁신융합대학·산학협력단지·조기취업형 계약학과·마이스터대 등 <b>8개 내역사업이 앵커(구 RISE)로 이관·통합</b>됩니다.
