@@ -938,7 +938,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.1</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.2</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3862,7 +3862,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v9.1 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v9.2 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7495,7 +7495,7 @@ const UNIV_FUND_PROGRAMS = [
       ],
       links: [
         { name: '정책브리핑 — 2026년 교육부 예산', url: 'https://www.korea.kr/news/policyNewsView.do?newsId=148955948' },
-        { name: '국립대학 육성사업 정보시스템(NRF)', url: 'https://usps.nrf.re.kr/nat/usps/bizGuid/bizIntroduce.do?baseMenuNo=usps0200000' },
+        { name: '한국연구재단 사업공고', url: 'https://www.nrf.re.kr/biz/notice/list?menu_no=364' },
       ],
     },
   },
@@ -7942,7 +7942,7 @@ const UNIV_FUND_PROGRAMS = [
         '지원 기간·단가의 구체 수치는 연도별 공고문에 따라 상이 — 종합 명시 문서 미확인',
       ],
       links: [
-        { name: '한국연구재단 — 인문한국지원사업 소개', url: 'https://hk.nrf.re.kr/intro/intro02.do' },
+        { name: '한국연구재단 웹진 — 인문사회분야 학술연구지원사업', url: 'https://webzine.nrf.re.kr/magazine/2502/sub2.php' },
         { name: '한국연구재단 웹진 2502호 — 인문사회분야 학술연구지원사업 일정', url: 'https://webzine.nrf.re.kr/magazine/2502/sub2.php' },
       ],
     },
@@ -24266,6 +24266,49 @@ function naPushSentHistory(kw, sentiment) {
   return hist;
 }
 // 시각화 HTML 빌더 (light=true: 내보내기용 밝은 배경, false: 앱 다크)
+// ═══ 뉴스 ↔ 대학지원사업 연결 ═══
+// 기사 제목에서 사업을 찾는다. 카드의 name은 "앵커(ANCHOR, 지역성장 인재양성체계)"처럼
+// 기사 표기와 다르므로 별칭 사전이 필요하다.
+const NA_PROG_ALIASES = {
+  'glocal':    ['글로컬대학', '글로컬 대학', '글로컬30'],
+  'anchor':    ['앵커사업', 'ANCHOR', '라이즈', 'RISE', '지역혁신중심 대학지원', '지역혁신중심대학지원'],
+  'bk21':      ['BK21', 'BK 21', '두뇌한국'],
+  'innov':     ['대학혁신지원사업', '대학혁신지원'],
+  'ctech':     ['전문대학혁신지원', '전문대학 혁신지원', '전문대 혁신지원'],
+  'natl-fund': ['국립대학육성', '국립대학 육성', '국립대 육성'],
+  'coss':      ['COSS', '첨단분야 혁신융합대학', '혁신융합대학'],
+  'linc':      ['LINC', '산학연협력 선도대학', '산학협력 선도대학'],
+  'hive':      ['HiVE', '고등직업교육거점지구', '고등직업교육 거점지구'],
+  'life':      ['LiFE', '평생교육체제 지원', '대학 평생교육체제'],
+  'acad':      ['학술연구지원사업', '학술연구 지원사업'],
+  'hk3':       ['인문한국', 'HK+', 'HK3.0', 'HK 3.0', '인문사회연구소'],
+  'glocallab': ['글로컬랩', '선도연구센터'],
+  'ai-edu':    ['AI 기본교육과정', 'AI중심대학', 'AI 중심대학', 'AI 부트캠프'],
+  'meister':   ['마이스터대', '조기취업형 계약학과'],
+  'iuc-park':  ['BRIDGE', '브릿지', '산학협력단지', '산학연협력단지'],
+  'restr':     ['대학구조개혁', '한계대학', '재정위기대학'],
+  'scholar':   ['국가장학금', '학자금대출', '한국장학재단'],
+  'spec-inc':  ['특성화 인센티브'],
+  'sahak':     ['사학진흥기금', '한국사학진흥재단'],
+  'hub-natl':  ['거점국립대', '지역혁신 허브'],
+  'priv-mgmt': ['사립대학 경영지원'],
+  'natl-acct': ['국립대학회계', '국립대 회계'],
+  'teacher-ai':['교원양성기관'],
+};
+// 기사 목록 → [{p, hits, titles[]}] (등장 횟수 내림차순)
+function naMatchPrograms(items) {
+  if (typeof UNIV_FUND_PROGRAMS === 'undefined') return [];
+  const blob = (items || []).map(x => x.title || '');
+  const out = [];
+  UNIV_FUND_PROGRAMS.forEach(p => {
+    const aliases = NA_PROG_ALIASES[p.id] || [];
+    if (!aliases.length) return;
+    const titles = blob.filter(t => aliases.some(a => t.toUpperCase().includes(a.toUpperCase())));
+    if (titles.length) out.push({ p, hits: titles.length, titles: titles.slice(0, 3) });
+  });
+  return out.sort((a, b) => b.hits - a.hits);
+}
+
 function buildNewsViz(d, light) {
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const C = light
@@ -24424,6 +24467,26 @@ function buildNewsViz(d, light) {
     ${(() => { const c = wordCloud(d.wordCloud); return c ? sect('☁️ 워드클라우드 (핵심 명사)', card(c)) : ''; })()}
     ${(() => { const c = networkChart(d.network); return c ? sect('🕸 키워드 네트워크 (동시출현)', card(c)) : ''; })()}
     ${(() => { const c = sentTrend(d.sentHistory); return c ? sect('📉 감성 트렌드 히스토리 (최근 분석)', card(c)) : ''; })()}
+    ${(() => {
+      const ms = naMatchPrograms(d.items);
+      if (!ms.length) return '';
+      // light(공유 HTML)에는 ufJumpTo가 없다 → 출처 링크로 대체
+      const rows = ms.map(({p, hits, titles}) => {
+        const head = light
+          ? `<a href="${esc(p.sourceUrl)}" target="_blank" rel="noopener" style="font-size:.76rem;font-weight:800;color:${p.color};text-decoration:none">${esc(p.name)} ↗</a>`
+          : `<button onclick="ufJumpTo('${p.id}')" title="사업 상세 보기" style="background:none;border:none;padding:0;font-size:.76rem;font-weight:800;color:${p.color};cursor:pointer;font-family:inherit;text-align:left">${esc(p.name)} ▸ 상세</button>`;
+        return `<div style="padding:8px 0;border-top:1px solid ${C.border}">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            ${head}
+            <span style="font-size:.6rem;font-weight:700;color:#fff;background:${p.color};padding:1px 7px;border-radius:8px">기사 ${hits}건</span>
+            <span style="font-size:.62rem;color:${C.dim}">${esc(p.budget)} · ${esc(p.selected)}</span>
+          </div>
+          <div style="margin-top:4px">${titles.map(t => `<div style="font-size:.66rem;color:${C.dim};line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">· ${esc(t)}</div>`).join('')}</div>
+        </div>`;
+      }).join('');
+      return sect('💰 관련 대학지원사업', card(
+        `<div style="font-size:.66rem;color:${C.dim};margin-bottom:2px">수집한 기사 제목에서 사업명을 찾아 연결했습니다. 기사 건수 순.</div>${rows}`));
+    })()}
     ${d.insights && d.insights.length ? sect('💡 핵심 인사이트', card(bullets(d.insights, '▸', true))) : ''}
     ${d.trend ? sect('📈 동향·흐름', card(`<div style="font-size:.78rem;line-height:1.75;color:${C.txt}">${emph(d.trend)}</div>`)) : ''}
     ${d.keyPlayers && d.keyPlayers.length ? sect('👥 핵심 인물·기관', card(bullets(d.keyPlayers, '•'))) : ''}

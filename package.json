@@ -4,7 +4,9 @@
   "description": "AI KCI - AI 기반 학술연구 지원 대시보드",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "verify:univfund": "node scripts/verify-univfund.mjs",
+    "verify:univfund:fast": "node scripts/verify-univfund.mjs --no-net"
   },
   "engines": {
     "node": ">=18.0.0"
