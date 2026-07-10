@@ -932,7 +932,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v8.9</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.0</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3856,7 +3856,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v8.9 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v9.0 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7563,9 +7563,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'sahak', cat: 'priv', target: '사립대·학교법인', name: '사학진흥기금 · 사립대 융자지원', color: '#be185d',
     period: '상시', status: '상시 운영',
-    budget: '사립학교 교육환경개선 융자 2,180.6억 원 (2025년)', budgetNote: '2025년도 사업별 설명자료 기준. ⚠ 2026년 총액·이자율은 기금운용계획 1차 문서 미확보 — 미확인. 융자한도 「당해연도 250억」은 개별 신청자 한도이지 사업 총액 아님. 이자율은 기재부 공자기금 차입 이자율 연동 분기 조정',
-    selected: '재정난 사립대·학교법인', selectedNote: '융자 배정 대학 수는 1차 출처 미확보 — 미확인',
-    agency: '한국사학진흥재단', budgetConf: '부분확인', selectedConf: '미확인', confidence: '부분확인',
+    budget: '교육환경개선 융자 1,786.5억 원 (2026년)', budgetNote: '한국사학진흥재단 「2026년 사학진흥기금 사업별 설명자료」 PDF 원문 파싱(p.18 지출계획 총괄표) — 2026년 178,646백만원, 2025년 218,063백만원 대비 △39,417백만원(△18.1%). 이자율은 고정값이 아닌 분기별 변동(2025년 4분기 기준 연 2.43%, 수익사업·대환 +0.2%p 가산, 연체 +3%p). 상환 10년 범위·거치 5년 이내. 행복기숙사 융자는 연 1.8% 수준(주택도시기금 재원) 별도',
+    selected: '미확인', selectedNote: '재정난 사립대·학교법인 대상. ⚠ 융자 배정 대학 수는 사업별 설명자료에 미기재 — 미확인',
+    agency: '한국사학진흥재단', budgetConf: '확인', selectedConf: '미확인', confidence: '미확인',
     purpose: '사립대 시설 개선·경영 안정, 통폐합·적정규모화 연동',
     schedule: [{ stage: '수시 신청·심사', date: '상시' }],
     sourceName: '사용자 제공 자료 (한국사학진흥재단)',
@@ -7627,8 +7627,8 @@ const UNIV_FUND_PROGRAMS = [
     period: '2025~2029 (1차 기본계획 5년)', status: 'RISE → 앵커 재구조화(2026.4)',
     budget: '2026년 2조 1,403억 원',
     budgetNote: 'KCUE 「고등교육 포커스」 제13호 예산표 확인 — 2025년 1조 9,410억 → 2026년 2조 1,403억 (+1,993억, +10.3%)',
-    selected: '17개 시도 주도 (중앙 공모형 아님)', selectedNote: '17개 시도 참여·참여 대학 수는 예산표에 미기재 — 문장 단위 1차 출처 미확인',
-    agency: '교육부 · 17개 광역지자체', budgetConf: '확인', selectedConf: '부분확인', confidence: '부분확인',
+    selected: '17개 시도 전부 (중앙 공모형 아님)', selectedNote: '교육부 보도자료(boardSeq=102182) 첨부 HWPX 원문 파싱 — "올해 5월, 17개 모든 시도가 시·도청 내 대학 관련 업무 담당 부서 정비와 지역라이즈센터 지정을 완료하였다". ⚠ 참여 대학 수는 사업 구조상 단일 확정 숫자가 존재하지 않음(해당 시도 내 대학 전반 대상)',
+    agency: '교육부 · 17개 광역지자체', budgetConf: '확인', selectedConf: '확인', confidence: '확인',
     purpose: '지역산업 연계 인재양성·지역 정주·지역혁신, 중앙부처 개별사업의 지역 단위 통합·조정',
     schedule: [
       { stage: 'RISE센터 지정', date: '2024-05' },
@@ -7668,8 +7668,8 @@ const UNIV_FUND_PROGRAMS = [
     period: '2023~2025 지정 (대학별 지원 5년)', status: '지정 종료 · 기지정 대학 계속 지원',
     budget: '대학(모델)당 5년간 최대 1,000억 원',
     budgetNote: '정책브리핑 「글로컬대학 본지정 선정 결과 발표」(2023.11.13, newsId=156599407) 원문 확인 — "대학당 5년간 최대 1,000억 원 지원". 종전 표기 「통합모델 평균 1,500억」은 1차 출처에 없어 삭제함',
-    selected: '누적 27개 모델 (참여대학 39개교)', selectedNote: '27개 모델은 1차 출처 합산 확정 — 2023년 10모델 + 2024년 10모델 + 2025년 7모델(경성대·순천향대·전남대·제주대·한서대 단독 5 + 조선대-조선간호대 + 충남대-국립공주대 통합 2). 「39개교」는 단일 1차 문장으로 미확인',
-    agency: '교육부(글로컬대학위원회)', budgetConf: '확인', selectedConf: '부분확인', confidence: '부분확인',
+    selected: '27개 모델 · 39개 대학 (누적)', selectedNote: '교육부 보도자료(2025.9.28, boardSeq=104382) 첨부 HWP 원문 파싱 — "2023년 10개 모델(13개 대학), 2024년 10개 모델(17개 대학)을 포함하여 특성화 지방대학으로 지정되는 대학은 총 27개 모델, 39개 대학이 된다". 2025년은 7개 모델(9개 대학)',
+    agency: '교육부(글로컬대학위원회)', budgetConf: '확인', selectedConf: '확인', confidence: '확인',
     purpose: '지역대학의 과감한 구조혁신·세계적 경쟁력 확보 (통합·연합·특성화·지역산업 연계·규제혁신)',
     schedule: [
       { stage: '공고', date: '2025-04-03' },
@@ -7845,9 +7845,9 @@ const UNIV_FUND_PROGRAMS = [
   {
     id: 'bk21', cat: 'research', target: '국립·사립 대학원', name: 'BK21 4단계 (두뇌한국21)', color: '#6366f1',
     period: '2020.9~2027.8 (7년)', status: '진행 중',
-    budget: '연 약 4,080억 원 (7년간 총 약 2.9조 원)', budgetNote: '⚠ 2020년 최초 선정 시점 기준. 2025~2026년 연도별 확정 예산은 한국연구재단·교육부 1차 출처에서 확인 실패 — 현재 수치로 단정 불가',
-    selected: '68개교 · 562개 교육연구단·팀', selectedNote: '교육연구단 386 · 교육연구팀 176 (2020년 예비선정). ⚠ 2023년 중간평가 결과 평가대상 369개 중 129개 탈락·133개 재선정(교육부 boardSeq=97463 확인)되어 현재 활성 단·팀 수는 다름. 사업기간 2024.3~2027.8',
-    agency: '교육부 · 한국연구재단', budgetConf: '부분확인', selectedConf: '부분확인', confidence: '부분확인',
+    budget: '2025년 5,238억 원 (연간)', budgetNote: '교육부 보도자료(2025.9, boardSeq=104164) 첨부 HWP 원문 파싱 — "(사업 기간/예산) \'20.9.~\'27.8.(7년) / \'25년 5,238억원". 대학원혁신지원은 27개교에 연간 807억 원 별도. ⚠ 종전 표기 「연 4,080억」은 2020년 최초 선정 시점 값이라 부정확 — 교체함. 7년 총사업비 최신치는 이 문서에 없어 미확인',
+    selected: '591개 교육연구단·팀 (2025년 기준)', selectedNote: '교육부 원문 파싱 — 미래인재 양성 373개 + 혁신인재 양성 218개 = 591개 교육연구단(팀), 대학원혁신지원 27개교. ⚠ 종전 표기 「68개교·562개」는 2020년 최초 선정값(68개 대학·578개 단·팀)이라 부정확 — 2023년 중간평가로 재편되어 현재 수치가 다름',
+    agency: '교육부 · 한국연구재단', budgetConf: '확인', selectedConf: '확인', confidence: '확인',
     purpose: '석박사급 연구인력 양성, 대학원 중심 연구대학 육성',
     schedule: [
       { stage: '공고', date: '2020-02' },
@@ -7866,7 +7866,8 @@ const UNIV_FUND_PROGRAMS = [
         '교육연구단 5개 이상 선정 대학(19개교)에는 「대학원혁신지원비」를 별도 지원 — 대학 본부 차원의 대학원 제도개혁 재원',
       ],
       selectedList: [
-        { year: '선정 규모(2020년 예비선정 기준)', items: '68개 대학 · 562개 교육연구단·팀 (교육연구단 386 + 교육연구팀 176)' },
+        { year: '2020년 최초 선정', items: '68개 대학 · 578개 교육연구단·팀 · 대학원혁신 20개교 (교육부 원문). 종전 카드의 562개는 예비선정 시점 집계' },
+        { year: '2025년 현재', items: '591개 교육연구단·팀 — 미래인재 양성 373개 + 혁신인재 양성 218개. 대학원혁신지원 27개교(연 807억). 연간 예산 5,238억 원' },
         { year: '대학원혁신지원비 대상', items: '19개 대학 (수도권 10 · 지역 9) — 교육연구팀·대학연합 교육연구단·과학기술원 제외' },
       ],
       notes: [
