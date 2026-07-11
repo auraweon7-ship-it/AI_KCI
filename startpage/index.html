@@ -959,7 +959,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.6</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.7</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1567,11 +1567,6 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       <div class="rw-hdr"><span>📡 RSS 피드</span><span style="margin-left:auto;display:flex;gap:4px"><button class="rw-refresh" onclick="rssManageOpen()" title="피드 추가·삭제 관리">⚙</button><button class="rw-refresh" onclick="rssLoad()" title="새로고침">↻</button></span></div>
       <div class="rss-tabs" id="rssTabs"></div>
       <div class="rss-items" id="rssItems"><div class="skel" style="height:30px"></div></div>
-      <div class="rss-add-row">
-        <input id="rssAddName" placeholder="이름" style="width:55px">
-        <input id="rssAddUrl" placeholder="RSS URL">
-        <button onclick="rssAddFeed()">추가</button>
-      </div>
     </div>
 
     <!-- 공고 알림 -->
@@ -3928,7 +3923,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v11.6 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v11.7 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
