@@ -537,7 +537,7 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 .clock-date { font-size: 0.88rem; color: var(--text-dim); margin-top: 4px; }
 .clock-hidden { display: none; }
 /* 시계 양옆 글로벌 도시 */
-.clock-row { display: flex; align-items: center; justify-content: center; gap: 1.2rem; }
+.clock-row { display: flex; align-items: center; justify-content: center; gap: 3.6rem; }
 .clock-center { flex: 0 0 auto; min-width: 180px; }
 .clock-cities { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; }
 .clock-city { display: flex; align-items: center; gap: 8px; font-size: .72rem; color: var(--text); }
@@ -957,7 +957,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.5</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.6</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3926,7 +3926,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v10.5 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v10.6 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
