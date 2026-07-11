@@ -959,7 +959,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.3</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.4</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1362,30 +1362,6 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       </div>
     </div>
 
-    <!-- 입법·국회 교육위 -->
-    <div class="rw" id="rwLegis">
-      <div class="rw-hdr"><span>🏛 입법·국회 교육위</span><button class="rw-refresh" onclick="loadLegisNews()" title="새로고침">↻</button></div>
-      <div id="legisList" style="display:flex;flex-direction:column;gap:5px;"></div>
-    </div>
-
-    <!-- 연구재단 신규사업 RSS -->
-    <div class="rw" id="rwNrf">
-      <div class="rw-hdr"><span>🔬 연구재단 신규사업</span><button class="rw-refresh" onclick="loadNrfRss()" title="새로고침">↻</button></div>
-      <div id="nrfRssBody"><div class="skel" style="height:44px"></div></div>
-    </div>
-
-    <!-- D-day -->
-    <div class="rw" id="rwDday">
-      <div class="rw-hdr"><span>⏳ D-day</span></div>
-      <div class="dday-list" id="ddayList"></div>
-      <div class="dday-add">
-        <input id="ddayName" placeholder="이름" style="width:80px">
-        <input id="ddayDate" type="date">
-        <button onclick="addDday()">+</button>
-      </div>
-      <button onclick="addDisclosurePresets()" style="width:100%;margin-top:6px;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:.68rem;cursor:pointer">📋 고등교육 주요 일정 자동 추가</button>
-    </div>
-
     <!-- 관심 대학 -->
     <div class="rw" id="rwWatchUniv">
       <div class="rw-hdr"><span>🎓 관심 대학</span></div>
@@ -1397,19 +1373,6 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
         <button onclick="addWatchUniv()" style="padding:4px 10px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.7rem;cursor:pointer;flex-shrink:0">+</button>
       </div>
       <datalist id="univDataList"></datalist>
-    </div>
-
-    <!-- 연구 키워드 뉴스 -->
-    <div class="rw" id="rwKciWatch">
-      <div class="rw-hdr"><span>🔬 연구 키워드 뉴스</span><button class="rw-refresh" onclick="kciWatchLoad()" style="background:none;border:none;cursor:pointer;color:var(--text-dim)">↻</button></div>
-      <div id="kciKeywordChips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;"></div>
-      <div style="display:flex;gap:4px;margin-bottom:6px;">
-        <input id="kciKeywordInput" placeholder="키워드 (예: 고등교육 정책)"
-          style="flex:1;min-width:0;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.7rem;outline:none;"
-          onkeydown="if(event.key==='Enter')addKciKeyword()">
-        <button onclick="addKciKeyword()" style="padding:4px 10px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.7rem;cursor:pointer;flex-shrink:0">+</button>
-      </div>
-      <div id="kciWatchList" style="display:flex;flex-direction:column;gap:4px;"></div>
     </div>
 
     <!-- 계산기 -->
@@ -1560,6 +1523,43 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
         <button onclick="pomoSkip()" title="다음 단계로" style="flex:0 0 auto;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);cursor:pointer">⏭</button>
       </div>
       <div style="font-size:.6rem;color:var(--text-muted);text-align:center;margin-top:6px">집중 25분 · 휴식 5분 · 4회마다 긴 휴식 15분</div>
+    </div>
+
+    <!-- 입법·국회 교육위 -->
+    <div class="rw" id="rwLegis">
+      <div class="rw-hdr"><span>🏛 입법·국회 교육위</span><button class="rw-refresh" onclick="loadLegisNews()" title="새로고침">↻</button></div>
+      <div id="legisList" style="display:flex;flex-direction:column;gap:5px;"></div>
+    </div>
+
+    <!-- 연구재단 신규사업 RSS -->
+    <div class="rw" id="rwNrf">
+      <div class="rw-hdr"><span>🔬 연구재단 신규사업</span><button class="rw-refresh" onclick="loadNrfRss()" title="새로고침">↻</button></div>
+      <div id="nrfRssBody"><div class="skel" style="height:44px"></div></div>
+    </div>
+
+    <!-- D-day -->
+    <div class="rw" id="rwDday">
+      <div class="rw-hdr"><span>⏳ D-day</span></div>
+      <div class="dday-list" id="ddayList"></div>
+      <div class="dday-add">
+        <input id="ddayName" placeholder="이름" style="width:80px">
+        <input id="ddayDate" type="date">
+        <button onclick="addDday()">+</button>
+      </div>
+      <button onclick="addDisclosurePresets()" style="width:100%;margin-top:6px;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-size:.68rem;cursor:pointer">📋 고등교육 주요 일정 자동 추가</button>
+    </div>
+
+    <!-- 연구 키워드 뉴스 -->
+    <div class="rw" id="rwKciWatch">
+      <div class="rw-hdr"><span>🔬 연구 키워드 뉴스</span><button class="rw-refresh" onclick="kciWatchLoad()" style="background:none;border:none;cursor:pointer;color:var(--text-dim)">↻</button></div>
+      <div id="kciKeywordChips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px;"></div>
+      <div style="display:flex;gap:4px;margin-bottom:6px;">
+        <input id="kciKeywordInput" placeholder="키워드 (예: 고등교육 정책)"
+          style="flex:1;min-width:0;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.7rem;outline:none;"
+          onkeydown="if(event.key==='Enter')addKciKeyword()">
+        <button onclick="addKciKeyword()" style="padding:4px 10px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.7rem;cursor:pointer;flex-shrink:0">+</button>
+      </div>
+      <div id="kciWatchList" style="display:flex;flex-direction:column;gap:4px;"></div>
     </div>
 
     <!-- RSS 맞춤 피드 -->
@@ -3928,7 +3928,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v11.3 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v11.4 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
