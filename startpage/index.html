@@ -958,7 +958,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.7</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.8</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3927,7 +3927,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v10.7 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v10.8 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -25647,15 +25647,19 @@ function aiMemoRun() {
       let t = (j.content || []).map(c => c.text || '').join('').trim();
       const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       const html = esc(t).replace(/\n/g, '<br>');
-      out.innerHTML = `<div style="font-size:.72rem;line-height:1.65;color:var(--text);background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 11px">${html}</div>
+      out.innerHTML = `<div style="position:relative;font-size:.72rem;line-height:1.65;color:var(--text);background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 26px 9px 11px">
+          <button onclick="aiMemoClose()" title="닫기" style="position:absolute;right:4px;top:4px;width:18px;height:18px;line-height:1;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text-muted);cursor:pointer;font-size:.7rem;padding:0">✕</button>
+          ${html}</div>
         <div style="display:flex;gap:5px;margin-top:5px">
           <button onclick="navigator.clipboard.writeText(${JSON.stringify(t)}).then(()=>showToast('복사됨 📋'))" style="flex:1;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.64rem;cursor:pointer;font-family:inherit">📋 복사</button>
           ${mode === 'todo' ? `<button onclick="aiMemoToTodo(${JSON.stringify(t)})" style="flex:1;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.64rem;cursor:pointer;font-family:inherit">✅ TO-DO로</button>` : ''}
+          <button onclick="aiMemoClose()" style="flex:0 0 auto;padding:4px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.64rem;cursor:pointer;font-family:inherit">닫기</button>
         </div>`;
     })
     .catch(e => { out.innerHTML = `<div style="font-size:.68rem;color:var(--danger,#e74c3c)">실패: ${(e.message||'오류').replace(/</g,'&lt;')}</div>`; })
     .finally(() => { if (btn) { btn.disabled = false; btn.textContent = 'AI 정리'; } });
 }
+function aiMemoClose() { const o = document.getElementById('aiMemoOut'); if (o) o.innerHTML = ''; }
 function aiMemoToTodo(text) {
   if (!isLoggedIn()) { showToast('로그인 후 이용할 수 있습니다 🔒'); return; }
   const lines = text.split('\n').map(l => l.replace(/^\s*-?\s*\[[ x]\]\s*/, '').replace(/^\s*[-•*]\s*/, '').trim()).filter(Boolean);
