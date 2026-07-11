@@ -543,6 +543,7 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 .clock-city { display: flex; align-items: center; gap: 8px; font-size: .72rem; color: var(--text); }
 .clock-city .cc-flag { flex: 0 0 auto; font-size: .9rem; }
 .clock-city .cc-name { flex: 0 0 5.2em; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); }
+.clock-city .cc-date { flex: 0 0 2.6em; text-align: right; font-size: .64rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .clock-city .cc-time { flex: 0 0 auto; font-weight: 700; font-variant-numeric: tabular-nums; }
 .clock-city .cc-temp { flex: 0 0 auto; color: var(--accent2); font-weight: 600; min-width: 40px; text-align: right; }
 @media (max-width: 780px) {
@@ -957,7 +958,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.6</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.7</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3926,7 +3927,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v10.6 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v10.7 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -24551,12 +24552,19 @@ function renderClockCities() {
   if (!L || !R) return;
   const now = new Date();
   const row = c => {
-    let time = '--:--';
-    try { time = new Intl.DateTimeFormat('ko-KR', { timeZone: c.tz, hour12: false, hour: '2-digit', minute: '2-digit' }).format(now); } catch(_) {}
+    let time = '--:--', date = '';
+    try {
+      time = new Intl.DateTimeFormat('ko-KR', { timeZone: c.tz, hour12: false, hour: '2-digit', minute: '2-digit' }).format(now);
+      const parts = new Intl.DateTimeFormat('en-US', { timeZone: c.tz, month: 'numeric', day: 'numeric' }).formatToParts(now);
+      const mo = parts.find(p => p.type === 'month')?.value || '';
+      const da = parts.find(p => p.type === 'day')?.value || '';
+      date = `${mo}/${da}`;
+    } catch(_) {}
     const temp = _clockTemps[c.name] || '';
     return `<div class="clock-city" title="${c.name} · ${c.tz}">
       <span class="cc-flag">${c.flag}</span>
       <span class="cc-name">${c.name}</span>
+      <span class="cc-date">${date}</span>
       <span class="cc-time">${time}</span>
       <span class="cc-temp">${temp}</span>
     </div>`;
