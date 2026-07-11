@@ -960,7 +960,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v12.4</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v12.5</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3923,7 +3923,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v12.4 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v12.5 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -27117,7 +27117,7 @@ async function rssAnalyzeAll() {
 
   // 전 피드 병렬 수집(피드당 5건). 실패 피드는 건너뜀.
   const results = await Promise.all(feeds.map(async f => {
-    const items = await rssFetchItems(f.url, 5);
+    const items = await rssFetchItems(f.url, 3);
     return { name: f.name, items };
   }));
   const okFeeds = results.filter(r => r.items.length);
@@ -27147,7 +27147,7 @@ sentiment 세 값의 합은 전체 기사 수와 같아야 함. categories 4~6�
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:4000, messages:[{ role:'user', content:prompt }] }),
+      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:8000, messages:[{ role:'user', content:prompt }] }),
     });
     if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error?.message || r.status); }
     const j = await r.json();
