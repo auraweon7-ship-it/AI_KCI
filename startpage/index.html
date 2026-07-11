@@ -539,13 +539,12 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 /* 시계 양옆 글로벌 도시 */
 .clock-row { display: flex; align-items: center; justify-content: center; gap: 1.2rem; }
 .clock-center { flex: 0 0 auto; min-width: 180px; }
-.clock-cities { flex: 1 1 0; display: flex; flex-direction: column; gap: 6px; max-width: 260px; }
-.clock-cities.right { align-items: flex-start; }
-.clock-city { display: flex; align-items: center; gap: 7px; font-size: .72rem; color: var(--text); width: 100%; }
+.clock-cities { flex: 0 0 auto; display: flex; flex-direction: column; gap: 6px; }
+.clock-city { display: flex; align-items: center; gap: 8px; font-size: .72rem; color: var(--text); }
 .clock-city .cc-flag { flex: 0 0 auto; font-size: .9rem; }
-.clock-city .cc-name { flex: 1 1 auto; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); }
+.clock-city .cc-name { flex: 0 0 5.2em; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); }
 .clock-city .cc-time { flex: 0 0 auto; font-weight: 700; font-variant-numeric: tabular-nums; }
-.clock-city .cc-temp { flex: 0 0 auto; color: var(--accent2); font-weight: 600; min-width: 46px; text-align: right; }
+.clock-city .cc-temp { flex: 0 0 auto; color: var(--accent2); font-weight: 600; min-width: 40px; text-align: right; }
 @media (max-width: 780px) {
   .clock-row { flex-direction: column; gap: .8rem; }
   .clock-cities { flex-direction: row; flex-wrap: wrap; justify-content: center; max-width: none; }
@@ -958,7 +957,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.3</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.4</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3933,7 +3932,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v10.3 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v10.4 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
