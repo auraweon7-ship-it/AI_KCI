@@ -363,16 +363,6 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 .rss-add-row input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:5px; color:var(--text); font-size:.7rem; padding:4px 6px; }
 .rss-add-row button { background:var(--accent); border:none; border-radius:5px; color:#fff; font-size:.7rem; padding:4px 8px; cursor:pointer; white-space:nowrap; }
 
-/* ── 공고 알림 ── */
-.notice-item { display:flex; align-items:flex-start; gap:6px; padding:5px 0; border-bottom:1px solid var(--border); }
-.notice-item:last-child { border-bottom:none; }
-.notice-badge { font-size:.6rem; padding:2px 5px; border-radius:4px; background:var(--accent); color:#fff; white-space:nowrap; flex-shrink:0; margin-top:1px; }
-.notice-item a { color:var(--text); font-size:.73rem; text-decoration:none; line-height:1.4; }
-.notice-item a:hover { color:var(--accent2); }
-.notice-kw { display:flex; gap:4px; margin-bottom:7px; align-items:center; }
-.notice-kw input { flex:1; background:var(--bg); border:1px solid var(--border); border-radius:5px; color:var(--text); font-size:.72rem; padding:4px 6px; }
-.notice-kw button { background:var(--accent); border:none; border-radius:5px; color:#fff; font-size:.7rem; padding:4px 8px; cursor:pointer; }
-
 /* ── 포스트잇 위젯 ── */
 .postit-toolbar { display: flex; gap: 5px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
 .postit-color-btn {
@@ -961,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v13.0</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v13.1</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1569,16 +1559,6 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
     </div>
 
     <!-- RSS 맞춤 피드 -->
-
-    <!-- 공고 알림 -->
-    <div class="rw" id="rwNotice">
-      <div class="rw-hdr"><span>📢 공고 알림</span><button class="rw-refresh" onclick="noticeLoad()" title="새로고침">↻</button></div>
-      <div class="notice-kw">
-        <input id="noticeKw" placeholder="키워드 필터" value="">
-        <button onclick="noticeLoad()">검색</button>
-      </div>
-      <div id="noticeBody"><div class="skel" style="height:30px"></div></div>
-    </div>
 
   </aside>
 </div>
@@ -3924,7 +3904,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v13.0 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v13.1 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -27361,80 +27341,6 @@ function rssMgAdd() {
   if (rssAddFeed(name, url)) { rssManageRender(); }
 }
 
-// ══ 공고 알림 ══
-const NOTICE_FEEDS = [
-  { name:'교육부 공고', url:'https://www.moe.go.kr/boardRss/boardRss.do?bbs_id=94', badge:'교육부' },
-  { name:'한국연구재단 공고', url:'https://www.nrf.re.kr/biz/info/notice/list?menu_no=378', badge:'NRF' },
-  { name:'나라장터 공고', url:'https://www.g2b.go.kr:8101/ep/tbid/tbidList.do?bidType=&searchType=1', badge:'조달' },
-];
-async function noticeLoad() {
-  const el = document.getElementById('noticeBody');
-  const kw = document.getElementById('noticeKw').value.trim().toLowerCase();
-  el.innerHTML = '<div class="skel" style="height:30px"></div>';
-  const rssFeeds = [
-    { url:'https://news.google.com/rss/search?q=%EC%97%B0%ED%95%A9%EB%89%B4%EC%8A%A4+%EA%B5%90%EC%9C%A1&hl=ko&gl=KR&ceid=KR:ko', badge:'연합' },
-    { url:'https://www.unipress.co.kr/rss/allArticle.xml', badge:'한국대학신문' },
-    { url:'https://news.unn.net/rss/allArticle.xml', badge:'대학신문' },
-    { url:'https://www.kyosu.net/rss/allArticle.xml', badge:'교수신문' },
-    { url:'https://www.veritas-a.com/rss/allArticle.xml', badge:'베리타스알파' },
-  ];
-  let allItems = [];
-  await Promise.all(rssFeeds.map(async f => {
-    try {
-      // rss2json 우선
-      let ok = false;
-      try {
-        const d = await (await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(f.url)}`)).json();
-        if (d.status === 'ok' && d.items?.length) {
-          allItems.push(...d.items.slice(0,8).map(it => ({ title:it.title, link:it.link, pubDate:it.pubDate, badge:f.badge })));
-          ok = true;
-        }
-      } catch(_) {}
-      // 프록시 XML 파싱 폴백
-      if (!ok) {
-        const raw = await proxyfetch(f.url);
-        const xml = new DOMParser().parseFromString(raw, 'text/xml');
-        [...xml.querySelectorAll('item')].slice(0,8).forEach(it => {
-          allItems.push({ title: it.querySelector('title')?.textContent||'', link: it.querySelector('link')?.textContent||'', pubDate: it.querySelector('pubDate')?.textContent||'', badge: f.badge });
-        });
-      }
-    } catch(e) {}
-  }));
-  // 키워드 필터
-  const filtered = kw
-    ? allItems.filter(it => it.title.toLowerCase().includes(kw) || (it.description||'').toLowerCase().includes(kw))
-    : allItems;
-  filtered.sort((a,b) => new Date(b.pubDate)-new Date(a.pubDate));
-  if (!filtered.length) {
-    const links = [
-      { name:'교육부 공고', url:'https://www.moe.go.kr/web/100067/site/contents/menuDetail.do?menuNo=294', badge:'교육부' },
-      { name:'한국연구재단', url:'https://www.nrf.re.kr/biz/info/notice/list?menu_no=378', badge:'NRF' },
-      { name:'나라장터', url:'https://www.g2b.go.kr', badge:'조달' },
-      { name:'대학알리미', url:'https://www.academyinfo.go.kr', badge:'알리미' },
-      { name:'RISS 공지', url:'https://www.riss.kr/index.do', badge:'RISS' },
-      { name:'교육통계서비스', url:'https://kess.kedi.re.kr', badge:'KESS' },
-    ];
-    el.innerHTML = `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:6px">
-        ${links.map(l=>`<a href="${l.url}" target="_blank"
-          style="display:flex;align-items:center;gap:4px;background:var(--bg2);border-radius:5px;padding:5px 6px;text-decoration:none;font-size:.72rem;color:var(--text)">
-          <span style="background:var(--accent2);color:#fff;border-radius:3px;padding:1px 4px;font-size:.62rem;white-space:nowrap">${l.badge}</span>
-          <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.name}</span>
-        </a>`).join('')}
-      </div>
-      <div style="font-size:.65rem;color:var(--text-muted);text-align:center">※ 크롬 홈페이지 설정 시 공고가 자동 표시됩니다</div>`;
-    return;
-  }
-  el.innerHTML = filtered.slice(0,7).map(it => {
-    const date = it.pubDate ? new Date(it.pubDate).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'}) : '';
-    return `<div class="notice-item">
-      <span class="notice-badge">${it.badge}</span>
-      <div><a href="${it.link}" target="_blank">${it.title}</a>
-      <div style="font-size:.63rem;color:var(--text-muted)">${date}</div></div>
-    </div>`;
-  }).join('');
-}
-
 // ── 포스트잇 ──
 let piColor = '#fff9a3';
 function piPickColor(btn, color) {
@@ -27543,7 +27449,7 @@ render();
  loadLegisNews, () => loadIdiom(false), () => loadQuote(false), () => loadGreatLine(false), loadHealMusic,
  () => { try { loadYtRec(); } catch(_){} },
  memoLoad, cvSetOpts, piLoad, timerRender, loadStock, pomoRender, loadClockCityTemps,
- () => { rssRenderTabs(); rssLoad(); }, noticeLoad
+ () => { rssRenderTabs(); rssLoad(); }
 ].forEach(fn => { try { fn(); } catch(e) { console.error('위젯 초기화 오류:', fn.name, e); } });
 
 document.getElementById('cmdInput')?.addEventListener('input', e => cmdRender(e.target.value));
