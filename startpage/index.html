@@ -961,7 +961,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v12.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v12.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3924,7 +3924,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v12.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v12.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -9905,13 +9905,22 @@ function briefRender() {
     }).filter(x => !isNaN(x.days) && x.days <= 7).sort((a,b) => a.days - b.days).slice(0, 4);
   } catch(_) {}
 
-  // 3) 관심 사업 D-day (없으면 전체 사업 기준)
+  // 3) 관심 사업 공고 — 관심 등록한 사업은 향후 일정 유무와 무관하게 표시
   let uf = [];
   try {
     const favs = ufFavs();
-    const all = ufUpcoming(20);
-    const mine = all.filter(x => favs.includes(x.p.id));
-    uf = (mine.length ? mine : all).slice(0, 3);
+    if (favs.length) {
+      // 관심 사업 전체(일정 없으면 n=null). 임박 순 → 나머지
+      uf = favs.map(id => {
+        const p = UNIV_FUND_PROGRAMS.find(x => x.id === id);
+        return p ? { p, n: ufNextStage(p) } : null;
+      }).filter(Boolean).sort((a, b) => {
+        if (a.n && b.n) return a.n.days - b.n.days;
+        return (a.n ? 0 : 1) - (b.n ? 0 : 1);   // 일정 있는 것 먼저
+      });
+    } else {
+      uf = ufUpcoming(3);   // 관심 없으면 전체 임박 공고
+    }
   } catch(_) {}
 
   // 4) D-day 위젯 항목
@@ -9948,8 +9957,8 @@ function briefRender() {
           ? todos.map(({t, days}) => line(ufDdayLabel(days), days <= 1 ? '#dc2626' : '#0f172a', esc(t.text))).join('')
           : empty('7일 내 마감 항목이 없습니다'))}
         ${col('💰 관심 사업 공고', uf.length
-          ? uf.map(({p, n}) => line(ufDdayLabel(n.days), n.days <= 14 ? '#dc2626' : p.color, esc(p.name), `ufJumpTo('${p.id}')`)).join('')
-          : empty('예정된 공고가 없습니다'))}
+          ? uf.slice(0, 4).map(({p, n}) => line(n ? ufDdayLabel(n.days) : '관심', n && n.days <= 14 ? '#dc2626' : p.color, esc(p.name), `ufJumpTo('${p.id}')`)).join('')
+          : empty('⭐로 관심 사업을 등록하세요'))}
         ${col('⏳ D-day', dd.length
           ? dd.map(x => line(ufDdayLabel(x.days), x.days <= 7 ? '#dc2626' : '#0f172a', esc(x.name))).join('')
           : empty('D-day를 추가하세요'))}
@@ -27227,10 +27236,14 @@ ${corpus}
 
     out.innerHTML = `<div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 12px 13px">
         <button onclick="rssAiClose()" title="닫기" style="position:absolute;right:7px;top:7px;width:20px;height:20px;line-height:1;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text-muted);cursor:pointer;font-size:.72rem;padding:0;z-index:1">✕</button>
-        <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;padding-right:24px">
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;padding-right:24px;flex-wrap:wrap">
           <span style="font-size:.8rem">🤖</span>
           <span style="font-size:.76rem;font-weight:800;color:var(--text)">전체 피드 AI 분석</span>
           <span style="font-size:.56rem;color:#fff;background:var(--accent);border-radius:9px;padding:1px 8px;font-weight:700">${okFeeds.length}피드 · ${allTitles.length}건</span>
+          <span style="margin-left:auto;display:flex;gap:5px">
+            <button onclick="rssAiExportHtml()" title="HTML로 저장" style="font-size:.6rem;font-weight:700;color:var(--text);background:var(--card);border:1px solid var(--border);border-radius:6px;padding:3px 9px;cursor:pointer;font-family:inherit">📄 HTML</button>
+            <button onclick="rssAiShare()" title="공유 링크 만들기" style="font-size:.6rem;font-weight:700;color:#fff;background:var(--accent);border:none;border-radius:6px;padding:3px 9px;cursor:pointer;font-family:inherit">🔗 SHARE</button>
+          </span>
         </div>
         ${J.summary ? `<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:9px;padding:10px 12px;font-size:.74rem;line-height:1.75;color:var(--text);margin-bottom:10px">${esc(J.summary)}</div>` : ''}
         <div class="rss-ai-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px">${donuts}</div>
@@ -27252,6 +27265,54 @@ ${corpus}
   }
 }
 function rssAiClose() { const o = document.getElementById('rssAiOut'); if (o) o.innerHTML = ''; }
+
+// ── 전체 피드 AI 분석 결과: 독립 HTML 문서화(스타일 포함) ──
+function rssAiBuildDoc() {
+  const out = document.getElementById('rssAiOut');
+  const root = out && out.firstElementChild;
+  if (!root) return null;
+  const clone = root.cloneNode(true);
+  clone.querySelectorAll('button').forEach(b => b.remove()); // 닫기·SHARE·HTML 버튼 제거
+  const cs = getComputedStyle(document.documentElement);
+  const vars = ['--bg','--bg2','--bg3','--card','--border','--text','--text-dim','--text-muted','--accent','--accent2','--danger']
+    .map(n => { const v = cs.getPropertyValue(n).trim(); return v ? `${n}:${v}` : ''; }).filter(Boolean).join(';');
+  const now = new Date().toLocaleString('ko-KR');
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8">` +
+    `<meta name="viewport" content="width=device-width,initial-scale=1"><title>전체 피드 AI 분석</title>` +
+    `<style>:root{${vars}}*{box-sizing:border-box}body{margin:0;padding:22px 18px;background:var(--bg,#0d1117);` +
+    `color:var(--text,#e6edf3);font-family:'Malgun Gothic',system-ui,-apple-system,sans-serif;max-width:840px;margin:0 auto}` +
+    `svg{max-width:100%}a{color:var(--accent)}</style></head><body>` +
+    `<div style="font-size:.62rem;color:var(--text-muted,#8b949e);margin-bottom:12px">🏠 나의 시작 페이지 · 전체 피드 AI 분석 · ${now}</div>` +
+    clone.outerHTML + `</body></html>`;
+}
+function rssAiExportHtml() {
+  const doc = rssAiBuildDoc();
+  if (!doc) { showToast('먼저 AI 분석을 실행하세요', '⚠️'); return; }
+  const blob = new Blob([doc], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = '피드AI분석_' + new Date().toISOString().slice(0, 10) + '.html';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  showToast('HTML 파일로 저장했습니다', '📄');
+}
+async function rssAiShare() {
+  const doc = rssAiBuildDoc();
+  if (!doc) { showToast('먼저 AI 분석을 실행하세요', '⚠️'); return; }
+  try {
+    const r = await fetch('/api/share', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: '전체 피드 AI 분석', html: doc }),
+    });
+    if (r.status === 503) { showToast('공유 서버(DB) 비활성 — HTML로 저장합니다', 'ℹ️'); rssAiExportHtml(); return; }
+    if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.error || ('HTTP ' + r.status)); }
+    const j = await r.json();
+    const full = location.origin + j.url;
+    try { await navigator.clipboard.writeText(full); showToast('공유 링크를 복사했습니다', '🔗'); }
+    catch (_) { prompt('공유 링크', full); }
+  } catch (e) { showToast('공유 실패: ' + (e.message || e), '⚠️'); }
+}
 
 // ── RSS 피드 관리 모달 ──
 function rssManageOpen() {

@@ -4,3 +4,7 @@ hanzi-writer-app/claude-config.js
 hanzi-writer-app/firebase-config.js
 hanzi-writer-app/.env
 *.env
+
+startpage/server.js
+startpage/package.json
+startpage/package-lock.json
