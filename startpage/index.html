@@ -959,7 +959,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1154,15 +1154,19 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       <div class="news-grid" id="univNoticeGrid"><div class="skel" style="height:44px"></div></div>
     </div>
 
-    <!-- News widget -->
+    <!-- 고등교육 뉴스 RSS (RSS 피드 통합) -->
     <div class="news-widget" id="newsWidget">
       <div class="news-widget-header">
-        <span>📰 고등교육 뉴스</span>
-        <button class="news-refresh-btn" onclick="loadNews()" title="새로고침">↻</button>
+        <span>📡 고등교육 뉴스 RSS</span>
+        <span style="margin-left:auto;display:flex;gap:6px">
+          <button class="news-refresh-btn" onclick="rssManageOpen()" title="피드 추가·삭제 관리">⚙</button>
+          <button class="news-refresh-btn" onclick="rssLoad()" title="새로고침">↻</button>
+        </span>
       </div>
-      <div class="news-grid" id="newsGrid">
-        <div class="skel" style="height:44px"></div>
-      </div>
+      <div class="rss-tabs" id="rssTabs"></div>
+      <div class="rss-items" id="rssItems"><div class="skel" style="height:30px"></div></div>
+      <button id="rssAiBtn" onclick="rssAnalyzeAll()" style="width:100%;margin-top:8px;padding:8px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit">🤖 전체 피드 AI 분석</button>
+      <div id="rssAiOut" style="margin-top:8px"></div>
     </div>
 
     <!-- 일정 편집 모달 -->
@@ -1563,13 +1567,6 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
     </div>
 
     <!-- RSS 맞춤 피드 -->
-    <div class="rw" id="rwRSS">
-      <div class="rw-hdr"><span>📡 RSS 피드</span><span style="margin-left:auto;display:flex;gap:4px"><button class="rw-refresh" onclick="rssManageOpen()" title="피드 추가·삭제 관리">⚙</button><button class="rw-refresh" onclick="rssLoad()" title="새로고침">↻</button></span></div>
-      <div class="rss-tabs" id="rssTabs"></div>
-      <div class="rss-items" id="rssItems"><div class="skel" style="height:30px"></div></div>
-      <button id="rssAiBtn" onclick="rssAnalyzeAll()" style="width:100%;margin-top:8px;padding:7px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">🤖 전체 피드 AI 분석</button>
-      <div id="rssAiOut" style="margin-top:8px"></div>
-    </div>
 
     <!-- 공고 알림 -->
     <div class="rw" id="rwNotice">
@@ -3925,7 +3922,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v11.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v11.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -24610,8 +24607,9 @@ updateClock();
 
 // ── NEWS ──
 function renderNewsItems(items) {
-  if (typeof checkUnivNewsAlert === 'function') checkUnivNewsAlert(items);
+  if (typeof checkUnivNewsAlert === 'function') checkUnivNewsAlert(items);   // 관심대학 뉴스 알림은 계속
   const grid = document.getElementById('newsGrid');
+  if (!grid) return;   // 뉴스 위젯이 RSS로 통합되어 그리드가 없으면 렌더 생략
   grid.innerHTML = items.slice(0, 9).map(item => {
     const safeTitle = (item.title||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const date = item.pubDate ? new Date(item.pubDate).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
@@ -25133,8 +25131,9 @@ function newsAnalysisExport() {
   showToast('분석 결과를 HTML로 내보냈습니다 📤');
 }
 async function loadNews() {
+  // 뉴스 위젯은 RSS 피드로 통합됨. 관심대학 뉴스 알림용으로 기사만 백그라운드 수집(렌더 그리드 없음).
   const grid = document.getElementById('newsGrid');
-  grid.innerHTML = '<div class="skel" style="height:44px"></div>';
+  if (grid) grid.innerHTML = '<div class="skel" style="height:44px"></div>';
   const RSS_URL = 'https://news.google.com/rss/search?q=%EB%8C%80%ED%95%99+%EA%B3%A0%EB%93%B1%EA%B5%90%EC%9C%A1&hl=ko&gl=KR&ceid=KR:ko';
 
   // Method 1: rss2json.com
@@ -25171,7 +25170,7 @@ async function loadNews() {
     } catch(_) {}
   }
 
-  grid.innerHTML = '<div class="news-loading">뉴스를 불러올 수 없습니다. ↻ 버튼으로 재시도하세요.</div>';
+  if (grid) grid.innerHTML = '<div class="news-loading">뉴스를 불러올 수 없습니다. ↻ 버튼으로 재시도하세요.</div>';
 }
 loadNews();
 
