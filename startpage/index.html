@@ -352,7 +352,8 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 .rss-tabs { display:flex; gap:3px; margin-bottom:7px; flex-wrap:wrap; }
 .rss-tab { background:var(--bg3); border:1px solid var(--border); border-radius:5px; color:var(--text-dim); font-size:.68rem; padding:3px 7px; cursor:pointer; }
 .rss-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
-.rss-items { display:flex; flex-direction:column; gap:4px; }
+.rss-items { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
+@media (max-width: 640px) { .rss-items { grid-template-columns:1fr; } }
 .rss-item { background:var(--bg3); border-radius:5px; padding:5px 7px; }
 .rss-item a { color:var(--text); font-size:.73rem; text-decoration:none; display:block; line-height:1.4; }
 .rss-item a:hover { color:var(--accent2); }
@@ -959,7 +960,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.9</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v12.0</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3922,7 +3923,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v11.9 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v12.0 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
