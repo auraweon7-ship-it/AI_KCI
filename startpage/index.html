@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v13.3</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v13.4</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3904,7 +3904,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v13.3 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v13.4 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -27108,7 +27108,7 @@ async function rssAnalyzeAll() {
   // 전 피드 병렬 수집(피드당 5건). 실패 피드는 건너뜀.
   const results = await Promise.all(feeds.map(async f => {
     const items = await rssFetchItems(f.url, 5);
-    return { name: f.name, items };
+    return { name: f.name, url: f.url, items };
   }));
   const okFeeds = results.filter(r => r.items.length);
   const allTitles = okFeeds.flatMap(r => r.items.map(it => it.title));
@@ -27214,6 +27214,22 @@ ${corpus}
       ? card('📄','분석 원문 (구조화 실패)', `<div style="font-size:.66rem;line-height:1.6;color:var(--text-dim);white-space:pre-wrap;max-height:220px;overflow:auto">${esc(txt).replace(/\n/g,'<br>')}</div>`, 'var(--danger,#e74c3c)')
       : '';
 
+    // 대표·핵심 피드 20개 + 원본 링크 (수집 성공 피드를 기사 수 많은순 정렬)
+    const topFeeds = okFeeds.slice().sort((a,b) => b.items.length - a.items.length).slice(0, 20);
+    const feedLinks = topFeeds.map((f, i) => {
+      let home = f.url;
+      try { home = new URL(f.url).origin; } catch(_) {}
+      return `<a href="${esc(f.url)}" target="_blank" rel="noopener" title="${esc(home)}"
+        style="display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:6px 8px;text-decoration:none;min-width:0">
+        <span style="flex:0 0 auto;width:16px;height:16px;border-radius:5px;background:var(--accent);color:#fff;font-size:.55rem;font-weight:800;display:flex;align-items:center;justify-content:center">${i+1}</span>
+        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.68rem;color:var(--text)">${esc(f.name)}</span>
+        <span style="flex:0 0 auto;font-size:.55rem;color:var(--text-muted)">${f.items.length}건 ↗</span>
+      </a>`;
+    }).join('');
+    const feedListCard = topFeeds.length
+      ? card('📰', `대표 피드 ${topFeeds.length}선`, `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">${feedLinks}</div>`, '#3b82f6')
+      : '';
+
     out.innerHTML = `<div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 12px 13px">
         <button onclick="rssAiClose()" title="닫기" style="position:absolute;right:7px;top:7px;width:20px;height:20px;line-height:1;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text-muted);cursor:pointer;font-size:.72rem;padding:0;z-index:1">✕</button>
         <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;padding-right:24px;flex-wrap:wrap">
@@ -27235,6 +27251,7 @@ ${corpus}
             ${card('🔮','주목할 사안', bullets(J.watch,'▸','#8b5cf6'), '#8b5cf6')}
           </div>
           ${rawFallback}
+          ${feedListCard}
         </div>
       </div>`;
   } catch (e) {
