@@ -354,6 +354,7 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 .rss-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
 .rss-items { display:grid; grid-template-columns:1fr 1fr; gap:4px; }
 @media (max-width: 640px) { .rss-items { grid-template-columns:1fr; } }
+@media (max-width: 560px) { .rss-ai-grid { grid-template-columns:1fr !important; } }
 .rss-item { background:var(--bg3); border-radius:5px; padding:5px 7px; }
 .rss-item a { color:var(--text); font-size:.73rem; text-decoration:none; display:block; line-height:1.4; }
 .rss-item a:hover { color:var(--accent2); }
@@ -960,7 +961,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v12.6</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v12.7</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3923,7 +3924,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v12.6 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v12.7 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -27171,69 +27172,77 @@ sentiment 세 값의 합은 전체 기사 수와 같아야 함. categories 4~6�
     const parsedEmpty = !J.summary && !J.sentiment && !(J.themes && J.themes.length) && !(J.categories && J.categories.length);
     const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const PAL = ['#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6','#a855f7'];
-    const sec = (t, inner) => inner ? `<div style="margin-top:10px"><div style="font-size:.64rem;font-weight:800;color:var(--accent2);margin-bottom:4px">${t}</div>${inner}</div>` : '';
+    // 카드 래퍼 — 제목 + 본문
+    const card = (icon, title, inner, accent) => inner ? `<div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:11px 13px">
+        <div style="font-size:.66rem;font-weight:800;color:${accent||'var(--accent2)'};margin-bottom:8px;letter-spacing:.02em">${icon} ${title}</div>${inner}</div>` : '';
 
-    // 도넛(SVG) — [{label,v,color}]
+    // 도넛(SVG) — 중앙에 총합
     const donut = (seg) => {
       const tot = seg.reduce((s,x)=>s+x.v,0); if (!tot) return '';
-      const R=26, C=2*Math.PI*R; let off=0;
-      const arcs = seg.map(s => { const frac=s.v/tot; const dash=`${(frac*C).toFixed(2)} ${(C-frac*C).toFixed(2)}`; const el=`<circle cx="32" cy="32" r="${R}" fill="none" stroke="${s.color}" stroke-width="10" stroke-dasharray="${dash}" stroke-dashoffset="${(-off*C).toFixed(2)}" transform="rotate(-90 32 32)"/>`; off+=frac; return el; }).join('');
-      const leg = seg.map(s => `<div style="display:flex;align-items:center;gap:5px;font-size:.62rem;color:var(--text)"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};flex:0 0 auto"></span>${esc(s.label)} <span style="color:var(--text-muted)">${s.v}</span></div>`).join('');
-      return `<div style="display:flex;align-items:center;gap:12px"><svg width="64" height="64" viewBox="0 0 64 64" style="flex:0 0 auto">${arcs}</svg><div style="display:flex;flex-direction:column;gap:3px">${leg}</div></div>`;
+      const R=27, C=2*Math.PI*R; let off=0;
+      const arcs = seg.map(s => { const frac=s.v/tot; const dash=`${(frac*C).toFixed(2)} ${(C-frac*C).toFixed(2)}`; const el=`<circle cx="34" cy="34" r="${R}" fill="none" stroke="${s.color}" stroke-width="9" stroke-dasharray="${dash}" stroke-dashoffset="${(-off*C).toFixed(2)}" transform="rotate(-90 34 34)" stroke-linecap="butt"/>`; off+=frac; return el; }).join('');
+      const leg = seg.map(s => `<div style="display:flex;align-items:center;gap:6px;font-size:.64rem;color:var(--text)"><span style="width:9px;height:9px;border-radius:3px;background:${s.color};flex:0 0 auto"></span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.label)}</span><b style="color:var(--text)">${s.v}</b> <span style="color:var(--text-muted);font-size:.58rem">${Math.round(s.v/tot*100)}%</span></div>`).join('');
+      return `<div style="display:flex;align-items:center;gap:12px">
+        <div style="position:relative;flex:0 0 auto"><svg width="68" height="68" viewBox="0 0 68 68">${arcs}</svg><div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><b style="font-size:.82rem;color:var(--text);line-height:1">${tot}</b><span style="font-size:.5rem;color:var(--text-muted)">건</span></div></div>
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;min-width:0">${leg}</div></div>`;
     };
-    // 가로 막대 — [{label,v}]
+    // 순위 막대 — 값 pill
     const hbar = (rows) => {
       if (!rows.length) return ''; const max = Math.max(...rows.map(r=>r.v))||1;
-      return `<div style="display:flex;flex-direction:column;gap:4px">` + rows.map((r,i)=>`
-        <div style="display:flex;align-items:center;gap:6px;font-size:.66rem">
-          <span style="flex:0 0 32%;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.label)}</span>
-          <div style="flex:1;background:var(--card);border-radius:4px;height:13px;overflow:hidden"><div style="width:${Math.max(5,Math.round(r.v/max*100))}%;height:100%;background:${PAL[i%PAL.length]};border-radius:4px"></div></div>
-          <span style="flex:0 0 auto;color:var(--text-muted);min-width:16px;text-align:right">${r.v}</span>
+      return `<div style="display:flex;flex-direction:column;gap:6px">` + rows.map((r,i)=>`
+        <div style="display:flex;align-items:center;gap:8px;font-size:.68rem">
+          <span style="flex:0 0 30%;color:var(--text);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.label)}</span>
+          <div style="flex:1;background:var(--bg3);border-radius:5px;height:15px;overflow:hidden;position:relative"><div style="width:${Math.max(6,Math.round(r.v/max*100))}%;height:100%;background:linear-gradient(90deg,${PAL[i%PAL.length]}bb,${PAL[i%PAL.length]});border-radius:5px"></div></div>
+          <span style="flex:0 0 auto;font-weight:800;color:${PAL[i%PAL.length]};min-width:18px;text-align:right">${r.v}</span>
         </div>`).join('') + `</div>`;
     };
 
-    // 감성 도넛
     const st = J.sentiment || {};
     const sentSeg = [
       { label:'긍정', v:+st.positive||0, color:'#10b981' },
       { label:'중립', v:+st.neutral||0, color:'#94a3b8' },
       { label:'부정', v:+st.negative||0, color:'#ef4444' },
     ].filter(s=>s.v>0);
-    // 카테고리 도넛
     const catSeg = Array.isArray(J.categories) ? J.categories.slice(0,6).map((c,i)=>({label:c.name,v:+c.count||0,color:PAL[i%PAL.length]})).filter(c=>c.v>0) : [];
-    // 이슈 막대
     const themeBar = Array.isArray(J.themes) ? J.themes.slice(0,5).map(t=>({label:t.title,v:+t.count||0})) : [];
-    // 키워드 막대
     const kwBar = Array.isArray(J.keywords) ? J.keywords.slice(0,10).map(k=>({label:(k.word||k),v:+(k.count||0)})).filter(k=>k.v>0) : [];
-    // 피드별 활동(클라이언트 계산) — 도넛
-    const feedSeg = okFeeds.map((f,i)=>({label:f.name,v:f.items.length})).sort((a,b)=>b.v-a.v).slice(0,8).map((f,i)=>({...f,color:PAL[i%PAL.length]}));
+    const feedSeg = okFeeds.map(f=>({label:f.name,v:f.items.length})).sort((a,b)=>b.v-a.v).slice(0,8).map((f,i)=>({...f,color:PAL[i%PAL.length]}));
 
-    const themeDesc = Array.isArray(J.themes) ? J.themes.map(t=>`<div style="font-size:.66rem;line-height:1.5;margin:2px 0"><b style="color:var(--accent)">${esc(t.title)}</b> <span style="color:var(--text-dim)">— ${esc(t.desc)}</span></div>`).join('') : '';
-    const insights = Array.isArray(J.insights) ? `<ul style="margin:0;padding-left:14px;font-size:.68rem;line-height:1.6;color:var(--text)">${J.insights.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>` : '';
-    const watch = Array.isArray(J.watch) ? `<ul style="margin:0;padding-left:14px;font-size:.68rem;line-height:1.6;color:var(--text-dim)">${J.watch.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>` : '';
+    // 이슈: 막대 + 설명을 한 카드에
+    const themeInner = themeBar.length ? hbar(themeBar) +
+      (Array.isArray(J.themes) ? `<div style="margin-top:9px;border-top:1px dashed var(--border);padding-top:8px;display:flex;flex-direction:column;gap:5px">${J.themes.map((t,i)=>`<div style="font-size:.66rem;line-height:1.5"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${PAL[i%PAL.length]};margin-right:5px"></span><b style="color:var(--text)">${esc(t.title)}</b> <span style="color:var(--text-dim)">${esc(t.desc)}</span></div>`).join('')}</div>` : '') : '';
+    // 통찰/주목: 아이콘 리스트
+    const bullets = (arr, mark, col) => Array.isArray(arr)&&arr.length ? `<div style="display:flex;flex-direction:column;gap:6px">${arr.map(w=>`<div style="display:flex;gap:7px;font-size:.68rem;line-height:1.55;color:var(--text)"><span style="flex:0 0 auto;color:${col}">${mark}</span><span>${esc(w)}</span></div>`).join('')}</div>` : '';
 
-    // 도넛들을 나란히
-    const donutRow = `<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:10px">
-        ${sentSeg.length?`<div><div style="font-size:.6rem;font-weight:700;color:var(--text-muted);margin-bottom:3px">😊 감성 분포</div>${donut(sentSeg)}</div>`:''}
-        ${catSeg.length?`<div><div style="font-size:.6rem;font-weight:700;color:var(--text-muted);margin-bottom:3px">📂 분야 분포</div>${donut(catSeg)}</div>`:''}
-        ${feedSeg.length?`<div><div style="font-size:.6rem;font-weight:700;color:var(--text-muted);margin-bottom:3px">📡 피드별 기사 수</div>${donut(feedSeg)}</div>`:''}
-      </div>`;
+    // 도넛 그리드(2열)
+    const donuts = [
+      sentSeg.length ? card('😊','감성 분포', donut(sentSeg)) : '',
+      catSeg.length ? card('📂','분야 분포', donut(catSeg)) : '',
+      feedSeg.length ? card('📡','피드별 기사 수', donut(feedSeg)) : '',
+    ].filter(Boolean).join('');
 
     const rawFallback = parsedEmpty
-      ? `<div style="margin-top:8px;font-size:.66rem;line-height:1.6;color:var(--text-dim);white-space:pre-wrap;max-height:220px;overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:8px">${esc(txt).replace(/\n/g,'<br>')}</div>`
+      ? card('📄','분석 원문 (구조화 실패)', `<div style="font-size:.66rem;line-height:1.6;color:var(--text-dim);white-space:pre-wrap;max-height:220px;overflow:auto">${esc(txt).replace(/\n/g,'<br>')}</div>`, 'var(--danger,#e74c3c)')
       : '';
 
-    out.innerHTML = `<div style="position:relative;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 26px 11px 12px">
-        <button onclick="rssAiClose()" title="닫기" style="position:absolute;right:5px;top:5px;width:18px;height:18px;line-height:1;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text-muted);cursor:pointer;font-size:.7rem;padding:0">✕</button>
-        <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:5px">${okFeeds.length}개 피드 · ${allTitles.length}건 기사 심층 분석</div>
-        ${J.summary ? `<div style="font-size:.72rem;line-height:1.7;color:var(--text)">${esc(J.summary)}</div>` : ''}
-        ${donutRow}
-        ${sec('🔥 핵심 이슈 (기사 수)', hbar(themeBar))}
-        ${themeDesc ? `<div style="margin-top:5px">${themeDesc}</div>` : ''}
-        ${sec('🏷 키워드 빈도', hbar(kwBar))}
-        ${sec('💡 통찰', insights)}
-        ${sec('🔮 주목할 사안', watch)}
-        ${parsedEmpty ? sec('📄 분석 원문 (구조화 실패)', rawFallback) : ''}
+    out.innerHTML = `<div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 12px 13px">
+        <button onclick="rssAiClose()" title="닫기" style="position:absolute;right:7px;top:7px;width:20px;height:20px;line-height:1;background:var(--card);border:1px solid var(--border);border-radius:6px;color:var(--text-muted);cursor:pointer;font-size:.72rem;padding:0;z-index:1">✕</button>
+        <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;padding-right:24px">
+          <span style="font-size:.8rem">🤖</span>
+          <span style="font-size:.76rem;font-weight:800;color:var(--text)">전체 피드 AI 분석</span>
+          <span style="font-size:.56rem;color:#fff;background:var(--accent);border-radius:9px;padding:1px 8px;font-weight:700">${okFeeds.length}피드 · ${allTitles.length}건</span>
+        </div>
+        ${J.summary ? `<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid var(--accent);border-radius:9px;padding:10px 12px;font-size:.74rem;line-height:1.75;color:var(--text);margin-bottom:10px">${esc(J.summary)}</div>` : ''}
+        <div class="rss-ai-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:10px">${donuts}</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          ${card('🔥','핵심 이슈', themeInner, '#ef4444')}
+          ${card('🏷','키워드 빈도', hbar(kwBar), '#f59e0b')}
+          <div class="rss-ai-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            ${card('💡','통찰', bullets(J.insights,'▸','#10b981'), '#10b981')}
+            ${card('🔮','주목할 사안', bullets(J.watch,'▸','#8b5cf6'), '#8b5cf6')}
+          </div>
+          ${rawFallback}
+        </div>
       </div>`;
   } catch (e) {
     out.innerHTML = `<div style="font-size:.68rem;color:var(--danger,#e74c3c)">분석 실패: ${(e.message||'오류').replace(/</g,'&lt;')}</div>`;
