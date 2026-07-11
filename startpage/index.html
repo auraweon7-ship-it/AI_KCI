@@ -959,7 +959,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.1</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.2</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1266,12 +1266,6 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       <div class="postit-grid" id="postitGrid"></div>
     </div>
 
-    <!-- 입법·국회 교육위 -->
-    <div class="rw" id="rwLegis">
-      <div class="rw-hdr"><span>🏛 입법·국회 교육위</span><button class="rw-refresh" onclick="loadLegisNews()" title="새로고침">↻</button></div>
-      <div id="legisList" style="display:flex;flex-direction:column;gap:5px;"></div>
-    </div>
-
     <!-- 오늘의 사자성어 -->
     <div class="rw" id="rwIdiom">
       <div class="rw-hdr"><span>📖 오늘의 사자성어</span><button class="rw-refresh" onclick="loadIdiom(true)" title="다른 성어">↻</button></div>
@@ -1366,6 +1360,12 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
         </div>
         <div id="fxCalcOut" style="margin-top:6px;font-size:.82rem;font-weight:700;color:var(--accent2);text-align:right;">—</div>
       </div>
+    </div>
+
+    <!-- 입법·국회 교육위 -->
+    <div class="rw" id="rwLegis">
+      <div class="rw-hdr"><span>🏛 입법·국회 교육위</span><button class="rw-refresh" onclick="loadLegisNews()" title="새로고침">↻</button></div>
+      <div id="legisList" style="display:flex;flex-direction:column;gap:5px;"></div>
     </div>
 
     <!-- 연구재단 신규사업 RSS -->
@@ -3928,7 +3928,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v11.1 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v11.2 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
