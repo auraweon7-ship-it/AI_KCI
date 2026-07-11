@@ -959,7 +959,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.5</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.6</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3928,7 +3928,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v11.5 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v11.6 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -26969,6 +26969,9 @@ const RSS_DEFAULTS = [
   { name:'대학 구조개혁', url:'https://news.google.com/rss/search?q=%EB%8C%80%ED%95%99+%EA%B5%AC%EC%A1%B0%EA%B0%9C%ED%98%81&hl=ko&gl=KR&ceid=KR:ko' },
   { name:'대학 등록금', url:'https://news.google.com/rss/search?q=%EB%8C%80%ED%95%99+%EB%93%B1%EB%A1%9D%EA%B8%88&hl=ko&gl=KR&ceid=KR:ko' },
   { name:'대학 교원', url:'https://news.google.com/rss/search?q=%EB%8C%80%ED%95%99+%EA%B5%90%EC%9B%90&hl=ko&gl=KR&ceid=KR:ko' },
+  { name:'교육플러스', url:'https://www.edpl.co.kr/rss/allArticle.xml' },
+  { name:'대학평가', url:'https://news.google.com/rss/search?q=%EB%8C%80%ED%95%99%ED%8F%89%EA%B0%80&hl=ko&gl=KR&ceid=KR:ko' },
+  { name:'대입정책', url:'https://news.google.com/rss/search?q=%EB%8C%80%EC%9E%85%EC%A0%95%EC%B1%85&hl=ko&gl=KR&ceid=KR:ko' },
 ];
 // 서비스가 중단(404)되었거나 XML 대신 HTML을 반환하는 피드 — 저장된 목록에서 1회 제거
 const RSS_DEAD = [
