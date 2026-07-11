@@ -545,7 +545,8 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 .clock-city .cc-name { flex: 0 0 5.2em; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); }
 .clock-city .cc-date { flex: 0 0 2.6em; text-align: right; font-size: .64rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .clock-city .cc-time { flex: 0 0 auto; font-weight: 700; font-variant-numeric: tabular-nums; }
-.clock-city .cc-temp { flex: 0 0 auto; color: var(--accent2); font-weight: 600; min-width: 40px; text-align: right; }
+.clock-city .cc-wx { flex: 0 0 auto; font-size: .85rem; min-width: 1.2em; text-align: center; }
+.clock-city .cc-temp { flex: 0 0 auto; color: var(--accent2); font-weight: 600; min-width: 34px; text-align: right; }
 @media (max-width: 780px) {
   .clock-row { flex-direction: column; gap: .8rem; }
   .clock-cities { flex-direction: row; flex-wrap: wrap; justify-content: center; max-width: none; }
@@ -958,7 +959,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.9</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.0</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3927,7 +3928,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v10.9 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v11.0 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -24545,7 +24546,10 @@ const CLOCK_CITIES = [
   { name: '파리',   flag: '🇫🇷', tz: 'Europe/Paris',         lat: 48.85, lon: 2.35 },
   { name: '뉴욕',   flag: '🇺🇸', tz: 'America/New_York',     lat: 40.71, lon: -74.01 },
 ];
-const _clockTemps = {};   // name -> '21°'
+const _clockWx = {};   // name -> { temp: '21°', icon: '☀️', desc: '맑음' }
+// weathercode → 아이콘·설명 (날씨 위젯 WI/WD와 동일 기준)
+const CC_WI = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌦',55:'🌧',61:'🌧',63:'🌧',65:'🌧',71:'🌨',73:'🌨',75:'❄️',80:'🌦',81:'🌧',82:'⛈',95:'⛈',96:'⛈',99:'⛈'};
+const CC_WD = {0:'맑음',1:'대체로 맑음',2:'구름 조금',3:'흐림',45:'안개',48:'안개',51:'이슬비',53:'이슬비',55:'이슬비',61:'비',63:'비',65:'강한 비',71:'눈',73:'눈',75:'폭설',80:'소나기',81:'소나기',82:'강한 소나기',95:'뇌우',96:'뇌우',99:'뇌우'};
 function renderClockCities() {
   const L = document.getElementById('clockCitiesL');
   const R = document.getElementById('clockCitiesR');
@@ -24560,13 +24564,14 @@ function renderClockCities() {
       const da = parts.find(p => p.type === 'day')?.value || '';
       date = `${mo}/${da}`;
     } catch(_) {}
-    const temp = _clockTemps[c.name] || '';
-    return `<div class="clock-city" title="${c.name} · ${c.tz}">
+    const wx = _clockWx[c.name] || {};
+    return `<div class="clock-city" title="${c.name} · ${c.tz}${wx.desc ? ' · ' + wx.desc : ''}">
       <span class="cc-flag">${c.flag}</span>
       <span class="cc-name">${c.name}</span>
       <span class="cc-date">${date}</span>
       <span class="cc-time">${time}</span>
-      <span class="cc-temp">${temp}</span>
+      <span class="cc-wx">${wx.icon || ''}</span>
+      <span class="cc-temp">${wx.temp || ''}</span>
     </div>`;
   };
   L.innerHTML = CLOCK_CITIES.slice(0, 3).map(row).join('');
@@ -24577,12 +24582,15 @@ async function loadClockCityTemps() {
   await Promise.all(CLOCK_CITIES.map(async c => {
     try {
       const r = await Promise.race([
-        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current=temperature_2m`),
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current=temperature_2m,weathercode`),
         _tout(6000),
       ]);
       const d = await r.json();
       const t = d?.current?.temperature_2m;
-      if (typeof t === 'number') _clockTemps[c.name] = `${Math.round(t)}°`;
+      const wc = d?.current?.weathercode;
+      const e = _clockWx[c.name] || (_clockWx[c.name] = {});
+      if (typeof t === 'number') e.temp = `${Math.round(t)}°`;
+      if (typeof wc === 'number') { e.icon = CC_WI[wc] || '🌡'; e.desc = CC_WD[wc] || ''; }
     } catch(_) {}
   }));
   renderClockCities();
