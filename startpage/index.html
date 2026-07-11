@@ -959,7 +959,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.7</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.8</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1567,6 +1567,8 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       <div class="rw-hdr"><span>📡 RSS 피드</span><span style="margin-left:auto;display:flex;gap:4px"><button class="rw-refresh" onclick="rssManageOpen()" title="피드 추가·삭제 관리">⚙</button><button class="rw-refresh" onclick="rssLoad()" title="새로고침">↻</button></span></div>
       <div class="rss-tabs" id="rssTabs"></div>
       <div class="rss-items" id="rssItems"><div class="skel" style="height:30px"></div></div>
+      <button id="rssAiBtn" onclick="rssAnalyzeAll()" style="width:100%;margin-top:8px;padding:7px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">🤖 전체 피드 AI 분석</button>
+      <div id="rssAiOut" style="margin-top:8px"></div>
     </div>
 
     <!-- 공고 알림 -->
@@ -3923,7 +3925,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v11.7 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v11.8 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -27003,6 +27005,36 @@ function rssRenderTabs() {
     `<button class="rss-tab${i===rssCur?' active':''}" onclick="rssSwitchTab(${i})">${f.name}</button>`
   ).join('') + `<button class="rss-tab" onclick="rssDelFeed()" title="현재 피드 삭제" style="color:var(--danger)">✕</button>`;
 }
+// 피드 URL → 기사 배열 [{title,link,date}]. rss2json 우선, 실패 시 프록시+파싱.
+async function rssFetchItems(url, limit = 6) {
+  try {
+    const d = await (await Promise.race([
+      fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`),
+      _tout(5000)
+    ])).json();
+    if (d.status === 'ok' && d.items?.length) return d.items.slice(0, limit).map(it => ({ title: it.title, link: it.link, date: it.pubDate }));
+  } catch(_) {}
+  try {
+    const raw = await Promise.race([proxyfetch(url), _tout(8000)]);
+    const xml = new DOMParser().parseFromString(raw, 'text/xml');
+    const nodes = [...xml.querySelectorAll('item')];
+    const isAtom = !nodes.length;
+    const src = isAtom ? [...xml.querySelectorAll('entry')] : nodes;
+    const parsed = src.slice(0, limit).map(it => {
+      const linkEl = it.querySelector('link');
+      return {
+        title: (it.querySelector('title')?.textContent || '').trim(),
+        link:  (isAtom ? (linkEl?.getAttribute('href') || '') : (linkEl?.textContent || ''))
+               || it.querySelector('guid')?.textContent || '',
+        date:  it.querySelector('pubDate')?.textContent || it.querySelector('updated')?.textContent
+               || it.querySelector('published')?.textContent || '',
+      };
+    }).filter(it => it.title);
+    if (parsed.length) return parsed;
+  } catch(_) {}
+  return [];
+}
+
 async function rssLoad() {
   const feeds = rssGetFeeds();
   if (!feeds.length) return;
@@ -27010,36 +27042,7 @@ async function rssLoad() {
   const el = document.getElementById('rssItems');
   el.innerHTML = '<div class="skel" style="height:30px"></div>';
   rssRenderTabs();
-  let items = null;
-  try {
-    // ※ rss2json의 count 파라미터는 유료 전환됨 — 붙이면 전 피드가 실패한다. 클라이언트에서 자른다.
-    const d = await (await Promise.race([
-      fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed.url)}`),
-      _tout(5000)
-    ])).json();
-    if (d.status === 'ok' && d.items?.length) items = d.items.slice(0,6).map(it => ({ title:it.title, link:it.link, date:it.pubDate }));
-  } catch(_) {}
-  if (!items) {
-    try {
-      const raw = await Promise.race([proxyfetch(feed.url), _tout(8000)]);
-      const xml = new DOMParser().parseFromString(raw, 'text/xml');
-      // RSS 2.0(<item>) · Atom(<entry>) 모두 지원
-      const nodes = [...xml.querySelectorAll('item')];
-      const isAtom = !nodes.length;
-      const src = isAtom ? [...xml.querySelectorAll('entry')] : nodes;
-      const parsed = src.slice(0,6).map(it => {
-        const linkEl = it.querySelector('link');
-        return {
-          title: (it.querySelector('title')?.textContent || '').trim(),
-          link:  (isAtom ? (linkEl?.getAttribute('href') || '') : (linkEl?.textContent || ''))
-                 || it.querySelector('guid')?.textContent || '',
-          date:  it.querySelector('pubDate')?.textContent || it.querySelector('updated')?.textContent
-                 || it.querySelector('published')?.textContent || '',
-        };
-      }).filter(it => it.title);
-      if (parsed.length) items = parsed;
-    } catch(_) {}
-  }
+  const items = await rssFetchItems(feed.url, 6);
   if (items?.length) {
     el.innerHTML = items.map(it => {
       const dt = it.date ? new Date(it.date) : null;
@@ -27096,6 +27099,80 @@ function rssDelFeed(idx) {
   rssLoad();
   if (document.getElementById('rssManageOverlay')) rssManageRender();
 }
+
+// ── 모든 RSS 피드 AI 분석 ──
+let _rssAiBusy = false;
+async function rssAnalyzeAll() {
+  if (_rssAiBusy) return;
+  const out = document.getElementById('rssAiOut');
+  const btn = document.getElementById('rssAiBtn');
+  const key = (localStorage.getItem('claude_api_key') || '').trim();
+  if (!key) { out.innerHTML = '<div style="font-size:.68rem;color:var(--text-muted)">⚠️ 설정 → API 키에서 Claude 키를 등록하세요</div>'; return; }
+  const feeds = rssGetFeeds();
+  if (!feeds.length) return;
+
+  _rssAiBusy = true;
+  if (btn) { btn.disabled = true; btn.textContent = '수집 중…'; }
+  out.innerHTML = `<div class="skel" style="height:40px"></div>`;
+
+  // 전 피드 병렬 수집(피드당 5건). 실패 피드는 건너뜀.
+  const results = await Promise.all(feeds.map(async f => {
+    const items = await rssFetchItems(f.url, 5);
+    return { name: f.name, items };
+  }));
+  const okFeeds = results.filter(r => r.items.length);
+  const allTitles = okFeeds.flatMap(r => r.items.map(it => it.title));
+  if (!allTitles.length) { out.innerHTML = '<div style="font-size:.68rem;color:var(--danger,#e74c3c)">기사를 불러오지 못했습니다.</div>'; _rssAiBusy = false; if (btn) { btn.disabled = false; btn.textContent = '🤖 전체 피드 AI 분석'; } return; }
+
+  if (btn) btn.textContent = `분석 중… (${allTitles.length}건)`;
+
+  const corpus = okFeeds.map(r => `[${r.name}]\n` + r.items.map(it => '· ' + it.title).join('\n')).join('\n\n');
+  const prompt = `아래는 여러 고등교육 관련 RSS 피드에서 수집한 최신 기사 제목 ${allTitles.length}건입니다(피드별로 묶음). 이를 종합 분석해 JSON으로만 답하세요.
+
+${corpus}
+
+다음 JSON 스키마로 답하세요(설명 없이 JSON만):
+{
+  "summary": "지금 고등교육 분야에서 가장 두드러진 흐름을 3~4문장으로",
+  "themes": [{"title":"핵심 이슈명","count":관련기사수,"desc":"한 문장 설명"}],
+  "keywords": ["자주 등장한 핵심 키워드 6~10개"],
+  "watch": ["앞으로 주목할 사안 2~3개"]
+}
+themes는 3~5개, 중요도 순. 실제 제목 근거로만 작성하고 지어내지 마세요.`;
+
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:1500, messages:[{ role:'user', content:prompt }] }),
+    });
+    if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error?.message || r.status); }
+    const j = await r.json();
+    const txt = (j.content || []).map(c => c.text || '').join('').replace(/```json/gi,'').replace(/```/g,'').trim();
+    const J = naParseJSON(txt) || {};
+    const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const sec = (t, inner) => inner ? `<div style="margin-top:8px"><div style="font-size:.64rem;font-weight:800;color:var(--accent2);margin-bottom:3px">${t}</div>${inner}</div>` : '';
+    const themes = Array.isArray(J.themes) ? J.themes.map(t =>
+      `<div style="display:flex;gap:6px;font-size:.68rem;line-height:1.5;margin:2px 0"><span style="flex:0 0 auto;font-weight:700;color:var(--accent)">${esc(t.title)}${t.count?` <span style="color:var(--text-muted);font-weight:400">${t.count}</span>`:''}</span><span style="color:var(--text-dim)">— ${esc(t.desc)}</span></div>`).join('') : '';
+    const kws = Array.isArray(J.keywords) ? J.keywords.map(k => `<span style="display:inline-block;font-size:.62rem;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1px 8px;margin:0 3px 3px 0;color:var(--text)">${esc(k)}</span>`).join('') : '';
+    const watch = Array.isArray(J.watch) ? `<ul style="margin:0;padding-left:14px;font-size:.68rem;line-height:1.6;color:var(--text-dim)">${J.watch.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : '';
+
+    out.innerHTML = `<div style="position:relative;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 26px 9px 11px">
+        <button onclick="rssAiClose()" title="닫기" style="position:absolute;right:4px;top:4px;width:18px;height:18px;line-height:1;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text-muted);cursor:pointer;font-size:.7rem;padding:0">✕</button>
+        <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:5px">${okFeeds.length}개 피드 · ${allTitles.length}건 기사 분석</div>
+        ${J.summary ? `<div style="font-size:.72rem;line-height:1.65;color:var(--text)">${esc(J.summary)}</div>` : ''}
+        ${sec('🔥 핵심 이슈', themes)}
+        ${sec('🏷 키워드', kws)}
+        ${sec('🔮 주목할 사안', watch)}
+      </div>`;
+  } catch (e) {
+    out.innerHTML = `<div style="font-size:.68rem;color:var(--danger,#e74c3c)">분석 실패: ${(e.message||'오류').replace(/</g,'&lt;')}</div>`;
+  } finally {
+    _rssAiBusy = false;
+    if (btn) { btn.disabled = false; btn.textContent = '🤖 전체 피드 AI 분석'; }
+  }
+}
+function rssAiClose() { const o = document.getElementById('rssAiOut'); if (o) o.innerHTML = ''; }
 
 // ── RSS 피드 관리 모달 ──
 function rssManageOpen() {
