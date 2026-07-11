@@ -960,7 +960,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v12.1</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v12.2</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3923,7 +3923,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v12.1 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v12.2 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -27127,42 +27127,91 @@ async function rssAnalyzeAll() {
   if (btn) btn.textContent = `분석 중… (${allTitles.length}건)`;
 
   const corpus = okFeeds.map(r => `[${r.name}]\n` + r.items.map(it => '· ' + it.title).join('\n')).join('\n\n');
-  const prompt = `아래는 여러 고등교육 관련 RSS 피드에서 수집한 최신 기사 제목 ${allTitles.length}건입니다(피드별로 묶음). 이를 종합 분석해 JSON으로만 답하세요.
+  const prompt = `아래는 여러 고등교육 관련 RSS 피드에서 수집한 최신 기사 제목 ${allTitles.length}건입니다(피드별로 묶음). 이를 심층 분석해 JSON으로만 답하세요.
 
 ${corpus}
 
-다음 JSON 스키마로 답하세요(설명 없이 JSON만):
+다음 JSON 스키마로 답하세요(설명 없이 JSON만, 모든 count는 실제 기사 수):
 {
-  "summary": "지금 고등교육 분야에서 가장 두드러진 흐름을 3~4문장으로",
+  "summary": "지금 고등교육 분야에서 가장 두드러진 흐름을 4~5문장으로 구체적으로",
+  "sentiment": {"positive": 긍정기사수, "neutral": 중립기사수, "negative": 부정기사수},
+  "categories": [{"name":"분야명(예: 재정, 입시, 학사, 정책, 산학협력, 국제화 등)","count":기사수}],
   "themes": [{"title":"핵심 이슈명","count":관련기사수,"desc":"한 문장 설명"}],
-  "keywords": ["자주 등장한 핵심 키워드 6~10개"],
+  "keywords": [{"word":"핵심 키워드","count":등장횟수}],
+  "insights": ["데이터에서 읽히는 통찰 2~3개"],
   "watch": ["앞으로 주목할 사안 2~3개"]
 }
-themes는 3~5개, 중요도 순. 실제 제목 근거로만 작성하고 지어내지 마세요.`;
+sentiment 세 값의 합은 전체 기사 수와 같아야 함. categories 4~6개, themes 3~5개(중요도 순), keywords 8~12개(빈도 내림차순). 실제 제목 근거로만 작성하고 지어내지 마세요.`;
 
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:1500, messages:[{ role:'user', content:prompt }] }),
+      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:2600, messages:[{ role:'user', content:prompt }] }),
     });
     if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error?.message || r.status); }
     const j = await r.json();
     const txt = (j.content || []).map(c => c.text || '').join('').replace(/```json/gi,'').replace(/```/g,'').trim();
     const J = naParseJSON(txt) || {};
     const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    const sec = (t, inner) => inner ? `<div style="margin-top:8px"><div style="font-size:.64rem;font-weight:800;color:var(--accent2);margin-bottom:3px">${t}</div>${inner}</div>` : '';
-    const themes = Array.isArray(J.themes) ? J.themes.map(t =>
-      `<div style="display:flex;gap:6px;font-size:.68rem;line-height:1.5;margin:2px 0"><span style="flex:0 0 auto;font-weight:700;color:var(--accent)">${esc(t.title)}${t.count?` <span style="color:var(--text-muted);font-weight:400">${t.count}</span>`:''}</span><span style="color:var(--text-dim)">— ${esc(t.desc)}</span></div>`).join('') : '';
-    const kws = Array.isArray(J.keywords) ? J.keywords.map(k => `<span style="display:inline-block;font-size:.62rem;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1px 8px;margin:0 3px 3px 0;color:var(--text)">${esc(k)}</span>`).join('') : '';
-    const watch = Array.isArray(J.watch) ? `<ul style="margin:0;padding-left:14px;font-size:.68rem;line-height:1.6;color:var(--text-dim)">${J.watch.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : '';
+    const PAL = ['#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6','#a855f7'];
+    const sec = (t, inner) => inner ? `<div style="margin-top:10px"><div style="font-size:.64rem;font-weight:800;color:var(--accent2);margin-bottom:4px">${t}</div>${inner}</div>` : '';
 
-    out.innerHTML = `<div style="position:relative;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 26px 9px 11px">
-        <button onclick="rssAiClose()" title="닫기" style="position:absolute;right:4px;top:4px;width:18px;height:18px;line-height:1;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text-muted);cursor:pointer;font-size:.7rem;padding:0">✕</button>
-        <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:5px">${okFeeds.length}개 피드 · ${allTitles.length}건 기사 분석</div>
-        ${J.summary ? `<div style="font-size:.72rem;line-height:1.65;color:var(--text)">${esc(J.summary)}</div>` : ''}
-        ${sec('🔥 핵심 이슈', themes)}
-        ${sec('🏷 키워드', kws)}
+    // 도넛(SVG) — [{label,v,color}]
+    const donut = (seg) => {
+      const tot = seg.reduce((s,x)=>s+x.v,0); if (!tot) return '';
+      const R=26, C=2*Math.PI*R; let off=0;
+      const arcs = seg.map(s => { const frac=s.v/tot; const dash=`${(frac*C).toFixed(2)} ${(C-frac*C).toFixed(2)}`; const el=`<circle cx="32" cy="32" r="${R}" fill="none" stroke="${s.color}" stroke-width="10" stroke-dasharray="${dash}" stroke-dashoffset="${(-off*C).toFixed(2)}" transform="rotate(-90 32 32)"/>`; off+=frac; return el; }).join('');
+      const leg = seg.map(s => `<div style="display:flex;align-items:center;gap:5px;font-size:.62rem;color:var(--text)"><span style="width:8px;height:8px;border-radius:2px;background:${s.color};flex:0 0 auto"></span>${esc(s.label)} <span style="color:var(--text-muted)">${s.v}</span></div>`).join('');
+      return `<div style="display:flex;align-items:center;gap:12px"><svg width="64" height="64" viewBox="0 0 64 64" style="flex:0 0 auto">${arcs}</svg><div style="display:flex;flex-direction:column;gap:3px">${leg}</div></div>`;
+    };
+    // 가로 막대 — [{label,v}]
+    const hbar = (rows) => {
+      if (!rows.length) return ''; const max = Math.max(...rows.map(r=>r.v))||1;
+      return `<div style="display:flex;flex-direction:column;gap:4px">` + rows.map((r,i)=>`
+        <div style="display:flex;align-items:center;gap:6px;font-size:.66rem">
+          <span style="flex:0 0 32%;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.label)}</span>
+          <div style="flex:1;background:var(--card);border-radius:4px;height:13px;overflow:hidden"><div style="width:${Math.max(5,Math.round(r.v/max*100))}%;height:100%;background:${PAL[i%PAL.length]};border-radius:4px"></div></div>
+          <span style="flex:0 0 auto;color:var(--text-muted);min-width:16px;text-align:right">${r.v}</span>
+        </div>`).join('') + `</div>`;
+    };
+
+    // 감성 도넛
+    const st = J.sentiment || {};
+    const sentSeg = [
+      { label:'긍정', v:+st.positive||0, color:'#10b981' },
+      { label:'중립', v:+st.neutral||0, color:'#94a3b8' },
+      { label:'부정', v:+st.negative||0, color:'#ef4444' },
+    ].filter(s=>s.v>0);
+    // 카테고리 도넛
+    const catSeg = Array.isArray(J.categories) ? J.categories.slice(0,6).map((c,i)=>({label:c.name,v:+c.count||0,color:PAL[i%PAL.length]})).filter(c=>c.v>0) : [];
+    // 이슈 막대
+    const themeBar = Array.isArray(J.themes) ? J.themes.slice(0,5).map(t=>({label:t.title,v:+t.count||0})) : [];
+    // 키워드 막대
+    const kwBar = Array.isArray(J.keywords) ? J.keywords.slice(0,10).map(k=>({label:(k.word||k),v:+(k.count||0)})).filter(k=>k.v>0) : [];
+    // 피드별 활동(클라이언트 계산)
+    const feedBar = okFeeds.map(f=>({label:f.name,v:f.items.length})).sort((a,b)=>b.v-a.v).slice(0,8);
+
+    const themeDesc = Array.isArray(J.themes) ? J.themes.map(t=>`<div style="font-size:.66rem;line-height:1.5;margin:2px 0"><b style="color:var(--accent)">${esc(t.title)}</b> <span style="color:var(--text-dim)">— ${esc(t.desc)}</span></div>`).join('') : '';
+    const insights = Array.isArray(J.insights) ? `<ul style="margin:0;padding-left:14px;font-size:.68rem;line-height:1.6;color:var(--text)">${J.insights.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>` : '';
+    const watch = Array.isArray(J.watch) ? `<ul style="margin:0;padding-left:14px;font-size:.68rem;line-height:1.6;color:var(--text-dim)">${J.watch.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>` : '';
+
+    // 도넛 2개를 나란히
+    const donutRow = (sentSeg.length||catSeg.length) ? `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px">
+        ${sentSeg.length?`<div><div style="font-size:.6rem;font-weight:700;color:var(--text-muted);margin-bottom:3px">😊 감성 분포</div>${donut(sentSeg)}</div>`:''}
+        ${catSeg.length?`<div><div style="font-size:.6rem;font-weight:700;color:var(--text-muted);margin-bottom:3px">📂 분야 분포</div>${donut(catSeg)}</div>`:''}
+      </div>` : '';
+
+    out.innerHTML = `<div style="position:relative;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 26px 11px 12px">
+        <button onclick="rssAiClose()" title="닫기" style="position:absolute;right:5px;top:5px;width:18px;height:18px;line-height:1;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text-muted);cursor:pointer;font-size:.7rem;padding:0">✕</button>
+        <div style="font-size:.58rem;color:var(--text-muted);margin-bottom:5px">${okFeeds.length}개 피드 · ${allTitles.length}건 기사 심층 분석</div>
+        ${J.summary ? `<div style="font-size:.72rem;line-height:1.7;color:var(--text)">${esc(J.summary)}</div>` : ''}
+        ${donutRow}
+        ${sec('🔥 핵심 이슈 (기사 수)', hbar(themeBar))}
+        ${themeDesc ? `<div style="margin-top:5px">${themeDesc}</div>` : ''}
+        ${sec('🏷 키워드 빈도', hbar(kwBar))}
+        ${sec('📡 피드별 기사 수', hbar(feedBar))}
+        ${sec('💡 통찰', insights)}
         ${sec('🔮 주목할 사안', watch)}
       </div>`;
   } catch (e) {
