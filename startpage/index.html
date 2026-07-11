@@ -958,7 +958,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.2</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.3</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1545,6 +1545,22 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
     </div>
 
 
+    <!-- 뽀모도로 (사이클 카운트) -->
+    <div class="rw" id="rwPomodoro">
+      <div class="rw-hdr"><span>🍅 뽀모도로</span><span id="pomoTodayCount" style="font-size:.66rem;color:var(--accent2)"></span></div>
+      <div style="text-align:center;margin:6px 0">
+        <div id="pomoDisplay" style="font-size:2.2rem;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:1px">25:00</div>
+        <div id="pomoPhase" style="font-size:.72rem;font-weight:700;color:var(--accent)">집중</div>
+      </div>
+      <div id="pomoDots" style="display:flex;justify-content:center;gap:5px;margin:6px 0;min-height:12px"></div>
+      <div style="display:flex;gap:5px">
+        <button class="tbtn sec" onclick="pomoReset()" style="flex:0 0 auto;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);cursor:pointer">↺</button>
+        <button id="pomoStartBtn" onclick="pomoToggle()" style="flex:1;padding:6px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit">▶ 시작</button>
+        <button onclick="pomoSkip()" title="다음 단계로" style="flex:0 0 auto;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);cursor:pointer">⏭</button>
+      </div>
+      <div style="font-size:.6rem;color:var(--text-muted);text-align:center;margin-top:6px">집중 25분 · 휴식 5분 · 4회마다 긴 휴식 15분</div>
+    </div>
+
     <!-- RSS 맞춤 피드 -->
     <div class="rw" id="rwRSS">
       <div class="rw-hdr"><span>📡 RSS 피드</span><button class="rw-refresh" onclick="rssLoad()" title="새로고침">↻</button></div>
@@ -1571,22 +1587,6 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
     <div class="rw" id="rwWorldClock">
       <div class="rw-hdr"><span>🌐 세계 시계</span><button class="rw-refresh" onclick="wcAddPrompt()" title="도시 추가">＋</button></div>
       <div id="wcList"></div>
-    </div>
-
-    <!-- 뽀모도로 (사이클 카운트) -->
-    <div class="rw" id="rwPomodoro">
-      <div class="rw-hdr"><span>🍅 뽀모도로</span><span id="pomoTodayCount" style="font-size:.66rem;color:var(--accent2)"></span></div>
-      <div style="text-align:center;margin:6px 0">
-        <div id="pomoDisplay" style="font-size:2.2rem;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:1px">25:00</div>
-        <div id="pomoPhase" style="font-size:.72rem;font-weight:700;color:var(--accent)">집중</div>
-      </div>
-      <div id="pomoDots" style="display:flex;justify-content:center;gap:5px;margin:6px 0;min-height:12px"></div>
-      <div style="display:flex;gap:5px">
-        <button class="tbtn sec" onclick="pomoReset()" style="flex:0 0 auto;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);cursor:pointer">↺</button>
-        <button id="pomoStartBtn" onclick="pomoToggle()" style="flex:1;padding:6px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit">▶ 시작</button>
-        <button onclick="pomoSkip()" title="다음 단계로" style="flex:0 0 auto;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);cursor:pointer">⏭</button>
-      </div>
-      <div style="font-size:.6rem;color:var(--text-muted);text-align:center;margin-top:6px">집중 25분 · 휴식 5분 · 4회마다 긴 휴식 15분</div>
     </div>
 
   </aside>
@@ -3933,7 +3933,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v10.2 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v10.3 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
