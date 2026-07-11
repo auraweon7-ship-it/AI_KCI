@@ -942,7 +942,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v9.9</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.0</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1529,7 +1529,43 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       <div id="noticeBody"><div class="skel" style="height:30px"></div></div>
     </div>
 
+    <!-- 세계 시계 -->
+    <div class="rw" id="rwWorldClock">
+      <div class="rw-hdr"><span>🌐 세계 시계</span><button class="rw-refresh" onclick="wcAddPrompt()" title="도시 추가">＋</button></div>
+      <div id="wcList"></div>
+    </div>
 
+    <!-- 빠른 메모 → AI 정리 -->
+    <div class="rw" id="rwAiMemo">
+      <div class="rw-hdr"><span>🧠 빠른 메모 · AI 정리</span></div>
+      <textarea id="aiMemoInput" placeholder="아이디어·회의 내용을 자유롭게 적고 정리 버튼을 누르세요" style="width:100%;min-height:70px;resize:vertical;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.74rem;font-family:inherit;outline:none;box-sizing:border-box"></textarea>
+      <div style="display:flex;gap:5px;margin-top:6px">
+        <select id="aiMemoMode" style="flex:0 0 auto;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:.68rem;cursor:pointer;font-family:inherit">
+          <option value="bullet">• 불릿 정리</option>
+          <option value="summary">📝 3줄 요약</option>
+          <option value="todo">✅ 할 일 추출</option>
+          <option value="polish">✍️ 문장 다듬기</option>
+        </select>
+        <button onclick="aiMemoRun()" id="aiMemoBtn" style="flex:1;padding:6px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">AI 정리</button>
+      </div>
+      <div id="aiMemoOut" style="margin-top:8px"></div>
+    </div>
+
+    <!-- 뽀모도로 (사이클 카운트) -->
+    <div class="rw" id="rwPomodoro">
+      <div class="rw-hdr"><span>🍅 뽀모도로</span><span id="pomoTodayCount" style="font-size:.66rem;color:var(--accent2)"></span></div>
+      <div style="text-align:center;margin:6px 0">
+        <div id="pomoDisplay" style="font-size:2.2rem;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums;letter-spacing:1px">25:00</div>
+        <div id="pomoPhase" style="font-size:.72rem;font-weight:700;color:var(--accent)">집중</div>
+      </div>
+      <div id="pomoDots" style="display:flex;justify-content:center;gap:5px;margin:6px 0;min-height:12px"></div>
+      <div style="display:flex;gap:5px">
+        <button class="tbtn sec" onclick="pomoReset()" style="flex:0 0 auto;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);cursor:pointer">↺</button>
+        <button id="pomoStartBtn" onclick="pomoToggle()" style="flex:1;padding:6px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit">▶ 시작</button>
+        <button onclick="pomoSkip()" title="다음 단계로" style="flex:0 0 auto;padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);cursor:pointer">⏭</button>
+      </div>
+      <div style="font-size:.6rem;color:var(--text-muted);text-align:center;margin-top:6px">집중 25분 · 휴식 5분 · 4회마다 긴 휴식 15분</div>
+    </div>
 
   </aside>
 </div>
@@ -3875,7 +3911,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v9.9 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v10.0 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -4244,7 +4280,7 @@ function isLoggedIn() { try { return !!JSON.parse(localStorage.getItem('startpag
 // ── 클라우드 동기화 (Railway Postgres) ──
 let _cloudToken = null, _cloudTokenExp = 0;
 const CLOUD_BASE_KEYS = ['api_keys', 'apps', 'sched_events', 'lectures', 'todo_items'];  // 계정별(__이메일)
-const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden', 'uf_favs', 'bm_groups', 'bm_group_hidden'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube
+const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden', 'uf_favs', 'bm_groups', 'bm_group_hidden', 'world_clocks'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube
 const CLOUD_ALL_KEYS = [...CLOUD_BASE_KEYS, ...CLOUD_PLAIN_KEYS];
 // 로컬 키 결정 — startpage_v7은 프로필별 키(getStateKey) 사용
 function _cloudLocalKey(base) {
@@ -25513,6 +25549,163 @@ function handleImport(e) {
 
 // ══════════════════════════════════════════════
 // RIGHT SIDEBAR WIDGETS
+
+// ═══ 🌐 세계 시계 ═══
+const WC_DEFAULTS = [
+  { city: '서울', tz: 'Asia/Seoul' },
+  { city: '뉴욕', tz: 'America/New_York' },
+  { city: '런던', tz: 'Europe/London' },
+];
+// IANA 타임존 일부 + 한글 도시명
+const WC_KNOWN = {
+  '서울':'Asia/Seoul','도쿄':'Asia/Tokyo','베이징':'Asia/Shanghai','상하이':'Asia/Shanghai',
+  '홍콩':'Asia/Hong_Kong','싱가포르':'Asia/Singapore','방콕':'Asia/Bangkok','델리':'Asia/Kolkata',
+  '두바이':'Asia/Dubai','모스크바':'Europe/Moscow','런던':'Europe/London','파리':'Europe/Paris',
+  '베를린':'Europe/Berlin','로마':'Europe/Rome','뉴욕':'America/New_York','시카고':'America/Chicago',
+  '로스앤젤레스':'America/Los_Angeles','LA':'America/Los_Angeles','샌프란시스코':'America/Los_Angeles',
+  '토론토':'America/Toronto','시드니':'Australia/Sydney','오클랜드':'Pacific/Auckland','하와이':'Pacific/Honolulu',
+};
+function wcGet() { try { const v = JSON.parse(localStorage.getItem('world_clocks') || 'null'); return Array.isArray(v) ? v : WC_DEFAULTS; } catch(_) { return WC_DEFAULTS; } }
+function wcSave(v) { localStorage.setItem('world_clocks', JSON.stringify(v)); cloudPush('world_clocks'); }
+function wcRender() {
+  const el = document.getElementById('wcList'); if (!el) return;
+  const list = wcGet();
+  const now = new Date();
+  const seoulH = +new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', hour12: false, hour: '2-digit' }).format(now);
+  el.innerHTML = list.map((c, i) => {
+    let time = '—', dstr = '', diff = '';
+    try {
+      time = new Intl.DateTimeFormat('ko-KR', { timeZone: c.tz, hour12: false, hour: '2-digit', minute: '2-digit' }).format(now);
+      dstr = new Intl.DateTimeFormat('ko-KR', { timeZone: c.tz, month: 'numeric', day: 'numeric', weekday: 'short' }).format(now);
+      const h = +new Intl.DateTimeFormat('en-US', { timeZone: c.tz, hour12: false, hour: '2-digit' }).format(now);
+      let d = h - seoulH; if (d > 12) d -= 24; if (d < -12) d += 24;
+      diff = c.tz === 'Asia/Seoul' ? '기준' : (d === 0 ? '±0h' : (d > 0 ? `+${d}h` : `${d}h`));
+    } catch(_) {}
+    const night = (() => { try { const h = +new Intl.DateTimeFormat('en-US', { timeZone: c.tz, hour12: false, hour: '2-digit' }).format(now); return h >= 21 || h < 7; } catch(_) { return false; } })();
+    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;border-top:${i ? '1px solid var(--border)' : 'none'}">
+      <span style="flex:0 0 auto;font-size:.86rem">${night ? '🌙' : '☀️'}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.74rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(c.city||'').replace(/</g,'&lt;')}</div>
+        <div style="font-size:.58rem;color:var(--text-muted)">${dstr} · ${diff}</div>
+      </div>
+      <span style="flex:0 0 auto;font-size:.96rem;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums">${time}</span>
+      ${c.tz === 'Asia/Seoul' ? '' : `<button onclick="wcRemove(${i})" title="삭제" style="flex:0 0 auto;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.68rem">✕</button>`}
+    </div>`;
+  }).join('') || '<div style="font-size:.7rem;color:var(--text-muted);padding:6px">＋ 로 도시를 추가하세요</div>';
+}
+function wcAddPrompt() {
+  const name = (prompt('추가할 도시 (예: 도쿄, 파리, 뉴욕)\n또는 "도시=IANA/타임존" 형식') || '').trim();
+  if (!name) return;
+  let city = name, tz = WC_KNOWN[name];
+  if (name.includes('=')) { const [c, t] = name.split('=').map(s => s.trim()); city = c; tz = t; }
+  if (!tz) { showToast('모르는 도시입니다. "도시=Asia/Tokyo" 형식으로 입력하세요', 'ℹ️'); return; }
+  try { new Intl.DateTimeFormat('en-US', { timeZone: tz }).format(new Date()); }
+  catch(_) { showToast('올바르지 않은 타임존입니다', '⚠️'); return; }
+  const list = wcGet();
+  if (list.some(c => c.tz === tz)) { showToast('이미 추가된 도시입니다', 'ℹ️'); return; }
+  list.push({ city, tz }); wcSave(list); wcRender();
+}
+function wcRemove(i) { const list = wcGet(); list.splice(i, 1); wcSave(list); wcRender(); }
+
+// ═══ 🧠 빠른 메모 · AI 정리 ═══
+function aiMemoRun() {
+  const inp = document.getElementById('aiMemoInput');
+  const out = document.getElementById('aiMemoOut');
+  const btn = document.getElementById('aiMemoBtn');
+  const text = (inp?.value || '').trim();
+  if (!text) { showToast('내용을 입력하세요', '⚠️'); return; }
+  const key = (localStorage.getItem('claude_api_key') || '').trim();
+  if (!key) { out.innerHTML = '<div style="font-size:.68rem;color:var(--text-muted)">⚠️ 설정 → API 키에서 Claude 키를 등록하세요</div>'; return; }
+  const mode = document.getElementById('aiMemoMode')?.value || 'bullet';
+  const PROMPTS = {
+    bullet:  '다음 메모를 핵심만 뽑아 간결한 불릿 목록으로 정리하라. 각 항목은 한 줄. 군더더기 제거.',
+    summary: '다음 메모를 3줄 이내로 요약하라. 가장 중요한 결론 중심.',
+    todo:    '다음 메모에서 실행해야 할 할 일(액션 아이템)만 추출해 체크리스트로 정리하라. 각 줄 앞에 "- [ ] ". 할 일이 없으면 "추출할 할 일이 없습니다".',
+    polish:  '다음 메모를 뜻은 유지하되 매끄러운 문장으로 다듬어라. 존댓말, 자연스러운 한국어.',
+  };
+  if (btn) { btn.disabled = true; btn.textContent = '정리 중…'; }
+  out.innerHTML = '<div class="skel" style="height:40px"></div>';
+  fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
+    body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:1200, messages:[{ role:'user', content:`${PROMPTS[mode]}\n\n---\n${text}` }] }),
+  }).then(r => r.ok ? r.json() : r.json().then(e => { throw new Error(e.error?.message || r.status); }))
+    .then(j => {
+      let t = (j.content || []).map(c => c.text || '').join('').trim();
+      const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const html = esc(t).replace(/\n/g, '<br>');
+      out.innerHTML = `<div style="font-size:.72rem;line-height:1.65;color:var(--text);background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 11px">${html}</div>
+        <div style="display:flex;gap:5px;margin-top:5px">
+          <button onclick="navigator.clipboard.writeText(${JSON.stringify(t)}).then(()=>showToast('복사됨 📋'))" style="flex:1;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.64rem;cursor:pointer;font-family:inherit">📋 복사</button>
+          ${mode === 'todo' ? `<button onclick="aiMemoToTodo(${JSON.stringify(t)})" style="flex:1;padding:4px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.64rem;cursor:pointer;font-family:inherit">✅ TO-DO로</button>` : ''}
+        </div>`;
+    })
+    .catch(e => { out.innerHTML = `<div style="font-size:.68rem;color:var(--danger,#e74c3c)">실패: ${(e.message||'오류').replace(/</g,'&lt;')}</div>`; })
+    .finally(() => { if (btn) { btn.disabled = false; btn.textContent = 'AI 정리'; } });
+}
+function aiMemoToTodo(text) {
+  if (!isLoggedIn()) { showToast('로그인 후 이용할 수 있습니다 🔒'); return; }
+  const lines = text.split('\n').map(l => l.replace(/^\s*-?\s*\[[ x]\]\s*/, '').replace(/^\s*[-•*]\s*/, '').trim()).filter(Boolean);
+  let n = 0;
+  lines.forEach(l => { if (l.length > 1 && !l.includes('추출할 할 일이 없')) { todoAddItem(l, '', '기타', 2); n++; } });
+  showToast(n ? `${n}개 할 일 추가됨 ✅` : '추가할 항목이 없습니다');
+}
+
+// ═══ 🍅 뽀모도로 (사이클 카운트) ═══
+const POMO = { focus: 25*60, short: 5*60, long: 15*60 };
+let _pomoRemain = POMO.focus, _pomoPhase = 'focus', _pomoCycle = 0, _pomoTimer = null, _pomoRunning = false;
+function pomoTodayKey() { return 'pomo_' + _dstr(new Date()); }
+function pomoTodayCount() { return +(localStorage.getItem(pomoTodayKey()) || 0); }
+function pomoBumpToday() { localStorage.setItem(pomoTodayKey(), pomoTodayCount() + 1); }
+function pomoFmt(s) { return `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`; }
+function pomoRender() {
+  const disp = document.getElementById('pomoDisplay'); if (!disp) return;
+  disp.textContent = pomoFmt(_pomoRemain);
+  const names = { focus:'집중', short:'짧은 휴식', long:'긴 휴식' };
+  const cols = { focus:'var(--accent)', short:'#10b981', long:'#3b82f6' };
+  const ph = document.getElementById('pomoPhase');
+  if (ph) { ph.textContent = names[_pomoPhase]; ph.style.color = cols[_pomoPhase]; }
+  const btn = document.getElementById('pomoStartBtn');
+  if (btn) { btn.textContent = _pomoRunning ? '❚❚ 일시정지' : '▶ 시작'; }
+  // 이번 세트(4회) 진행 점
+  const dots = document.getElementById('pomoDots');
+  if (dots) dots.innerHTML = Array.from({ length: 4 }, (_, i) =>
+    `<span style="width:9px;height:9px;border-radius:50%;background:${i < (_pomoCycle % 4 || (_pomoCycle && _pomoPhase!=='focus' ? 4 : 0)) ? 'var(--accent)' : 'var(--border)'}"></span>`).join('');
+  const cnt = document.getElementById('pomoTodayCount');
+  if (cnt) { const t = pomoTodayCount(); cnt.textContent = t ? `오늘 🍅×${t}` : ''; }
+}
+function pomoTick() {
+  if (_pomoRemain > 0) { _pomoRemain--; pomoRender(); return; }
+  // 단계 종료
+  clearInterval(_pomoTimer); _pomoTimer = null; _pomoRunning = false;
+  if (_pomoPhase === 'focus') {
+    _pomoCycle++; pomoBumpToday();
+    _pomoPhase = (_pomoCycle % 4 === 0) ? 'long' : 'short';
+  } else {
+    _pomoPhase = 'focus';
+  }
+  _pomoRemain = POMO[_pomoPhase];
+  const msg = _pomoPhase === 'focus' ? '휴식 끝 — 집중 시작!' : (_pomoPhase === 'long' ? '4세트 완료! 긴 휴식하세요' : '집중 완료 — 잠깐 쉬세요');
+  try { if (Notification?.permission === 'granted') new Notification('🍅 뽀모도로', { body: msg }); } catch(_) {}
+  showToast('🍅 ' + msg);
+  pomoRender();
+}
+function pomoToggle() {
+  if (_pomoRunning) { clearInterval(_pomoTimer); _pomoTimer = null; _pomoRunning = false; pomoRender(); return; }
+  try { if (Notification?.permission === 'default') Notification.requestPermission(); } catch(_) {}
+  _pomoRunning = true;
+  _pomoTimer = setInterval(pomoTick, 1000);
+  pomoRender();
+}
+function pomoReset() {
+  clearInterval(_pomoTimer); _pomoTimer = null; _pomoRunning = false;
+  _pomoRemain = POMO[_pomoPhase]; pomoRender();
+}
+function pomoSkip() {
+  clearInterval(_pomoTimer); _pomoTimer = null; _pomoRunning = false;
+  _pomoRemain = 0; pomoTick();
+}
+
 // ══════════════════════════════════════════════
 
 // 설정: 도서추천 키워드 3개 저장
@@ -27038,7 +27231,7 @@ render();
  () => { try { loadBookRec(); } catch(_){} },
  loadLegisNews, () => loadIdiom(false), () => loadQuote(false), () => loadGreatLine(false), loadHealMusic,
  () => { try { loadYtRec(); } catch(_){} },
- memoLoad, cvSetOpts, piLoad, timerRender, loadStock,
+ memoLoad, cvSetOpts, piLoad, timerRender, loadStock, wcRender, pomoRender,
  () => { rssRenderTabs(); rssLoad(); }, noticeLoad
 ].forEach(fn => { try { fn(); } catch(e) { console.error('위젯 초기화 오류:', fn.name, e); } });
 
@@ -27048,6 +27241,7 @@ document.getElementById('cmdInput')?.addEventListener('input', e => cmdRender(e.
 setInterval(() => { try { loadStock(); } catch(_) {} }, 60 * 1000);           // 주식 1분
 setInterval(() => { try { loadFX(); } catch(_) {} }, 10 * 60 * 1000);          // 환율 10분
 setInterval(() => { try { loadWeather(); } catch(_) {} }, 10 * 60 * 1000);     // 날씨 10분
+setInterval(() => { try { wcRender(); } catch(_) {} }, 30 * 1000);                // 세계 시계 30초
 setInterval(() => { try { updateHdrDday(); } catch(_) {} }, 60 * 60 * 1000);   // D-day 1시간
 // 탭 다시 활성화 시 즉시 갱신
 document.addEventListener('visibilitychange', () => {
