@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v13.5</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v13.6</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3729,6 +3729,12 @@ function checkUnivNewsAlert(items) {
 // ── Google Drive 클라우드 백업 ──
 let driveClient = null, driveAction = null;
 let driveToken = null, driveTokenExp = 0;  // Drive 스코프 access token 세션 캐싱
+// 새로고침 후에도 유효 토큰 재사용 → 매번 뜨던 OAuth 팝업(about:blank) 제거
+try {
+  const _dt = localStorage.getItem('drive_token');
+  const _de = +(localStorage.getItem('drive_token_exp') || 0);
+  if (_dt && Date.now() < _de) { driveToken = _dt; driveTokenExp = _de; }
+} catch(_) {}
 let driveSilent = false;                    // 자동(30분) 백업: 팝업/토스트 억제
 function driveBackup() { driveAuth('backup'); }
 function driveRestore() { driveAuth('restore'); }
@@ -3752,6 +3758,7 @@ function driveAuth(action) {
         if (!resp.access_token) return;
         driveToken = resp.access_token;
         driveTokenExp = Date.now() + ((resp.expires_in || 3600) - 60) * 1000;
+        try { localStorage.setItem('drive_token', driveToken); localStorage.setItem('drive_token_exp', String(driveTokenExp)); } catch(_) {}
         driveDoAction(resp.access_token);
       },
     });
@@ -3774,7 +3781,11 @@ async function driveDoAction(tk) {
           // 기존 백업 파일 검색
           const q = encodeURIComponent("name='startpage-backup.json'");
           const listR = await fetch(`https://www.googleapis.com/drive/v3/files?spaces=appDataFolder&q=${q}&fields=files(id,modifiedTime)`, { headers: { Authorization: 'Bearer ' + tk } });
-          if (!listR.ok) { showToast('Drive 오류: ' + await apiErr(listR), '⚠️'); return; }
+          if (!listR.ok) {
+            if (listR.status === 401) { driveToken = null; driveTokenExp = 0; try { localStorage.removeItem('drive_token'); localStorage.removeItem('drive_token_exp'); } catch(_) {} }
+            if (!driveSilent) showToast('Drive 오류: ' + await apiErr(listR), '⚠️');
+            driveSilent = false; return;
+          }
           const files = (await listR.json()).files || [];
           if (driveAction === 'backup') {
             try { saveState(); } catch(_) {}   // 최신 상태(내 북마크·카테고리 등) localStorage 반영 후 스냅샷
@@ -3904,7 +3915,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v13.5 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v13.6 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
