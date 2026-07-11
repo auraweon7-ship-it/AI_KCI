@@ -961,7 +961,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v12.7</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v12.8</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3924,7 +3924,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v12.7 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v12.8 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -27118,7 +27118,7 @@ async function rssAnalyzeAll() {
 
   // 전 피드 병렬 수집(피드당 5건). 실패 피드는 건너뜀.
   const results = await Promise.all(feeds.map(async f => {
-    const items = await rssFetchItems(f.url, 3);
+    const items = await rssFetchItems(f.url, 5);
     return { name: f.name, items };
   }));
   const okFeeds = results.filter(r => r.items.length);
@@ -27132,17 +27132,17 @@ async function rssAnalyzeAll() {
 
 ${corpus}
 
-다음 JSON 스키마로 답하세요(설명 없이 JSON만, 모든 count는 실제 기사 수):
+아래 JSON 스키마로만 답하세요(설명 문장 없이 JSON만). 7개 필드를 하나도 빠짐없이 모두 채워야 합니다. 특히 categories·themes·keywords·insights·watch를 절대 비우지 마세요.
 {
-  "summary": "지금 고등교육 분야에서 가장 두드러진 흐름을 4~5문장으로 구체적으로",
+  "summary": "지금 고등교육 분야에서 가장 두드러진 흐름을 5~6문장으로 구체적이고 풍부하게. 주요 이슈·배경·쟁점을 짚을 것",
   "sentiment": {"positive": 긍정기사수, "neutral": 중립기사수, "negative": 부정기사수},
-  "categories": [{"name":"분야명(예: 재정, 입시, 학사, 정책, 산학협력, 국제화 등)","count":기사수}],
-  "themes": [{"title":"핵심 이슈명","count":관련기사수,"desc":"한 문장 설명"}],
+  "categories": [{"name":"분야명(예: 재정, 입시, 학사, 정책, 산학협력, 국제화, 연구, 취업 등)","count":기사수}],
+  "themes": [{"title":"핵심 이슈명","count":관련기사수,"desc":"두 문장 이내 설명"}],
   "keywords": [{"word":"핵심 키워드","count":등장횟수}],
-  "insights": ["데이터에서 읽히는 통찰 2~3개"],
-  "watch": ["앞으로 주목할 사안 2~3개"]
+  "insights": ["데이터에서 읽히는 통찰(각 한 문장, 근거 포함)"],
+  "watch": ["앞으로 주목할 사안(각 한 문장)"]
 }
-sentiment 세 값의 합은 전체 기사 수와 같아야 함. categories 4~6개, themes 3~5개(중요도 순), keywords 8~12개(빈도 내림차순). 실제 제목 근거로만 작성하고 지어내지 마세요.`;
+필수 개수: categories 5~6개, themes 4~5개(중요도 순), keywords 10~12개(빈도 내림차순), insights 3~4개, watch 3개. sentiment 세 값의 합은 전체 기사 수와 같아야 함. 실제 제목 근거로만 작성하고 지어내지 마세요.`;
 
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
