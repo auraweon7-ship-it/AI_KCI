@@ -957,7 +957,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.4</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.5</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1580,12 +1580,6 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
         <button onclick="noticeLoad()">검색</button>
       </div>
       <div id="noticeBody"><div class="skel" style="height:30px"></div></div>
-    </div>
-
-    <!-- 세계 시계 -->
-    <div class="rw" id="rwWorldClock">
-      <div class="rw-hdr"><span>🌐 세계 시계</span><button class="rw-refresh" onclick="wcAddPrompt()" title="도시 추가">＋</button></div>
-      <div id="wcList"></div>
     </div>
 
   </aside>
@@ -3932,7 +3926,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v10.4 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v10.5 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -4301,7 +4295,7 @@ function isLoggedIn() { try { return !!JSON.parse(localStorage.getItem('startpag
 // ── 클라우드 동기화 (Railway Postgres) ──
 let _cloudToken = null, _cloudTokenExp = 0;
 const CLOUD_BASE_KEYS = ['api_keys', 'apps', 'sched_events', 'lectures', 'todo_items'];  // 계정별(__이메일)
-const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden', 'uf_favs', 'bm_groups', 'bm_group_hidden', 'world_clocks'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube
+const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden', 'uf_favs', 'bm_groups', 'bm_group_hidden'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube
 const CLOUD_ALL_KEYS = [...CLOUD_BASE_KEYS, ...CLOUD_PLAIN_KEYS];
 // 로컬 키 결정 — startpage_v7은 프로필별 키(getStateKey) 사용
 function _cloudLocalKey(base) {
@@ -25618,63 +25612,6 @@ function handleImport(e) {
 // ══════════════════════════════════════════════
 // RIGHT SIDEBAR WIDGETS
 
-// ═══ 🌐 세계 시계 ═══
-const WC_DEFAULTS = [
-  { city: '서울', tz: 'Asia/Seoul' },
-  { city: '뉴욕', tz: 'America/New_York' },
-  { city: '런던', tz: 'Europe/London' },
-];
-// IANA 타임존 일부 + 한글 도시명
-const WC_KNOWN = {
-  '서울':'Asia/Seoul','도쿄':'Asia/Tokyo','베이징':'Asia/Shanghai','상하이':'Asia/Shanghai',
-  '홍콩':'Asia/Hong_Kong','싱가포르':'Asia/Singapore','방콕':'Asia/Bangkok','델리':'Asia/Kolkata',
-  '두바이':'Asia/Dubai','모스크바':'Europe/Moscow','런던':'Europe/London','파리':'Europe/Paris',
-  '베를린':'Europe/Berlin','로마':'Europe/Rome','뉴욕':'America/New_York','시카고':'America/Chicago',
-  '로스앤젤레스':'America/Los_Angeles','LA':'America/Los_Angeles','샌프란시스코':'America/Los_Angeles',
-  '토론토':'America/Toronto','시드니':'Australia/Sydney','오클랜드':'Pacific/Auckland','하와이':'Pacific/Honolulu',
-};
-function wcGet() { try { const v = JSON.parse(localStorage.getItem('world_clocks') || 'null'); return Array.isArray(v) ? v : WC_DEFAULTS; } catch(_) { return WC_DEFAULTS; } }
-function wcSave(v) { localStorage.setItem('world_clocks', JSON.stringify(v)); cloudPush('world_clocks'); }
-function wcRender() {
-  const el = document.getElementById('wcList'); if (!el) return;
-  const list = wcGet();
-  const now = new Date();
-  const seoulH = +new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Seoul', hour12: false, hour: '2-digit' }).format(now);
-  el.innerHTML = list.map((c, i) => {
-    let time = '—', dstr = '', diff = '';
-    try {
-      time = new Intl.DateTimeFormat('ko-KR', { timeZone: c.tz, hour12: false, hour: '2-digit', minute: '2-digit' }).format(now);
-      dstr = new Intl.DateTimeFormat('ko-KR', { timeZone: c.tz, month: 'numeric', day: 'numeric', weekday: 'short' }).format(now);
-      const h = +new Intl.DateTimeFormat('en-US', { timeZone: c.tz, hour12: false, hour: '2-digit' }).format(now);
-      let d = h - seoulH; if (d > 12) d -= 24; if (d < -12) d += 24;
-      diff = c.tz === 'Asia/Seoul' ? '기준' : (d === 0 ? '±0h' : (d > 0 ? `+${d}h` : `${d}h`));
-    } catch(_) {}
-    const night = (() => { try { const h = +new Intl.DateTimeFormat('en-US', { timeZone: c.tz, hour12: false, hour: '2-digit' }).format(now); return h >= 21 || h < 7; } catch(_) { return false; } })();
-    return `<div style="display:flex;align-items:center;gap:8px;padding:5px 2px;border-top:${i ? '1px solid var(--border)' : 'none'}">
-      <span style="flex:0 0 auto;font-size:.86rem">${night ? '🌙' : '☀️'}</span>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:.74rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${(c.city||'').replace(/</g,'&lt;')}</div>
-        <div style="font-size:.58rem;color:var(--text-muted)">${dstr} · ${diff}</div>
-      </div>
-      <span style="flex:0 0 auto;font-size:.96rem;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums">${time}</span>
-      ${c.tz === 'Asia/Seoul' ? '' : `<button onclick="wcRemove(${i})" title="삭제" style="flex:0 0 auto;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.68rem">✕</button>`}
-    </div>`;
-  }).join('') || '<div style="font-size:.7rem;color:var(--text-muted);padding:6px">＋ 로 도시를 추가하세요</div>';
-}
-function wcAddPrompt() {
-  const name = (prompt('추가할 도시 (예: 도쿄, 파리, 뉴욕)\n또는 "도시=IANA/타임존" 형식') || '').trim();
-  if (!name) return;
-  let city = name, tz = WC_KNOWN[name];
-  if (name.includes('=')) { const [c, t] = name.split('=').map(s => s.trim()); city = c; tz = t; }
-  if (!tz) { showToast('모르는 도시입니다. "도시=Asia/Tokyo" 형식으로 입력하세요', 'ℹ️'); return; }
-  try { new Intl.DateTimeFormat('en-US', { timeZone: tz }).format(new Date()); }
-  catch(_) { showToast('올바르지 않은 타임존입니다', '⚠️'); return; }
-  const list = wcGet();
-  if (list.some(c => c.tz === tz)) { showToast('이미 추가된 도시입니다', 'ℹ️'); return; }
-  list.push({ city, tz }); wcSave(list); wcRender();
-}
-function wcRemove(i) { const list = wcGet(); list.splice(i, 1); wcSave(list); wcRender(); }
-
 // ═══ 🧠 빠른 메모 · AI 정리 ═══
 function aiMemoRun() {
   const inp = document.getElementById('aiMemoInput');
@@ -27299,7 +27236,7 @@ render();
  () => { try { loadBookRec(); } catch(_){} },
  loadLegisNews, () => loadIdiom(false), () => loadQuote(false), () => loadGreatLine(false), loadHealMusic,
  () => { try { loadYtRec(); } catch(_){} },
- memoLoad, cvSetOpts, piLoad, timerRender, loadStock, wcRender, pomoRender, loadClockCityTemps,
+ memoLoad, cvSetOpts, piLoad, timerRender, loadStock, pomoRender, loadClockCityTemps,
  () => { rssRenderTabs(); rssLoad(); }, noticeLoad
 ].forEach(fn => { try { fn(); } catch(e) { console.error('위젯 초기화 오류:', fn.name, e); } });
 
@@ -27309,7 +27246,6 @@ document.getElementById('cmdInput')?.addEventListener('input', e => cmdRender(e.
 setInterval(() => { try { loadStock(); } catch(_) {} }, 60 * 1000);           // 주식 1분
 setInterval(() => { try { loadFX(); } catch(_) {} }, 10 * 60 * 1000);          // 환율 10분
 setInterval(() => { try { loadWeather(); } catch(_) {} }, 10 * 60 * 1000);     // 날씨 10분
-setInterval(() => { try { wcRender(); } catch(_) {} }, 30 * 1000);                // 세계 시계 30초
 setInterval(() => { try { loadClockCityTemps(); } catch(_) {} }, 30 * 60 * 1000);  // 시계 도시 기온 30분
 setInterval(() => { try { updateHdrDday(); } catch(_) {} }, 60 * 60 * 1000);   // D-day 1시간
 // 탭 다시 활성화 시 즉시 갱신
