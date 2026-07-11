@@ -958,7 +958,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.1</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.2</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1234,6 +1234,22 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
   <!-- ── RIGHT SIDEBAR WIDGETS ── -->
   <aside class="right-sidebar" id="rightSidebar">
+
+    <!-- 빠른 메모 → AI 정리 -->
+    <div class="rw" id="rwAiMemo">
+      <div class="rw-hdr"><span>🧠 빠른 메모 · AI 정리</span></div>
+      <textarea id="aiMemoInput" placeholder="아이디어·회의 내용을 자유롭게 적고 정리 버튼을 누르세요" style="width:100%;min-height:70px;resize:vertical;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.74rem;font-family:inherit;outline:none;box-sizing:border-box"></textarea>
+      <div style="display:flex;gap:5px;margin-top:6px">
+        <select id="aiMemoMode" style="flex:0 0 auto;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:.68rem;cursor:pointer;font-family:inherit">
+          <option value="bullet">• 불릿 정리</option>
+          <option value="summary">📝 3줄 요약</option>
+          <option value="todo">✅ 할 일 추출</option>
+          <option value="polish">✍️ 문장 다듬기</option>
+        </select>
+        <button onclick="aiMemoRun()" id="aiMemoBtn" style="flex:1;padding:6px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">AI 정리</button>
+      </div>
+      <div id="aiMemoOut" style="margin-top:8px"></div>
+    </div>
 
     <!-- 포스트잇 -->
     <div class="rw" id="rwPostit">
@@ -1555,22 +1571,6 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
     <div class="rw" id="rwWorldClock">
       <div class="rw-hdr"><span>🌐 세계 시계</span><button class="rw-refresh" onclick="wcAddPrompt()" title="도시 추가">＋</button></div>
       <div id="wcList"></div>
-    </div>
-
-    <!-- 빠른 메모 → AI 정리 -->
-    <div class="rw" id="rwAiMemo">
-      <div class="rw-hdr"><span>🧠 빠른 메모 · AI 정리</span></div>
-      <textarea id="aiMemoInput" placeholder="아이디어·회의 내용을 자유롭게 적고 정리 버튼을 누르세요" style="width:100%;min-height:70px;resize:vertical;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.74rem;font-family:inherit;outline:none;box-sizing:border-box"></textarea>
-      <div style="display:flex;gap:5px;margin-top:6px">
-        <select id="aiMemoMode" style="flex:0 0 auto;padding:6px 8px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:.68rem;cursor:pointer;font-family:inherit">
-          <option value="bullet">• 불릿 정리</option>
-          <option value="summary">📝 3줄 요약</option>
-          <option value="todo">✅ 할 일 추출</option>
-          <option value="polish">✍️ 문장 다듬기</option>
-        </select>
-        <button onclick="aiMemoRun()" id="aiMemoBtn" style="flex:1;padding:6px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">AI 정리</button>
-      </div>
-      <div id="aiMemoOut" style="margin-top:8px"></div>
     </div>
 
     <!-- 뽀모도로 (사이클 카운트) -->
@@ -3933,7 +3933,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v10.1 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v10.2 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
