@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v13.6</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v13.7</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3915,7 +3915,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v13.6 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v13.7 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -27245,7 +27245,7 @@ ${corpus}
       </a>`;
     }).join('');
     const feedListCard = topFeeds.length
-      ? card('📰', `대표 피드 ${topFeeds.length}선`, `<div style="display:flex;flex-direction:column">${feedArticles}</div>`, '#3b82f6')
+      ? card('📰', `대표 피드 ${topFeeds.length}선`, `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0 14px">${feedArticles}</div>`, '#3b82f6')
       : '';
 
     out.innerHTML = `<div style="position:relative;background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:12px 12px 13px">
