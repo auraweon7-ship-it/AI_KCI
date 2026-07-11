@@ -959,7 +959,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.2</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.3</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1564,7 +1564,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
     <!-- RSS 맞춤 피드 -->
     <div class="rw" id="rwRSS">
-      <div class="rw-hdr"><span>📡 RSS 피드</span><button class="rw-refresh" onclick="rssLoad()" title="새로고침">↻</button></div>
+      <div class="rw-hdr"><span>📡 RSS 피드</span><span style="margin-left:auto;display:flex;gap:4px"><button class="rw-refresh" onclick="rssManageOpen()" title="피드 추가·삭제 관리">⚙</button><button class="rw-refresh" onclick="rssLoad()" title="새로고침">↻</button></span></div>
       <div class="rss-tabs" id="rssTabs"></div>
       <div class="rss-items" id="rssItems"><div class="skel" style="height:30px"></div></div>
       <div class="rss-add-row">
@@ -3928,7 +3928,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v11.2 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v11.3 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -4297,7 +4297,7 @@ function isLoggedIn() { try { return !!JSON.parse(localStorage.getItem('startpag
 // ── 클라우드 동기화 (Railway Postgres) ──
 let _cloudToken = null, _cloudTokenExp = 0;
 const CLOUD_BASE_KEYS = ['api_keys', 'apps', 'sched_events', 'lectures', 'todo_items'];  // 계정별(__이메일)
-const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden', 'uf_favs', 'bm_groups', 'bm_group_hidden'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube
+const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden', 'uf_favs', 'bm_groups', 'bm_group_hidden', 'rss_feeds', 'rss_migrated'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube
 const CLOUD_ALL_KEYS = [...CLOUD_BASE_KEYS, ...CLOUD_PLAIN_KEYS];
 // 로컬 키 결정 — startpage_v7은 프로필별 키(getStateKey) 사용
 function _cloudLocalKey(base) {
@@ -26970,7 +26970,7 @@ let rssCur = 0;
 function rssGetFeeds() {
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem('rss_feeds') || 'null'); } catch(_) {}
-  if (!Array.isArray(saved) || !saved.length) return RSS_DEFAULTS;
+  if (!Array.isArray(saved) || !saved.length) return RSS_DEFAULTS.slice();   // 원본 배열 보호(호출측 splice 방지)
   let changed = false;
   // 1) 죽은 기본 피드 제거
   const before = saved.length;
@@ -27053,25 +27053,88 @@ async function rssLoad() {
   }
 }
 function rssSwitchTab(i) { rssCur = i; rssLoad(); }
-function rssAddFeed() {
-  const name = document.getElementById('rssAddName').value.trim();
-  const url  = document.getElementById('rssAddUrl').value.trim();
-  if (!name || !url) return;
-  const feeds = rssGetFeeds();
-  feeds.push({name, url});
-  localStorage.setItem('rss_feeds', JSON.stringify(feeds));
-  rssCur = feeds.length - 1;
-  document.getElementById('rssAddName').value = '';
-  document.getElementById('rssAddUrl').value = '';
-  rssLoad();
+function rssSaveFeeds(feeds) { localStorage.setItem('rss_feeds', JSON.stringify(feeds)); cloudPush('rss_feeds'); }
+// 기본 피드를 지울 땐 rss_migrated에 남겨 rssGetFeeds가 되살리지 않게 한다
+function rssMarkMigrated(url) {
+  let added = []; try { added = JSON.parse(localStorage.getItem('rss_migrated') || '[]'); } catch(_) {}
+  if (!added.includes(url)) { added.push(url); localStorage.setItem('rss_migrated', JSON.stringify(added)); cloudPush('rss_migrated'); }
 }
-function rssDelFeed() {
+function rssAddFeed(nameArg, urlArg) {
+  const nEl = document.getElementById('rssAddName'), uEl = document.getElementById('rssAddUrl');
+  const name = (nameArg ?? nEl?.value ?? '').trim();
+  let url = (urlArg ?? uEl?.value ?? '').trim();
+  if (!name || !url) { showToast('이름과 URL을 입력하세요', '⚠️'); return false; }
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
   const feeds = rssGetFeeds();
-  if (feeds.length <= 1) return;
-  feeds.splice(rssCur, 1);
-  localStorage.setItem('rss_feeds', JSON.stringify(feeds));
-  rssCur = Math.max(0, rssCur-1);
+  if (feeds.some(f => f.url === url)) { showToast('이미 있는 피드입니다', 'ℹ️'); return false; }
+  feeds.push({ name, url });
+  rssSaveFeeds(feeds);
+  rssCur = feeds.length - 1;
+  if (nEl) nEl.value = ''; if (uEl) uEl.value = '';
   rssLoad();
+  return true;
+}
+function rssDelFeed(idx) {
+  const feeds = rssGetFeeds();
+  if (feeds.length <= 1) { showToast('최소 1개 피드는 남겨야 합니다', 'ℹ️'); return; }
+  const i = (idx == null) ? rssCur : idx;
+  const gone = feeds[i];
+  if (!gone) return;
+  if (!confirm(`"${gone.name}" 피드를 삭제할까요?`)) return;
+  feeds.splice(i, 1);
+  rssSaveFeeds(feeds);
+  if (RSS_DEFAULTS.some(d => d.url === gone.url)) rssMarkMigrated(gone.url);   // 기본 피드면 재추가 방지
+  rssCur = Math.min(Math.max(0, rssCur - (i <= rssCur ? 1 : 0)), feeds.length - 1);
+  rssLoad();
+  if (document.getElementById('rssManageOverlay')) rssManageRender();
+}
+
+// ── RSS 피드 관리 모달 ──
+function rssManageOpen() {
+  let ov = document.getElementById('rssManageOverlay');
+  if (!ov) {
+    ov = document.createElement('div'); ov.id = 'rssManageOverlay'; ov.className = 'uf-overlay';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:flex;align-items:center;justify-content:center;padding:20px';
+    ov.onclick = e => { if (e.target === ov) ov.remove(); };
+    document.body.appendChild(ov);
+  }
+  rssManageRender();
+}
+function rssManageRender() {
+  const ov = document.getElementById('rssManageOverlay'); if (!ov) return;
+  const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const feeds = rssGetFeeds();
+  const rows = feeds.map((f, i) => {
+    const isDefault = RSS_DEFAULTS.some(d => d.url === f.url);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.76rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</div>
+        <div style="font-size:.6rem;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.url)}</div>
+      </div>
+      ${isDefault ? '<span title="기본 제공" style="font-size:.56rem;color:var(--text-muted);flex-shrink:0">기본</span>' : ''}
+      <button onclick="rssDelFeed(${i})" title="삭제" style="background:none;border:none;color:var(--danger,#e74c3c);cursor:pointer;font-size:.78rem;flex-shrink:0">✕</button>
+    </div>`;
+  }).join('');
+  ov.innerHTML = `<div class="uf-modal" style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:460px;width:100%;max-height:86vh;overflow-y:auto;padding:18px 20px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="flex:1;font-size:.95rem;font-weight:800;color:var(--text)">📡 RSS 피드 관리</div>
+      <button onclick="document.getElementById('rssManageOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.15rem;color:var(--text-muted)">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:12px">
+      <input id="rssMgName" placeholder="이름" maxlength="20" style="flex:0 0 30%;min-width:0;padding:7px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:.72rem;outline:none;font-family:inherit">
+      <input id="rssMgUrl" placeholder="RSS/Atom URL" onkeydown="if(event.key==='Enter'&&!event.isComposing)rssMgAdd()" style="flex:1;min-width:0;padding:7px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:.72rem;outline:none;font-family:inherit">
+      <button onclick="rssMgAdd()" style="flex:0 0 auto;padding:7px 13px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:.72rem;font-weight:700;cursor:pointer;font-family:inherit">+ 추가</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:5px">${rows}</div>
+    <div style="font-size:.62rem;color:var(--text-muted);margin-top:12px;line-height:1.6;padding:8px 10px;background:var(--bg3);border-radius:7px">
+      ※ 기본 피드를 삭제해도 다시 추가되지 않습니다. RSS 2.0·Atom 모두 지원합니다.
+    </div>
+  </div>`;
+}
+function rssMgAdd() {
+  const name = document.getElementById('rssMgName')?.value.trim();
+  const url = document.getElementById('rssMgUrl')?.value.trim();
+  if (rssAddFeed(name, url)) { rssManageRender(); }
 }
 
 // ══ 공고 알림 ══
