@@ -51,7 +51,7 @@
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { height: 100%; font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif; }
+html, body { min-height: 100%; font-family: 'Pretendard', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif; }
 body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 
 /* ── HEADER ── */
@@ -194,7 +194,7 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
   width: 265px; flex-shrink: 0;
   background: var(--bg2); border-left: 1px solid var(--border);
   padding: 8px; display: flex; flex-direction: column; gap: 7px;
-  overflow-y: auto; height: calc(100vh - 100px); position: sticky; top: 100px; align-self: flex-start;
+  overflow-y: auto; height: calc(100vh - 44px); position: sticky; top: 44px; align-self: flex-start;
 }
 .rw { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 9px; }
 .rw-hdr {
@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v13.2</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v13.3</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3904,7 +3904,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v13.2 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v13.3 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
