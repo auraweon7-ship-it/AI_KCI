@@ -536,6 +536,22 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 .clock-time { font-size: 1.9rem; font-weight: 800; letter-spacing: .02em; color: var(--accent2); }
 .clock-date { font-size: 0.88rem; color: var(--text-dim); margin-top: 4px; }
 .clock-hidden { display: none; }
+/* 시계 양옆 글로벌 도시 */
+.clock-row { display: flex; align-items: center; justify-content: center; gap: 1.2rem; }
+.clock-center { flex: 0 0 auto; min-width: 180px; }
+.clock-cities { flex: 1 1 0; display: flex; flex-direction: column; gap: 6px; max-width: 260px; }
+.clock-cities.right { align-items: flex-start; }
+.clock-city { display: flex; align-items: center; gap: 7px; font-size: .72rem; color: var(--text); width: 100%; }
+.clock-city .cc-flag { flex: 0 0 auto; font-size: .9rem; }
+.clock-city .cc-name { flex: 1 1 auto; min-width: 0; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-dim); }
+.clock-city .cc-time { flex: 0 0 auto; font-weight: 700; font-variant-numeric: tabular-nums; }
+.clock-city .cc-temp { flex: 0 0 auto; color: var(--accent2); font-weight: 600; min-width: 46px; text-align: right; }
+@media (max-width: 780px) {
+  .clock-row { flex-direction: column; gap: .8rem; }
+  .clock-cities { flex-direction: row; flex-wrap: wrap; justify-content: center; max-width: none; }
+  .clock-city { width: auto; }
+  .clock-city .cc-name { flex: 0 0 auto; }
+}
 
 /* Prof widgets row */
 .prof-widgets-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
@@ -942,7 +958,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.0</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v10.1</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1012,8 +1028,14 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
   <div class="content" id="mainContent">
     <!-- Clock -->
     <div class="clock-widget" id="clockWidget">
-      <div class="clock-time" id="clockTime">00:00:00</div>
-      <div class="clock-date" id="clockDate"></div>
+      <div class="clock-row">
+        <div class="clock-cities" id="clockCitiesL"></div>
+        <div class="clock-center">
+          <div class="clock-time" id="clockTime">00:00:00</div>
+          <div class="clock-date" id="clockDate"></div>
+        </div>
+        <div class="clock-cities" id="clockCitiesR"></div>
+      </div>
     </div>
 
     <!-- 스케줄 캘린더 -->
@@ -3911,7 +3933,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v10.0 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v10.1 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -24519,6 +24541,52 @@ function closeModal(id) {
 function escListener(e) { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open')); }
 document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
 
+// ── 시계 양옆 글로벌 도시 (좌 3 · 우 3) ──
+// open-meteo(키 불필요)로 기온, Intl로 현지 시각. 좌표는 도시 대표값.
+const CLOCK_CITIES = [
+  { name: '베이징', flag: '🇨🇳', tz: 'Asia/Shanghai',        lat: 39.90, lon: 116.40 },
+  { name: '싱가포르', flag: '🇸🇬', tz: 'Asia/Singapore',       lat: 1.35,  lon: 103.82 },
+  { name: '두바이', flag: '🇦🇪', tz: 'Asia/Dubai',           lat: 25.20, lon: 55.27 },
+  { name: '런던',   flag: '🇬🇧', tz: 'Europe/London',        lat: 51.51, lon: -0.13 },
+  { name: '파리',   flag: '🇫🇷', tz: 'Europe/Paris',         lat: 48.85, lon: 2.35 },
+  { name: '뉴욕',   flag: '🇺🇸', tz: 'America/New_York',     lat: 40.71, lon: -74.01 },
+];
+const _clockTemps = {};   // name -> '21°'
+function renderClockCities() {
+  const L = document.getElementById('clockCitiesL');
+  const R = document.getElementById('clockCitiesR');
+  if (!L || !R) return;
+  const now = new Date();
+  const row = c => {
+    let time = '--:--';
+    try { time = new Intl.DateTimeFormat('ko-KR', { timeZone: c.tz, hour12: false, hour: '2-digit', minute: '2-digit' }).format(now); } catch(_) {}
+    const temp = _clockTemps[c.name] || '';
+    return `<div class="clock-city" title="${c.name} · ${c.tz}">
+      <span class="cc-flag">${c.flag}</span>
+      <span class="cc-name">${c.name}</span>
+      <span class="cc-time">${time}</span>
+      <span class="cc-temp">${temp}</span>
+    </div>`;
+  };
+  L.innerHTML = CLOCK_CITIES.slice(0, 3).map(row).join('');
+  R.className = 'clock-cities right';
+  R.innerHTML = CLOCK_CITIES.slice(3, 6).map(row).join('');
+}
+async function loadClockCityTemps() {
+  await Promise.all(CLOCK_CITIES.map(async c => {
+    try {
+      const r = await Promise.race([
+        fetch(`https://api.open-meteo.com/v1/forecast?latitude=${c.lat}&longitude=${c.lon}&current=temperature_2m`),
+        _tout(6000),
+      ]);
+      const d = await r.json();
+      const t = d?.current?.temperature_2m;
+      if (typeof t === 'number') _clockTemps[c.name] = `${Math.round(t)}°`;
+    } catch(_) {}
+  }));
+  renderClockCities();
+}
+
 // ── CLOCK ──
 function updateClock() {
   const now = new Date();
@@ -24529,6 +24597,7 @@ function updateClock() {
   const days = ['일','월','화','수','목','금','토'];
   const dateStr = `${now.getFullYear()}년 ${now.getMonth()+1}월 ${now.getDate()}일 (${days[now.getDay()]})`;
   document.getElementById('clockDate').textContent = dateStr;
+  renderClockCities();
 }
 setInterval(updateClock, 1000);
 updateClock();
@@ -27231,7 +27300,7 @@ render();
  () => { try { loadBookRec(); } catch(_){} },
  loadLegisNews, () => loadIdiom(false), () => loadQuote(false), () => loadGreatLine(false), loadHealMusic,
  () => { try { loadYtRec(); } catch(_){} },
- memoLoad, cvSetOpts, piLoad, timerRender, loadStock, wcRender, pomoRender,
+ memoLoad, cvSetOpts, piLoad, timerRender, loadStock, wcRender, pomoRender, loadClockCityTemps,
  () => { rssRenderTabs(); rssLoad(); }, noticeLoad
 ].forEach(fn => { try { fn(); } catch(e) { console.error('위젯 초기화 오류:', fn.name, e); } });
 
@@ -27242,6 +27311,7 @@ setInterval(() => { try { loadStock(); } catch(_) {} }, 60 * 1000);           //
 setInterval(() => { try { loadFX(); } catch(_) {} }, 10 * 60 * 1000);          // 환율 10분
 setInterval(() => { try { loadWeather(); } catch(_) {} }, 10 * 60 * 1000);     // 날씨 10분
 setInterval(() => { try { wcRender(); } catch(_) {} }, 30 * 1000);                // 세계 시계 30초
+setInterval(() => { try { loadClockCityTemps(); } catch(_) {} }, 30 * 60 * 1000);  // 시계 도시 기온 30분
 setInterval(() => { try { updateHdrDday(); } catch(_) {} }, 60 * 60 * 1000);   // D-day 1시간
 // 탭 다시 활성화 시 즉시 갱신
 document.addEventListener('visibilitychange', () => {
