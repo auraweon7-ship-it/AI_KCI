@@ -959,7 +959,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.0</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v11.1</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3928,7 +3928,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v11.0 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v11.1 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -24541,7 +24541,7 @@ document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('cli
 const CLOCK_CITIES = [
   { name: '베이징', flag: '🇨🇳', tz: 'Asia/Shanghai',        lat: 39.90, lon: 116.40 },
   { name: '싱가포르', flag: '🇸🇬', tz: 'Asia/Singapore',       lat: 1.35,  lon: 103.82 },
-  { name: '두바이', flag: '🇦🇪', tz: 'Asia/Dubai',           lat: 25.20, lon: 55.27 },
+  { name: '도쿄',   flag: '🇯🇵', tz: 'Asia/Tokyo',           lat: 35.68, lon: 139.69 },
   { name: '런던',   flag: '🇬🇧', tz: 'Europe/London',        lat: 51.51, lon: -0.13 },
   { name: '파리',   flag: '🇫🇷', tz: 'Europe/Paris',         lat: 48.85, lon: 2.35 },
   { name: '뉴욕',   flag: '🇺🇸', tz: 'America/New_York',     lat: 40.71, lon: -74.01 },
