@@ -960,7 +960,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v12.2</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v12.3</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3923,7 +3923,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v12.2 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v12.3 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -27115,9 +27115,9 @@ async function rssAnalyzeAll() {
   if (btn) { btn.disabled = true; btn.textContent = '수집 중…'; }
   out.innerHTML = `<div class="skel" style="height:40px"></div>`;
 
-  // 전 피드 병렬 수집(피드당 5건). 실패 피드는 건너뜀.
+  // 전 피드 병렬 수집(피드당 8건). 실패 피드는 건너뜀.
   const results = await Promise.all(feeds.map(async f => {
-    const items = await rssFetchItems(f.url, 5);
+    const items = await rssFetchItems(f.url, 8);
     return { name: f.name, items };
   }));
   const okFeeds = results.filter(r => r.items.length);
@@ -27147,12 +27147,14 @@ sentiment 세 값의 합은 전체 기사 수와 같아야 함. categories 4~6�
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
-      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:2600, messages:[{ role:'user', content:prompt }] }),
+      body: JSON.stringify({ model:'claude-sonnet-5', max_tokens:4000, messages:[{ role:'user', content:prompt }] }),
     });
     if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.error?.message || r.status); }
     const j = await r.json();
     const txt = (j.content || []).map(c => c.text || '').join('').replace(/```json/gi,'').replace(/```/g,'').trim();
     const J = naParseJSON(txt) || {};
+    // 파싱이 사실상 실패(핵심 필드 전무)하면 원문이라도 보여준다 — 피드 통계만 나오는 사태 방지
+    const parsedEmpty = !J.summary && !J.sentiment && !(J.themes && J.themes.length) && !(J.categories && J.categories.length);
     const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const PAL = ['#8b5cf6','#ec4899','#f59e0b','#10b981','#3b82f6','#ef4444','#14b8a6','#a855f7'];
     const sec = (t, inner) => inner ? `<div style="margin-top:10px"><div style="font-size:.64rem;font-weight:800;color:var(--accent2);margin-bottom:4px">${t}</div>${inner}</div>` : '';
@@ -27189,18 +27191,23 @@ sentiment 세 값의 합은 전체 기사 수와 같아야 함. categories 4~6�
     const themeBar = Array.isArray(J.themes) ? J.themes.slice(0,5).map(t=>({label:t.title,v:+t.count||0})) : [];
     // 키워드 막대
     const kwBar = Array.isArray(J.keywords) ? J.keywords.slice(0,10).map(k=>({label:(k.word||k),v:+(k.count||0)})).filter(k=>k.v>0) : [];
-    // 피드별 활동(클라이언트 계산)
-    const feedBar = okFeeds.map(f=>({label:f.name,v:f.items.length})).sort((a,b)=>b.v-a.v).slice(0,8);
+    // 피드별 활동(클라이언트 계산) — 도넛
+    const feedSeg = okFeeds.map((f,i)=>({label:f.name,v:f.items.length})).sort((a,b)=>b.v-a.v).slice(0,8).map((f,i)=>({...f,color:PAL[i%PAL.length]}));
 
     const themeDesc = Array.isArray(J.themes) ? J.themes.map(t=>`<div style="font-size:.66rem;line-height:1.5;margin:2px 0"><b style="color:var(--accent)">${esc(t.title)}</b> <span style="color:var(--text-dim)">— ${esc(t.desc)}</span></div>`).join('') : '';
     const insights = Array.isArray(J.insights) ? `<ul style="margin:0;padding-left:14px;font-size:.68rem;line-height:1.6;color:var(--text)">${J.insights.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>` : '';
     const watch = Array.isArray(J.watch) ? `<ul style="margin:0;padding-left:14px;font-size:.68rem;line-height:1.6;color:var(--text-dim)">${J.watch.map(w=>`<li>${esc(w)}</li>`).join('')}</ul>` : '';
 
-    // 도넛 2개를 나란히
-    const donutRow = (sentSeg.length||catSeg.length) ? `<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:10px">
+    // 도넛들을 나란히
+    const donutRow = `<div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:10px">
         ${sentSeg.length?`<div><div style="font-size:.6rem;font-weight:700;color:var(--text-muted);margin-bottom:3px">😊 감성 분포</div>${donut(sentSeg)}</div>`:''}
         ${catSeg.length?`<div><div style="font-size:.6rem;font-weight:700;color:var(--text-muted);margin-bottom:3px">📂 분야 분포</div>${donut(catSeg)}</div>`:''}
-      </div>` : '';
+        ${feedSeg.length?`<div><div style="font-size:.6rem;font-weight:700;color:var(--text-muted);margin-bottom:3px">📡 피드별 기사 수</div>${donut(feedSeg)}</div>`:''}
+      </div>`;
+
+    const rawFallback = parsedEmpty
+      ? `<div style="margin-top:8px;font-size:.66rem;line-height:1.6;color:var(--text-dim);white-space:pre-wrap;max-height:220px;overflow:auto;background:var(--card);border:1px solid var(--border);border-radius:6px;padding:8px">${esc(txt).replace(/\n/g,'<br>')}</div>`
+      : '';
 
     out.innerHTML = `<div style="position:relative;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:11px 26px 11px 12px">
         <button onclick="rssAiClose()" title="닫기" style="position:absolute;right:5px;top:5px;width:18px;height:18px;line-height:1;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text-muted);cursor:pointer;font-size:.7rem;padding:0">✕</button>
@@ -27210,9 +27217,9 @@ sentiment 세 값의 합은 전체 기사 수와 같아야 함. categories 4~6�
         ${sec('🔥 핵심 이슈 (기사 수)', hbar(themeBar))}
         ${themeDesc ? `<div style="margin-top:5px">${themeDesc}</div>` : ''}
         ${sec('🏷 키워드 빈도', hbar(kwBar))}
-        ${sec('📡 피드별 기사 수', hbar(feedBar))}
         ${sec('💡 통찰', insights)}
         ${sec('🔮 주목할 사안', watch)}
+        ${parsedEmpty ? sec('📄 분석 원문 (구조화 실패)', rawFallback) : ''}
       </div>`;
   } catch (e) {
     out.innerHTML = `<div style="font-size:.68rem;color:var(--danger,#e74c3c)">분석 실패: ${(e.message||'오류').replace(/</g,'&lt;')}</div>`;
