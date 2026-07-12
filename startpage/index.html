@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.4</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.5</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3919,7 +3919,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v14.4 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v14.5 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -28052,24 +28052,28 @@ let _nrTab = 'rank', _nrCmpA = 0, _nrCmpB = 1;
 function nrEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
 // 오버레이 열기
+const NR_URL = 'https://univnews.up.railway.app/';
 function openNewsReview() {
   let ov = document.getElementById('nrOverlay');
   if (!ov) {
     ov = document.createElement('div');
     ov.id = 'nrOverlay';
-    ov.style.cssText = 'position:fixed;inset:0;z-index:11000;background:var(--bg,#0d1117);overflow-y:auto;display:none';
-    ov.onclick = e => { if (e.target === ov) nrClose(); };
+    ov.style.cssText = 'position:fixed;inset:0;z-index:11000;background:var(--bg,#0d1117);display:none';
     document.body.appendChild(ov);
   }
+  // univnews 배포 사이트를 전체화면 iframe으로 임베드 (완전 동일)
+  ov.innerHTML =
+    `<button onclick="nrClose()" title="닫기 (Esc)" style="position:fixed;top:12px;right:16px;z-index:2;width:34px;height:34px;border-radius:9px;background:rgba(0,0,0,.6);border:1px solid rgba(255,255,255,.3);color:#fff;cursor:pointer;font-size:1rem;backdrop-filter:blur(4px)">✕</button>` +
+    `<iframe src="${NR_URL}" title="뉴스 리뷰 — 사립대학 뉴스 대시보드" style="width:100%;height:100%;border:0;display:block" allow="clipboard-write"></iframe>`;
   ov.style.display = 'block';
   document.body.style.overflow = 'hidden';
-  nrRender();
 }
 function nrClose() {
   const ov = document.getElementById('nrOverlay');
-  if (ov) ov.style.display = 'none';
+  if (ov) { ov.style.display = 'none'; ov.innerHTML = ''; } // iframe 언로드
   document.body.style.overflow = '';
 }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { const ov = document.getElementById('nrOverlay'); if (ov && ov.style.display === 'block') nrClose(); } });
 function nrSetTab(t) { _nrTab = t; nrRender(); }
 
 function nrRender() {
