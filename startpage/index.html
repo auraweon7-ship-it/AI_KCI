@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.5</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.6</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3919,7 +3919,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v14.5 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v14.6 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6075,6 +6075,7 @@ function renderGovView() {
           </span>
           <a href="https://edu.na.go.kr" target="_blank" rel="noopener"
              style="font-size:.72rem;margin-left:.6rem;color:var(--accent2);text-decoration:none">공식 홈페이지 →</a>
+          <button onclick="govAddMember()" style="font-size:.68rem;font-weight:700;margin-left:.6rem;background:var(--accent);border:none;border-radius:6px;color:#fff;padding:3px 10px;cursor:pointer;font-family:inherit">+ 카드 추가</button>
         </h3>
         <div class="member-notice" style="font-size:.72rem;color:var(--text-dim);margin-bottom:.8rem;padding:.5rem .8rem;background:var(--card);border-radius:8px;border:1px solid var(--border)">
           ⚠️ 위원 구성 및 연락처는 변경될 수 있습니다. 최신 정보는
@@ -6089,6 +6090,7 @@ function renderGovView() {
           🏢 교육부 조직도 (장관·차관·국장·과장)
           <a href="https://www.moe.go.kr/sub/info.do?m=010204&s=moe" target="_blank" rel="noopener"
              style="font-size:.72rem;margin-left:.6rem;color:var(--accent2);text-decoration:none">조직도 공식 페이지 →</a>
+          <button onclick="govAddMoe()" style="font-size:.68rem;font-weight:700;margin-left:.6rem;background:var(--accent);border:none;border-radius:6px;color:#fff;padding:3px 10px;cursor:pointer;font-family:inherit">+ 카드 추가</button>
         </h3>
         <div style="font-size:.72rem;color:var(--text-dim);margin-bottom:.8rem;padding:.5rem .8rem;background:var(--card);border-radius:8px;border:1px solid var(--border)">
           ⚠️ 담당자·연락처는 변경될 수 있습니다. 최신 정보는
@@ -6128,8 +6130,9 @@ function renderGovView() {
     return r;
   };
 
+  const moeData = govMoe();
   RANK_GROUPS.forEach(grp => {
-    const items = MOE_ORG.filter(o => rankLabel(o.rank) === grp);
+    const items = moeData.filter(o => rankLabel(o.rank) === grp);
     if (!items.length) return;
     const sec = document.createElement('div');
     sec.style.cssText = 'margin-bottom:1.2rem';
@@ -6138,13 +6141,17 @@ function renderGovView() {
     grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px';
     items.forEach(o => {
       const card = document.createElement('a');
-      card.href = o.url; card.target = '_blank'; card.rel = 'noopener noreferrer';
-      card.style.cssText = 'display:block;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.7rem .9rem;text-decoration:none;transition:transform .15s,box-shadow .15s;cursor:pointer';
+      card.href = o.url || '#'; card.target = '_blank'; card.rel = 'noopener noreferrer';
+      card.style.cssText = 'position:relative;display:block;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.7rem .9rem;text-decoration:none;transition:transform .15s,box-shadow .15s;cursor:pointer';
       card.onmouseover = () => { card.style.transform='translateY(-2px)'; card.style.boxShadow='0 4px 12px rgba(0,0,0,.15)'; };
       card.onmouseout = () => { card.style.transform=''; card.style.boxShadow=''; };
       const clr = RANK_COLOR[o.rank] || '#555';
       card.innerHTML = `
-        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">
+        <span style="position:absolute;top:5px;right:5px;display:flex;gap:3px;z-index:2">
+          <button onclick="event.preventDefault();event.stopPropagation();govEditMoe('${o.id}')" title="수정" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text-dim);cursor:pointer;font-size:.62rem;padding:2px 5px">✏️</button>
+          <button onclick="event.preventDefault();event.stopPropagation();govDelMoe('${o.id}')" title="삭제" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text-dim);cursor:pointer;font-size:.62rem;padding:2px 5px">✕</button>
+        </span>
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;padding-right:44px">
           <span style="background:${clr};color:#fff;font-size:.65rem;font-weight:700;padding:.18rem .45rem;border-radius:4px;white-space:nowrap">${o.rank}</span>
           <span style="font-size:.82rem;font-weight:700;color:var(--text)">${o.dept}</span>
         </div>
@@ -6160,13 +6167,17 @@ function renderGovView() {
 
   // 의원 카드
   const memberGrid = document.getElementById('memberGrid');
-  EDU_COMMITTEE.forEach(m => {
+  govMembers().forEach(m => {
     const card = document.createElement('a');
     card.className = 'member-card';
-    card.href = m.url;
+    card.href = m.url || '#';
     card.target = '_blank';
     card.rel = 'noopener noreferrer';
     card.innerHTML = `
+      <span style="position:absolute;top:4px;right:4px;display:flex;gap:3px;z-index:2">
+        <button onclick="event.preventDefault();event.stopPropagation();govEditMember('${m.id}')" title="수정" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text-dim);cursor:pointer;font-size:.66rem;padding:2px 5px">✏️</button>
+        <button onclick="event.preventDefault();event.stopPropagation();govDelMember('${m.id}')" title="삭제" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text-dim);cursor:pointer;font-size:.66rem;padding:2px 5px">✕</button>
+      </span>
       <div class="member-role-badge" style="background:${m.pColor}">${m.role}</div>
       <div class="member-name">${m.name}</div>
       <div class="member-party" style="color:${m.pColor}">${m.party}</div>
@@ -6176,6 +6187,70 @@ function renderGovView() {
     memberGrid.appendChild(card);
   });
 }
+
+// ── 국회 교육위 명단 / 교육부 조직도 카드 CRUD (localStorage 오버레이) ──
+function govMembers() {
+  try { const s = JSON.parse(localStorage.getItem('gov_members') || 'null'); if (Array.isArray(s)) return s; } catch (_) {}
+  return EDU_COMMITTEE.map((m, i) => ({ ...m, id: m.id || 'em' + i }));
+}
+function govSaveMembers(arr) { localStorage.setItem('gov_members', JSON.stringify(arr)); try { cloudPush && cloudPush('gov_members'); } catch (_) {} }
+function govMoe() {
+  try { const s = JSON.parse(localStorage.getItem('gov_moe') || 'null'); if (Array.isArray(s)) return s; } catch (_) {}
+  return MOE_ORG.map((m, i) => ({ ...m, id: m.id || 'mo' + i }));
+}
+function govSaveMoe(arr) { localStorage.setItem('gov_moe', JSON.stringify(arr)); try { cloudPush && cloudPush('gov_moe'); } catch (_) {} }
+
+// 공용 폼 모달
+function govFormModal(title, fields, cur, onSave) {
+  let ov = document.getElementById('govFormOv');
+  if (!ov) { ov = document.createElement('div'); ov.id = 'govFormOv'; document.body.appendChild(ov); }
+  ov.style.cssText = 'position:fixed;inset:0;z-index:12000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px';
+  ov.onclick = e => { if (e.target === ov) ov.remove(); };
+  const esc = s => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:440px;width:100%;padding:20px 22px;max-height:88vh;overflow:auto">
+    <div style="font-size:1rem;font-weight:800;color:var(--text);margin-bottom:14px">${esc(title)}</div>
+    ${fields.map(f => `<div style="margin-bottom:10px">
+      <label style="display:block;font-size:.7rem;color:var(--text-dim);margin-bottom:3px">${esc(f.label)}</label>
+      <input id="gf_${f.key}" type="${f.type || 'text'}" value="${esc(cur[f.key] != null ? cur[f.key] : (f.def || ''))}" placeholder="${esc(f.ph || '')}"
+        style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-size:.8rem;outline:none${f.type === 'color' ? ';height:38px;padding:4px' : ''}">
+    </div>`).join('')}
+    <div style="display:flex;gap:8px;margin-top:14px">
+      <button onclick="document.getElementById('govFormOv').remove()" style="flex:1;padding:9px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);cursor:pointer;font-size:.78rem">취소</button>
+      <button id="gfSave" style="flex:1;padding:9px;background:var(--accent);border:none;border-radius:7px;color:#fff;cursor:pointer;font-size:.78rem;font-weight:700">저장</button>
+    </div></div>`;
+  document.getElementById('gfSave').onclick = () => {
+    const vals = {}; fields.forEach(f => { vals[f.key] = document.getElementById('gf_' + f.key).value.trim(); });
+    ov.remove(); onSave(vals);
+  };
+}
+
+const GOV_MEMBER_FIELDS = [
+  { key: 'name', label: '성명' }, { key: 'party', label: '정당' },
+  { key: 'pColor', label: '정당 색상', type: 'color', def: '#004EA2' },
+  { key: 'role', label: '직위 (위원장·간사·위원 등)' }, { key: 'district', label: '지역구' },
+  { key: 'tel', label: '전화' }, { key: 'url', label: '링크 URL', ph: 'https://' },
+];
+const GOV_MOE_FIELDS = [
+  { key: 'rank', label: '직급 (장관·차관·보좌관·실장·국장·과장)' }, { key: 'dept', label: '부서' },
+  { key: 'name', label: '성명' }, { key: 'note', label: '비고' },
+  { key: 'tel', label: '전화' }, { key: 'url', label: '링크 URL', ph: 'https://' },
+];
+function govEditMember(id) { const m = govMembers().find(x => x.id === id) || {}; govFormModal(id ? '의원 정보 수정' : '의원 추가', GOV_MEMBER_FIELDS, m, vals => {
+  let arr = govMembers();
+  if (id) { const i = arr.findIndex(x => x.id === id); if (i >= 0) arr[i] = { ...arr[i], ...vals }; }
+  else arr.push({ ...vals, id: 'em' + Date.now() });
+  govSaveMembers(arr); renderGovView();
+}); }
+function govAddMember() { govEditMember(null); }
+function govDelMember(id) { if (!confirm('이 카드를 삭제할까요?')) return; govSaveMembers(govMembers().filter(x => x.id !== id)); renderGovView(); }
+function govEditMoe(id) { const m = govMoe().find(x => x.id === id) || {}; govFormModal(id ? '조직도 카드 수정' : '조직도 카드 추가', GOV_MOE_FIELDS, m, vals => {
+  let arr = govMoe();
+  if (id) { const i = arr.findIndex(x => x.id === id); if (i >= 0) arr[i] = { ...arr[i], ...vals }; }
+  else arr.push({ ...vals, id: 'mo' + Date.now() });
+  govSaveMoe(arr); renderGovView();
+}); }
+function govAddMoe() { govEditMoe(null); }
+function govDelMoe(id) { if (!confirm('이 카드를 삭제할까요?')) return; govSaveMoe(govMoe().filter(x => x.id !== id)); renderGovView(); }
 
 // ── YouTube 큐레이션 영상 (조회수 기준 정렬) ──
 // vid 있으면 썸네일+watch 링크, 없으면 제목+채널 YouTube 검색 링크(항상 재생 가능)
