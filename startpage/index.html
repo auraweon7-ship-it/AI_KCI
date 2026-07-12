@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.1</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.2</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3919,7 +3919,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v16.1 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v16.2 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6008,6 +6008,7 @@ const MOE_ORG = [
   { rank:"과장", name:"", tel:"", dept:"부단장", office:"기획조정실", bureau:"교육행정체제통합지원단", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"과장", name:"", tel:"", dept:"기획총괄팀", office:"기획조정실", bureau:"교육행정체제통합지원단", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"과장", name:"", tel:"", dept:"통합지원팀", office:"기획조정실", bureau:"교육행정체제통합지원단", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"실장", name:"이해숙", tel:"010-4705-3943", dept:"고등평생정책실장", office:"고등평생정책실", bureau:"고등평생정책실", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"국장", name:"송근현", tel:"010-2831-2152", dept:"대학정책관", office:"고등평생정책실", bureau:"대학정책관", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"과장", name:"김태경", tel:"010-2293-3716", dept:"대학정책과", office:"고등평생정책실", bureau:"대학정책관", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"과장", name:"박형식", tel:"", dept:"대학학사운영과", office:"고등평생정책실", bureau:"대학정책관", url:"https://www.moe.go.kr/main.do?s=moe" },
