@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.0</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.1</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3919,7 +3919,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v16.0 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v16.1 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5983,6 +5983,7 @@ const MOE_ORG = [
   { rank:"차관", name:"최은옥", tel:"010-9470-1201", dept:"차관", office:"본부", bureau:"본부", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"보좌관", name:"김성천", tel:"010-7599-0679", dept:"정책보좌관", office:"본부", bureau:"본부", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"보좌관", name:"한세효", tel:"010-2923-6018", dept:"정책보좌관", office:"본부", bureau:"본부", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"보좌관", name:"김훈호", tel:"010-3098-1502", dept:"장관정책자문관", office:"본부", bureau:"본부", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"보좌관", name:"", tel:"", dept:"대변인", office:"본부", bureau:"본부", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"과장", name:"", tel:"", dept:"홍보담당관", office:"본부", bureau:"본부", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"과장", name:"", tel:"", dept:"디지털소통팀", office:"본부", bureau:"본부", url:"https://www.moe.go.kr/main.do?s=moe" },
