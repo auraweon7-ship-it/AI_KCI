@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v15.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v15.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3919,7 +3919,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v15.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v15.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6067,6 +6067,95 @@ const MOE_ORG = [
   { rank:"과장", name:"", tel:"", dept:"교육보육과정지원과", office:"영유아지원관", bureau:"영유아지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
 ];
 
+const MOE_DEPTCD = {
+  "교육부장관":"1342001",
+  "정책보좌관":"1342009",
+  "대변인":"1342003",
+  "홍보담당관":"1342004",
+  "디지털소통팀":"1342222",
+  "차관":"1342002",
+  "감사관":"1342005",
+  "감사총괄담당관":"1342006",
+  "반부패청렴담당관":"1342167",
+  "사학감사담당관":"1342109",
+  "입시비리조사팀":"1342370",
+  "운영지원과":"1342010",
+  "기획조정실":"1342011",
+  "정책기획관":"1342012",
+  "기획담당관":"1342013",
+  "예산담당관":"1342014",
+  "혁신행정담당관":"1342166",
+  "규제개혁법무담당관":"1342016",
+  "양성평등정책담당관":"1342219",
+  "국제교육기획관":"1342391",
+  "국제교육정책담당관":"1342410",
+  "교육국제화담당관":"1342418",
+  "재외교육지원담당관":"1342425",
+  "비상안전담당관":"1342018",
+  "고등평생정책실":"1342380",
+  "대학정책관":"1342385",
+  "대학정책과":"1342406",
+  "대학학사운영과":"1342414",
+  "학술연구정책과":"1342422",
+  "대입정책과":"1342429",
+  "대학지원관":"1342390",
+  "지역대학지원과":"1342407",
+  "산학협력지원과":"1342415",
+  "국립대학지원과":"1342423",
+  "사립대학지원과":"1342430",
+  "대학시설지원과":"1342433",
+  "평생교육지원관":"1342396",
+  "평생학습정책과":"1342409",
+  "전문대학지원과":"1342417",
+  "청년장학지원과":"1342424",
+  "사학분쟁조정위원회지원팀":"1342436",
+  "의대교육지원관":"1342401",
+  "의대교육기반과":"1342408",
+  "의대혁신지원과":"1342416",
+  "학교정책실":"1342381",
+  "학교정책관":"1342387",
+  "학교정책과":"1342412",
+  "교육과정운영지원과":"1342420",
+  "고교학점제지원과":"1342427",
+  "교육콘텐츠정책과":"1342432",
+  "동북아역사대응팀":"1342435",
+  "학교지원관":"1342393",
+  "공교육진흥과":"1342413",
+  "직업교육정책과":"1342428",
+  "교원교육자치지원관":"1342398",
+  "교원정책과":"1342411",
+  "교원양성연수과":"1342419",
+  "교육자치협력과":"1342426",
+  "지방교육재정과":"1342431",
+  "학교시설개선팀":"1342434",
+  "인공지능인재지원국":"1342384",
+  "인재정책총괄과":"1342386",
+  "인공지능교육진흥과":"1342392",
+  "인공지능융합인재양성과":"1342397",
+  "디지털교육기반과":"1342402",
+  "학교인공지능전환추진단":"1342438",
+  "교육데이터정책과":"1342404",
+  "정보보호팀":"1342405",
+  "학생지원국":"1342382",
+  "학생지원총괄과":"1342389",
+  "방과후돌봄정책과":"1342395",
+  "특수교육정책과":"1342400",
+  "학생건강안전정책국":"1342383",
+  "학생건강정책과":"1342388",
+  "교육안전정책과":"1342394",
+  "학생정서지원과":"1342399",
+  "학교폭력대책과":"1342403",
+  "영유아정책국":"1342347",
+  "영유아정책총괄과":"1342350",
+  "영유아재정과":"1342351",
+  "영유아안전정보과":"1342352",
+  "영유아지원관":"1342348",
+  "영유아기준정책과":"1342354",
+  "영유아교원지원과":"1342356",
+  "교육보육과정지원과":"1342357",
+  "장관":"1342001"
+};
+
 function renderGovView() {
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
@@ -6167,7 +6256,13 @@ function renderGovView() {
   // 카드 생성 헬퍼
   const makeMoeCard = (o) => {
     const card = document.createElement('a');
-    card.href = o.url || '#'; card.target = '_blank'; card.rel = 'noopener noreferrer';
+    // 교육부 부서별 상세(조직도·연락처) 개별 링크 — deptCD 매칭, 사용자 커스텀 URL 우선
+    const isCustom = o.url && o.url !== '#' && !/moe\.go\.kr\/(main|sub)\.do/.test(o.url);
+    const cd = (typeof MOE_DEPTCD !== 'undefined') ? MOE_DEPTCD[o.dept] : null;
+    card.href = isCustom ? o.url
+      : cd ? 'https://www.moe.go.kr/user/detailRenew.do?deptCD=' + cd + '&m=0604&s=moe'
+      : 'https://www.moe.go.kr/sub/infoRenewal.do?m=0604&page=0604&s=moe';
+    card.target = '_blank'; card.rel = 'noopener noreferrer';
     card.style.cssText = 'position:relative;display:block;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.6rem .8rem;text-decoration:none;transition:transform .15s,box-shadow .15s;cursor:pointer';
     card.onmouseover = () => { card.style.transform='translateY(-2px)'; card.style.boxShadow='0 4px 12px rgba(0,0,0,.15)'; };
     card.onmouseout = () => { card.style.transform=''; card.style.boxShadow=''; };
