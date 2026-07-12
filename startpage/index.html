@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.3</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.4</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -2182,8 +2182,7 @@ let state = {
   categories: [
     { id: 'all',      name: '전체',       emoji: '⭐', pinned: true },
     { id: 'univall',  name: '대학',        emoji: '🎓', pinned: true, special: 'univall' },
-    { id: 'gov',      name: '정부·정책',   emoji: '🏛' },
-    { id: 'nl',       name: '뉴스·법령',   emoji: '📰', merged: ['news','law'] },
+    { id: 'gov',      name: '정부·정책·법령', emoji: '🏛' },
     { id: 'uinfo',    name: '대학 행정·평가', emoji: '🏫', merged: ['research','employ','finance','eval','stat','univ','rank','inst','admis','hire','inter'] },
     { id: 'univfund', name: '대학지원사업', emoji: '💰', special: 'univfund' },
     { id: 'univstats', name: '대학통계',   emoji: '📈', special: 'univstats' },
@@ -3147,7 +3146,7 @@ function loadState() {
       const defaultCatIds = new Set(state.categories.map(c=>c.id));
       const defaultLinkIds = new Set(state.links.map(l=>l.id));
       // 통합으로 사라진 구 카테고리 — 저장본에서 재추가 금지
-      const OBSOLETE_CATS = new Set(['news','law','research','employ','finance','eval','stat','inst','admis','hire','re','fes','univ','rank','iah','inter']);
+      const OBSOLETE_CATS = new Set(['nl','news','law','research','employ','finance','eval','stat','inst','admis','hire','re','fes','univ','rank','iah','inter']);
       if (parsed.categories) parsed.categories.filter(c=>!defaultCatIds.has(c.id) && !OBSOLETE_CATS.has(c.id)).forEach(c=>state.categories.push(c));
       if (parsed.links) parsed.links.filter(l=>!defaultLinkIds.has(l.id)).forEach(l=>state.links.push(l));
       if (Array.isArray(parsed.pinned)) state.pinned = parsed.pinned;
@@ -3920,7 +3919,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v14.3 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v14.4 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6041,9 +6040,11 @@ function renderGovView() {
   const addBtn = document.getElementById('addLinkHeaderBtn');
   if (addBtn) addBtn.style.display = '';
   grid.classList.add('univall-mode');
-  title.textContent = '🏛 정부·정책';
+  title.textContent = '🏛 정부·정책 · 뉴스·법령';
 
   const govLinks = state.links.filter(l => l.catId === 'gov');
+  const newsLinks = state.links.filter(l => l.catId === 'news');
+  const lawLinks = state.links.filter(l => l.catId === 'law');
 
   grid.innerHTML = `
     <div class="ai-view-wrap">
@@ -6051,6 +6052,18 @@ function renderGovView() {
       <div class="univ-region-section">
         <h3 class="univ-region-title">🏛 정부기관·교육부 산하</h3>
         <div class="ai-chip-grid" id="govLinksGrid"></div>
+      </div>
+
+      <!-- 교육 뉴스 -->
+      <div class="univ-region-section" style="margin-top:1.2rem">
+        <h3 class="univ-region-title">📰 교육 뉴스·언론</h3>
+        <div class="ai-chip-grid" id="newsLinksGrid"></div>
+      </div>
+
+      <!-- 법령·법제 -->
+      <div class="univ-region-section" style="margin-top:1.2rem">
+        <h3 class="univ-region-title">⚖️ 법령·법제</h3>
+        <div class="ai-chip-grid" id="lawLinksGrid"></div>
       </div>
 
       <!-- 교육위원회 -->
@@ -6086,17 +6099,23 @@ function renderGovView() {
     </div>
   `;
 
-  // gov 링크 칩
-  const govGrid = document.getElementById('govLinksGrid');
-  govLinks.forEach(link => {
-    const a = document.createElement('a');
-    a.className = 'univ-chip';
-    a.href = link.url;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div><span class="chip-actions"><button class="edit" onclick="openEditLink('${link.id}',event)" title="편집">✏️</button><button class="del" onclick="deleteLink('${link.id}',event)" title="삭제">✕</button></span>`;
-    govGrid.appendChild(a);
-  });
+  // 링크 칩 렌더 헬퍼
+  const renderChips = (links, gridId) => {
+    const g = document.getElementById(gridId);
+    if (!g) return;
+    links.forEach(link => {
+      const a = document.createElement('a');
+      a.className = 'univ-chip';
+      a.href = link.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.innerHTML = `<span>${link.emoji||'🔗'}</span><div class="ai-chip-text"><div class="ai-chip-name">${link.name}</div><div class="ai-chip-desc">${link.desc||''}</div></div><span class="chip-actions"><button class="edit" onclick="openEditLink('${link.id}',event)" title="편집">✏️</button><button class="del" onclick="deleteLink('${link.id}',event)" title="삭제">✕</button></span>`;
+      g.appendChild(a);
+    });
+  };
+  renderChips(govLinks, 'govLinksGrid');
+  renderChips(newsLinks, 'newsLinksGrid');
+  renderChips(lawLinks, 'lawLinksGrid');
 
   // 교육부 조직도
   const moeWrap = document.getElementById('moeOrgWrap');
@@ -10299,7 +10318,7 @@ function renderLinks() {
       // 일반 링크 카드
       const catLinks = cat.id === 'fes' ? state.links.filter(l => FES_IDS.includes(l.catId))
         : cat.id === 're'  ? state.links.filter(l => RE_IDS.includes(l.catId))
-        : cat.id === 'nl'  ? state.links.filter(l => NL_IDS.includes(l.catId))
+        : cat.id === 'gov' ? state.links.filter(l => l.catId === 'gov' || NL_IDS.includes(l.catId))
         : cat.id === 'iah' ? state.links.filter(l => IAH_IDS.includes(l.catId))
         : cat.id === 'uinfo' ? state.links.filter(l => UINFO_IDS.includes(l.catId))
         : state.links.filter(l => l.catId === cat.id);
@@ -28224,7 +28243,7 @@ function nrReportTab() {
 function nrInsertButton() {
   const bar = document.getElementById('catBar');
   if (!bar || document.getElementById('nrTabBtn')) return;
-  const nlTab = [...bar.querySelectorAll('.cat-tab')].find(b => /뉴스\s*·?\s*법령/.test(b.textContent));
+  const nlTab = [...bar.querySelectorAll('.cat-tab')].find(b => /법령|뉴스/.test(b.textContent));
   const btn = document.createElement('button');
   btn.id = 'nrTabBtn';
   btn.className = 'cat-tab';
