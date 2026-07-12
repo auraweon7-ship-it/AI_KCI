@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.0</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.1</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3920,7 +3920,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v14.0 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v14.1 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -26457,6 +26457,16 @@ function fxCalc() {
 
 // ── 연구재단 신규사업 (nrf.re.kr 페이지 파싱) ──
 const NRF_URL = 'https://www.nrf.re.kr/page/362?menuNo=362&bizNotGubn=guide';
+// 공모 마감 레이더 — NRF 공고를 D-day 후보로(제목 자동 채움, 마감일만 지정)
+function nrfToDday(title) {
+  const n = document.getElementById('ddayName');
+  const d = document.getElementById('ddayDate');
+  if (n) n.value = (title || '').slice(0, 40);
+  const rw = document.getElementById('rwDday');
+  if (rw) rw.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  if (d) setTimeout(() => { try { d.focus(); if (d.showPicker) d.showPicker(); } catch (_) {} }, 350);
+  showToast('마감일을 지정하고 + 를 누르세요 ⏳', '⏳');
+}
 async function loadNrfRss() {
   const el = document.getElementById('nrfRssBody');
   if (!el) return;
@@ -26476,12 +26486,17 @@ async function loadNrfRss() {
   };
   const render = items => {
     if (!items.length) throw new Error('no items');
+    const escAttr = s => (s || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
     el.innerHTML = items.slice(0, 8).map(it =>
-      `<a href="${NRF_URL}" target="_blank" rel="noopener" style="display:block;padding:6px 0;border-bottom:1px solid var(--border);text-decoration:none;">
-        <div style="font-size:.72rem;color:var(--text);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
-          ${it.cat?`<span style="font-size:.56rem;font-weight:700;color:#fff;background:var(--accent);padding:0 5px;border-radius:6px;margin-right:3px">${it.cat}</span>`:''}${it.isNew?'<span style="color:#e74c3c;font-weight:700;font-size:.6rem">N </span>':''}${it.title.replace(/</g,'&lt;')}
-        </div>
-      </a>`).join('') +
+      `<div style="display:flex;align-items:flex-start;gap:5px;padding:6px 0;border-bottom:1px solid var(--border)">
+        <a href="${NRF_URL}" target="_blank" rel="noopener" style="flex:1;min-width:0;text-decoration:none">
+          <div style="font-size:.72rem;color:var(--text);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
+            ${it.cat?`<span style="font-size:.56rem;font-weight:700;color:#fff;background:var(--accent);padding:0 5px;border-radius:6px;margin-right:3px">${it.cat}</span>`:''}${it.isNew?'<span style="color:#e74c3c;font-weight:700;font-size:.6rem">N </span>':''}${it.title.replace(/</g,'&lt;')}
+          </div>
+        </a>
+        <button data-title="${escAttr(it.title)}" onclick="nrfToDday(this.dataset.title)" title="마감일 D-day 추가"
+          style="flex:0 0 auto;background:var(--bg3);border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:.72rem;line-height:1;padding:3px 5px;color:var(--text-dim)">⏳</button>
+      </div>`).join('') +
       `<a href="${NRF_URL}" target="_blank" rel="noopener" style="display:block;font-size:.64rem;color:var(--accent2);text-decoration:none;margin-top:6px">→ 연구재단 신규사업공모 전체보기</a>`;
   };
   // 자체 프록시(/api/proxy) → allorigins 폴백
