@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v15.1</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v15.2</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3919,7 +3919,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v15.1 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v15.2 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5993,6 +5993,7 @@ const MOE_ORG = [
   { rank:'국장', name:'예혜란', tel:'',              dept:'고등평생정책실 / 평생교육지원관', note:'평생교육·전문대', url:'https://www.moe.go.kr/main.do?s=moe' },
   { rank:'국장', name:'장미란', tel:'010-2371-8186', dept:'고등평생정책실 / 의대교육지원관', note:'의대 교육 지원', url:'https://www.moe.go.kr/main.do?s=moe' },
   { rank:'국장', name:'하유경', tel:'',              dept:'국제교육기획관',           note:'국제교육 기획',       url:'https://www.moe.go.kr/main.do?s=moe' },
+  { rank:'국장', name:'이윤홍', tel:'010-3218-07257', dept:'인공지능인재지원국',       note:'AI 인재 양성·정책',   duty:'인공지능 인재 양성 총괄', url:'https://www.moe.go.kr/main.do?s=moe' },
   { rank:'국장', name:'',       tel:'',              dept:'감사관실',                 note:'감사·청렴',           url:'https://www.moe.go.kr/main.do?s=moe' },
   // ── 과장급 ──
   { rank:'과장', name:'',       tel:'02-6222-6211', dept:'기획조정실 / 정책기획과',       note:'정책 총괄',       url:'https://www.moe.go.kr/main.do?s=moe' },
