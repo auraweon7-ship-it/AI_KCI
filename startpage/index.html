@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v13.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v13.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1158,6 +1158,9 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       <div class="rss-tabs" id="rssTabs"></div>
       <div class="rss-items" id="rssItems"><div class="skel" style="height:30px"></div></div>
       <button id="rssAiBtn" onclick="rssAnalyzeAll()" style="width:100%;margin-top:8px;padding:8px;background:var(--accent);border:none;border-radius:7px;color:#fff;font-size:.74rem;font-weight:700;cursor:pointer;font-family:inherit">🤖 전체 피드 AI 분석</button>
+      <label style="display:flex;align-items:center;gap:5px;margin-top:5px;font-size:.64rem;color:var(--text-muted);cursor:pointer">
+        <input type="checkbox" id="dailyBriefChk" onchange="toggleDailyBrief()"> 🌅 매일 첫 방문 시 자동 분석 (일일 브리핑)
+      </label>
       <div id="rssAiOut" style="margin-top:8px"></div>
     </div>
 
@@ -3915,7 +3918,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v13.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v13.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -27311,6 +27314,25 @@ ${corpus}
 }
 function rssAiClose() { const o = document.getElementById('rssAiOut'); if (o) o.innerHTML = ''; }
 
+// ── 일일 브리핑: 하루 1회 첫 방문 시 전체 피드 AI 분석 자동 실행 ──
+function toggleDailyBrief() {
+  const chk = document.getElementById('dailyBriefChk');
+  state.settings.dailyBrief = !!(chk && chk.checked);
+  saveState();
+}
+function checkDailyBrief() {
+  const chk = document.getElementById('dailyBriefChk');
+  const on = state.settings.dailyBrief !== false; // 기본 켜짐
+  if (chk) chk.checked = on;
+  if (!on) return;
+  const key = (localStorage.getItem('claude_api_key') || '').trim();
+  if (!key) return;                                // 키 없으면 조용히 skip
+  const today = new Date().toISOString().slice(0, 10);
+  if (localStorage.getItem('daily_brief_date') === today) return; // 오늘 이미 실행
+  localStorage.setItem('daily_brief_date', today);
+  setTimeout(() => { try { if (!_rssAiBusy) rssAnalyzeAll(); } catch (_) {} }, 1800);
+}
+
 // ── 전체 피드 AI 분석 결과: 독립 HTML 문서화(스타일 포함) ──
 function rssAiBuildDoc() {
   const out = document.getElementById('rssAiOut');
@@ -27514,7 +27536,7 @@ render();
  loadLegisNews, () => loadIdiom(false), () => loadQuote(false), () => loadGreatLine(false), loadHealMusic,
  () => { try { loadYtRec(); } catch(_){} },
  memoLoad, cvSetOpts, piLoad, timerRender, loadStock, pomoRender, loadClockCityTemps,
- () => { rssRenderTabs(); rssLoad(); }
+ () => { rssRenderTabs(); rssLoad(); }, checkDailyBrief
 ].forEach(fn => { try { fn(); } catch(e) { console.error('위젯 초기화 오류:', fn.name, e); } });
 
 document.getElementById('cmdInput')?.addEventListener('input', e => cmdRender(e.target.value));
