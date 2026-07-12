@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -2011,6 +2011,16 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
     style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;"
     oninput="localStorage.setItem('claude_api_key', this.value.trim()); if(state.activeCat==='univstats') renderUnivStatsView();">
   <p style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">메뉴 <b>📈 대학통계</b> 대시보드는 이 키가 있어야 작동합니다. 키는 이 브라우저에만 저장되며 Anthropic API로만 전송됩니다. <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--accent2)">키 발급 →</a></p>
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+  <div class="settings-title" style="font-size:.9rem;">🟢 네이버 검색 API (뉴스 리뷰 실시간 검색)</div>
+  <input id="naverClientId" type="text" placeholder="Client ID" autocomplete="off"
+    style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;font-family:Consolas,monospace;"
+    oninput="localStorage.setItem('naver_client_id', this.value.trim());">
+  <input id="naverClientSecret" type="password" placeholder="Client Secret" autocomplete="off"
+    style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;font-family:Consolas,monospace;"
+    oninput="localStorage.setItem('naver_client_secret', this.value.trim());">
+  <p style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">메뉴 <b>📊 뉴스 리뷰</b>의 실시간 뉴스 검색에 사용됩니다. 키가 없어도 기본 뉴스는 표시됩니다. 키는 이 브라우저에만 저장됩니다. <a href="https://developers.naver.com/apps/" target="_blank" style="color:var(--accent2)">키 발급 →</a></p>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
   <div class="settings-title" style="font-size:.9rem;">🎙 ElevenLabs API (시 낭송)</div>
@@ -3919,7 +3929,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v14.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v14.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -24600,6 +24610,8 @@ function applySettings() {
   const at = document.getElementById('toggleAutoTheme');
   if (at) at.className = 'toggle' + (state.settings.autoTheme ? ' on' : '');
   document.body.dataset.theme = state.settings.dark ? 'dark' : 'light';
+  // 뉴스 리뷰 iframe 테마 연동
+  try { const nrIf = document.querySelector('#linksGrid iframe'); if (nrIf && nrIf.contentWindow && nrIf.contentWindow.nrApplyParentTheme) nrIf.contentWindow.nrApplyParentTheme(); } catch(_) {}
   // 밀도
   const dt = document.getElementById('toggleDensity');
   if (dt) dt.className = 'toggle' + (state.settings.compact ? ' on' : '');
@@ -27683,6 +27695,7 @@ render();
  () => { const p = document.getElementById('profileSel'); if (p) p.value = localStorage.getItem('active_profile') || ''; },
  () => { const k = document.getElementById('kciApiKey'); if (k) k.value = localStorage.getItem('kci_api_key') || ''; },
  () => { const k = document.getElementById('claudeApiKey'); if (k) k.value = localStorage.getItem('claude_api_key') || ''; },
+ () => { const a = document.getElementById('naverClientId'); if (a) a.value = localStorage.getItem('naver_client_id') || ''; const b = document.getElementById('naverClientSecret'); if (b) b.value = localStorage.getItem('naver_client_secret') || ''; },
  () => { const k = document.getElementById('elevenApiKey'); if (k) k.value = localStorage.getItem('eleven_api_key') || ''; const v = document.getElementById('elevenVoiceId'); if (v) v.value = localStorage.getItem('eleven_voice_id') || ''; },
  () => { let kws=[]; try{kws=JSON.parse(localStorage.getItem('book_keywords')||'[]');}catch(_){} ['bookKw1','bookKw2','bookKw3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=kws[i]||'';}); },
  () => { let ts=[]; try{ts=JSON.parse(localStorage.getItem('youtube_topics')||'[]');}catch(_){} ['ytTopic1','ytTopic2','ytTopic3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=ts[i]||'';}); },

@@ -325,10 +325,6 @@
     <div class="meta-info">
       <span id="updateDate">갱신: 2026-06-01</span>
       <span id="totalCount">전체 0건</span>
-      <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
-      <button id="apiKeyBtn" onclick="toggleApiKeyModal()" style="background:var(--accent);border:none;color:#fff;padding:0.35rem 0.8rem;border-radius:6px;cursor:pointer;font-size:0.8rem;font-weight:700;display:flex;align-items:center;gap:0.3rem;">
-        <span id="apiKeyIcon">🔑</span> <span id="apiKeyLabel">API 키 설정</span>
-      </button>
     </div>
     <!-- API Key Modal -->
     <div id="apiKeyModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:9999;display:none;justify-content:center;align-items:center;">
@@ -1325,12 +1321,20 @@ function toggleTheme(){
   document.getElementById('themeToggle').textContent=isLight?'☀️':'🌙';
   localStorage.setItem('theme_mode',isLight?'light':'dark');
 }
-(function initTheme(){
-  if(localStorage.getItem('theme_mode')==='light'){
-    document.body.classList.add('light-mode');
-    document.getElementById('themeToggle').textContent='☀️';
-  }
-})();
+// 테마: startpage 메인 모드와 연동 (같은 origin — 부모 body[data-theme] 감지)
+function nrApplyParentTheme(){
+  let light=false;
+  try{
+    if(window.parent!==window && window.parent.document && window.parent.document.body){
+      light = window.parent.document.body.dataset.theme === 'light';
+    } else {
+      light = localStorage.getItem('theme_mode')==='light'; // 단독 실행 폴백
+    }
+  }catch(_){ light = localStorage.getItem('theme_mode')==='light'; }
+  document.body.classList.toggle('light-mode', light);
+}
+window.nrApplyParentTheme = nrApplyParentTheme;
+nrApplyParentTheme();
 
 // ═══ 정책기획서 렌더 ═══
 let policyChartMajorInst, policyChartSubInst, policyChartBudgetInst, policyChartYearlyInst;
