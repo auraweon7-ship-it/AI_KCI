@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.7</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.8</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3919,7 +3919,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v14.7 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v14.8 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -28144,7 +28144,7 @@ function renderNewsReviewView() {
   if (grid) {
     grid.classList.remove('univall-mode');
     grid.innerHTML = `<iframe src="newsreview.html" title="뉴스 리뷰 — 사립대학 뉴스 대시보드"
-      style="width:100%;height:calc(100vh - 210px);min-height:560px;border:1px solid var(--border);border-radius:12px;display:block;background:var(--bg)"
+      style="grid-column:1/-1;width:100%;height:calc(100vh - 210px);min-height:560px;border:1px solid var(--border);border-radius:12px;display:block;background:var(--bg)"
       allow="clipboard-write"></iframe>`;
   }
 }
