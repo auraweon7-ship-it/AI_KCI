@@ -364,10 +364,10 @@
     <span class="sep">~</span>
     <input type="date" id="dateTo" class="ctrl-input">
     <div class="date-presets" id="datePresets">
-      <button class="preset-btn active" data-months="0">이번 달</button>
+      <button class="preset-btn" data-months="0">이번 달</button>
       <button class="preset-btn" data-months="3">3개월</button>
       <button class="preset-btn" data-months="6">6개월</button>
-      <button class="preset-btn" data-months="12">올해 전체</button>
+      <button class="preset-btn active" data-months="12">올해 전체</button>
     </div>
     <select id="liveSearchCount" class="ctrl-input" style="width:auto;margin-left:8px;padding:4px 8px;font-size:0.85rem;font-weight:600;background:#1e1e2e;color:#f0f0f0;border:1px solid var(--border);border-radius:6px;cursor:pointer;">
       <option value="100" style="background:#1e1e2e;color:#f0f0f0;padding:4px;">100건</option>
@@ -2224,11 +2224,10 @@ function renderSentimentGauge(f){
 // 기간 초기값: 실행하는 월의 1일~말일
 (function initDates(){
   const now=new Date();
-  const y=now.getFullYear(), m=now.getMonth();
-  const first=new Date(y,m,1);
-  const last=new Date(y,m+1,0);
-  document.getElementById('dateFrom').value=first.toISOString().split('T')[0];
-  document.getElementById('dateTo').value=last.toISOString().split('T')[0];
+  // 기본: 최근 12개월(올해 전체) — '이번 달'은 최신 데이터 범위 밖이라 0건 표시되던 문제 해결
+  const from=new Date(now); from.setMonth(from.getMonth()-12);
+  document.getElementById('dateFrom').value=from.toISOString().split('T')[0];
+  document.getElementById('dateTo').value=now.toISOString().split('T')[0];
 })();
 
 render();
