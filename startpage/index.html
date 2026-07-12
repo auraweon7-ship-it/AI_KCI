@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.1</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.2</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3920,7 +3920,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v14.1 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v14.2 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -25475,15 +25475,18 @@ function getSemesterWeek() {
 }
 
 function loadCalWidget() {
+  const el = document.getElementById('semesterInfo');
+  if (!el) return; // 구 캘린더 잔재 — 현재는 schedWidget 사용, 요소 없으면 무시
   const { semName, week } = getSemesterWeek();
-  document.getElementById('semesterInfo').innerHTML =
+  el.innerHTML =
     `<div class="sem-week">제${week}주</div><div style="font-size:.78rem;color:var(--text-dim);margin-top:2px;">${semName}</div>`;
   renderCalEvents();
 }
 
 function renderCalEvents() {
-  const events = JSON.parse(localStorage.getItem('cal_events') || '[]');
   const container = document.getElementById('calDates');
+  if (!container) return; // 구 캘린더 잔재 — 요소 없으면 무시
+  const events = JSON.parse(localStorage.getItem('cal_events') || '[]');
   const now = new Date(); now.setHours(0,0,0,0);
   if (!events.length) {
     container.innerHTML = '<div class="cal-no-events">✏️ 버튼으로 일정을 추가하세요</div>';
