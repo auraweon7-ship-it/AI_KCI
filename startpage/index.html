@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.2</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.3</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3920,7 +3920,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v14.2 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v14.3 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5721,6 +5721,7 @@ function renderCats() {
     btn.onclick = () => selectCat(cat.id);
     bar.insertBefore(btn, addBtn);
   });
+  try { nrInsertButton(); } catch(_) {}
 }
 
 // 대학별 전임교원 수 (대학알리미 공시 기준)
@@ -27616,6 +27617,627 @@ document.addEventListener('click', e => {
 });
 
 // 로그인은 handleLogin()의 OAuth2 팝업 방식 사용 — 커스텀 "G Login" 버튼 유지
+</script>
+
+<script>
+// ══════════════════════════════════════════════════════
+//  뉴스 리뷰 — 사립대학 법인진단평가 (univreview 이식)
+//  데이터: 대학알리미·대학재정알리미 기반 샘플 (2024)
+// ══════════════════════════════════════════════════════
+const NR_DATA = [
+  // 대규모 대학
+  {
+    universityName: "고려대학교",
+    universityId: "korea-univ",
+    year: 2024,
+    studentEducationExpense: 18500,
+    educationExpenseReturnRate: 125.3,
+    scholarshipRate: 18.2,
+    carryoverRate: 8.5,
+    tuitionDependencyRate: 42.3,
+    debtRatio: 12.4,
+    foundationContributionRate: 3.8,
+    profitableAssetSecurityRate: 95.2,
+    operatingExpenseBurdenRate: 88.5,
+    fullTimeFacultyRate: 92.5,
+    employmentRate: 87.3,
+    externalResearchPerFaculty: 125.4,
+    donationRatio: 8.9,
+    dormitoryOccupancyRate: 78.5,
+    undergradEnrollmentRate: 95.2,
+    educationalAssetSecurityRate: 92.1,
+    internalResearchPerFaculty: 45.3,
+    foreignUndergraduateStudents: 325,
+    nonRegularStaffCount: 185,
+    partTimeFacultyCount: 520,
+    nonQuotaAdmission: 12.5,
+    administrativeOperatingCost: 52.8,
+    financialHealthScore: 92.5,
+    educationInvestmentScore: 88.3,
+    foundationAccountabilityScore: 85.7,
+    totalScore: 88.8,
+    rank: 1,
+  },
+  {
+    universityName: "연세대학교",
+    universityId: "yonsei-univ",
+    year: 2024,
+    studentEducationExpense: 17800,
+    educationExpenseReturnRate: 122.1,
+    scholarshipRate: 17.5,
+    carryoverRate: 9.2,
+    tuitionDependencyRate: 45.1,
+    debtRatio: 15.2,
+    foundationContributionRate: 4.2,
+    profitableAssetSecurityRate: 92.8,
+    operatingExpenseBurdenRate: 86.3,
+    fullTimeFacultyRate: 89.2,
+    employmentRate: 85.1,
+    externalResearchPerFaculty: 118.6,
+    donationRatio: 7.8,
+    dormitoryOccupancyRate: 75.2,
+    undergradEnrollmentRate: 92.8,
+    educationalAssetSecurityRate: 89.5,
+    internalResearchPerFaculty: 42.1,
+    foreignUndergraduateStudents: 298,
+    nonRegularStaffCount: 210,
+    partTimeFacultyCount: 545,
+    nonQuotaAdmission: 14.2,
+    administrativeOperatingCost: 54.3,
+    financialHealthScore: 89.3,
+    educationInvestmentScore: 86.5,
+    foundationAccountabilityScore: 83.2,
+    totalScore: 86.3,
+    rank: 2,
+  },
+  {
+    universityName: "성균관대학교",
+    universityId: "skku",
+    year: 2024,
+    studentEducationExpense: 16200,
+    educationExpenseReturnRate: 118.5,
+    scholarshipRate: 16.8,
+    carryoverRate: 10.1,
+    tuitionDependencyRate: 48.3,
+    debtRatio: 18.5,
+    foundationContributionRate: 3.5,
+    profitableAssetSecurityRate: 88.4,
+    operatingExpenseBurdenRate: 82.7,
+    fullTimeFacultyRate: 87.5,
+    employmentRate: 83.2,
+    externalResearchPerFaculty: 112.3,
+    donationRatio: 6.7,
+    dormitoryOccupancyRate: 72.1,
+    undergradEnrollmentRate: 90.5,
+    educationalAssetSecurityRate: 87.2,
+    internalResearchPerFaculty: 39.8,
+    foreignUndergraduateStudents: 276,
+    nonRegularStaffCount: 235,
+    partTimeFacultyCount: 568,
+    nonQuotaAdmission: 15.8,
+    administrativeOperatingCost: 56.1,
+    financialHealthScore: 85.2,
+    educationInvestmentScore: 83.8,
+    foundationAccountabilityScore: 79.5,
+    totalScore: 82.8,
+    rank: 3,
+  },
+  {
+    universityName: "한양대학교",
+    universityId: "hanyang-univ",
+    year: 2024,
+    scale: "중규",
+    studentEducationExpense: 15800,
+    educationExpenseReturnRate: 115.2,
+    scholarshipRate: 15.9,
+    carryoverRate: 11.3,
+    tuitionDependencyRate: 51.2,
+    debtRatio: 22.1,
+    foundationContributionRate: 2.8,
+    profitableAssetSecurityRate: 84.5,
+    operatingExpenseBurdenRate: 78.9,
+    fullTimeFacultyRate: 84.8,
+    employmentRate: 81.5,
+    externalResearchPerFaculty: 108.9,
+    donationRatio: 5.9,
+    dormitoryOccupancyRate: 70.3,
+    undergradEnrollmentRate: 88.2,
+    educationalAssetSecurityRate: 82.1,
+    internalResearchPerFaculty: 36.5,
+    foreignUndergraduateStudents: 245,
+    nonRegularStaffCount: 252,
+    partTimeFacultyCount: 612,
+    nonQuotaAdmission: 18.5,
+    administrativeOperatingCost: 58.2,
+    financialHealthScore: 81.5,
+    educationInvestmentScore: 80.2,
+    foundationAccountabilityScore: 75.3,
+    totalScore: 79.0,
+    rank: 4,
+  },
+  {
+    universityName: "이화여자대학교",
+    universityId: "ewha-univ",
+    year: 2024,
+    studentEducationExpense: 16800,
+    educationExpenseReturnRate: 120.4,
+    scholarshipRate: 17.2,
+    carryoverRate: 9.8,
+    tuitionDependencyRate: 46.5,
+    debtRatio: 16.8,
+    foundationContributionRate: 3.9,
+    profitableAssetSecurityRate: 91.2,
+    operatingExpenseBurdenRate: 85.1,
+    fullTimeFacultyRate: 88.3,
+    employmentRate: 82.8,
+    externalResearchPerFaculty: 115.6,
+    donationRatio: 7.2,
+    dormitoryOccupancyRate: 73.5,
+    undergradEnrollmentRate: 91.3,
+    educationalAssetSecurityRate: 88.8,
+    internalResearchPerFaculty: 41.2,
+    foreignUndergraduateStudents: 287,
+    nonRegularStaffCount: 198,
+    partTimeFacultyCount: 535,
+    nonQuotaAdmission: 13.9,
+    administrativeOperatingCost: 55.7,
+    financialHealthScore: 87.8,
+    educationInvestmentScore: 85.2,
+    foundationAccountabilityScore: 81.9,
+    totalScore: 84.9,
+    rank: 5,
+  },
+  {
+    universityName: "경희대학교",
+    universityId: "kyunghee-univ",
+    year: 2024,
+    studentEducationExpense: 15200,
+    educationExpenseReturnRate: 112.6,
+    scholarshipRate: 15.3,
+    carryoverRate: 11.9,
+    tuitionDependencyRate: 52.8,
+    debtRatio: 24.5,
+    foundationContributionRate: 2.5,
+    profitableAssetSecurityRate: 81.3,
+    operatingExpenseBurdenRate: 75.2,
+    fullTimeFacultyRate: 82.1,
+    employmentRate: 79.4,
+    externalResearchPerFaculty: 104.2,
+    donationRatio: 5.3,
+    dormitoryOccupancyRate: 68.9,
+    undergradEnrollmentRate: 87.1,
+    educationalAssetSecurityRate: 79.5,
+    internalResearchPerFaculty: 34.3,
+    foreignUndergraduateStudents: 215,
+    nonRegularStaffCount: 278,
+    partTimeFacultyCount: 645,
+    nonQuotaAdmission: 19.2,
+    administrativeOperatingCost: 59.4,
+    financialHealthScore: 79.5,
+    educationInvestmentScore: 77.8,
+    foundationAccountabilityScore: 72.4,
+    totalScore: 76.5,
+    rank: 6,
+  },
+  // 중규모 대학
+  {
+    universityName: "서강대학교",
+    universityId: "sogang-univ",
+    year: 2024,
+    studentEducationExpense: 14200,
+    educationExpenseReturnRate: 108.9,
+    scholarshipRate: 14.1,
+    carryoverRate: 13.5,
+    tuitionDependencyRate: 56.2,
+    debtRatio: 31.2,
+    foundationContributionRate: 2.1,
+    profitableAssetSecurityRate: 76.5,
+    operatingExpenseBurdenRate: 70.8,
+    fullTimeFacultyRate: 80.2,
+    employmentRate: 77.6,
+    externalResearchPerFaculty: 101.3,
+    donationRatio: 4.8,
+    dormitoryOccupancyRate: 66.4,
+    undergradEnrollmentRate: 84.5,
+    educationalAssetSecurityRate: 74.8,
+    internalResearchPerFaculty: 31.1,
+    foreignUndergraduateStudents: 185,
+    nonRegularStaffCount: 312,
+    partTimeFacultyCount: 698,
+    nonQuotaAdmission: 21.5,
+    administrativeOperatingCost: 62.1,
+    financialHealthScore: 74.2,
+    educationInvestmentScore: 72.5,
+    foundationAccountabilityScore: 67.8,
+    totalScore: 71.5,
+    rank: 7,
+  },
+  {
+    universityName: "중앙대학교",
+    universityId: "chung-ang-univ",
+    year: 2024,
+    studentEducationExpense: 14500,
+    educationExpenseReturnRate: 110.8,
+    scholarshipRate: 14.5,
+    carryoverRate: 12.8,
+    tuitionDependencyRate: 55.3,
+    debtRatio: 28.4,
+    foundationContributionRate: 2.2,
+    profitableAssetSecurityRate: 78.2,
+    operatingExpenseBurdenRate: 72.5,
+    fullTimeFacultyRate: 81.5,
+    employmentRate: 78.9,
+    externalResearchPerFaculty: 103.7,
+    donationRatio: 5.1,
+    dormitoryOccupancyRate: 67.8,
+    undergradEnrollmentRate: 85.9,
+    educationalAssetSecurityRate: 76.3,
+    internalResearchPerFaculty: 32.8,
+    foreignUndergraduateStudents: 198,
+    nonRegularStaffCount: 298,
+    partTimeFacultyCount: 672,
+    nonQuotaAdmission: 20.7,
+    administrativeOperatingCost: 61.3,
+    financialHealthScore: 76.8,
+    educationInvestmentScore: 75.3,
+    foundationAccountabilityScore: 70.1,
+    totalScore: 74.1,
+    rank: 8,
+  },
+  {
+    universityName: "포항공과대학교",
+    universityId: "postech",
+    year: 2024,
+    studentEducationExpense: 16900,
+    educationExpenseReturnRate: 128.5,
+    scholarshipRate: 19.8,
+    carryoverRate: 7.2,
+    tuitionDependencyRate: 38.4,
+    debtRatio: 9.8,
+    foundationContributionRate: 4.5,
+    profitableAssetSecurityRate: 93.7,
+    operatingExpenseBurdenRate: 89.2,
+    fullTimeFacultyRate: 91.3,
+    employmentRate: 89.5,
+    externalResearchPerFaculty: 135.8,
+    donationRatio: 9.8,
+    dormitoryOccupancyRate: 81.2,
+    undergradEnrollmentRate: 93.7,
+    educationalAssetSecurityRate: 91.5,
+    internalResearchPerFaculty: 48.9,
+    foreignUndergraduateStudents: 342,
+    nonRegularStaffCount: 156,
+    partTimeFacultyCount: 489,
+    nonQuotaAdmission: 9.8,
+    administrativeOperatingCost: 49.5,
+    financialHealthScore: 90.4,
+    educationInvestmentScore: 91.2,
+    foundationAccountabilityScore: 87.3,
+    totalScore: 89.6,
+    rank: 9,
+  },
+  {
+    universityName: "동국대학교",
+    universityId: "dongguk-univ",
+    year: 2024,
+    studentEducationExpense: 13800,
+    educationExpenseReturnRate: 107.2,
+    scholarshipRate: 13.9,
+    carryoverRate: 14.1,
+    tuitionDependencyRate: 57.4,
+    debtRatio: 33.5,
+    foundationContributionRate: 1.9,
+    profitableAssetSecurityRate: 74.2,
+    operatingExpenseBurdenRate: 69.1,
+    fullTimeFacultyRate: 78.9,
+    employmentRate: 76.2,
+    externalResearchPerFaculty: 99.4,
+    donationRatio: 4.5,
+    dormitoryOccupancyRate: 65.1,
+    undergradEnrollmentRate: 82.3,
+    educationalAssetSecurityRate: 71.2,
+    internalResearchPerFaculty: 29.5,
+    foreignUndergraduateStudents: 167,
+    nonRegularStaffCount: 328,
+    partTimeFacultyCount: 721,
+    nonQuotaAdmission: 23.1,
+    administrativeOperatingCost: 64.2,
+    financialHealthScore: 71.9,
+    educationInvestmentScore: 70.8,
+    foundationAccountabilityScore: 65.5,
+    totalScore: 69.4,
+    rank: 10,
+  },
+  {
+    universityName: "아주대학교",
+    universityId: "ajou-univ",
+    year: 2024,
+    studentEducationExpense: 13500,
+    educationExpenseReturnRate: 106.4,
+    scholarshipRate: 13.7,
+    carryoverRate: 14.6,
+    tuitionDependencyRate: 58.1,
+    debtRatio: 34.8,
+    foundationContributionRate: 1.8,
+    profitableAssetSecurityRate: 73.1,
+    operatingExpenseBurdenRate: 68.4,
+    fullTimeFacultyRate: 77.5,
+    employmentRate: 74.8,
+    externalResearchPerFaculty: 97.1,
+    donationRatio: 4.2,
+    dormitoryOccupancyRate: 63.5,
+    undergradEnrollmentRate: 81.1,
+    educationalAssetSecurityRate: 69.8,
+    internalResearchPerFaculty: 28.2,
+    foreignUndergraduateStudents: 152,
+    nonRegularStaffCount: 342,
+    partTimeFacultyCount: 745,
+    nonQuotaAdmission: 24.5,
+    administrativeOperatingCost: 65.8,
+    financialHealthScore: 70.5,
+    educationInvestmentScore: 69.3,
+    foundationAccountabilityScore: 64.2,
+    totalScore: 68.0,
+    rank: 11,
+  },
+  {
+    universityName: "건국대학교",
+    universityId: "konkuk-univ",
+    year: 2024,
+    studentEducationExpense: 14100,
+    educationExpenseReturnRate: 109.3,
+    scholarshipRate: 14.3,
+    carryoverRate: 13.2,
+    tuitionDependencyRate: 55.8,
+    debtRatio: 29.7,
+    foundationContributionRate: 2.3,
+    profitableAssetSecurityRate: 79.5,
+    operatingExpenseBurdenRate: 73.8,
+    fullTimeFacultyRate: 79.8,
+    employmentRate: 77.3,
+    externalResearchPerFaculty: 102.5,
+    donationRatio: 4.9,
+    dormitoryOccupancyRate: 69.4,
+    undergradEnrollmentRate: 86.4,
+    educationalAssetSecurityRate: 77.9,
+    internalResearchPerFaculty: 33.5,
+    foreignUndergraduateStudents: 203,
+    nonRegularStaffCount: 285,
+    partTimeFacultyCount: 658,
+    nonQuotaAdmission: 19.8,
+    administrativeOperatingCost: 60.6,
+    financialHealthScore: 77.6,
+    educationInvestmentScore: 76.1,
+    foundationAccountabilityScore: 71.3,
+    totalScore: 75.0,
+    rank: 12,
+  },
+];;
+
+// 지표 라벨·단위 (표시용)
+const NR_LABELS = {
+  studentEducationExpense: ['학생 1인당 교육비', '만원'],
+  educationExpenseReturnRate: ['교육비 환원율', '%'],
+  scholarshipRate: ['장학금 지급률', '%'],
+  tuitionDependencyRate: ['등록금 의존율', '%'],
+  debtRatio: ['부채비율', '%'],
+  foundationContributionRate: ['법인전입금 비율', '%'],
+  profitableAssetSecurityRate: ['수익용 기본재산 확보율', '%'],
+  fullTimeFacultyRate: ['전임교원 확보율', '%'],
+  employmentRate: ['취업률', '%'],
+  dormitoryOccupancyRate: ['기숙사 수용율', '%'],
+};
+const NR_BLUE = '#0A2463', NR_ACCENT = '#3E92CC';
+let _nrTab = 'rank', _nrCmpA = 0, _nrCmpB = 1;
+
+function nrEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+// 오버레이 열기
+function openNewsReview() {
+  let ov = document.getElementById('nrOverlay');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'nrOverlay';
+    ov.style.cssText = 'position:fixed;inset:0;z-index:11000;background:var(--bg,#0d1117);overflow-y:auto;display:none';
+    ov.onclick = e => { if (e.target === ov) nrClose(); };
+    document.body.appendChild(ov);
+  }
+  ov.style.display = 'block';
+  document.body.style.overflow = 'hidden';
+  nrRender();
+}
+function nrClose() {
+  const ov = document.getElementById('nrOverlay');
+  if (ov) ov.style.display = 'none';
+  document.body.style.overflow = '';
+}
+function nrSetTab(t) { _nrTab = t; nrRender(); }
+
+function nrRender() {
+  const ov = document.getElementById('nrOverlay');
+  if (!ov) return;
+  const tabs = [
+    ['rank', '🏆 종합 순위'],
+    ['metric', '📊 주요 지표'],
+    ['compare', '⚖️ 대학 비교'],
+    ['report', '📄 분석 보고서'],
+  ];
+  ov.innerHTML = `
+    <div style="max-width:1080px;margin:0 auto;padding:0 20px 60px">
+      <div style="position:sticky;top:0;background:var(--bg,#0d1117);padding:18px 0 12px;z-index:2;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:1.15rem;font-weight:800;color:var(--text);letter-spacing:-.01em">📊 뉴스 리뷰 · 사립대학 법인진단평가</div>
+            <div style="font-size:.68rem;color:var(--text-muted);margin-top:2px">대학알리미·대학재정알리미 기반 객관 지표 · 2024 · 표본 ${NR_DATA.length}개교</div>
+          </div>
+          <button onclick="nrClose()" title="닫기" style="flex:0 0 auto;width:32px;height:32px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--text-muted);cursor:pointer;font-size:.9rem">✕</button>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:12px;flex-wrap:wrap">
+          ${tabs.map(([id, label]) => `<button onclick="nrSetTab('${id}')" style="font-size:.72rem;font-weight:700;padding:7px 13px;border-radius:8px;cursor:pointer;font-family:inherit;border:1px solid ${_nrTab===id?NR_ACCENT:'var(--border)'};background:${_nrTab===id?NR_ACCENT:'var(--card)'};color:${_nrTab===id?'#fff':'var(--text-dim)'}">${label}</button>`).join('')}
+        </div>
+      </div>
+      <div style="padding-top:18px">${nrTabContent()}</div>
+      <div style="font-size:.62rem;color:var(--text-muted);text-align:center;margin-top:30px;line-height:1.7">
+        원본 프로젝트: 사립대학 법인진단평가 시스템 (univreview) · 표본 데이터 기반 재현<br>
+        지표 정의·전체 156개교 데이터는 대학알리미(academyinfo.go.kr)·대학재정알리미 공시 참조
+      </div>
+    </div>`;
+}
+
+function nrTabContent() {
+  if (_nrTab === 'rank') return nrRankTab();
+  if (_nrTab === 'metric') return nrMetricTab();
+  if (_nrTab === 'compare') return nrCompareTab();
+  return nrReportTab();
+}
+
+// 카드 래퍼
+function nrCard(title, inner, sub) {
+  return `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:14px">
+    <div style="font-size:.82rem;font-weight:800;color:var(--text);margin-bottom:${sub?'2px':'12px'}">${title}</div>
+    ${sub ? `<div style="font-size:.64rem;color:var(--text-muted);margin-bottom:12px">${sub}</div>` : ''}
+    ${inner}</div>`;
+}
+
+// 가로 막대 (값→비율)
+function nrHBars(rows, max, unit, color) {
+  const mx = max || Math.max(...rows.map(r => r.v), 1);
+  return `<div style="display:flex;flex-direction:column;gap:7px">` + rows.map((r, i) => {
+    const pct = Math.max(2, Math.round(r.v / mx * 100));
+    const c = color || (i === 0 ? NR_BLUE : NR_ACCENT);
+    return `<div style="display:flex;align-items:center;gap:8px">
+      <div style="flex:0 0 108px;font-size:.7rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.rank?`<b style="color:${NR_ACCENT}">${r.rank}</b> `:''}${nrEsc(r.label)}</div>
+      <div style="flex:1;background:var(--bg3);border-radius:5px;height:16px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${c};border-radius:5px"></div></div>
+      <div style="flex:0 0 auto;font-size:.68rem;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;min-width:54px;text-align:right">${r.v.toLocaleString()}${unit||''}</div>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+// 1) 종합 순위
+function nrRankTab() {
+  const sorted = NR_DATA.slice().sort((a, b) => b.totalScore - a.totalScore);
+  const top = sorted[0];
+  const avg = (NR_DATA.reduce((s, e) => s + e.totalScore, 0) / NR_DATA.length).toFixed(1);
+  const stat = (label, val, sub) => `<div style="flex:1;min-width:150px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px">
+    <div style="font-size:.66rem;color:var(--text-muted)">${label}</div>
+    <div style="font-size:1.5rem;font-weight:800;color:${NR_ACCENT};margin-top:3px;font-variant-numeric:tabular-nums">${val}</div>
+    ${sub ? `<div style="font-size:.62rem;color:var(--text-dim);margin-top:2px">${sub}</div>` : ''}</div>`;
+  const stats = `<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px">
+    ${stat('평가 대상', NR_DATA.length + '개교', '표본')}
+    ${stat('최고 종합점수', top.totalScore.toFixed(1) + '점', nrEsc(top.universityName))}
+    ${stat('평균 종합점수', avg + '점', '전체 표본')}</div>`;
+  const rankBars = nrHBars(sorted.map((e, i) => ({ label: e.universityName, v: +e.totalScore.toFixed(1), rank: i + 1 })), 100, '점');
+  // 3대 점수 표
+  const scoreTable = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.72rem;min-width:460px">
+    <thead><tr style="text-align:left;color:var(--text-muted);font-size:.64rem">
+      <th style="padding:7px 8px;border-bottom:1px solid var(--border)">순위</th>
+      <th style="padding:7px 8px;border-bottom:1px solid var(--border)">대학</th>
+      <th style="padding:7px 8px;border-bottom:1px solid var(--border);text-align:right">재정건전성</th>
+      <th style="padding:7px 8px;border-bottom:1px solid var(--border);text-align:right">교육투자</th>
+      <th style="padding:7px 8px;border-bottom:1px solid var(--border);text-align:right">법인책무성</th>
+      <th style="padding:7px 8px;border-bottom:1px solid var(--border);text-align:right">종합</th></tr></thead>
+    <tbody>${sorted.map((e, i) => `<tr>
+      <td style="padding:7px 8px;border-bottom:1px solid var(--border);color:${NR_ACCENT};font-weight:700">${i + 1}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid var(--border);color:var(--text);font-weight:600">${nrEsc(e.universityName)}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--text-dim);font-variant-numeric:tabular-nums">${e.financialHealthScore.toFixed(1)}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--text-dim);font-variant-numeric:tabular-nums">${e.educationInvestmentScore.toFixed(1)}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--text-dim);font-variant-numeric:tabular-nums">${e.foundationAccountabilityScore.toFixed(1)}</td>
+      <td style="padding:7px 8px;border-bottom:1px solid var(--border);text-align:right;color:var(--text);font-weight:800;font-variant-numeric:tabular-nums">${e.totalScore.toFixed(1)}</td></tr>`).join('')}</tbody></table></div>`;
+  return stats + nrCard('종합점수 순위', rankBars, '재정건전성·교육투자·법인책무성 종합 (100점 만점)') + nrCard('3대 영역별 점수', scoreTable);
+}
+
+// 2) 주요 지표 (지표 선택 → 대학별 막대)
+let _nrMetric = 'educationExpenseReturnRate';
+function nrSetMetric(m) { _nrMetric = m; nrRender(); }
+function nrMetricTab() {
+  const opts = Object.entries(NR_LABELS).map(([k, [name]]) =>
+    `<option value="${k}"${k === _nrMetric ? ' selected' : ''}>${name}</option>`).join('');
+  const [name, unit] = NR_LABELS[_nrMetric];
+  // 부채비율은 낮을수록 좋음 → 오름차순, 나머지 내림차순
+  const asc = (_nrMetric === 'debtRatio' || _nrMetric === 'tuitionDependencyRate');
+  const rows = NR_DATA.map(e => ({ label: e.universityName, v: +(+e[_nrMetric]).toFixed(1) }))
+    .sort((a, b) => asc ? a.v - b.v : b.v - a.v);
+  const selector = `<select onchange="nrSetMetric(this.value)" style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.76rem;margin-bottom:14px;cursor:pointer;font-family:inherit">${opts}</select>`;
+  const note = asc ? '※ 낮을수록 우수한 지표 (오름차순)' : '';
+  return selector + nrCard(name + (unit ? ` (${unit})` : ''), nrHBars(rows, null, unit, NR_ACCENT), note || `${NR_DATA.length}개교 비교`);
+}
+
+// 3) 대학 비교 (2개 선택 → 3대 점수 + 주요 지표)
+function nrSetCmp(which, idx) { if (which === 'a') _nrCmpA = +idx; else _nrCmpB = +idx; nrRender(); }
+function nrCompareTab() {
+  const A = NR_DATA[_nrCmpA], B = NR_DATA[_nrCmpB];
+  const sel = (which, cur) => `<select onchange="nrSetCmp('${which}',this.value)" style="flex:1;min-width:0;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.74rem;cursor:pointer;font-family:inherit">
+    ${NR_DATA.map((e, i) => `<option value="${i}"${i === cur ? ' selected' : ''}>${nrEsc(e.universityName)}</option>`).join('')}</select>`;
+  const picker = `<div style="display:flex;gap:10px;align-items:center;margin-bottom:16px">
+    ${sel('a', _nrCmpA)}<span style="color:var(--text-muted);font-weight:700;font-size:.8rem">vs</span>${sel('b', _nrCmpB)}</div>`;
+  // 3대 점수 비교 막대
+  const dims = [['재정건전성', 'financialHealthScore'], ['교육투자', 'educationInvestmentScore'], ['법인책무성', 'foundationAccountabilityScore'], ['종합점수', 'totalScore']];
+  const cmpBars = dims.map(([lab, key]) => {
+    const va = +A[key].toFixed(1), vb = +B[key].toFixed(1);
+    return `<div style="margin-bottom:12px">
+      <div style="font-size:.7rem;color:var(--text-dim);margin-bottom:5px">${lab}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+        <div style="flex:0 0 90px;font-size:.66rem;color:${NR_BLUE};font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nrEsc(A.universityName)}</div>
+        <div style="flex:1;background:var(--bg3);border-radius:5px;height:14px;overflow:hidden"><div style="width:${va}%;height:100%;background:${NR_BLUE};border-radius:5px"></div></div>
+        <div style="flex:0 0 44px;text-align:right;font-size:.68rem;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums">${va}</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div style="flex:0 0 90px;font-size:.66rem;color:${NR_ACCENT};font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${nrEsc(B.universityName)}</div>
+        <div style="flex:1;background:var(--bg3);border-radius:5px;height:14px;overflow:hidden"><div style="width:${vb}%;height:100%;background:${NR_ACCENT};border-radius:5px"></div></div>
+        <div style="flex:0 0 44px;text-align:right;font-size:.68rem;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums">${vb}</div></div>
+    </div>`;
+  }).join('');
+  // 주요 지표 표
+  const rows = Object.entries(NR_LABELS).map(([k, [name, unit]]) => {
+    const va = (+A[k]).toFixed(1), vb = (+B[k]).toFixed(1);
+    return `<tr>
+      <td style="padding:6px 8px;border-bottom:1px solid var(--border);color:var(--text-dim);font-size:.68rem">${name}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid var(--border);text-align:right;color:${NR_BLUE};font-weight:700;font-variant-numeric:tabular-nums">${va}${unit}</td>
+      <td style="padding:6px 8px;border-bottom:1px solid var(--border);text-align:right;color:${NR_ACCENT};font-weight:700;font-variant-numeric:tabular-nums">${vb}${unit}</td></tr>`;
+  }).join('');
+  const table = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;min-width:360px">
+    <thead><tr style="font-size:.64rem;color:var(--text-muted)">
+      <th style="padding:6px 8px;text-align:left;border-bottom:1px solid var(--border)">지표</th>
+      <th style="padding:6px 8px;text-align:right;border-bottom:1px solid var(--border);color:${NR_BLUE}">${nrEsc(A.universityName)}</th>
+      <th style="padding:6px 8px;text-align:right;border-bottom:1px solid var(--border);color:${NR_ACCENT}">${nrEsc(B.universityName)}</th></tr></thead>
+    <tbody>${rows}</tbody></table></div>`;
+  return picker + nrCard('3대 영역 점수 비교', cmpBars) + nrCard('주요 지표 비교', table);
+}
+
+// 4) 분석 보고서
+function nrReportTab() {
+  const items = [
+    ['재정건전성', '학생 1인당 교육비·교육비 환원율·부채비율·등록금 의존율 등으로 대학 재정의 안정성과 지속가능성을 평가'],
+    ['교육투자', '장학금 지급률·전임교원 확보율·기숙사 수용율 등 학생에 대한 직접 투자 수준을 측정'],
+    ['법인책무성', '법인전입금 비율·수익용 기본재산 확보율 등 학교법인의 재정 기여와 책무 이행을 평가'],
+  ];
+  const cards = items.map(([t, d]) => `<div style="background:var(--card);border:1px solid var(--border);border-left:3px solid ${NR_ACCENT};border-radius:0 10px 10px 0;padding:14px 16px;margin-bottom:10px">
+    <div style="font-size:.8rem;font-weight:800;color:var(--text);margin-bottom:4px">${t}</div>
+    <div style="font-size:.72rem;color:var(--text-dim);line-height:1.6">${d}</div></div>`).join('');
+  const links = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+    <a href="https://www.academyinfo.go.kr" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 11px;text-decoration:none;color:var(--text);font-size:.72rem">🔎 대학알리미 ↗</a>
+    <a href="https://www.대학재정알리미.kr" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:6px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 11px;text-decoration:none;color:var(--text);font-size:.72rem">💰 대학재정알리미 ↗</a></div>`;
+  return nrCard('평가 체계 — 3대 영역', cards) +
+    nrCard('데이터 출처', `<div style="font-size:.72rem;color:var(--text-dim);line-height:1.7;margin-bottom:10px">본 평가는 대학알리미·대학재정알리미의 공시 데이터를 기반으로 156개 사립대학의 재정건전성·교육투자·법인책무성을 객관 지표로 산출합니다. 이 화면은 표본 ${NR_DATA.length}개교 데이터로 재현한 요약본입니다.</div>${links}`);
+}
+
+// 뉴스·법령 탭 우측에 "뉴스 리뷰" 버튼 삽입 (renderCats 이후 호출)
+function nrInsertButton() {
+  const bar = document.getElementById('catBar');
+  if (!bar || document.getElementById('nrTabBtn')) return;
+  const nlTab = [...bar.querySelectorAll('.cat-tab')].find(b => /뉴스\s*·?\s*법령/.test(b.textContent));
+  const btn = document.createElement('button');
+  btn.id = 'nrTabBtn';
+  btn.className = 'cat-tab';
+  btn.style.cssText = 'color:' + NR_ACCENT + ';font-weight:700';
+  btn.innerHTML = '📊 뉴스 리뷰';
+  btn.onclick = openNewsReview;
+  if (nlTab && nlTab.nextSibling) bar.insertBefore(btn, nlTab.nextSibling);
+  else { const addBtn = document.getElementById('addCatBtn'); bar.insertBefore(btn, addBtn); }
+}
+// 스크립트 로드 직후 1회 삽입(초기 renderCats 이후 로드된 경우 대비)
+try { nrInsertButton(); } catch(_) {}
+document.addEventListener('DOMContentLoaded', () => { try { nrInsertButton(); } catch(_) {} });
+
 </script>
 </body>
 </html>
