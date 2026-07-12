@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v15.4</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v15.5</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3919,7 +3919,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v15.4 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v15.5 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5970,6 +5970,14 @@ const EDU_COMMITTEE = [
   { name:'강경숙', party:'개혁신당', pColor:'#FF7210', role:'위원', district:'전북 익산시', tel:'02-784-5601', url:'https://www.assembly.go.kr/members?currentPage=1&searchName=%EA%B0%95%EA%B2%BD%EC%88%99' },
 ];
 
+// 국회도서관 정책자료(ampos) 의원별 고유번호 — 개별 상세 페이지 직결
+const AMPOS_NO = {
+  '김영호':'G1899521','고민정':'G1899676','조정훈':'G1899814','문정복':'G1899696',
+  '김준혁':'G1899911','김문수':'G1899895','진선미':'G1899428','정을호':'G1899989',
+  '백승아':'G1899937','박성준':'G1899675','김민전':'G1899896','정성국':'G1899987',
+  '김대식':'G1899893','서지영':'G1899942','김용태':'G1899903','강경숙':'G1899880',
+};
+
 const MOE_ORG = [
   // ── 장관·차관 ──
   { rank:'장관',  name:'최교진', tel:'010-4573-1018', dept:'교육부',       note:'교육부장관',              url:'https://www.moe.go.kr/sub/infoRenew.do?m=060201&s=moe' },
@@ -6171,9 +6179,12 @@ function renderGovView() {
   govMembers().forEach(m => {
     const card = document.createElement('a');
     card.className = 'member-card';
-    // 국회도서관 국회의원 정책자료로 연결 (구 assembly 404 URL·네이버검색 대체, 사용자 커스텀 URL은 유지)
-    const badUrl = !m.url || m.url === '#' || /assembly\.go\.kr\/members\?/.test(m.url) || /search\.naver\.com/.test(m.url);
-    card.href = badUrl ? 'https://ampos.nanet.go.kr/activityCongressList.do?searchKeyword=' + encodeURIComponent(m.name) : m.url;
+    // 국회도서관 정책자료 개별 상세로 연결 (ampos congress_no). 사용자 커스텀 URL은 우선
+    const isCustom = m.url && m.url !== '#' && !/assembly\.go\.kr\/members\?|search\.naver\.com|ampos\.nanet\.go\.kr\/activityCongressList/.test(m.url);
+    const amposNo = AMPOS_NO[m.name];
+    card.href = isCustom ? m.url
+      : amposNo ? 'https://ampos.nanet.go.kr/activityCongressDetail.do?congress_no=' + amposNo
+      : 'https://ampos.nanet.go.kr/activityCongressList.do?searchKeyword=' + encodeURIComponent(m.name);
     card.target = '_blank';
     card.rel = 'noopener noreferrer';
     card.innerHTML = `
