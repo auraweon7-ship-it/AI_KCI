@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.4</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.5</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3919,7 +3919,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v16.4 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v16.5 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6347,17 +6347,18 @@ function renderGovView() {
   const moeData = govMoe();
   // 카드 생성 헬퍼
   const makeMoeCard = (o) => {
-    const card = document.createElement('a');
-    // 교육부 부서별 상세(조직도·연락처) 개별 링크 — deptCD 매칭, 사용자 커스텀 URL 우선
+    // 카드를 div로 — 내부 전화(tel:) 링크가 중첩 <a>로 무시되지 않게(전화걸기 정상 작동)
+    const card = document.createElement('div');
     const isCustom = o.url && o.url !== '#' && !/moe\.go\.kr\/(main|sub)\.do/.test(o.url);
     const cd = (typeof MOE_DEPTCD !== 'undefined') ? MOE_DEPTCD[o.dept] : null;
-    card.href = isCustom ? o.url
+    const href = isCustom ? o.url
       : cd ? 'https://www.moe.go.kr/user/detailRenew.do?deptCD=' + cd + '&m=0604&s=moe'
       : 'https://www.moe.go.kr/sub/infoRenewal.do?m=0604&page=0604&s=moe';
-    card.target = '_blank'; card.rel = 'noopener noreferrer';
-    card.style.cssText = 'position:relative;display:block;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.6rem .8rem;text-decoration:none;transition:transform .15s,box-shadow .15s;cursor:pointer';
+    card.style.cssText = 'position:relative;display:block;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:.6rem .8rem;transition:transform .15s,box-shadow .15s;cursor:pointer';
     card.onmouseover = () => { card.style.transform='translateY(-2px)'; card.style.boxShadow='0 4px 12px rgba(0,0,0,.15)'; };
     card.onmouseout = () => { card.style.transform=''; card.style.boxShadow=''; };
+    // 카드 클릭 → 부서 상세 (단, 전화·이메일 링크·수정/삭제 버튼 클릭은 제외)
+    card.onclick = (e) => { if (e.target.closest('a,button')) return; window.open(href, '_blank', 'noopener'); };
     const clr = RANK_COLOR[o.rank] || '#555';
     card.innerHTML = `
       <span style="position:absolute;top:4px;right:4px;display:flex;gap:3px;z-index:2">
@@ -6401,8 +6402,7 @@ function renderGovView() {
       });
       moeWrap.appendChild(oSec);
     });
-    return;
-  }
+  } else {
   // 폴백: 구 group/rank 그룹핑
   let groups = [...new Set(moeData.map(o => o.group).filter(Boolean))];
   const useGroup = groups.length > 0;
@@ -6419,20 +6419,22 @@ function renderGovView() {
     sec.appendChild(grid);
     moeWrap.appendChild(sec);
   });
+  }
 
   // 의원 카드
   const memberGrid = document.getElementById('memberGrid');
   govMembers().forEach(m => {
-    const card = document.createElement('a');
+    // div로 — 내부 전화(tel:) 링크가 중첩 <a>로 무시되지 않게(전화걸기 정상 작동)
+    const card = document.createElement('div');
     card.className = 'member-card';
-    // 국회도서관 정책자료 개별 상세로 연결 (ampos congress_no). 사용자 커스텀 URL은 우선
+    card.style.cursor = 'pointer';
     const isCustom = m.url && m.url !== '#' && !/assembly\.go\.kr\/members\?|search\.naver\.com|ampos\.nanet\.go\.kr\/activityCongressList/.test(m.url);
     const amposNo = AMPOS_NO[m.name];
-    card.href = isCustom ? m.url
+    const href = isCustom ? m.url
       : amposNo ? 'https://ampos.nanet.go.kr/activityCongressDetail.do?congress_no=' + amposNo
       : 'https://ampos.nanet.go.kr/activityCongressList.do?searchKeyword=' + encodeURIComponent(m.name);
-    card.target = '_blank';
-    card.rel = 'noopener noreferrer';
+    // 카드 클릭 → 정책자료 (전화·이메일 링크·버튼 제외)
+    card.onclick = (e) => { if (e.target.closest('a,button')) return; window.open(href, '_blank', 'noopener'); };
     card.innerHTML = `
       <span style="position:absolute;top:4px;right:4px;display:flex;gap:3px;z-index:2">
         <button onclick="event.preventDefault();event.stopPropagation();govEditMember('${m.id}')" title="수정" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text-dim);cursor:pointer;font-size:.66rem;padding:2px 5px">✏️</button>
@@ -6453,7 +6455,7 @@ function renderGovView() {
 
 // ── 국회 교육위 명단 / 교육부 조직도 카드 CRUD (localStorage 오버레이) ──
 // 조직도·명단 데이터 버전 — 코드 데이터 갱신 시 올리면 구 localStorage 캐시가 무효화되고 최신 코드가 표시됨
-const GOV_DATA_VER = '2026.07.1-r3';
+const GOV_DATA_VER = '2026.07.1-r4';
 function govVerOk() { return localStorage.getItem('gov_data_ver') === GOV_DATA_VER; }
 function govMembers() {
   try { if (govVerOk()) { const s = JSON.parse(localStorage.getItem('gov_members') || 'null'); if (Array.isArray(s)) return s; } } catch (_) {}
