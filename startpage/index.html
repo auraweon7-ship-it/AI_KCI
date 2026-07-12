@@ -661,20 +661,20 @@ body { background: var(--bg); color: var(--text); overflow-x: hidden; }
 }
 .member-card {
   background: var(--card); border: 1px solid var(--border); border-radius: 12px;
-  padding: 14px; text-decoration: none; color: var(--text);
-  display: flex; flex-direction: column; gap: 5px;
+  padding: 10px 11px; text-decoration: none; color: var(--text);
+  display: flex; flex-direction: column; gap: 3px;
   transition: border-color .15s, transform .1s, box-shadow .15s;
   position: relative; overflow: hidden;
 }
 .member-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(108,92,231,.2); }
 .member-role-badge {
-  display: inline-block; font-size: .65rem; font-weight: 700; color: #fff;
-  padding: 2px 8px; border-radius: 20px; align-self: flex-start; margin-bottom: 2px;
+  display: inline-block; font-size: .58rem; font-weight: 700; color: #fff;
+  padding: 1px 7px; border-radius: 20px; align-self: flex-start; margin-bottom: 1px;
 }
-.member-name { font-size: 1.1rem; font-weight: 700; }
-.member-party { font-size: .75rem; font-weight: 600; }
-.member-district { font-size: .72rem; color: var(--text-dim); margin-top: 2px; }
-.member-tel { font-size: .72rem; color: var(--text-dim); }
+.member-name { font-size: .9rem; font-weight: 700; }
+.member-party { font-size: .66rem; font-weight: 600; }
+.member-district { font-size: .63rem; color: var(--text-dim); margin-top: 1px; }
+.member-tel { font-size: .63rem; color: var(--text-dim); }
 .ai-chip-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v15.0</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v15.1</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3919,7 +3919,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v15.0 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v15.1 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5955,7 +5955,6 @@ const EDU_COMMITTEE = [
   { name:'김영호', party:'더불어민주당', pColor:'#004EA2', role:'위원장', district:'서울 서대문구을', tel:'02-784-4020', url:'https://www.assembly.go.kr/members?currentPage=1&searchName=%EA%B9%80%EC%98%81%ED%98%B8' },
   { name:'고민정', party:'더불어민주당', pColor:'#004EA2', role:'간사(민주)', district:'서울 광진구을', tel:'02-784-4630', url:'https://www.assembly.go.kr/members?currentPage=1&searchName=%EA%B3%A0%EB%AF%BC%EC%A0%95' },
   { name:'조정훈', party:'국민의힘', pColor:'#E61E2B', role:'간사(국힘)', district:'서울 마포구갑', tel:'02-784-2181', url:'https://www.assembly.go.kr/members?currentPage=1&searchName=%EC%A1%B0%EC%A0%95%ED%9B%88' },
-  { name:'고민정', party:'더불어민주당', pColor:'#004EA2', role:'위원', district:'서울 광진을', tel:'02-784-2870', url:'https://www.assembly.go.kr/members?currentPage=1&searchName=%EA%B3%A0%EB%AF%BC%EC%A0%95' },
   { name:'문정복', party:'더불어민주당', pColor:'#004EA2', role:'위원', district:'경기 시흥시갑', tel:'02-784-2114', url:'https://www.assembly.go.kr/members?currentPage=1&searchName=%EB%AC%B8%EC%A0%95%EB%B3%B5' },
   { name:'김준혁', party:'더불어민주당', pColor:'#004EA2', role:'위원', district:'경기 수원시정', tel:'02-784-2195', url:'https://www.assembly.go.kr/members?currentPage=1&searchName=%EA%B9%80%EC%A4%80%ED%98%81' },
   { name:'김문수', party:'더불어민주당', pColor:'#004EA2', role:'위원', district:'전남 순천·광양·곡성·구례갑', tel:'02-784-6471', url:'https://www.assembly.go.kr/members?currentPage=1&searchName=%EA%B9%80%EB%AC%B8%EC%88%98' },
@@ -6150,13 +6149,15 @@ function renderGovView() {
           <button onclick="event.preventDefault();event.stopPropagation();govEditMoe('${o.id}')" title="수정" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text-dim);cursor:pointer;font-size:.62rem;padding:2px 5px">✏️</button>
           <button onclick="event.preventDefault();event.stopPropagation();govDelMoe('${o.id}')" title="삭제" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text-dim);cursor:pointer;font-size:.62rem;padding:2px 5px">✕</button>
         </span>
-        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem;padding-right:44px">
-          <span style="background:${clr};color:#fff;font-size:.65rem;font-weight:700;padding:.18rem .45rem;border-radius:4px;white-space:nowrap">${o.rank}</span>
-          <span style="font-size:.82rem;font-weight:700;color:var(--text)">${o.dept}</span>
+        <div style="display:flex;align-items:center;gap:.4rem;margin-bottom:.3rem;padding-right:44px">
+          <span style="background:${clr};color:#fff;font-size:.58rem;font-weight:700;padding:.15rem .4rem;border-radius:4px;white-space:nowrap">${o.rank}</span>
+          <span style="font-size:.72rem;font-weight:700;color:var(--text)">${o.dept}</span>
         </div>
-        ${o.name ? `<div style="font-size:.95rem;font-weight:800;color:var(--text);margin-bottom:.25rem">${o.name}</div>` : ''}
-        <div style="font-size:.72rem;color:var(--text-dim);margin-bottom:.3rem">${o.note}</div>
-        <div style="font-size:.72rem;color:var(--accent2)">📞 <a href="tel:${o.tel}" onclick="event.stopPropagation()" style="color:var(--accent2)">${o.tel}</a></div>
+        ${o.name ? `<div style="font-size:.82rem;font-weight:800;color:var(--text);margin-bottom:.2rem">${o.name}${o.since?`<span style="font-size:.58rem;font-weight:500;color:var(--text-dim);margin-left:4px">${o.since}</span>`:''}</div>` : ''}
+        <div style="font-size:.64rem;color:var(--text-dim);margin-bottom:.25rem">${o.note}</div>
+        ${o.duty?`<div style="font-size:.63rem;color:var(--text-dim);margin-bottom:.25rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📄 ${o.duty}</div>`:''}
+        <div style="font-size:.63rem;color:var(--accent2)">📞 <a href="tel:${o.tel}" onclick="event.stopPropagation()" style="color:var(--accent2)">${o.tel}</a></div>
+        ${o.email?`<div style="font-size:.63rem;color:var(--accent2);margin-top:.15rem">✉ <a href="mailto:${o.email}" onclick="event.stopPropagation()" style="color:var(--accent2)">${o.email}</a></div>`:''}
       `;
       grid.appendChild(card);
     });
@@ -6178,10 +6179,13 @@ function renderGovView() {
         <button onclick="event.preventDefault();event.stopPropagation();govDelMember('${m.id}')" title="삭제" style="background:var(--bg3);border:1px solid var(--border);border-radius:5px;color:var(--text-dim);cursor:pointer;font-size:.66rem;padding:2px 5px">✕</button>
       </span>
       <div class="member-role-badge" style="background:${m.pColor}">${m.role}</div>
-      <div class="member-name">${m.name}</div>
+      <div class="member-name">${m.name}${m.term?`<span style="font-size:.6rem;font-weight:500;color:var(--text-dim);margin-left:4px">${m.term}</span>`:''}</div>
       <div class="member-party" style="color:${m.pColor}">${m.party}</div>
       <div class="member-district">📍 ${m.district}</div>
+      ${m.committee?`<div class="member-district">🏛 ${m.committee}</div>`:''}
+      ${m.career?`<div class="member-district" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📋 ${m.career}</div>`:''}
       <div class="member-tel">📞 <a href="tel:${m.tel}" onclick="event.stopPropagation()" style="color:var(--accent2)">${m.tel}</a></div>
+      ${m.email?`<div class="member-tel">✉ <a href="mailto:${m.email}" onclick="event.stopPropagation()" style="color:var(--accent2)">${m.email}</a></div>`:''}
     `;
     memberGrid.appendChild(card);
   });
@@ -6227,12 +6231,19 @@ const GOV_MEMBER_FIELDS = [
   { key: 'name', label: '성명' }, { key: 'party', label: '정당' },
   { key: 'pColor', label: '정당 색상', type: 'color', def: '#004EA2' },
   { key: 'role', label: '직위 (위원장·간사·위원 등)' }, { key: 'district', label: '지역구' },
-  { key: 'tel', label: '전화' }, { key: 'url', label: '링크 URL', ph: 'https://' },
+  { key: 'term', label: '선수 (초선·재선·3선 등)', ph: '예: 재선' },
+  { key: 'committee', label: '소속 위원회·직책', ph: '예: 예산결산특위' },
+  { key: 'career', label: '주요 약력', ph: '예: 前 방송기자' },
+  { key: 'tel', label: '전화' }, { key: 'email', label: '이메일', ph: '@assembly.go.kr' },
+  { key: 'url', label: '링크 URL', ph: 'https://' },
 ];
 const GOV_MOE_FIELDS = [
   { key: 'rank', label: '직급 (장관·차관·보좌관·실장·국장·과장)' }, { key: 'dept', label: '부서' },
   { key: 'name', label: '성명' }, { key: 'note', label: '비고' },
-  { key: 'tel', label: '전화' }, { key: 'url', label: '링크 URL', ph: 'https://' },
+  { key: 'duty', label: '소관 업무', ph: '예: 고등교육 정책 총괄' },
+  { key: 'since', label: '재임 시작', ph: '예: 2025.07' },
+  { key: 'tel', label: '전화' }, { key: 'email', label: '이메일', ph: '@moe.go.kr' },
+  { key: 'url', label: '링크 URL', ph: 'https://' },
 ];
 function govEditMember(id) { const m = govMembers().find(x => x.id === id) || {}; govFormModal(id ? '의원 정보 수정' : '의원 추가', GOV_MEMBER_FIELDS, m, vals => {
   let arr = govMembers();
