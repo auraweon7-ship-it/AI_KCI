@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v15.6</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v15.7</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3919,7 +3919,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v15.6 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v15.7 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -5979,53 +5979,53 @@ const AMPOS_NO = {
 };
 
 const MOE_ORG = [
-  { rank:"장관", name:"최교진", tel:"010-4573-1018", dept:"장관", note:"교육부", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"차관", name:"최은옥", tel:"010-9470-1201", dept:"차관", note:"교육부", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"보좌관", name:"김성천", tel:"010-7599-0679", dept:"장관정책보좌관", note:"교육부", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"보좌관", name:"한세효", tel:"010-2923-6018", dept:"장관정책보좌관", note:"교육부", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"보좌관", name:"김훈호", tel:"010-3098-1502", dept:"장관정책자문관", note:"교육부", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"실장", name:"이해숙", tel:"010-4705-3943", dept:"고등평생정책실장", note:"고등평생정책실", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"국장", name:"송근현", tel:"010-2831-2152", dept:"대학정책관", note:"대학정책관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"국장", name:"", tel:"", dept:"학술연구정책과", note:"대학정책관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"국장", name:"신진용", tel:"", dept:"대입정책과", note:"대학정책관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"국장", name:"이주희", tel:"", dept:"대학지원관", note:"대학지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"국장", name:"예혜란", tel:"", dept:"평생교육지원관", note:"평생교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"국장", name:"장미란", tel:"010-2371-8186", dept:"의대교육지원관", note:"의대교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"국장", name:"", tel:"", dept:"감사관", note:"감사관실", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"국장", name:"", tel:"", dept:"입시비리조사팀", note:"감사관실", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"국장", name:"하유경", tel:"", dept:"국제교육기획관", note:"국제교육기획관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"국장", name:"", tel:"", dept:"영유아정책국장", note:"영유아정책국", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"국장", name:"", tel:"", dept:"영유아지원국장", note:"영유아지원국", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"국장", name:"", tel:"", dept:"지원단장", note:"교육행정체제통합지원단", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"국장", name:"", tel:"", dept:"부단장", note:"교육행정체제통합지원단", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"김태경", tel:"010-2293-3716", dept:"대학정책과장", note:"대학정책관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"박형식", tel:"", dept:"대학학사운영과장", note:"대학정책관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"최우성", tel:"010-3193-8474", dept:"지역대학지원과장", note:"대학지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"유희진", tel:"", dept:"산학협력지원과장", note:"대학지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"안주란", tel:"", dept:"국립대학지원과장", note:"대학지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"안상훈", tel:"010-3278-9334", dept:"사립대학지원과장", note:"대학지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"최문태", tel:"", dept:"대학시설지원과장", note:"대학지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"김주연", tel:"010-2680-2984", dept:"평생학습정책과장", note:"평생교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"이운식", tel:"", dept:"전문대학지원과장", note:"평생교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"", tel:"", dept:"청년장학지원과장", note:"평생교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"김수정", tel:"", dept:"사학분쟁조정위원회지원팀장", note:"평생교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"김태훈", tel:"", dept:"의대교육기반과장", note:"의대교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"윤혜준", tel:"", dept:"의대혁신지원과장", note:"의대교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"홍수영", tel:"", dept:"감사총괄담당관", note:"감사관실", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"", tel:"", dept:"반부패청렴담당관", note:"감사관실", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"최화식", tel:"", dept:"사학감사담당관", note:"감사관실", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"안웅환", tel:"", dept:"국제교육정책담당관", note:"국제교육기획관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"최화영", tel:"", dept:"교육국제화담당관", note:"국제교육기획관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"", tel:"", dept:"재외교육지원담당관", note:"국제교육기획관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"", tel:"", dept:"비상안전담당관", note:"비상안전담당관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"", tel:"", dept:"영유아정책총괄과장", note:"영유아정책국", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"이정규", tel:"", dept:"영유아재정과장", note:"영유아정책국", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"", tel:"", dept:"영유아안전정보과장", note:"영유아정책국", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"어효진", tel:"", dept:"영유아기준정책과장", note:"영유아지원국", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"연수진", tel:"", dept:"영유아교원지원과장", note:"영유아지원국", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"", tel:"", dept:"교육보육과정지원과장", note:"영유아지원국", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"구본억", tel:"", dept:"심사과장", note:"교원소청심사위원회", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"국장", name:"이윤홍", tel:"010-3218-07257", dept:"인공지능인재지원국", note:"교육부", duty:"AI 인재 양성 총괄", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"장관", name:"최교진", tel:"010-4573-1018", dept:"장관", group:"장·차관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"차관", name:"최은옥", tel:"010-9470-1201", dept:"차관", group:"장·차관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"보좌관", name:"김성천", tel:"010-7599-0679", dept:"장관정책보좌관", group:"장·차관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"보좌관", name:"한세효", tel:"010-2923-6018", dept:"장관정책보좌관", group:"장·차관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"보좌관", name:"김훈호", tel:"010-3098-1502", dept:"장관정책자문관", group:"장·차관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"실장", name:"이해숙", tel:"010-4705-3943", dept:"고등평생정책실장", group:"고등평생정책실", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"국장", name:"송근현", tel:"010-2831-2152", dept:"대학정책관", group:"대학정책관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"김태경", tel:"010-2293-3716", dept:"대학정책과장", group:"대학정책관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"박형식", tel:"", dept:"대학학사운영과장", group:"대학정책관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"국장", name:"", tel:"", dept:"학술연구정책과", group:"대학정책관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"국장", name:"신진용", tel:"", dept:"대입정책과", group:"대학정책관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"국장", name:"이주희", tel:"", dept:"대학지원관", group:"대학지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"최우성", tel:"010-3193-8474", dept:"지역대학지원과장", group:"대학지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"유희진", tel:"", dept:"산학협력지원과장", group:"대학지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"안주란", tel:"", dept:"국립대학지원과장", group:"대학지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"안상훈", tel:"010-3278-9334", dept:"사립대학지원과장", group:"대학지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"최문태", tel:"", dept:"대학시설지원과장", group:"대학지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"국장", name:"예혜란", tel:"", dept:"평생교육지원관", group:"평생교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"김주연", tel:"010-2680-2984", dept:"평생학습정책과장", group:"평생교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"이운식", tel:"", dept:"전문대학지원과장", group:"평생교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"", tel:"", dept:"청년장학지원과장", group:"평생교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"김수정", tel:"", dept:"사학분쟁조정위원회지원팀장", group:"평생교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"국장", name:"장미란", tel:"010-2371-8186", dept:"의대교육지원관", group:"의대교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"김태훈", tel:"", dept:"의대교육기반과장", group:"의대교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"윤혜준", tel:"", dept:"의대혁신지원과장", group:"의대교육지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"국장", name:"", tel:"", dept:"감사관", group:"감사관실", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"홍수영", tel:"", dept:"감사총괄담당관", group:"감사관실", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"", tel:"", dept:"반부패청렴담당관", group:"감사관실", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"최화식", tel:"", dept:"사학감사담당관", group:"감사관실", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"국장", name:"", tel:"", dept:"입시비리조사팀", group:"감사관실", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"국장", name:"하유경", tel:"", dept:"국제교육기획관", group:"국제교육기획관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"안웅환", tel:"", dept:"국제교육정책담당관", group:"국제교육기획관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"최화영", tel:"", dept:"교육국제화담당관", group:"국제교육기획관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"", tel:"", dept:"재외교육지원담당관", group:"국제교육기획관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"", tel:"", dept:"비상안전담당관", group:"비상안전담당관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"국장", name:"", tel:"", dept:"영유아정책국장", group:"영유아정책국", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"", tel:"", dept:"영유아정책총괄과장", group:"영유아정책국", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"이정규", tel:"", dept:"영유아재정과장", group:"영유아정책국", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"", tel:"", dept:"영유아안전정보과장", group:"영유아정책국", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"국장", name:"", tel:"", dept:"영유아지원국장", group:"영유아지원국", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"어효진", tel:"", dept:"영유아기준정책과장", group:"영유아지원국", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"연수진", tel:"", dept:"영유아교원지원과장", group:"영유아지원국", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"", tel:"", dept:"교육보육과정지원과장", group:"영유아지원국", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"국장", name:"", tel:"", dept:"지원단장", group:"교육행정체제통합지원단", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"국장", name:"", tel:"", dept:"부단장", group:"교육행정체제통합지원단", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"구본억", tel:"", dept:"심사과장", group:"교원소청심사위원회", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"국장", name:"이윤홍", tel:"010-3218-07257", dept:"인공지능인재지원국장", group:"인공지능인재지원국", duty:"AI 인재 양성 총괄", url:"https://www.moe.go.kr/main.do?s=moe" },
 ];
 
 function renderGovView() {
@@ -6125,12 +6125,16 @@ function renderGovView() {
   };
 
   const moeData = govMoe();
-  RANK_GROUPS.forEach(grp => {
-    const items = moeData.filter(o => rankLabel(o.rank) === grp);
+  // 부서(group) 기준 그룹핑 — 데이터 등장 순서 유지(구 데이터는 rank로 폴백)
+  let groups = [...new Set(moeData.map(o => o.group).filter(Boolean))];
+  const useGroup = groups.length > 0;
+  if (!useGroup) groups = RANK_GROUPS.slice();
+  groups.forEach(grp => {
+    const items = moeData.filter(o => (useGroup ? o.group : rankLabel(o.rank)) === grp);
     if (!items.length) return;
     const sec = document.createElement('div');
     sec.style.cssText = 'margin-bottom:1.2rem';
-    sec.innerHTML = `<div style="font-size:.78rem;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem;padding:.3rem .6rem;background:var(--bg2);border-radius:6px;display:inline-block">${grp}</div>`;
+    sec.innerHTML = `<div style="font-size:.8rem;font-weight:800;color:var(--accent2);letter-spacing:.02em;margin-bottom:.5rem;padding:.35rem .7rem;background:var(--bg2);border-left:3px solid var(--accent);border-radius:0 6px 6px 0;display:inline-block">🏢 ${grp}</div>`;
     const grid = document.createElement('div');
     grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px';
     items.forEach(o => {
@@ -6150,7 +6154,7 @@ function renderGovView() {
           <span style="font-size:.72rem;font-weight:700;color:var(--text)">${o.dept}</span>
         </div>
         ${o.name ? `<div style="font-size:.82rem;font-weight:800;color:var(--text);margin-bottom:.2rem">${o.name}${o.since?`<span style="font-size:.58rem;font-weight:500;color:var(--text-dim);margin-left:4px">${o.since}</span>`:''}</div>` : ''}
-        <div style="font-size:.64rem;color:var(--text-dim);margin-bottom:.25rem">${o.note}</div>
+        ${o.note?`<div style="font-size:.64rem;color:var(--text-dim);margin-bottom:.25rem">${o.note}</div>`:''}
         ${o.duty?`<div style="font-size:.63rem;color:var(--text-dim);margin-bottom:.25rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📄 ${o.duty}</div>`:''}
         <div style="font-size:.63rem;color:var(--accent2)">📞 <a href="tel:${o.tel}" onclick="event.stopPropagation()" style="color:var(--accent2)">${o.tel}</a></div>
         ${o.email?`<div style="font-size:.63rem;color:var(--accent2);margin-top:.15rem">✉ <a href="mailto:${o.email}" onclick="event.stopPropagation()" style="color:var(--accent2)">${o.email}</a></div>`:''}
