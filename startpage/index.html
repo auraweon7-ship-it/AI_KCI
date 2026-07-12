@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.3</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.4</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3919,7 +3919,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v16.3 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v16.4 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6452,16 +6452,19 @@ function renderGovView() {
 }
 
 // ── 국회 교육위 명단 / 교육부 조직도 카드 CRUD (localStorage 오버레이) ──
+// 조직도·명단 데이터 버전 — 코드 데이터 갱신 시 올리면 구 localStorage 캐시가 무효화되고 최신 코드가 표시됨
+const GOV_DATA_VER = '2026.07.1-r3';
+function govVerOk() { return localStorage.getItem('gov_data_ver') === GOV_DATA_VER; }
 function govMembers() {
-  try { const s = JSON.parse(localStorage.getItem('gov_members') || 'null'); if (Array.isArray(s)) return s; } catch (_) {}
+  try { if (govVerOk()) { const s = JSON.parse(localStorage.getItem('gov_members') || 'null'); if (Array.isArray(s)) return s; } } catch (_) {}
   return EDU_COMMITTEE.map((m, i) => ({ ...m, id: m.id || 'em' + i }));
 }
-function govSaveMembers(arr) { localStorage.setItem('gov_members', JSON.stringify(arr)); try { cloudPush && cloudPush('gov_members'); } catch (_) {} }
+function govSaveMembers(arr) { localStorage.setItem('gov_members', JSON.stringify(arr)); localStorage.setItem('gov_data_ver', GOV_DATA_VER); try { cloudPush && cloudPush('gov_members'); } catch (_) {} }
 function govMoe() {
-  try { const s = JSON.parse(localStorage.getItem('gov_moe') || 'null'); if (Array.isArray(s)) return s; } catch (_) {}
+  try { if (govVerOk()) { const s = JSON.parse(localStorage.getItem('gov_moe') || 'null'); if (Array.isArray(s)) return s; } } catch (_) {}
   return MOE_ORG.map((m, i) => ({ ...m, id: m.id || 'mo' + i }));
 }
-function govSaveMoe(arr) { localStorage.setItem('gov_moe', JSON.stringify(arr)); try { cloudPush && cloudPush('gov_moe'); } catch (_) {} }
+function govSaveMoe(arr) { localStorage.setItem('gov_moe', JSON.stringify(arr)); localStorage.setItem('gov_data_ver', GOV_DATA_VER); try { cloudPush && cloudPush('gov_moe'); } catch (_) {} }
 
 // 공용 폼 모달
 function govFormModal(title, fields, cur, onSave) {
