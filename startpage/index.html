@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v13.9</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v14.0</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -1436,8 +1436,10 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
       </div>
       <div class="se-search-row">
         <input class="se-input" id="seInput" placeholder="검색어..." onkeydown="if(event.key==='Enter')seGo()">
+        <button class="se-go" onclick="seInline()" title="위젯에서 논문 바로보기 (Crossref)" style="padding-left:9px;padding-right:9px">📄</button>
         <button class="se-go" onclick="seGo()">검색</button>
       </div>
+      <div id="seInlineOut" style="margin-top:7px"></div>
       <div id="seRecent" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;"></div>
     </div>
 
@@ -3918,7 +3920,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v13.9 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v14.0 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -26740,6 +26742,39 @@ function seGo() {
   // 검색어를 서지 제목 입력창에 자동 채움 (저장 편의)
   const bt = document.getElementById('biblioTitle'); if (bt && !bt.value) bt.value = q;
   window.open(SE_URLS[curSE](q), '_blank');
+}
+// 위젯 내 논문 인라인 검색 (Crossref, 무인증·CORS 허용)
+async function seInline() {
+  const q = document.getElementById('seInput').value.trim();
+  const out = document.getElementById('seInlineOut');
+  if (!out) return;
+  if (!q) { out.innerHTML = ''; return; }
+  seSaveRecent(q);
+  out.innerHTML = '<div class="skel" style="height:26px"></div>';
+  const esc = s => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  try {
+    const url = 'https://api.crossref.org/works?rows=6&sort=relevance&select=title,author,published,container-title,is-referenced-by-count,DOI,URL&query=' + encodeURIComponent(q);
+    const r = await fetch(url, { headers: { Accept: 'application/json' } });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const items = (await r.json()).message.items || [];
+    if (!items.length) { out.innerHTML = '<div style="font-size:.66rem;color:var(--text-muted);padding:4px 0">검색 결과가 없습니다.</div>'; return; }
+    out.innerHTML = `<div style="font-size:.58rem;color:var(--text-muted);margin-bottom:3px">📄 Crossref · "${esc(q)}" 상위 ${items.length}건</div>` +
+      items.map(it => {
+        const title = esc(it.title && it.title[0] ? it.title[0] : '제목 없음');
+        const auth = esc((it.author || []).slice(0, 2).map(a => a.family || a.name || '').filter(Boolean).join(', '));
+        const year = (it.published && it.published['date-parts'] && it.published['date-parts'][0]) ? it.published['date-parts'][0][0] : '';
+        const venue = esc(it['container-title'] && it['container-title'][0] ? it['container-title'][0] : '');
+        const cited = it['is-referenced-by-count'] || 0;
+        const link = it.URL || (it.DOI ? 'https://doi.org/' + it.DOI : '#');
+        const meta = [auth, year, venue].filter(Boolean).join(' · ');
+        return `<a href="${esc(link)}" target="_blank" rel="noopener" style="display:block;padding:6px 0;border-bottom:1px solid var(--border);text-decoration:none">
+          <div style="font-size:.7rem;font-weight:600;color:var(--text);line-height:1.35">${title}</div>
+          <div style="font-size:.6rem;color:var(--text-muted);margin-top:2px">${meta}${meta ? ' · ' : ''}인용 ${cited} ↗</div>
+        </a>`;
+      }).join('');
+  } catch (e) {
+    out.innerHTML = `<div style="font-size:.66rem;color:var(--danger,#e74c3c);padding:4px 0">검색 실패: ${esc(e.message || String(e))}</div>`;
+  }
 }
 // 최근 검색어 (최대 8개)
 function seSaveRecent(q) {
