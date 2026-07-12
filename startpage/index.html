@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v15.9</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.0</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3919,7 +3919,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v15.9 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v16.0 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6049,11 +6049,11 @@ const MOE_ORG = [
   { rank:"국장", name:"", tel:"", dept:"학교인공지능전환추진단", office:"인공지능인재지원국", bureau:"인공지능인재지원국", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"과장", name:"", tel:"", dept:"교육데이터정책과", office:"인공지능인재지원국", bureau:"인공지능인재지원국", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"과장", name:"", tel:"", dept:"정보보호팀", office:"인공지능인재지원국", bureau:"인공지능인재지원국", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"", tel:"", dept:"교원정책과", office:"교원교육자치지원관", bureau:"교원교육자치지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"", tel:"", dept:"교원양성연수과", office:"교원교육자치지원관", bureau:"교원교육자치지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"", tel:"", dept:"교육자치협력과", office:"교원교육자치지원관", bureau:"교원교육자치지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"", tel:"", dept:"지방교육재정과", office:"교원교육자치지원관", bureau:"교원교육자치지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
-  { rank:"과장", name:"", tel:"", dept:"학교시설개선팀", office:"교원교육자치지원관", bureau:"교원교육자치지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"", tel:"", dept:"교원정책과", office:"학교정책실", bureau:"교원교육자치지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"", tel:"", dept:"교원양성연수과", office:"학교정책실", bureau:"교원교육자치지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"", tel:"", dept:"교육자치협력과", office:"학교정책실", bureau:"교원교육자치지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"", tel:"", dept:"지방교육재정과", office:"학교정책실", bureau:"교원교육자치지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
+  { rank:"과장", name:"", tel:"", dept:"학교시설개선팀", office:"학교정책실", bureau:"교원교육자치지원관", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"과장", name:"", tel:"", dept:"학생건강정책과", office:"학생건강안전정책국", bureau:"학생건강안전정책국", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"과장", name:"", tel:"", dept:"교육안전정책과", office:"학생건강안전정책국", bureau:"학생건강안전정책국", url:"https://www.moe.go.kr/main.do?s=moe" },
   { rank:"과장", name:"", tel:"", dept:"학생정서지원과", office:"학생건강안전정책국", bureau:"학생건강안전정책국", url:"https://www.moe.go.kr/main.do?s=moe" },
@@ -6154,6 +6154,95 @@ const MOE_DEPTCD = {
   "영유아교원지원과":"1342356",
   "교육보육과정지원과":"1342357",
   "장관":"1342001"
+};
+
+const MOE_LANDLINE = {
+  "감사관":"044-203-6070",
+  "감사총괄담당관":"044-203-6072",
+  "고교학점제지원과":"044-203-6715",
+  "고등평생정책실":"044-203-6800",
+  "공교육진흥과":"044-203-6730",
+  "교원교육자치지원관":"044-203-6440",
+  "교원양성연수과":"044-203-6500",
+  "교원정책과":"044-203-6480",
+  "교육과정운영지원과":"044-203-6699",
+  "교육국제화담당관":"044-203-6345",
+  "교육데이터정책과":"02-6222-6060",
+  "교육보육과정지원과":"044-203-7165",
+  "교육안전정책과":"044-203-6657",
+  "교육자치협력과":"044-203-6340",
+  "교육콘텐츠정책과":"044-203-6465",
+  "국립대학지원과":"044-203-6243",
+  "국제교육기획관":"044-203-6750",
+  "국제교육정책담당관":"044-203-6752",
+  "규제개혁법무담당관":"044-203-6170",
+  "기획담당관":"044-203-6026",
+  "기획조정실":"044-203-6030",
+  "대변인":"044-203-6570",
+  "대입정책과":"044-203-6885",
+  "대학시설지원과":"044-203-7172",
+  "대학정책과":"044-203-6830",
+  "대학정책관":"044-203-6810",
+  "대학지원관":"044-203-6860",
+  "대학학사운영과":"044-203-6845",
+  "동북아역사대응팀":"044-203-7040",
+  "디지털교육기반과":"044-203-7078",
+  "디지털소통팀":"044-203-6820",
+  "민주시민교육과":"044-203-6612",
+  "반부패청렴담당관":"044-203-6100",
+  "방과후돌봄정책과":"044-203-6603",
+  "비상안전담당관":"044-203-6188",
+  "사립대학지원과":"044-203-6950",
+  "사학감사담당관":"044-203-6336",
+  "사학분쟁조정위원회지원팀":"044-203-6907",
+  "산학협력지원과":"044-203-6252",
+  "양성평등정책담당관":"044-203-7112",
+  "영유아교원지원과":"044-203-7151",
+  "영유아기준정책과":"044-203-7124",
+  "영유아안전정보과":"044-203-7010",
+  "영유아재정과":"044-203-7216",
+  "영유아정책국":"044-203-7200",
+  "영유아정책총괄과":"044-203-7202",
+  "영유아지원관":"044-203-7150",
+  "예산담당관":"044-203-6033",
+  "운영지원과":"044-203-6110",
+  "의대교육기반과":"044-203-6894",
+  "의대교육지원관":"044-203-6450",
+  "의대혁신지원과":"044-203-6981",
+  "인공지능교육진흥과":"044-203-7080",
+  "인공지능융합인재양성과":"044-203-7251",
+  "인공지능인재지원국":"044-203-7050",
+  "인재정책총괄과":"044-203-7046",
+  "입시비리조사팀":"044-203-6429",
+  "재외교육지원담당관":"044-203-6780",
+  "전문대학지원과":"044-203-6415",
+  "정보보호팀":"044-203-5502",
+  "정책기획관":"044-203-6040",
+  "정책보좌관":"044-203-6099",
+  "지방교육재정과":"044-203-6636",
+  "지역대학지원과":"044-203-6232",
+  "직업교육정책과":"044-203-6397",
+  "차관":"044-203-6010",
+  "청년장학지원과":"044-203-6267",
+  "특수교육정책과":"044-203-6554",
+  "평생교육지원관":"044-203-6360",
+  "평생학습정책과":"044-203-6363",
+  "학교시설개선팀":"044-203-6356",
+  "학교인공지능전환추진단":"044-203-7240",
+  "학교정책과":"044-203-6682",
+  "학교정책관":"044-203-6870",
+  "학교정책실":"044-203-6200",
+  "학교지원관":"044-203-6310",
+  "학교폭력대책과":"044-203-6972",
+  "학생건강안전정책국":"044-203-6210",
+  "학생건강정책과":"044-203-6877",
+  "학생정서지원과":"044-203-6202",
+  "학생지원국":"044-203-6510",
+  "학생지원총괄과":"044-203-6521",
+  "학술연구정책과":"044-203-6870",
+  "혁신행정담당관":"044-203-6062",
+  "홍보담당관":"044-203-6575",
+  "장관":"044-203-6007"
 };
 
 function renderGovView() {
@@ -6278,7 +6367,8 @@ function renderGovView() {
       </div>
       ${o.name ? `<div style="font-size:.8rem;font-weight:800;color:var(--text);margin-bottom:.15rem">${o.name}</div>` : '<div style="font-size:.62rem;color:var(--text-muted);margin-bottom:.15rem">(공석·미기재)</div>'}
       ${o.duty?`<div style="font-size:.6rem;color:var(--text-dim);margin-bottom:.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📄 ${o.duty}</div>`:''}
-      ${o.tel?`<div style="font-size:.62rem;color:var(--accent2)">📞 <a href="tel:${o.tel}" onclick="event.stopPropagation()" style="color:var(--accent2)">${o.tel}</a></div>`:''}
+      ${o.tel?`<div style="font-size:.62rem;color:var(--accent2)">📞 <a href="tel:${o.tel}" onclick="event.stopPropagation()" style="color:var(--accent2)">${o.tel}</a></div>`
+        :(typeof MOE_LANDLINE!=='undefined'&&MOE_LANDLINE[o.dept])?`<div style="font-size:.62rem;color:var(--text-dim)">☎ <a href="tel:${MOE_LANDLINE[o.dept]}" onclick="event.stopPropagation()" style="color:var(--text-dim)">${MOE_LANDLINE[o.dept]}</a> <span style="font-size:.54rem">(부서)</span></div>`:''}
       ${o.email?`<div style="font-size:.62rem;color:var(--accent2);margin-top:.1rem">✉ <a href="mailto:${o.email}" onclick="event.stopPropagation()" style="color:var(--accent2)">${o.email}</a></div>`:''}
     `;
     return card;
