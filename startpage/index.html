@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v20.6</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v20.7</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3931,7 +3931,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v20.6 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v20.7 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7058,19 +7058,22 @@ function ytChannelImportHtml(input) {
         }));
       }
       if (!items.length) { showToast('채널을 찾지 못했습니다', '⚠️'); input.value = ''; return; }
-      const list = ytChannels(); let added = 0;
+      const list = ytChannels(); let added = 0, updated = 0;
       items.forEach(it => {
         const ch = ytParseChannel(it.url || it.name);
         if (it.name) ch.name = it.name.slice(0, 60);  // data-name(실제 채널명) 우선
         if (it.url) ch.url = it.url.slice(0, 300);      // data-url 원본 유지
         if (it.desc) ch.desc = it.desc.slice(0, 200);   // 주요 내용
         if (!ch.name && !ch.url) return;
-        const dup = list.some(c => (ch.url && c.url === ch.url) || (c.name && ch.name && c.name.toLowerCase() === ch.name.toLowerCase()));
-        if (!dup) { list.push(ch); added++; }
+        const ex = list.find(c => (ch.url && c.url === ch.url) || (c.name && ch.name && c.name.toLowerCase() === ch.name.toLowerCase()));
+        if (ex) {
+          // 중복 — 주요 내용(desc) 비어 있으면 보완
+          if (ch.desc && !ex.desc) { ex.desc = ch.desc; updated++; }
+        } else { list.push(ch); added++; }
       });
       saveYtChannels(list);
       ytChannelRender();
-      showToast(`${added}개 채널 가져오기 완료 (중복 제외) 📥`);
+      showToast(`${added}개 추가${updated ? `, ${updated}개 내용 보완` : ''} 📥`);
     } catch (e) { showToast('가져오기 실패: ' + (e.message || '파싱 오류'), '⚠️'); }
     input.value = '';
   };
