@@ -1045,17 +1045,39 @@ function travelDownloadHistoryKML(i) {
   try { generateKML(h.dest); downloadKML(h.dest); }
   finally { tripData = prev; }
 }
-// 여행 일정 → 독립 HTML 문서 문자열 생성 (인터랙티브 지도 포함) — 출력·공유 공용
+// 여행 일정 → 독립 HTML 문서 문자열 생성 (인터랙티브 지도 + 장소 팝업) — 출력·공유 공용
 function buildHistoryHTML(h, opts) {
   opts = opts || {};
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
   const dt = new Date(h.at);
   const when = `${dt.getFullYear()}.${dt.getMonth()+1}.${dt.getDate()}`;
   const DAY_C = ['#e74c3c','#0984e3','#00b894','#e17055','#6c5ce7','#fdcb6e'];
+  const key = window.__gmapsKey || '';
 
+  // 전체 장소 데이터 (팝업·지도 공용) — gid 누적
+  const PLACES = [];
+  h.tripData.forEach((day, di) => {
+    const color = DAY_C[di % DAY_C.length];
+    (day.places || []).forEach((p, pi) => {
+      PLACES.push({
+        gid: PLACES.length, di, day: day.day || di + 1, color, num: pi + 1,
+        name: String(p.name || ''), category: String(p.category || ''), rating: p.rating || '',
+        duration: String(p.duration || ''), address: String(p.address || ''), phone: String(p.phone || ''),
+        hours: String(p.hours || ''), fee: String(p.fee || ''), website: String(p.website || ''),
+        tip: String(p.tip || ''), meal: String(p.meal || ''), time: String(p.time || ''),
+        photo: String(p._photoUrl || ''), youtube_id: String(p.youtube_id || ''),
+        lat: p.lat ? parseFloat(p.lat) : null, lng: p.lng ? parseFloat(p.lng) : null
+      });
+    });
+  });
+  const placesJson = JSON.stringify(PLACES).replace(/</g, '\\u003c');
+
+  // 일정 카드 (클릭 → 팝업)
+  let gid = 0;
   const daysHtml = h.tripData.map((day, di) => {
     const color = DAY_C[di % DAY_C.length];
     const places = (day.places || []).map((p, pi) => {
+      const g = gid++;
       const mealBadge = p.meal ? `<span class="meal">${p.meal === '저녁' ? '🍖' : '🍚'} ${esc(p.meal)}</span>` : '';
       const rows = [
         p.time && `🕘 ${esc(p.time)}`,
@@ -1069,7 +1091,7 @@ function buildHistoryHTML(h, opts) {
         p.hours   && `<div>🕐 ${esc(p.hours)}</div>`,
         p.fee     && `<div>🎟 ${esc(p.fee)}</div>`
       ].filter(Boolean).join('');
-      return `<div class="place">
+      return `<div class="place" onclick="showPop(${g})">
         <div class="pnum" style="background:${color}">${pi + 1}</div>
         <div class="pbody">
           <div class="pname">${esc(p.name)} ${mealBadge}</div>
@@ -1085,21 +1107,11 @@ function buildHistoryHTML(h, opts) {
     </section>`;
   }).join('');
 
-  const key = window.__gmapsKey || '';
-  // 지도용 경량 데이터 (일차/색/장소 좌표·이름)
-  const mapData = h.tripData.map((day, di) => ({
-    color: DAY_C[di % DAY_C.length],
-    day: day.day || di + 1,
-    places: (day.places || []).filter(p => p.lat && p.lng)
-      .map(p => ({ lat: parseFloat(p.lat), lng: parseFloat(p.lng), name: String(p.name || ''), time: String(p.time || ''), meal: String(p.meal || '') }))
-  }));
-  const mapJson = JSON.stringify(mapData).replace(/</g, '\\u003c');
   const mapSection = key
     ? `<div class="mapbox"><div id="tmap"></div><div id="tmap-fallback" style="display:none;padding:30px;text-align:center;color:#888;font-size:13px">지도를 불러올 수 없습니다.</div></div>`
     : '';
   const mapScript = key ? `
 <script>
-var TRIP = ${mapJson};
 async function osrmSeg(a, b) {
   var url = 'https://router.project-osrm.org/route/v1/driving/' + a.lng + ',' + a.lat + ';' + b.lng + ',' + b.lat + '?overview=full&geometries=geojson';
   var r = await fetch(url); if (!r.ok) throw 0;
@@ -1109,17 +1121,18 @@ async function osrmSeg(a, b) {
 function initTMap() {
   var map = new google.maps.Map(document.getElementById('tmap'), { zoom: 9, mapTypeControl: true, streetViewControl: false });
   var bounds = new google.maps.LatLngBounds();
-  var iw = new google.maps.InfoWindow();
-  TRIP.forEach(function(day, di) {
-    var pts = day.places; if (!pts.length) return;
-    pts.forEach(function(p, pi) {
+  // 일차별 그룹
+  var byDay = {};
+  PLACES.forEach(function(p){ if(p.lat==null||p.lng==null) return; (byDay[p.di]=byDay[p.di]||[]).push(p); });
+  Object.keys(byDay).forEach(function(di){
+    var pts = byDay[di]; var color = pts[0].color;
+    pts.forEach(function(p){
       var pos = { lat: p.lat, lng: p.lng }; bounds.extend(pos);
-      var mk = new google.maps.Marker({ position: pos, map: map, label: { text: String((pi+1)%100), color: '#fff', fontSize: '12px', fontWeight: '700' },
-        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 12, fillColor: day.color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 } });
-      mk.addListener('click', function(){ iw.setContent('<div style="font-weight:700;font-size:13px;padding:2px 4px">' + (p.time?('🕘 '+p.time+' '):'') + p.name + (p.meal?(' ('+p.meal+')'):'') + '</div>'); iw.open(map, mk); });
+      var mk = new google.maps.Marker({ position: pos, map: map, label: { text: String(p.num % 100), color: '#fff', fontSize: '12px', fontWeight: '700' },
+        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 12, fillColor: color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 } });
+      mk.addListener('click', function(){ showPop(p.gid); });
     });
-    // 직선 먼저, 도로 경로로 갱신
-    var line = new google.maps.Polyline({ path: pts.map(function(p){return {lat:p.lat,lng:p.lng};}), map: map, strokeColor: day.color, strokeOpacity: 0.85, strokeWeight: 5 });
+    var line = new google.maps.Polyline({ path: pts.map(function(p){return {lat:p.lat,lng:p.lng};}), map: map, strokeColor: color, strokeOpacity: 0.85, strokeWeight: 5 });
     (async function(){
       var full = [];
       for (var i = 0; i < pts.length - 1; i++) {
@@ -1135,6 +1148,38 @@ function initTMap() {
 window.gm_authFailure = function(){ var t=document.getElementById('tmap'); if(t)t.style.display='none'; var f=document.getElementById('tmap-fallback'); if(f)f.style.display='block'; };
 <\/script>
 <script async defer src="https://maps.googleapis.com/maps/api/js?key=${key}&callback=initTMap&language=ko&region=KR"><\/script>` : '';
+
+  // 장소 팝업 (앱 InfoWindow와 동일 구성)
+  const popScript = `
+<script>
+var PLACES = ${placesJson};
+function ytId(v){ return /^[\\w-]{11}$/.test(v) ? v : ''; }
+function esc2(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function showPop(gid){
+  var p = PLACES[gid]; if(!p) return;
+  var ov = document.getElementById('placePop');
+  if(!ov){ ov = document.createElement('div'); ov.id='placePop'; ov.className='pop-ov'; ov.onclick=function(e){ if(e.target===ov) closePop(); }; document.body.appendChild(ov); }
+  var yid = ytId(p.youtube_id);
+  var ytSearch = 'https://www.youtube.com/results?search_query=' + encodeURIComponent(p.name + ' 여행');
+  var photo = p.photo ? '<div class="pop-photo"><img src="'+esc2(p.photo)+'" alt="'+esc2(p.name)+'" onerror="this.parentNode.style.display=\\'none\\'"></div>' : '';
+  var yt = yid ? '<div class="pop-yt"><iframe src="https://www.youtube.com/embed/'+yid+'" allowfullscreen frameborder="0"></iframe></div>' : '';
+  var meta = [ p.category && '<span class="pop-cat">'+esc2(p.category)+'</span>', p.rating && '<span class="pop-rate">★ '+esc2(p.rating)+'</span>', p.duration && '<span class="pop-dur">⏱ '+esc2(p.duration)+'</span>' ].filter(Boolean).join('');
+  var rows = [ p.time && '🕘 '+esc2(p.time), p.address && '📍 '+esc2(p.address), p.phone && '📞 '+esc2(p.phone), p.hours && '🕐 '+esc2(p.hours), p.fee && '🎟 '+esc2(p.fee) ].filter(Boolean).map(function(r){return '<div class="pop-row">'+r+'</div>';}).join('');
+  var web = p.website ? '<div class="pop-row">🌐 <a href="'+esc2(p.website)+'" target="_blank">공식 홈페이지</a></div>' : '';
+  ov.innerHTML = '<div class="pop-card">' +
+    '<button class="pop-x" onclick="closePop()">✕</button>' +
+    '<div class="pop-banner" style="background:'+p.color+'"><span class="pop-num">'+p.num+'</span><span class="pop-title">'+esc2(p.name)+(p.meal?(' '+(p.meal==="저녁"?"🍖":"🍚")+p.meal):'')+'</span></div>' +
+    photo + yt +
+    '<div class="pop-ytlink"><a href="'+ytSearch+'" target="_blank">🔍 YouTube에서 더 보기</a></div>' +
+    '<div class="pop-meta">'+meta+'</div>' +
+    '<div class="pop-detail">'+rows+web+'</div>' +
+    (p.tip ? '<div class="pop-tip">💡 '+esc2(p.tip)+'</div>' : '') +
+  '</div>';
+  ov.style.display='flex';
+}
+function closePop(){ var ov=document.getElementById('placePop'); if(ov) ov.style.display='none'; }
+document.addEventListener('keydown', function(e){ if(e.key==='Escape') closePop(); });
+<\/script>`;
 
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -1155,7 +1200,8 @@ window.gm_authFailure = function(){ var t=document.getElementById('tmap'); if(t)
   .day{padding:20px 26px}
   .day h2{font-size:16px;padding-bottom:8px;border-bottom:2px solid;margin-bottom:14px}
   .dbadge{color:#fff;font-size:13px;font-weight:700;padding:3px 12px;border-radius:20px}
-  .place{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #eee}
+  .place{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid #eee;cursor:pointer;transition:background .15s}
+  .place:hover{background:#f6f5ff}
   .place:last-child{border-bottom:none}
   .pnum{flex:0 0 26px;height:26px;border-radius:50%;color:#fff;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center}
   .pname{font-size:15px;font-weight:700}
@@ -1165,11 +1211,31 @@ window.gm_authFailure = function(){ var t=document.getElementById('tmap'); if(t)
   .pdetail div{margin-top:2px}
   .ptip{font-size:12.5px;color:#444;margin-top:6px;background:#f6f5ff;border-radius:8px;padding:7px 10px}
   footer{text-align:center;padding:16px;font-size:11px;color:#999}
-  @media print{body{background:#fff;padding:0}.wrap{box-shadow:none}.toolbar{display:none}}
+  /* 장소 팝업 */
+  .pop-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9999;align-items:center;justify-content:center;padding:16px}
+  .pop-card{position:relative;background:#fff;width:100%;max-width:360px;max-height:90vh;overflow-y:auto;border-radius:14px;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+  .pop-x{position:absolute;top:8px;right:8px;z-index:2;width:30px;height:30px;border:none;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;font-size:15px;cursor:pointer}
+  .pop-banner{display:flex;align-items:center;gap:10px;padding:14px 16px;color:#fff}
+  .pop-num{flex:0 0 24px;height:24px;border-radius:50%;background:rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+  .pop-title{font-size:16px;font-weight:800}
+  .pop-photo img{display:block;width:100%;height:180px;object-fit:cover}
+  .pop-yt{position:relative;width:100%;aspect-ratio:16/9;background:#000}
+  .pop-yt iframe{position:absolute;inset:0;width:100%;height:100%}
+  .pop-ytlink{padding:8px 16px;text-align:right;font-size:12px}
+  .pop-ytlink a{color:#0984e3;text-decoration:none}
+  .pop-meta{display:flex;gap:8px;flex-wrap:wrap;padding:10px 16px;border-bottom:1px solid #eee}
+  .pop-cat{background:#6c5ce7;color:#fff;font-size:12px;font-weight:700;padding:3px 10px;border-radius:12px}
+  .pop-rate{color:#6c5ce7;font-weight:700;font-size:13px}
+  .pop-dur{color:#777;font-size:13px}
+  .pop-detail{padding:12px 16px}
+  .pop-row{font-size:13px;color:#444;margin-top:5px}
+  .pop-row a{color:#0984e3}
+  .pop-tip{margin:0 16px 16px;font-size:13px;color:#444;background:#f6f5ff;border-radius:8px;padding:10px 12px;line-height:1.7}
+  @media print{body{background:#fff;padding:0}.wrap{box-shadow:none}.toolbar{display:none}.pop-ov{display:none!important}}
 </style></head>
 <body><div class="wrap">
   <header><h1>🗺️ ${esc(h.dest)} 여행 일정</h1>
-    <div class="sub">${esc(h.dur)} · ${h.tripData.length}일 · 생성일 ${when}</div>
+    <div class="sub">${esc(h.dur)} · ${h.tripData.length}일 · 생성일 ${when} · <span style="opacity:.85">장소를 클릭하면 상세 정보</span></div>
     <div class="toolbar">
       <button class="btn-print" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
       <button class="btn-share" onclick="(async()=>{const u=location.href;try{if(navigator.share){await navigator.share({title:document.title,url:u})}else{await navigator.clipboard.writeText(u);alert('링크 복사됨')}}catch(e){}})()">🔗 공유</button>
@@ -1178,7 +1244,7 @@ window.gm_authFailure = function(){ var t=document.getElementById('tmap'); if(t)
   ${mapSection}
   ${daysHtml}
   <footer>AI 여행 플래너 · ${when} 생성</footer>
-</div>${mapScript}</body></html>`;
+</div>${popScript}${mapScript}</body></html>`;
 }
 
 // 검색 결과를 독립 HTML 문서로 생성해 새 탭 출력
