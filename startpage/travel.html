@@ -489,12 +489,22 @@ body.light-mode select option { background: #ffffff !important; color: #1f2328 !
   width: 100%;
   height: 100%;
 }
-/* 지도/위성 토글 등 Google 컨트롤 폰트 50% 축소 */
-#map .gm-style-mtc button,
-#map .gm-style-mtc label,
-#map .gm-style-mtc span {
-  font-size: 50% !important;
+/* 커스텀 지도/위성 아이콘 토글 */
+.custom-maptype {
+  display: flex; gap: 2px; margin: 10px;
+  background: rgba(255,255,255,0.95);
+  border-radius: 8px; padding: 3px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
 }
+.custom-maptype button {
+  border: none; background: transparent;
+  font-size: 16px; line-height: 1;
+  width: 30px; height: 30px; border-radius: 6px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+}
+.custom-maptype button:hover { background: rgba(108,92,231,0.12); }
+.custom-maptype button.active { background: rgba(108,92,231,0.22); }
 
 /* ── 지도 범례 ── */
 #map-legend {
@@ -955,7 +965,26 @@ window.initMap = function() {
     center: { lat: 37.5665, lng: 126.9780 },
     zoom: 7,
     mapTypeId: 'roadmap',
+    mapTypeControl: false,  // 기본 지도/위성 텍스트 컨트롤 숨김 → 커스텀 아이콘 사용
     styles: document.body.classList.contains('light-mode') ? [] : window.DARK_MAP_STYLES
+  });
+
+  // 커스텀 지도/위성 아이콘 토글
+  const mtCtrl = document.createElement('div');
+  mtCtrl.className = 'custom-maptype';
+  mtCtrl.innerHTML = `<button id="mt-road" class="active" title="지도">🗺️</button><button id="mt-sat" title="위성">🛰️</button>`;
+  map.controls[google.maps.ControlPosition.TOP_RIGHT].push(mtCtrl);
+  const btnRoad = mtCtrl.querySelector('#mt-road');
+  const btnSat  = mtCtrl.querySelector('#mt-sat');
+  btnRoad.addEventListener('click', () => {
+    map.setMapTypeId('roadmap');
+    map.setOptions({ styles: document.body.classList.contains('light-mode') ? [] : window.DARK_MAP_STYLES });
+    btnRoad.classList.add('active'); btnSat.classList.remove('active');
+  });
+  btnSat.addEventListener('click', () => {
+    map.setOptions({ styles: [] });  // 위성은 커스텀 스타일 제거
+    map.setMapTypeId('hybrid');
+    btnSat.classList.add('active'); btnRoad.classList.remove('active');
   });
   // 컨테이너 크기 확정 후 타일 강제 재로드
   setTimeout(() => {
