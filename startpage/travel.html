@@ -989,6 +989,9 @@ window.initMap = function() {
     styles: document.body.classList.contains('light-mode') ? [] : window.DARK_MAP_STYLES
   });
 
+  // 지도 빈 영역 클릭 시 열린 InfoWindow(팝업) 닫기
+  map.addListener('click', () => { infoWindows.forEach(w => w.close()); });
+
   // 커스텀 지도/위성 아이콘 토글
   const mtCtrl = document.createElement('div');
   mtCtrl.className = 'custom-maptype';
