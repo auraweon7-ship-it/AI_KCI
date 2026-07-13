@@ -2201,14 +2201,22 @@ async function routeAlongRoads(coords, poly) {
 // 한 구간 경로 — OSRM(무료·키 불필요) 우선, 실패 시 Google Directions → Routes API
 async function routeChunk(pts) {
   if (pts.length < 2) return [];
-  try { return await osrmPath(pts); }
+  try { return await osrmPath(pts); }  // OSRM은 자체적으로 원본 지점 결합
   catch (e0) {
     console.warn('[경로] OSRM 실패:', e0.message, '→ Google Directions 시도');
-    try { return await directionsPromise(pts); }
+    let seg;
+    try { seg = await directionsPromise(pts); }
     catch (e1) {
       console.warn('[경로] DirectionsService 실패:', e1.message, '→ Routes API 시도');
-      return await routesApiPath(pts);
+      seg = await routesApiPath(pts);
     }
+    // Google 경로(LatLng 배열) 시작/끝에 원본 지점 결합 → 마커 연결
+    const toLit = p => ({ lat: typeof p.lat === 'function' ? p.lat() : p.lat, lng: typeof p.lng === 'function' ? p.lng() : p.lng });
+    return [
+      { lat: parseFloat(pts[0].lat), lng: parseFloat(pts[0].lng) },
+      ...seg.map(toLit),
+      { lat: parseFloat(pts[pts.length - 1].lat), lng: parseFloat(pts[pts.length - 1].lng) }
+    ];
   }
 }
 // OSRM 공개 라우팅 — 자동차 도로 경로 (API 키 불필요)
@@ -2221,21 +2229,27 @@ async function osrmPath(pts) {
   const j = await res.json();
   if (j.code !== 'Ok' || !j.routes || !j.routes[0]) throw new Error('OSRM ' + (j.code || 'no route'));
   const route = j.routes[0];
-  // steps별 세부 geometry 우선 (간략화 없이 도로 완전 일치)
+  const push = (path, pt) => {
+    const last = path[path.length - 1];
+    if (!last || last.lat !== pt.lat || last.lng !== pt.lng) path.push(pt); // 연속 중복 제거
+  };
+  // steps별 세부 geometry (간략화 없이 도로 완전 일치)
+  // + 각 구간 경계에 원본 지점 좌표 삽입 → 마커(도로 밖)와 경로 연결
   const path = [];
   if (route.legs && route.legs.length) {
-    route.legs.forEach(leg => (leg.steps || []).forEach(st => {
-      const cs = st.geometry && st.geometry.coordinates;
-      if (cs) cs.forEach(c => {
-        const pt = { lat: c[1], lng: c[0] };
-        const last = path[path.length - 1];
-        if (!last || last.lat !== pt.lat || last.lng !== pt.lng) path.push(pt); // 연속 중복 제거
+    route.legs.forEach((leg, li) => {
+      push(path, { lat: parseFloat(pts[li].lat), lng: parseFloat(pts[li].lng) }); // 구간 출발 지점 원본
+      (leg.steps || []).forEach(st => {
+        const cs = st.geometry && st.geometry.coordinates;
+        if (cs) cs.forEach(c => push(path, { lat: c[1], lng: c[0] }));
       });
-    }));
+    });
+    push(path, { lat: parseFloat(pts[pts.length - 1].lat), lng: parseFloat(pts[pts.length - 1].lng) }); // 마지막 지점 원본
   }
   if (path.length > 1) return path;
-  // steps 없으면 overview geometry로 폴백
-  return route.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
+  // steps 없으면 overview geometry에 원본 지점 결합
+  const geo = route.geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
+  return [{ lat: parseFloat(pts[0].lat), lng: parseFloat(pts[0].lng) }, ...geo, { lat: parseFloat(pts[pts.length - 1].lat), lng: parseFloat(pts[pts.length - 1].lng) }];
 }
 function directionsPromise(pts) {
   return new Promise((resolve, reject) => {
