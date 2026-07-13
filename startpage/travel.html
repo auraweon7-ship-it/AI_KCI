@@ -655,6 +655,20 @@ body.light-mode select option { background: #ffffff !important; color: #1f2328 !
 #space-chips {
   display: flex; gap: 5px; flex-wrap: wrap;
 }
+.chip-tool {
+  flex: 0 0 auto;
+  width: 24px; height: 24px; padding: 0;
+  border-radius: 50%; border: 1px dashed rgba(108,92,231,0.5);
+  background: transparent; color: var(--gold);
+  font-size: 13px; cursor: pointer; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.chip-tool:hover { background: rgba(108,92,231,0.15); }
+.chip-tool.on { background: rgba(108,92,231,0.25); border-style: solid; }
+.space-chip .chip-del {
+  margin-left: 4px; color: #e74c3c; font-weight: 700; cursor: pointer;
+}
+body.light-mode .chip-tool { color: #6c5ce7; }
 .space-chip {
   font-size: 11px;
   padding: 3px 9px;
@@ -855,18 +869,9 @@ body.light-mode .meal-chk { color: #55503f !important; }
     <span id="yt-key-status" class="key-status" style="display:none"></span>
     <div class="input-group space-type-group" id="space-type-group">
       <label>공간 유형</label>
-      <div id="space-chips">
-        <span class="space-chip active" data-val="역사유적지">🏯 유적지</span>
-        <span class="space-chip active" data-val="출사지/자연경관">📷 출사지</span>
-        <span class="space-chip active" data-val="맛집">🍜 맛집</span>
-        <span class="space-chip" data-val="카페">☕ 카페</span>
-        <span class="space-chip" data-val="전시/박물관">🖼 전시</span>
-        <span class="space-chip" data-val="쇼핑">🛍 쇼핑</span>
-        <span class="space-chip" data-val="액티비티/체험">🎯 액티비티</span>
-        <span class="space-chip" data-val="야경/드라이브">🌙 야경</span>
-        <span class="space-chip active" data-val="휴양림">🌲 휴양림</span>
-        <span class="space-chip active" data-val="수목원">🌸 수목원</span>
-      </div>
+      <div id="space-chips"><!-- JS 동적 렌더 --></div>
+      <button id="space-add-btn" class="chip-tool" title="유형 추가">＋</button>
+      <button id="space-edit-btn" class="chip-tool" title="편집(수정·삭제)">✏️</button>
     </div>
     <div class="input-group" id="lodging-group">
       <label>숙박</label>
@@ -1359,20 +1364,89 @@ function travelDelHistory(i) {
 }
 
 // ── 공간 유형 칩 토글 ──────────────────────────────
+// ── 공간 유형 칩 데이터 (추가·수정·삭제, localStorage) ──
+const DEFAULT_SPACE_TYPES = [
+  { val: '역사유적지',       label: '🏯 유적지',   active: true },
+  { val: '출사지/자연경관',   label: '📷 출사지',   active: true },
+  { val: '맛집',            label: '🍜 맛집',     active: true },
+  { val: '카페',            label: '☕ 카페',     active: false },
+  { val: '전시/박물관',      label: '🖼 전시',     active: false },
+  { val: '쇼핑',            label: '🛍 쇼핑',     active: false },
+  { val: '액티비티/체험',    label: '🎯 액티비티', active: false },
+  { val: '야경/드라이브',    label: '🌙 야경',     active: false },
+  { val: '휴양림',          label: '🌲 휴양림',   active: true },
+  { val: '수목원',          label: '🌸 수목원',   active: true }
+];
+let spaceEditMode = false;
+
+function loadSpaceTypes() {
+  try {
+    const raw = localStorage.getItem('travel_space_types');
+    if (raw) { const a = JSON.parse(raw); if (Array.isArray(a) && a.length) return a; }
+  } catch (_) {}
+  return JSON.parse(JSON.stringify(DEFAULT_SPACE_TYPES));
+}
+function saveSpaceTypes(arr) {
+  try { localStorage.setItem('travel_space_types', JSON.stringify(arr)); } catch (_) {}
+}
+function renderSpaceChips() {
+  const wrap = document.getElementById('space-chips'); if (!wrap) return;
+  const arr = loadSpaceTypes();
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
+  wrap.innerHTML = arr.map((t, i) =>
+    `<span class="space-chip${t.active ? ' active' : ''}" data-idx="${i}" data-val="${esc(t.val)}">${esc(t.label)}${spaceEditMode ? `<span class="chip-del" data-del="${i}" title="삭제">✕</span>` : ''}</span>`
+  ).join('');
+  const eb = document.getElementById('space-edit-btn');
+  if (eb) eb.classList.toggle('on', spaceEditMode);
+}
 function toggleChip(el) {
-  // 최소 1개 선택 유지
-  const chips = document.querySelectorAll('.space-chip');
-  const activeCount = [...chips].filter(c => c.classList.contains('active')).length;
-  if (el.classList.contains('active') && activeCount === 1) {
-    showToast('최소 1개 이상 선택해야 합니다.');
-    return;
-  }
-  el.classList.toggle('active');
+  const idx = Number(el.dataset.idx);
+  const arr = loadSpaceTypes();
+  if (spaceEditMode) { editSpaceType(idx); return; }
+  // 일반 모드: active 토글 (최소 1개 유지)
+  const activeCount = arr.filter(t => t.active).length;
+  if (arr[idx].active && activeCount === 1) { showToast('최소 1개 이상 선택해야 합니다.'); return; }
+  arr[idx].active = !arr[idx].active;
+  saveSpaceTypes(arr);
+  renderSpaceChips();
+}
+function addSpaceType() {
+  const input = prompt('추가할 공간 유형 (이모지 이름)\n예: 🎡 테마파크');
+  if (!input) return;
+  const label = input.trim();
+  if (!label) return;
+  // 값은 이모지 제거한 텍스트 (검색 키워드)
+  const val = label.replace(/^[\p{Emoji}️‍\s]+/u, '').trim() || label;
+  const arr = loadSpaceTypes();
+  arr.push({ val, label, active: true });
+  saveSpaceTypes(arr);
+  renderSpaceChips();
+}
+function editSpaceType(idx) {
+  const arr = loadSpaceTypes();
+  if (!arr[idx]) return;
+  const input = prompt('공간 유형 수정 (이모지 이름)', arr[idx].label);
+  if (input == null) return;
+  const label = input.trim();
+  if (!label) return;
+  arr[idx].label = label;
+  arr[idx].val = label.replace(/^[\p{Emoji}️‍\s]+/u, '').trim() || label;
+  saveSpaceTypes(arr);
+  renderSpaceChips();
+}
+function delSpaceType(idx) {
+  const arr = loadSpaceTypes();
+  if (arr.length <= 1) { showToast('최소 1개 유형은 남겨야 합니다.'); return; }
+  const removed = arr[idx];
+  arr.splice(idx, 1);
+  if (!arr.some(t => t.active)) arr[0].active = true;  // 전부 비활성 방지
+  saveSpaceTypes(arr);
+  renderSpaceChips();
+  showToast(`"${removed.label}" 삭제됨`);
 }
 
 function getSelectedSpaceTypes() {
-  return [...document.querySelectorAll('.space-chip.active')]
-    .map(c => c.dataset.val);
+  return loadSpaceTypes().filter(t => t.active).map(t => t.val);
 }
 
 // ── 메인: 계획 생성 ────────────────────────────────
@@ -3135,12 +3209,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   })();
 
-  // 공간 유형 칩
+  // 공간 유형 칩 (동적 렌더 + 추가·수정·삭제)
+  renderSpaceChips();
   document.getElementById('space-chips')
     .addEventListener('click', e => {
+      const del = e.target.closest('.chip-del');
+      if (del) { e.stopPropagation(); delSpaceType(Number(del.dataset.del)); return; }
       const chip = e.target.closest('.space-chip');
       if (chip) toggleChip(chip);
     });
+  document.getElementById('space-add-btn')?.addEventListener('click', addSpaceType);
+  document.getElementById('space-edit-btn')?.addEventListener('click', () => {
+    spaceEditMode = !spaceEditMode;
+    renderSpaceChips();
+    showToast(spaceEditMode ? '✏️ 편집 모드 — 칩 클릭=수정, ✕=삭제' : '편집 종료');
+  });
 
   // 탭 버튼
   document.getElementById('tabs')
