@@ -740,10 +740,10 @@ body.light-mode .meal-chk { color: #55503f !important; }
 /* ── 반응형 (모바일) ── */
 @media (max-width: 900px) {
   /* 좌우 분할 → 상하 스택 (인라인 리사이저 폭 무시) */
-  #main { grid-template-columns: 1fr !important; grid-template-rows: auto 45vh; }
+  #main { grid-template-columns: 1fr !important; grid-template-rows: auto 135vh; }
   #panel-resizer { display: none; }
   #side-panel { height: auto; max-height: 55vh; border-right: none; border-bottom: 1px solid var(--border); }
-  #map-container { min-height: 45vh; }
+  #map-container { min-height: 135vh; }
   #header { padding: 12px 14px; flex-wrap: wrap; gap: 8px; }
   #input-bar { width: 100%; gap: 6px; }
   .input-group { flex: 1 1 auto; min-width: 0; }
@@ -752,7 +752,7 @@ body.light-mode .meal-chk { color: #55503f !important; }
   .logo { font-size: 15px; }
 }
 @media (max-width: 560px) {
-  #main { grid-template-rows: auto 42vh; }
+  #main { grid-template-rows: auto 126vh; }
   #side-panel { max-height: 52vh; }
   #header { padding: 10px 12px; }
   .input-group { flex: 1 1 100%; padding: 6px 10px; }
