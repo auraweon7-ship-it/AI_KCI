@@ -8,62 +8,65 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 
 <style>
+/* 메인 startpage와 통일된 팔레트 (보라 accent) */
 :root {
-  --ink: #1a1a2e;
-  --paper: #f5f0e8;
-  --cream: #faf6ee;
-  --gold: #c9a84c;
-  --gold-light: #e8c97a;
-  --rust: #c0392b;
-  --sky: #2980b9;
-  --forest: #27ae60;
+  --ink: #0d1117;
+  --paper: #e6edf3;
+  --cream: #1c2128;
+  --gold: #6c5ce7;
+  --gold-light: #a29bfe;
+  --rust: #e74c3c;
+  --sky: #58a6ff;
+  --forest: #3fb950;
   --day1: #e74c3c;
-  --day2: #2980b9;
-  --day3: #f39c12;
-  --day4: #8e44ad;
-  --day5: #27ae60;
-  --shadow: rgba(26,26,46,0.15);
-  --border: rgba(201,168,76,0.3);
-  --muted-text: rgba(245,240,232,0.4);
+  --day2: #58a6ff;
+  --day3: #d29922;
+  --day4: #a371f7;
+  --day5: #3fb950;
+  --shadow: rgba(0,0,0,0.35);
+  --border: #30363d;
+  --muted-text: #8b949e;
 }
 /* 라이트 모드(기본) — 메인 startpage 테마와 연동 */
 body.light-mode {
-  --ink: #faf6ee;
-  --paper: #2a2a2e;
+  --ink: #f0f2f5;
+  --paper: #1f2328;
   --cream: #ffffff;
-  --shadow: rgba(0,0,0,0.12);
-  --border: rgba(201,168,76,0.55);
-  --muted-text: rgba(42,42,46,0.62);
+  --gold: #6c5ce7;
+  --gold-light: #7c6ef0;
+  --shadow: rgba(0,0,0,0.1);
+  --border: #d0d7de;
+  --muted-text: #6a727c;
 }
-body.light-mode { background: #faf6ee; color: #2a2a2e; }
+body.light-mode { background: #f0f2f5; color: #1f2328; }
 /* 라이트 모드 — 주요 다크 UI 요소 오버라이드 */
-body.light-mode #header { background: linear-gradient(135deg, #f3ecdb 0%, #ffffff 60%, #efe6d2 100%); border-bottom-color: rgba(201,168,76,0.4); }
-body.light-mode #side-panel { background: rgba(250,246,238,0.97); }
-body.light-mode .day-header { background: rgba(201,168,76,0.14); }
-body.light-mode .place-card { border-bottom-color: rgba(201,168,76,0.22); }
-body.light-mode .place-card:hover { background: rgba(201,168,76,0.08); }
+body.light-mode #header { background: #ffffff; border-bottom-color: #d0d7de; }
+body.light-mode #side-panel { background: #ffffff; }
+body.light-mode .day-header { background: rgba(108,92,231,0.1); }
+body.light-mode .place-card { border-bottom-color: #e7e5ee; }
+body.light-mode .place-card:hover { background: rgba(108,92,231,0.06); }
 body.light-mode .iw-body { background: #ffffff; }
-body.light-mode select, body.light-mode input { background: #fff; color: #2a2a2e; border-color: rgba(201,168,76,0.5); }
+body.light-mode select, body.light-mode input { background: #fff; color: #2a2a2e; border-color: rgba(108,92,231,0.5); }
 body.light-mode #dest-input::placeholder { color: rgba(42,42,46,0.45); }
 body.light-mode label { color: #5a5236; }
 /* 탭·칩 가독성 (밝은 배경에 어두운 텍스트) — !important로 원본 규칙 우선 */
-body.light-mode #tabs { background: rgba(201,168,76,0.12) !important; border-bottom-color: rgba(201,168,76,0.35); }
+body.light-mode #tabs { background: rgba(108,92,231,0.12) !important; border-bottom-color: rgba(108,92,231,0.35); }
 body.light-mode .tab-btn { color: rgba(42,42,46,0.6) !important; }
 body.light-mode .tab-btn:hover { color: #2a2a2e !important; }
-body.light-mode .tab-btn.active { color: #a8842a !important; background: rgba(201,168,76,0.14); border-bottom-color: #c9a84c; }
-body.light-mode #space-chips .space-chip { background: #fff !important; color: rgba(42,42,46,0.65) !important; border-color: rgba(201,168,76,0.4) !important; }
-body.light-mode #space-chips .space-chip.active { background: rgba(201,168,76,0.2) !important; color: #8a6d1a !important; border-color: #c9a84c !important; }
+body.light-mode .tab-btn.active { color: #6c5ce7 !important; background: rgba(108,92,231,0.14); border-bottom-color: #6c5ce7; }
+body.light-mode #space-chips .space-chip { background: #fff !important; color: rgba(42,42,46,0.65) !important; border-color: rgba(108,92,231,0.4) !important; }
+body.light-mode #space-chips .space-chip.active { background: rgba(108,92,231,0.2) !important; color: #6c5ce7 !important; border-color: #6c5ce7 !important; }
 body.light-mode #space-chips .space-chip:hover { color: #2a2a2e !important; }
 body.light-mode label { color: #5a5236 !important; }
 body.light-mode #dest-input::placeholder { color: rgba(42,42,46,0.5) !important; }
-body.light-mode .welcome-title { color: #a8842a; }
+body.light-mode .welcome-title { color: #6c5ce7; }
 body.light-mode .welcome-desc, body.light-mode .welcome-tip { color: rgba(42,42,46,0.7); }
 body.light-mode #history-list { color: #2a2a2e; }
 /* 탭·칩 비활성 텍스트 — 초구체 셀렉터로 확실히 어둡게 */
 body.light-mode #tabs button.tab-btn { color: #55503f !important; }
-body.light-mode #tabs button.tab-btn.active { color: #a8842a !important; }
+body.light-mode #tabs button.tab-btn.active { color: #6c5ce7 !important; }
 body.light-mode #space-chips span.space-chip { color: #55503f !important; }
-body.light-mode #space-chips span.space-chip.active { color: #8a6d1a !important; }
+body.light-mode #space-chips span.space-chip.active { color: #6c5ce7 !important; }
 body.light-mode #tabs button.tab-btn, body.light-mode #space-chips span.space-chip { transition: none !important; }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -82,7 +85,7 @@ body::before {
   content: '';
   position: fixed; inset: 0;
   background:
-    radial-gradient(ellipse at 20% 10%, rgba(201,168,76,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 10%, rgba(108,92,231,0.08) 0%, transparent 50%),
     radial-gradient(ellipse at 80% 90%, rgba(41,128,185,0.08) 0%, transparent 50%),
     repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(255,255,255,0.01) 40px, rgba(255,255,255,0.01) 41px);
   pointer-events: none; z-index: 0;
@@ -123,7 +126,7 @@ body::before {
 }
 .input-group:focus-within {
   border-color: var(--gold);
-  background: rgba(201,168,76,0.08);
+  background: rgba(108,92,231,0.08);
 }
 .input-group label {
   font-size: 11px; color: var(--gold); font-weight: 500;
@@ -146,9 +149,9 @@ body::before {
   font-size: 14px; font-weight: 700;
   cursor: pointer; white-space: nowrap;
   transition: transform 0.15s, box-shadow 0.15s;
-  box-shadow: 0 3px 12px rgba(201,168,76,0.3);
+  box-shadow: 0 3px 12px rgba(108,92,231,0.3);
 }
-#plan-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,76,0.4); }
+#plan-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(108,92,231,0.4); }
 #plan-btn:active { transform: translateY(0); }
 #plan-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
@@ -193,7 +196,7 @@ body::before {
 .tab-btn.active {
   color: var(--gold);
   border-bottom-color: var(--gold);
-  background: rgba(201,168,76,0.05);
+  background: rgba(108,92,231,0.05);
 }
 
 /* ── 패널 콘텐츠 ── */
@@ -224,7 +227,7 @@ body::before {
 }
 .welcome-tip {
   font-size: 11px; color: rgba(245,240,232,0.3);
-  background: rgba(201,168,76,0.08);
+  background: rgba(108,92,231,0.08);
   border: 1px solid var(--border);
   border-radius: 6px; padding: 10px 16px;
   line-height: 1.7;
@@ -238,7 +241,7 @@ body::before {
 }
 .spinner {
   width: 40px; height: 40px;
-  border: 3px solid rgba(201,168,76,0.2);
+  border: 3px solid rgba(108,92,231,0.2);
   border-top-color: var(--gold);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
@@ -289,7 +292,7 @@ body::before {
   overflow: hidden;
 }
 .place-card:hover { background: rgba(255,255,255,0.04); }
-.place-card.active { background: rgba(201,168,76,0.08); }
+.place-card.active { background: rgba(108,92,231,0.08); }
 
 /* 카드 썸네일 이미지 */
 .place-thumb {
@@ -371,10 +374,10 @@ body::before {
 }
 .travel-line {
   flex: 1; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.3), transparent);
+  background: linear-gradient(90deg, transparent, rgba(108,92,231,0.3), transparent);
 }
 .travel-info {
-  font-size: 10px; color: rgba(201,168,76,0.7);
+  font-size: 10px; color: rgba(108,92,231,0.7);
   white-space: nowrap; font-family: 'Space Mono', monospace;
   letter-spacing: 0.3px;
 }
@@ -391,7 +394,7 @@ body::before {
   font-size: 15px; font-weight: 600; color: var(--gold);
 }
 #copy-kml-btn, #download-kml-btn {
-  background: rgba(201,168,76,0.15);
+  background: rgba(108,92,231,0.15);
   border: 1px solid var(--border);
   border-radius: 6px; padding: 6px 12px;
   color: var(--gold); font-size: 11px;
@@ -399,7 +402,7 @@ body::before {
   font-family: 'Noto Sans KR', sans-serif;
 }
 #copy-kml-btn:hover, #download-kml-btn:hover {
-  background: rgba(201,168,76,0.25);
+  background: rgba(108,92,231,0.25);
 }
 .kml-btns { display: flex; gap: 6px; }
 #kml-output {
@@ -425,7 +428,7 @@ body::before {
   font-size: 11px;
 }
 #schedule-table th {
-  background: rgba(201,168,76,0.15);
+  background: rgba(108,92,231,0.15);
   color: var(--gold);
   padding: 8px 10px; text-align: left;
   font-weight: 600; letter-spacing: 0.3px;
@@ -604,7 +607,7 @@ body::before {
   font-size: 11px;
   padding: 3px 9px;
   border-radius: 20px;
-  border: 1px solid rgba(201,168,76,0.25);
+  border: 1px solid rgba(108,92,231,0.25);
   color: var(--muted-text);
   cursor: pointer;
   user-select: none;
@@ -613,11 +616,11 @@ body::before {
   background: transparent;
 }
 .space-chip:hover {
-  border-color: rgba(201,168,76,0.5);
+  border-color: rgba(108,92,231,0.5);
   color: rgba(245,240,232,0.7);
 }
 .space-chip.active {
-  background: rgba(201,168,76,0.18);
+  background: rgba(108,92,231,0.18);
   border-color: var(--gold);
   color: var(--gold-light);
   font-weight: 500;
@@ -646,7 +649,7 @@ body::before {
 }
 #yt-clear-btn:hover { background: rgba(192,57,43,0.25); }
 #gemini-save-btn {
-  background: rgba(201,168,76,0.15);
+  background: rgba(108,92,231,0.15);
   border: 1px solid var(--border);
   border-radius: 6px; padding: 4px 10px;
   color: var(--gold); font-size: 11px;
@@ -654,7 +657,7 @@ body::before {
   font-family: 'Noto Sans KR', sans-serif;
   transition: background 0.2s;
 }
-#gemini-save-btn:hover { background: rgba(201,168,76,0.3); }
+#gemini-save-btn:hover { background: rgba(108,92,231,0.3); }
 #gemini-clear-btn {
   background: rgba(192,57,43,0.12);
   border: 1px solid rgba(192,57,43,0.3);
@@ -697,7 +700,7 @@ body::before {
 .footer-name-en { color: rgba(245,240,232,0.6); font-size: 12px; font-weight: 400; }
 .footer-title {
   font-size: 11px; color: var(--gold);
-  background: rgba(201,168,76,0.12);
+  background: rgba(108,92,231,0.12);
   border: 1px solid var(--border);
   border-radius: 10px; padding: 1px 8px;
 }
@@ -789,7 +792,7 @@ body::before {
           ✦ 구글맵 평점 4.0 이상 검증 장소<br>
           ✦ 도로 동선 최적화 자동 적용<br>
           ✦ 지도에 날짜별 경로 자동 표시<br>
-          <span style="color:rgba(201,168,76,0.6);font-size:10px">※ Claude API 키 없이도 데모 모드로 동작합니다</span>
+          <span style="color:rgba(108,92,231,0.6);font-size:10px">※ Claude API 키 없이도 데모 모드로 동작합니다</span>
         </div>
       </div>
       <div id="loading">
@@ -927,7 +930,7 @@ function travelRenderHistory() {
     const spots = (x.tripData || []).reduce((s, d) => s + ((d.places || d || []).length || 0), 0);
     const dt = new Date(x.at);
     const when = `${dt.getFullYear()}.${dt.getMonth()+1}.${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
-    return `<div onclick="travelLoadHistory(${i})" style="position:relative;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer" onmouseover="this.style.background='rgba(201,168,76,0.08)'" onmouseout="this.style.background=''">
+    return `<div onclick="travelLoadHistory(${i})" style="position:relative;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer" onmouseover="this.style.background='rgba(108,92,231,0.08)'" onmouseout="this.style.background=''">
       <div style="font-size:14px;font-weight:700;color:var(--paper);margin-bottom:3px">📍 ${x.dest} <span style="font-size:11px;font-weight:400;color:var(--gold)">${x.dur}</span></div>
       <div style="font-size:11px;color:var(--paper);opacity:.55">${days}일 · ${spots}곳 · ${when}</div>
       <button onclick="event.stopPropagation();travelDelHistory(${i})" title="삭제" style="position:absolute;top:10px;right:10px;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--paper);opacity:.6;cursor:pointer;font-size:11px;padding:2px 6px">✕</button>
@@ -1840,7 +1843,7 @@ function renderSchedule(dest, dur) {
       card.dataset.pi = pi;
 
       const isHistory = p.category && (p.category.includes('유적') || p.category.includes('역사') || p.category.includes('문화'));
-      const catColor = isHistory ? '#c9a84c' : '#27ae60';
+      const catColor = isHistory ? '#6c5ce7' : '#27ae60';
       const emoji = getCategoryEmoji(p.category);
 
       // 썸네일 placeholder 먼저 렌더, 이후 Places API로 교체
@@ -1861,7 +1864,7 @@ function renderSchedule(dest, dur) {
             ${p.phone    ? `<div class="place-detail-row">📞 ${p.phone}</div>`    : ''}
             ${p.hours    ? `<div class="place-detail-row">🕐 ${p.hours}</div>`    : ''}
             ${p.fee      ? `<div class="place-detail-row">🎟 ${p.fee}</div>`      : ''}
-            ${p.website  ? `<div class="place-detail-row">🌐 <a href="${p.website}" target="_blank" style="color:#c9a84c;text-decoration:none">공식 홈페이지</a></div>` : ''}
+            ${p.website  ? `<div class="place-detail-row">🌐 <a href="${p.website}" target="_blank" style="color:#6c5ce7;text-decoration:none">공식 홈페이지</a></div>` : ''}
             <div class="place-tip">${p.tip||''}</div>
           </div>
         </div>
@@ -1920,7 +1923,7 @@ function renderTable() {
         <td style="color:${color};font-weight:700;white-space:nowrap">${day.day}일차</td>
         <td style="font-weight:600;color:#f5f0e8">${p.name}</td>
         <td>${p.category||'-'}</td>
-        <td style="color:#c9a84c">★ ${p.rating||'-'}</td>
+        <td style="color:#6c5ce7">★ ${p.rating||'-'}</td>
         <td style="max-width:200px">${urlVal}</td>
         <td>${p.tip||'-'}</td>
         <td style="white-space:nowrap">${p.duration||'-'}</td>
