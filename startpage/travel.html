@@ -1029,11 +1029,11 @@ function travelRenderHistory() {
     return `<div onclick="travelLoadHistory(${i})" style="position:relative;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer" onmouseover="this.style.background='rgba(108,92,231,0.08)'" onmouseout="this.style.background=''">
       <div style="font-size:14px;font-weight:700;color:var(--paper);margin-bottom:3px">📍 ${x.dest} <span style="font-size:11px;font-weight:400;color:var(--gold)">${x.dur}</span></div>
       <div style="font-size:11px;color:var(--paper);opacity:.55">${days}일 · ${spots}곳 · ${when}</div>
-      <div style="position:absolute;top:9px;right:9px;display:flex;gap:5px">
-        <button onclick="event.stopPropagation();travelShareHistory(${i})" title="공유 링크" style="background:#00b894;border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:11px;padding:3px 8px;font-weight:700">🔗 공유</button>
-        <button onclick="event.stopPropagation();travelExportHistoryHTML(${i})" title="HTML 출력" style="background:#0984e3;border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:11px;padding:3px 8px;font-weight:700">📄 HTML</button>
-        <button onclick="event.stopPropagation();travelDownloadHistoryKML(${i})" title="KML 다운로드" style="background:var(--gold);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:11px;padding:3px 8px;font-weight:700">📥 KML</button>
-        <button onclick="event.stopPropagation();travelDelHistory(${i})" title="삭제" style="background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--paper);opacity:.6;cursor:pointer;font-size:11px;padding:3px 7px">✕</button>
+      <div style="position:absolute;top:9px;right:9px;display:flex;gap:4px">
+        <button onclick="event.stopPropagation();travelShareHistory(${i})" title="공유 링크" style="background:#00b894;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:9px;padding:2px 5px;font-weight:700">🔗공유</button>
+        <button onclick="event.stopPropagation();travelExportHistoryHTML(${i})" title="HTML 출력" style="background:#0984e3;border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:9px;padding:2px 5px;font-weight:700">📄HTML</button>
+        <button onclick="event.stopPropagation();travelDownloadHistoryKML(${i})" title="KML 다운로드" style="background:var(--gold);border:none;border-radius:4px;color:#fff;cursor:pointer;font-size:9px;padding:2px 5px;font-weight:700">📥KML</button>
+        <button onclick="event.stopPropagation();travelDelHistory(${i})" title="삭제" style="background:transparent;border:1px solid var(--border);border-radius:4px;color:var(--paper);opacity:.6;cursor:pointer;font-size:9px;padding:2px 5px">✕</button>
       </div>
     </div>`;
   }).join('');
