@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v20.7</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v20.8</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3931,7 +3931,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v20.7 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v20.8 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6992,7 +6992,9 @@ function ytChannelRender() {
       <button onclick="document.getElementById('ytChOverlay').remove()" style="background:none;border:none;cursor:pointer;font-size:1.1rem;color:var(--text-muted)">✕</button>
     </div>
     <div style="display:flex;gap:6px;margin-bottom:8px">
-      <input id="ytChInput" placeholder="채널명 또는 채널 URL (예: 3Blue1Brown, https://youtube.com/@jocoding)" onkeydown="if(event.key==='Enter')ytChannelAdd()" style="flex:1;min-width:0;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.76rem;outline:none">
+      <input id="ytChName" placeholder="채널명" onkeydown="if(event.key==='Enter')ytChannelAdd()" style="flex:1.2;min-width:0;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.74rem;outline:none">
+      <input id="ytChUrl" placeholder="채널 URL" onkeydown="if(event.key==='Enter')ytChannelAdd()" style="flex:1.6;min-width:0;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.7rem;outline:none">
+      <input id="ytChDesc" placeholder="주요 내용" onkeydown="if(event.key==='Enter')ytChannelAdd()" style="flex:1.4;min-width:0;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.72rem;outline:none">
       <button onclick="ytChannelAdd()" style="padding:8px 14px;background:var(--accent);border:none;border-radius:6px;color:#fff;font-size:.76rem;cursor:pointer;white-space:nowrap">추가</button>
     </div>
     <details style="margin-bottom:10px">
@@ -7007,15 +7009,24 @@ function ytChannelRender() {
   </div>`;
 }
 function ytChannelAdd() {
-  const inp = document.getElementById('ytChInput'); const v = (inp?.value || '').trim();
-  if (!v) return;
-  const ch = ytParseChannel(v);
+  const name = (document.getElementById('ytChName')?.value || '').trim();
+  const url  = (document.getElementById('ytChUrl')?.value || '').trim();
+  const desc = (document.getElementById('ytChDesc')?.value || '').trim();
+  if (!name && !url) { showToast('채널명 또는 URL을 입력하세요', 'ℹ️'); return; }
+  const parsed = ytParseChannel(url || name);
+  const ch = {
+    name: (name || parsed.name).slice(0, 60),
+    url: (url ? (/^https?:\/\//i.test(url) ? url : 'https://' + url) : parsed.url).slice(0, 300),
+    desc: desc.slice(0, 200)
+  };
   if (!ch.name && !ch.url) return;
   const list = ytChannels();
   const dup = list.some(c => (ch.url && c.url === ch.url) || (c.name && ch.name && c.name.toLowerCase() === ch.name.toLowerCase()));
   if (!dup) list.push(ch);
-  saveYtChannels(list); if (inp) inp.value = '';
+  saveYtChannels(list);
+  ['ytChName','ytChUrl','ytChDesc'].forEach(id => { const e = document.getElementById(id); if (e) e.value = ''; });
   ytChannelRender();
+  if (dup) showToast('이미 등록된 채널입니다', 'ℹ️');
 }
 function ytChannelDel(i) { const list = ytChannels(); list.splice(i,1); saveYtChannels(list); window._ytChEdit = -1; ytChannelRender(); }
 // 채널 목록 → HTML 파일 내보내기 (data-속성으로 재가져오기 가능)
