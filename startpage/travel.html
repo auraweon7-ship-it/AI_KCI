@@ -2223,23 +2223,35 @@ function plotOnMap() {
 }
 
 // ── 자동차 도로 기반 경로로 폴리라인 갱신 ──────────────
-// 1) JS DirectionsService(Legacy) 시도 → 2) 실패 시 Routes API(신규 REST) fallback
+// 인접 지점 쌍마다 개별 경로 요청 → 되는 구간은 도로, 안 되는 구간(DMZ 등)만 직선으로 격리
 async function routeAlongRoads(coords, poly) {
   if (!coords || coords.length < 2) return;
-  const MAX = 25;  // 한 요청 최대 25지점(출발+도착+경유 23)
-  const chunks = [];
-  for (let i = 0; i < coords.length - 1; i += (MAX - 1)) chunks.push(coords.slice(i, i + MAX));
-  try {
-    const segs = await Promise.all(chunks.map(pts => routeChunk(pts)));
-    const path = [];
-    segs.forEach(s => { if (s && s.length) path.push(...s); });
-    if (path.length > 1) poly.setPath(path);
-  } catch (e) {
-    console.warn('[경로] 도로 경로 계산 실패 — 직선 유지:', e.message);
-    if (!window.__routeWarned) {
-      window.__routeWarned = true;
-      showToast('⚠️ 도로 경로 실패(직선 표시): ' + e.message.slice(0, 70));
+  const push = (path, pt) => {
+    const last = path[path.length - 1];
+    if (!last || last.lat !== pt.lat || last.lng !== pt.lng) path.push(pt);
+  };
+  const path = [];
+  let anyFail = false;
+  for (let i = 0; i < coords.length - 1; i++) {
+    const pair = [coords[i], coords[i + 1]];
+    let seg;
+    try {
+      seg = await routeChunk(pair);
+    } catch (e) {
+      // 이 구간 경로 없음 → 직선으로 연결 (전체가 아닌 해당 구간만)
+      anyFail = true;
+      console.warn(`[경로] 구간 ${i}→${i + 1} 도로 경로 실패(직선):`, e.message);
+      seg = [
+        { lat: parseFloat(pair[0].lat), lng: parseFloat(pair[0].lng) },
+        { lat: parseFloat(pair[1].lat), lng: parseFloat(pair[1].lng) }
+      ];
     }
+    seg.forEach(pt => push(path, pt));
+  }
+  if (path.length > 1) poly.setPath(path);
+  if (anyFail && !window.__routeWarned) {
+    window.__routeWarned = true;
+    showToast('ℹ️ 일부 구간(도로 없는 지역)은 직선으로 표시됩니다.');
   }
 }
 // 한 구간 경로 — OSRM(무료·키 불필요) 우선, 실패 시 Google Directions → Routes API
