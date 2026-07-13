@@ -886,6 +886,19 @@ body.light-mode .meal-chk { color: #55503f !important; }
         <label class="meal-chk"><input type="checkbox" id="meal-dinner" checked> 🍖 저녁</label>
       </div>
     </div>
+    <div class="input-group" id="cuisine-group">
+      <label>음식</label>
+      <select id="cuisine-select">
+        <option value="">무관</option>
+        <option value="한식">한식</option>
+        <option value="중식">중식</option>
+        <option value="양식">양식</option>
+        <option value="일식">일식</option>
+        <option value="분식">분식</option>
+        <option value="아시안">아시안</option>
+        <option value="향토·별미">향토·별미</option>
+      </select>
+    </div>
     <button id="plan-btn">✦ 여행 계획 생성</button>
   </div>
 </header>
@@ -1461,7 +1474,8 @@ async function generatePlan() {
     dinner: !!document.getElementById('meal-dinner')?.checked
   };
   const lodging      = !!document.getElementById('lodging-chk')?.checked;
-  try { localStorage.setItem('travel_origin', origin); localStorage.setItem('travel_lodging', lodging ? '1' : '0'); } catch (_) {}
+  const cuisine      = document.getElementById('cuisine-select')?.value || '';
+  try { localStorage.setItem('travel_origin', origin); localStorage.setItem('travel_lodging', lodging ? '1' : '0'); localStorage.setItem('travel_cuisine', cuisine); } catch (_) {}
 
   if (!dest) { showToast('목적지를 입력해주세요.'); return; }
   if (spaceTypes.length === 0) { showToast('공간 유형을 1개 이상 선택해주세요.'); return; }
@@ -1481,7 +1495,7 @@ async function generatePlan() {
 
     // Claude AI로 직접 검색 (항상 실시간)
     setLoadingMsg(`Claude AI로 "${dest}" 여행지 검색 중…`);
-    let allPlaces = await searchWithGemini(dest, spaceTypes, totalNeeded, { meals, numDays, perDay: dayPlaces, origin, lodging });
+    let allPlaces = await searchWithGemini(dest, spaceTypes, totalNeeded, { meals, numDays, perDay: dayPlaces, origin, lodging, cuisine });
 
     // 실패 시 내장 DB 폴백
     if (!allPlaces.length) {
@@ -1592,11 +1606,13 @@ async function searchWithGemini(dest, spaceTypes, count, opts) {
   }
 
   // 식사 배치 지시 (점심/저녁 체크 시)
+  const cuisine = (opts.cuisine || '').trim();
+  const cuisineLine = cuisine ? `   · 식사 맛집은 "${cuisine}" 전문 음식점 위주로 선정 (해당 지역에 ${cuisine}이 마땅치 않으면 인근의 유사·대체 맛집)\n` : '';
   const mealList = [meals.lunch && '점심', meals.dinner && '저녁'].filter(Boolean);
   const mealBlock = mealList.length ? `
 [식사 배치 — 필수]
 - 매일 ${mealList.join('·')} 식사를 위한 실제 맛집(음식점)을 각각 1곳씩 반드시 포함
-${meals.lunch ? '   · 점심 맛집: 도착시각(time) 12:00~13:00 사이, meal 필드="점심"\n' : ''}${meals.dinner ? '   · 저녁 맛집: 도착시각(time) 18:00~19:00 사이, meal 필드="저녁"\n' : ''}   · 식사 맛집은 category="맛집", 해당 시간대 이동 동선상 자연스러운 위치에 배치
+${meals.lunch ? '   · 점심 맛집: 도착시각(time) 12:00~13:00 사이, meal 필드="점심"\n' : ''}${meals.dinner ? '   · 저녁 맛집: 도착시각(time) 18:00~19:00 사이, meal 필드="저녁"\n' : ''}${cuisineLine}   · 식사 맛집은 category="맛집", 해당 시간대 이동 동선상 자연스러운 위치에 배치
 - 위 하루 ${perDay}개 장소에는 이 식사 맛집이 포함된 개수입니다.
 ` : '';
 
@@ -3163,6 +3179,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (lc) {
     const savedLodging = localStorage.getItem('travel_lodging');
     if (savedLodging === '0') lc.checked = false;
+  }
+  // 음식 종류 저장값 복원
+  const cs = document.getElementById('cuisine-select');
+  if (cs) {
+    const savedCuisine = localStorage.getItem('travel_cuisine');
+    if (savedCuisine != null) cs.value = savedCuisine;
   }
 
   // 엔터키
