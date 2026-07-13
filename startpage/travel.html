@@ -3128,19 +3128,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (btn) switchTab(btn.dataset.tab);
     });
 
-  // KML 버튼 — 부모에 이벤트 위임 (display:none 여부 무관하게 동작)
-  document.getElementById('kml-panel')
-    .addEventListener('click', e => {
-      if (e.target.closest('#copy-kml-btn'))     copyKML();
-      if (e.target.closest('#download-kml-btn')) downloadKML();
-    });
-
   // 범례 토글 (지도 위 동적 생성 요소 — 이벤트 위임)
-  document.getElementById('map-legend')
-    .addEventListener('click', e => {
-      const item = e.target.closest('.legend-item[data-day]');
-      if (item) toggleDay(Number(item.dataset.day));
-    });
+  const mapLegendEl = document.getElementById('map-legend');
+  if (mapLegendEl) mapLegendEl.addEventListener('click', e => {
+    const item = e.target.closest('.legend-item[data-day]');
+    if (item) toggleDay(Number(item.dataset.day));
+  });
 });
 </script>
 
