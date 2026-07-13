@@ -2163,11 +2163,11 @@ function plotOnMap() {
       const poly = new google.maps.Polyline({
         path: pathCoords, map,
         strokeColor: color,
-        strokeOpacity: 0.75,
-        strokeWeight: 3,
+        strokeOpacity: 0.85,
+        strokeWeight: 6,
         icons: [{
-          icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 3, strokeWeight: 1.5 },
-          offset: '50%', repeat: '120px'
+          icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 3.5, strokeWeight: 1.5 },
+          offset: '50%', repeat: '140px'
         }]
       });
       polylines.push({ poly, dayIdx: di });
