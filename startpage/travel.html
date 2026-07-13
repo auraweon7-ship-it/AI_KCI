@@ -2198,14 +2198,28 @@ async function routeAlongRoads(coords, poly) {
     }
   }
 }
-// 한 구간 경로 — Directions 먼저, 실패하면 Routes API
+// 한 구간 경로 — OSRM(무료·키 불필요) 우선, 실패 시 Google Directions → Routes API
 async function routeChunk(pts) {
   if (pts.length < 2) return [];
-  try { return await directionsPromise(pts); }
-  catch (e1) {
-    console.warn('[경로] DirectionsService 실패:', e1.message, '→ Routes API 시도');
-    return await routesApiPath(pts);
+  try { return await osrmPath(pts); }
+  catch (e0) {
+    console.warn('[경로] OSRM 실패:', e0.message, '→ Google Directions 시도');
+    try { return await directionsPromise(pts); }
+    catch (e1) {
+      console.warn('[경로] DirectionsService 실패:', e1.message, '→ Routes API 시도');
+      return await routesApiPath(pts);
+    }
   }
+}
+// OSRM 공개 라우팅 — 자동차 도로 경로 (API 키 불필요)
+async function osrmPath(pts) {
+  const coordStr = pts.map(p => `${parseFloat(p.lng)},${parseFloat(p.lat)}`).join(';');
+  const url = `https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error('OSRM ' + res.status);
+  const j = await res.json();
+  if (j.code !== 'Ok' || !j.routes || !j.routes[0]) throw new Error('OSRM ' + (j.code || 'no route'));
+  return j.routes[0].geometry.coordinates.map(c => ({ lat: c[1], lng: c[0] }));
 }
 function directionsPromise(pts) {
   return new Promise((resolve, reject) => {
