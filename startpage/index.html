@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.6</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.7</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3933,7 +3933,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v16.6 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v16.7 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -24903,6 +24903,8 @@ function applySettings() {
   const at = document.getElementById('toggleAutoTheme');
   if (at) at.className = 'toggle' + (state.settings.autoTheme ? ' on' : '');
   document.body.dataset.theme = state.settings.dark ? 'dark' : 'light';
+  // 여행 교통 iframe 테마 연동
+  try { const tvIf = document.querySelector('#linksGrid iframe'); if (tvIf && tvIf.contentWindow && tvIf.contentWindow.tvApplyParentTheme) tvIf.contentWindow.tvApplyParentTheme(); } catch(_) {}
   // 밀도
   const dt = document.getElementById('toggleDensity');
   if (dt) dt.className = 'toggle' + (state.settings.compact ? ' on' : '');

@@ -25,6 +25,15 @@
   --shadow: rgba(26,26,46,0.15);
   --border: rgba(201,168,76,0.3);
 }
+/* 라이트 모드(기본) — 메인 startpage 테마와 연동 */
+body.light-mode {
+  --ink: #faf6ee;
+  --paper: #2a2a2e;
+  --cream: #ffffff;
+  --shadow: rgba(0,0,0,0.12);
+  --border: rgba(201,168,76,0.55);
+}
+body.light-mode { background: #faf6ee; color: #2a2a2e; }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -701,26 +710,9 @@ body::before {
         <option value="5">5곳</option>
       </select>
     </div>
-    <div class="input-group gemini-key-group">
-      <label>🤖 Gemini Key</label>
-      <input type="password" id="gemini-key-input"
-             placeholder="AIzaSy…"
-             autocomplete="off" style="width:150px"
-             title="Google AI Studio에서 발급한 Gemini API 키 (https://aistudio.google.com/)" />
-      <button id="gemini-save-btn" title="API 키 저장">💾 저장</button>
-      <button id="gemini-clear-btn" title="API 키 초기화">🗑</button>
-      <span id="gemini-key-status" class="key-status"></span>
-    </div>
-    <div class="input-group yt-key-group">
-      <label>▶ YouTube Key</label>
-      <input type="password" id="yt-key-input"
-             placeholder="AIzaSy…"
-             autocomplete="off" style="width:150px"
-             title="Google Cloud Console에서 발급한 YouTube Data API v3 키" />
-      <button id="yt-save-btn" title="YouTube API 키 저장">💾 저장</button>
-      <button id="yt-clear-btn" title="YouTube API 키 초기화">🗑</button>
-      <span id="yt-key-status" class="key-status"></span>
-    </div>
+    <!-- API 키는 메인 설정에 통합 (Claude·YouTube·Maps) — 여기 입력 UI 제거 -->
+    <span id="gemini-key-status" class="key-status" style="display:none"></span>
+    <span id="yt-key-status" class="key-status" style="display:none"></span>
     <div class="input-group space-type-group" id="space-type-group">
       <label>공간 유형</label>
       <div id="space-chips">
@@ -1006,15 +998,15 @@ function getGeminiURL(key) {
 
 async function searchWithGemini(dest, spaceTypes, count) {
   const ks = document.getElementById('gemini-key-status');
-  const apiKey = getGeminiKey();
+  // 메인 설정(claude_api_key) 사용 — Claude API로 장소 검색
+  const apiKey = (localStorage.getItem('claude_api_key') || '').trim();
 
-  if (!apiKey || !apiKey.startsWith('AIza')) {
-    showToast('❌ 유효한 Gemini API 키를 입력하고 저장해주세요.');
+  if (!apiKey || !apiKey.startsWith('sk-ant')) {
+    showToast('❌ 메인 설정 → 🧠 Claude API 키를 등록하세요.');
     if (ks) { ks.textContent = '키 없음'; ks.className = 'key-status err'; }
     return [];
   }
 
-  const geminiUrl = getGeminiURL(apiKey);
   if (ks) { ks.textContent = '검색 중…'; ks.className = 'key-status'; }
 
   const typeList = spaceTypes.join(', ');
@@ -1052,24 +1044,30 @@ youtube_id는 해당 장소를 잘 소개하는 실제 YouTube 영상의 11자�
         await new Promise(r => setTimeout(r, 1000));
       }
 
-      const res = await fetch(geminiUrl, {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'content-type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
+          model: 'claude-sonnet-5',
+          max_tokens: 8000,
+          messages: [{ role: 'user', content: prompt }]
         })
       });
 
-      if (res.status === 400) {
+      if (res.status === 400 || res.status === 401) {
         const err = await res.json().catch(() => ({}));
-        const msg = err?.error?.message || '잘못된 요청';
+        const msg = err?.error?.message || '인증/요청 오류';
         if (ks) { ks.textContent = '키 오류'; ks.className = 'key-status err'; }
-        showToast(`❌ Gemini 키 오류: ${msg.slice(0, 60)}`);
+        showToast(`❌ Claude 키 오류: ${msg.slice(0, 60)}`);
         return [];
       }
       if (res.status === 429) {
-        showToast('⏳ Gemini 요청 한도 초과. 잠시 후 다시 시도해주세요.');
+        showToast('⏳ Claude 요청 한도 초과. 잠시 후 다시 시도해주세요.');
         if (ks) { ks.textContent = '한도 초과'; ks.className = 'key-status err'; }
         return [];
       }
@@ -1079,9 +1077,9 @@ youtube_id는 해당 장소를 잘 소개하는 실제 YouTube 영상의 11자�
       }
 
       const data = await res.json();
-      const raw  = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+      const raw  = ((data.content || []).map(c => c.text || '').join('') || '').trim();
 
-      if (!raw) throw new Error('Gemini 응답이 비어 있습니다.');
+      if (!raw) throw new Error('Claude 응답이 비어 있습니다.');
 
       // JSON 추출 — 다단계 강건 파싱
       let jsonStr = '';
@@ -2270,73 +2268,23 @@ document.addEventListener('DOMContentLoaded', () => {
       if (card) focusMarker(Number(card.dataset.di), Number(card.dataset.pi));
     });
 
-  // Gemini API 키 localStorage 복원
-  const savedKey = localStorage.getItem('gemini_api_key');
-  if (savedKey) {
-    const el = document.getElementById('gemini-key-input');
-    if (el) el.value = savedKey;
-    const ks = document.getElementById('gemini-key-status');
-    if (ks) { ks.textContent = '✓ 저장됨'; ks.className = 'key-status ok'; }
-  }
-
-  // Gemini 키 저장 버튼
-  document.getElementById('gemini-save-btn').addEventListener('click', () => {
-    const val = document.getElementById('gemini-key-input').value.trim();
-    const ks  = document.getElementById('gemini-key-status');
-    if (!val || !val.startsWith('AIza')) {
-      ks.textContent = '유효하지 않은 키'; ks.className = 'key-status err';
-      showToast('AIzaSy… 형식의 Gemini API 키를 입력해주세요.');
-      return;
-    }
-    localStorage.setItem('gemini_api_key', val);
-    ks.textContent = '✓ 저장됨'; ks.className = 'key-status ok';
-    showToast('✅ Gemini API 키가 저장되었습니다.');
-  });
-
-  // Gemini 키 초기화 버튼
-  document.getElementById('gemini-clear-btn').addEventListener('click', () => {
-    localStorage.removeItem('gemini_api_key');
-    document.getElementById('gemini-key-input').value = '';
-    const ks = document.getElementById('gemini-key-status');
-    ks.textContent = '초기화됨'; ks.className = 'key-status';
-    showToast('🗑 Gemini API 키가 초기화되었습니다.');
-  });
-
-  // ── YouTube API 키 복원 ──
-  const savedYtKey = localStorage.getItem('yt_api_key');
-  if (savedYtKey) {
-    const el = document.getElementById('yt-key-input');
-    if (el) el.value = savedYtKey;
-    const ks = document.getElementById('yt-key-status');
-    if (ks) { ks.textContent = '✓ 저장됨'; ks.className = 'key-status ok'; }
-  }
-
-  // YouTube 키 저장 버튼
-  document.getElementById('yt-save-btn').addEventListener('click', () => {
-    const val = document.getElementById('yt-key-input').value.trim();
-    const ks  = document.getElementById('yt-key-status');
-    if (!val || !val.startsWith('AIza')) {
-      ks.textContent = '유효하지 않은 키'; ks.className = 'key-status err';
-      showToast('AIzaSy… 형식의 YouTube API 키를 입력해주세요.');
-      return;
-    }
-    localStorage.setItem('yt_api_key', val);
-    ks.textContent = '✓ 저장됨'; ks.className = 'key-status ok';
-    showToast('✅ YouTube API 키가 저장되었습니다.');
-  });
-
-  // YouTube 키 초기화 버튼
-  document.getElementById('yt-clear-btn').addEventListener('click', () => {
-    localStorage.removeItem('yt_api_key');
-    document.getElementById('yt-key-input').value = '';
-    const ks = document.getElementById('yt-key-status');
-    ks.textContent = '초기화됨'; ks.className = 'key-status';
-    showToast('🗑 YouTube API 키가 초기화되었습니다.');
-  });
+  // API 키(Claude·YouTube·Maps)는 메인 설정에 통합 — travel.html 자체 키 UI/이벤트 제거
 
   // 생성 버튼
   document.getElementById('plan-btn')
     .addEventListener('click', generatePlan);
+
+  // 테마 — 기본 화이트, 메인(startpage) 다크/화이트 모드와 연동
+  window.tvApplyParentTheme = function () {
+    let light = true; // 기본 화이트
+    try {
+      if (window.parent !== window && window.parent.document && window.parent.document.body) {
+        light = window.parent.document.body.dataset.theme !== 'dark';
+      }
+    } catch (_) {}
+    document.body.classList.toggle('light-mode', light);
+  };
+  tvApplyParentTheme();
 
   // 엔터키
   document.getElementById('dest-input')
