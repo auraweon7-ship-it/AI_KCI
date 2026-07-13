@@ -864,6 +864,12 @@ body.light-mode .meal-chk { color: #55503f !important; }
         <span class="space-chip" data-val="수목원">🌸 수목원</span>
       </div>
     </div>
+    <div class="input-group" id="lodging-group">
+      <label>숙박</label>
+      <div id="meal-chips">
+        <label class="meal-chk"><input type="checkbox" id="lodging-chk" checked> 🏨 숙박</label>
+      </div>
+    </div>
     <div class="input-group" id="meal-group">
       <label>식사 포함</label>
       <div id="meal-chips">
@@ -1376,7 +1382,8 @@ async function generatePlan() {
     lunch:  !!document.getElementById('meal-lunch')?.checked,
     dinner: !!document.getElementById('meal-dinner')?.checked
   };
-  try { localStorage.setItem('travel_origin', origin); } catch (_) {}
+  const lodging      = !!document.getElementById('lodging-chk')?.checked;
+  try { localStorage.setItem('travel_origin', origin); localStorage.setItem('travel_lodging', lodging ? '1' : '0'); } catch (_) {}
 
   if (!dest) { showToast('목적지를 입력해주세요.'); return; }
   if (spaceTypes.length === 0) { showToast('공간 유형을 1개 이상 선택해주세요.'); return; }
@@ -1396,7 +1403,7 @@ async function generatePlan() {
 
     // Claude AI로 직접 검색 (항상 실시간)
     setLoadingMsg(`Claude AI로 "${dest}" 여행지 검색 중…`);
-    let allPlaces = await searchWithGemini(dest, spaceTypes, totalNeeded, { meals, numDays, perDay: dayPlaces, origin });
+    let allPlaces = await searchWithGemini(dest, spaceTypes, totalNeeded, { meals, numDays, perDay: dayPlaces, origin, lodging });
 
     // 실패 시 내장 DB 폴백
     if (!allPlaces.length) {
@@ -1472,12 +1479,21 @@ async function searchWithGemini(dest, spaceTypes, count, opts) {
   const perDay = opts.perDay || Math.round(count / Math.max(1, Math.ceil(count / 5)));
   const numDays = opts.numDays || Math.ceil(count / perDay);
   const origin = (opts.origin || '').trim();
-  const originBlock = origin ? `
-[출발지 기준 동선]
+  const lodging = opts.lodging !== false;
+  let originBlock = '';
+  if (origin) {
+    originBlock = lodging ? `
+[출발지 기준 동선 — 숙박 여행]
 - 여행 출발지: "${origin}"
 - 첫날 첫 장소는 출발지에서 접근성이 좋은(가까운·이동 편한) 곳으로 배치
-- 전체 동선을 출발지 → 목적지 방향으로 자연스럽게 흐르도록 설계
-` : '';
+- 목적지 현지에서 숙박하며, 전체 동선을 출발지 → 목적지 방향으로 자연스럽게 흐르도록 설계
+` : `
+[출발지 기준 동선 — 당일 왕복(숙박 없음)]
+- 여행 출발지 겸 매일 기점: "${origin}"
+- 숙박하지 않으므로 매일 아침 09:00 출발지 "${origin}"에서 출발하여 저녁에 다시 출발지로 복귀하는 당일 왕복 일정
+- 각 날의 첫 장소는 출발지에서 접근성이 좋은 곳으로 배치하고, 하루 동선이 출발지에서 너무 멀어지지 않도록(당일 왕복 가능 범위) 구성
+`;
+  }
 
   // 식사 배치 지시 (점심/저녁 체크 시)
   const mealList = [meals.lunch && '점심', meals.dinner && '저녁'].filter(Boolean);
@@ -2940,6 +2956,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedOrigin = localStorage.getItem('travel_origin');
     if (savedOrigin != null && savedOrigin !== '') oi.value = savedOrigin;
     oi.addEventListener('keydown', e => { if (e.key === 'Enter') generatePlan(); });
+  }
+  // 숙박 체크 저장값 복원 (기본 체크)
+  const lc = document.getElementById('lodging-chk');
+  if (lc) {
+    const savedLodging = localStorage.getItem('travel_lodging');
+    if (savedLodging === '0') lc.checked = false;
   }
 
   // 엔터키
