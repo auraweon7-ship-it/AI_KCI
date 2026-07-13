@@ -1421,6 +1421,10 @@ async function generatePlan() {
     tripData = distributeStrict(allPlaces, numDays, dayPlaces);
     await new Promise(r => setTimeout(r, 80));
 
+    // 1일차를 출발지에서 시작 — 출발지 좌표 지오코딩
+    window.originName = origin;
+    window.originLatLng = origin ? await geocodeOrigin(origin) : null;
+
     renderSchedule(dest, dur);
     renderTable();
     plotOnMap();
@@ -1458,6 +1462,19 @@ function extractBalancedObjects(s) {
     else if (c === '}') { depth--; if (depth === 0 && start !== -1) { objs.push(s.slice(start, i + 1)); start = -1; } }
   }
   return objs;
+}
+
+// 출발지 주소 → 좌표 (Geocoding)
+function geocodeOrigin(addr) {
+  return new Promise(resolve => {
+    if (!addr || !window.google || !google.maps.Geocoder) return resolve(null);
+    try {
+      new google.maps.Geocoder().geocode({ address: addr + ', 대한민국', region: 'KR' }, (r, s) => {
+        if (s === 'OK' && r && r[0]) resolve({ lat: r[0].geometry.location.lat(), lng: r[0].geometry.location.lng() });
+        else resolve(null);
+      });
+    } catch (_) { resolve(null); }
+  });
 }
 
 async function searchWithGemini(dest, spaceTypes, count, opts) {
@@ -2566,6 +2583,28 @@ function plotOnMap() {
       markers.push({ marker, dayIdx: di, placeIdx: pi });
       infoWindows.push(iw);
     });
+
+    // 1일차는 출발지에서 시작 — 경로 앞에 출발지 좌표·마커 추가
+    if (di === 0 && window.originLatLng && pathCoords.length) {
+      const oPos = window.originLatLng;
+      pathCoords.unshift(oPos);
+      bounds.extend(oPos);
+      const oSvg = `<svg width="40" height="52" viewBox="0 0 40 52" xmlns="http://www.w3.org/2000/svg">
+        <path d="M20 0C10.6 0 3 7.6 3 17c0 11.3 17 27 17 27s17-15.7 17-27C37 7.6 29.4 0 20 0z" fill="#2d3436"/>
+        <circle cx="20" cy="17" r="11" fill="#fff"/>
+        <text x="20" y="22" text-anchor="middle" font-size="14">🏠</text>
+      </svg>`;
+      const oMarker = new google.maps.Marker({
+        position: oPos, map,
+        icon: { url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(oSvg), anchor: new google.maps.Point(20, 44), scaledSize: new google.maps.Size(40, 52) },
+        title: '출발지: ' + (window.originName || ''),
+        zIndex: 300
+      });
+      const oIw = new google.maps.InfoWindow({ content: `<div style="font-weight:700;font-size:13px;padding:2px 4px">🏠 출발지<br>${(window.originName || '')}</div>` });
+      oMarker.addListener('click', () => { infoWindows.forEach(w => w.close()); oIw.open(map, oMarker); });
+      markers.push({ marker: oMarker, dayIdx: 0, placeIdx: -1 });
+      infoWindows.push(oIw);
+    }
 
     // 경로선 — 초기 직선, 이후 자동차 도로 경로로 갱신
     if (pathCoords.length > 1) {
