@@ -2167,19 +2167,37 @@ function plotOnMap() {
 }
 
 // ── 자동차 도로 기반 경로로 폴리라인 갱신 ──────────────
-function routeAlongRoads(coords, poly) {
+// 1) JS DirectionsService(Legacy) 시도 → 2) 실패 시 Routes API(신규 REST) fallback
+async function routeAlongRoads(coords, poly) {
   if (!coords || coords.length < 2) return;
-  if (!directionsSvc) directionsSvc = new google.maps.DirectionsService();
-  // Directions 한 요청 최대 25지점(출발+도착+경유 23). 초과 시 구간 분할.
-  const MAX = 25;
+  const MAX = 25;  // 한 요청 최대 25지점(출발+도착+경유 23)
   const chunks = [];
-  for (let i = 0; i < coords.length - 1; i += (MAX - 1)) {
-    chunks.push(coords.slice(i, i + MAX));
+  for (let i = 0; i < coords.length - 1; i += (MAX - 1)) chunks.push(coords.slice(i, i + MAX));
+  try {
+    const segs = await Promise.all(chunks.map(pts => routeChunk(pts)));
+    const path = [];
+    segs.forEach(s => { if (s && s.length) path.push(...s); });
+    if (path.length > 1) poly.setPath(path);
+  } catch (e) {
+    console.warn('[경로] 도로 경로 계산 실패 — 직선 유지:', e.message);
+    if (!window.__routeWarned) {
+      window.__routeWarned = true;
+      showToast('⚠️ 도로 경로 실패(직선 표시): ' + e.message.slice(0, 70));
+    }
   }
-  const results = new Array(chunks.length).fill(null);
-  let done = 0;
-  chunks.forEach((pts, ci) => {
-    if (pts.length < 2) { results[ci] = []; if (++done === chunks.length) applyRoadPath(poly, coords, results); return; }
+}
+// 한 구간 경로 — Directions 먼저, 실패하면 Routes API
+async function routeChunk(pts) {
+  if (pts.length < 2) return [];
+  try { return await directionsPromise(pts); }
+  catch (e1) {
+    console.warn('[경로] DirectionsService 실패:', e1.message, '→ Routes API 시도');
+    return await routesApiPath(pts);
+  }
+}
+function directionsPromise(pts) {
+  return new Promise((resolve, reject) => {
+    if (!directionsSvc) directionsSvc = new google.maps.DirectionsService();
     directionsSvc.route({
       origin: pts[0],
       destination: pts[pts.length - 1],
@@ -2187,18 +2205,40 @@ function routeAlongRoads(coords, poly) {
       travelMode: google.maps.TravelMode.DRIVING,
       optimizeWaypoints: false
     }, (res, status) => {
-      if (status === 'OK' && res.routes[0]) {
-        results[ci] = res.routes[0].overview_path;
-      }
-      if (++done === chunks.length) applyRoadPath(poly, coords, results);
+      if (status === 'OK' && res.routes[0]) resolve(res.routes[0].overview_path);
+      else reject(new Error('Directions ' + status));
     });
   });
 }
-function applyRoadPath(poly, fallback, results) {
-  if (results.some(r => r === null)) return; // 일부 실패 → 직선 유지
-  const path = [];
-  results.forEach(seg => { if (seg && seg.length) path.push(...seg); });
-  if (path.length > 1) poly.setPath(path);
+// 신규 Routes API — routes.googleapis.com/directions/v2:computeRoutes
+async function routesApiPath(pts) {
+  const key = window.__gmapsKey || '';
+  const toLL = p => ({ location: { latLng: { latitude: parseFloat(p.lat), longitude: parseFloat(p.lng) } } });
+  const body = {
+    origin: toLL(pts[0]),
+    destination: toLL(pts[pts.length - 1]),
+    intermediates: pts.slice(1, -1).map(toLL),
+    travelMode: 'DRIVE',
+    polylineEncoding: 'ENCODED_POLYLINE'
+  };
+  const res = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': key,
+      'X-Goog-FieldMask': 'routes.polyline.encodedPolyline'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok) {
+    const t = await res.text().catch(() => '');
+    throw new Error('Routes API ' + res.status + ' ' + t.slice(0, 100));
+  }
+  const j = await res.json();
+  const enc = j.routes && j.routes[0] && j.routes[0].polyline && j.routes[0].polyline.encodedPolyline;
+  if (!enc) throw new Error('Routes API: 경로 없음');
+  if (!(google.maps.geometry && google.maps.geometry.encoding)) throw new Error('geometry 라이브러리 없음');
+  return google.maps.geometry.encoding.decodePath(enc);
 }
 
 // ── 특정 마커 포커스 ───────────────────────────────
@@ -2514,8 +2554,9 @@ document.addEventListener('DOMContentLoaded', () => {
   var mk = '';
   try { mk = localStorage.getItem('google_maps_key') || ''; } catch(_) {}
   if (!mk || mk.indexOf('AIza') !== 0) mk = 'AIzaSyBpEN79WD3IRpzZ9LngdW-IKVYCImlmEPo';
+  window.__gmapsKey = mk;
   var s = document.createElement('script');
-  s.src = 'https://maps.googleapis.com/maps/api/js?key=' + mk + '&libraries=places&callback=initMap&language=ko&loading=async';
+  s.src = 'https://maps.googleapis.com/maps/api/js?key=' + mk + '&libraries=places,geometry&callback=initMap&language=ko&loading=async';
   s.async = true;
   document.body.appendChild(s);
 })();
