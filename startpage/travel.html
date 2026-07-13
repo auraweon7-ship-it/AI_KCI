@@ -879,6 +879,7 @@ let markers = [];
 let polylines = [];
 let infoWindows = [];
 let currentKML = '';
+let directionsSvc = null;  // 도로 기반 경로 계산 (lazy)
 
 // ── 지도 초기화 ────────────────────────────────────
 window.initMap = function() {
@@ -2128,7 +2129,7 @@ function plotOnMap() {
       infoWindows.push(iw);
     });
 
-    // 경로선
+    // 경로선 — 초기 직선, 이후 자동차 도로 경로로 갱신
     if (pathCoords.length > 1) {
       const poly = new google.maps.Polyline({
         path: pathCoords, map,
@@ -2141,10 +2142,46 @@ function plotOnMap() {
         }]
       });
       polylines.push({ poly, dayIdx: di });
+      routeAlongRoads(pathCoords, poly);
     }
   });
 
   map.fitBounds(bounds);
+}
+
+// ── 자동차 도로 기반 경로로 폴리라인 갱신 ──────────────
+function routeAlongRoads(coords, poly) {
+  if (!coords || coords.length < 2) return;
+  if (!directionsSvc) directionsSvc = new google.maps.DirectionsService();
+  // Directions 한 요청 최대 25지점(출발+도착+경유 23). 초과 시 구간 분할.
+  const MAX = 25;
+  const chunks = [];
+  for (let i = 0; i < coords.length - 1; i += (MAX - 1)) {
+    chunks.push(coords.slice(i, i + MAX));
+  }
+  const results = new Array(chunks.length).fill(null);
+  let done = 0;
+  chunks.forEach((pts, ci) => {
+    if (pts.length < 2) { results[ci] = []; if (++done === chunks.length) applyRoadPath(poly, coords, results); return; }
+    directionsSvc.route({
+      origin: pts[0],
+      destination: pts[pts.length - 1],
+      waypoints: pts.slice(1, -1).map(p => ({ location: p, stopover: false })),
+      travelMode: google.maps.TravelMode.DRIVING,
+      optimizeWaypoints: false
+    }, (res, status) => {
+      if (status === 'OK' && res.routes[0]) {
+        results[ci] = res.routes[0].overview_path;
+      }
+      if (++done === chunks.length) applyRoadPath(poly, coords, results);
+    });
+  });
+}
+function applyRoadPath(poly, fallback, results) {
+  if (results.some(r => r === null)) return; // 일부 실패 → 직선 유지
+  const path = [];
+  results.forEach(seg => { if (seg && seg.length) path.push(...seg); });
+  if (path.length > 1) poly.setPath(path);
 }
 
 // ── 특정 마커 포커스 ───────────────────────────────
