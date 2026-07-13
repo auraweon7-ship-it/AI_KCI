@@ -34,6 +34,15 @@ body.light-mode {
   --border: rgba(201,168,76,0.55);
 }
 body.light-mode { background: #faf6ee; color: #2a2a2e; }
+/* 라이트 모드 — 주요 다크 UI 요소 오버라이드 */
+body.light-mode #header { background: linear-gradient(135deg, #f3ecdb 0%, #ffffff 60%, #efe6d2 100%); border-bottom-color: rgba(201,168,76,0.4); }
+body.light-mode #side-panel { background: rgba(250,246,238,0.97); }
+body.light-mode .day-header { background: rgba(201,168,76,0.14); }
+body.light-mode .place-card { border-bottom-color: rgba(201,168,76,0.22); }
+body.light-mode .place-card:hover { background: rgba(201,168,76,0.08); }
+body.light-mode .iw-body { background: #ffffff; }
+body.light-mode select, body.light-mode input { background: #fff; color: #2a2a2e; border-color: rgba(201,168,76,0.5); }
+body.light-mode .space-chip { background: #fff; }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -821,11 +830,7 @@ let currentKML = '';
 
 // ── 지도 초기화 ────────────────────────────────────
 window.initMap = function() {
-  map = new google.maps.Map(document.getElementById('map'), {
-    center: { lat: 37.5665, lng: 126.9780 },
-    zoom: 7,
-    mapTypeId: 'roadmap',
-    styles: [
+  window.DARK_MAP_STYLES = [
       { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
       { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
       { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] },
@@ -843,7 +848,12 @@ window.initMap = function() {
       { featureType: 'transit', elementType: 'labels.text.fill', stylers: [{ color: '#98a5be' }] },
       { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0e1626' }] },
       { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4e6d70' }] }
-    ]
+    ];
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: 37.5665, lng: 126.9780 },
+    zoom: 7,
+    mapTypeId: 'roadmap',
+    styles: document.body.classList.contains('light-mode') ? [] : window.DARK_MAP_STYLES
   });
   // 컨테이너 크기 확정 후 타일 강제 재로드
   setTimeout(() => {
@@ -2249,6 +2259,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch (_) {}
     document.body.classList.toggle('light-mode', light);
+    // 지도 스타일도 테마 연동 (라이트=기본, 다크=커스텀)
+    try { if (window.map && window.DARK_MAP_STYLES) window.map.setOptions({ styles: light ? [] : window.DARK_MAP_STYLES }); } catch (_) {}
   };
   tvApplyParentTheme();
 
