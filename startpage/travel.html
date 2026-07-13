@@ -1045,26 +1045,7 @@ function travelDownloadHistoryKML(i) {
   try { generateKML(h.dest); downloadKML(h.dest); }
   finally { tripData = prev; }
 }
-// Google Static Maps URL 생성 — 일차별 마커(번호·색) + 경로선
-function buildStaticMapUrl(trip) {
-  const key = window.__gmapsKey || '';
-  const DAY_HEX = ['e74c3c','0984e3','00b894','e17055','6c5ce7','fdcb6e'];
-  let u = 'https://maps.googleapis.com/maps/api/staticmap?size=680x400&scale=2&language=ko&region=KR';
-  trip.forEach((day, di) => {
-    const hex = DAY_HEX[di % DAY_HEX.length];
-    const pts = (day.places || []).filter(p => p.lat && p.lng);
-    if (!pts.length) return;
-    pts.forEach((p, pi) => {
-      u += `&markers=color:0x${hex}%7Clabel:${(pi + 1) % 10}%7C${p.lat},${p.lng}`;
-    });
-    if (pts.length > 1) {
-      u += `&path=color:0x${hex}cc%7Cweight:3%7C` + pts.map(p => `${p.lat},${p.lng}`).join('%7C');
-    }
-  });
-  return u + '&key=' + key;
-}
-
-// 여행 일정 → 독립 HTML 문서 문자열 생성 (지도 포함) — 출력·공유 공용
+// 여행 일정 → 독립 HTML 문서 문자열 생성 (인터랙티브 지도 포함) — 출력·공유 공용
 function buildHistoryHTML(h, opts) {
   opts = opts || {};
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
@@ -1104,8 +1085,56 @@ function buildHistoryHTML(h, opts) {
     </section>`;
   }).join('');
 
-  const mapUrl = buildStaticMapUrl(h.tripData);
-  const mapSection = `<div class="mapbox"><img src="${mapUrl}" alt="여행 경로 지도" onerror="this.parentNode.style.display='none'"></div>`;
+  const key = window.__gmapsKey || '';
+  // 지도용 경량 데이터 (일차/색/장소 좌표·이름)
+  const mapData = h.tripData.map((day, di) => ({
+    color: DAY_C[di % DAY_C.length],
+    day: day.day || di + 1,
+    places: (day.places || []).filter(p => p.lat && p.lng)
+      .map(p => ({ lat: parseFloat(p.lat), lng: parseFloat(p.lng), name: String(p.name || ''), time: String(p.time || ''), meal: String(p.meal || '') }))
+  }));
+  const mapJson = JSON.stringify(mapData).replace(/</g, '\\u003c');
+  const mapSection = key
+    ? `<div class="mapbox"><div id="tmap"></div><div id="tmap-fallback" style="display:none;padding:30px;text-align:center;color:#888;font-size:13px">지도를 불러올 수 없습니다.</div></div>`
+    : '';
+  const mapScript = key ? `
+<script>
+var TRIP = ${mapJson};
+async function osrmSeg(a, b) {
+  var url = 'https://router.project-osrm.org/route/v1/driving/' + a.lng + ',' + a.lat + ';' + b.lng + ',' + b.lat + '?overview=full&geometries=geojson';
+  var r = await fetch(url); if (!r.ok) throw 0;
+  var j = await r.json(); if (j.code !== 'Ok' || !j.routes[0]) throw 0;
+  return j.routes[0].geometry.coordinates.map(function(c){ return {lat:c[1], lng:c[0]}; });
+}
+function initTMap() {
+  var map = new google.maps.Map(document.getElementById('tmap'), { zoom: 9, mapTypeControl: true, streetViewControl: false });
+  var bounds = new google.maps.LatLngBounds();
+  var iw = new google.maps.InfoWindow();
+  TRIP.forEach(function(day, di) {
+    var pts = day.places; if (!pts.length) return;
+    pts.forEach(function(p, pi) {
+      var pos = { lat: p.lat, lng: p.lng }; bounds.extend(pos);
+      var mk = new google.maps.Marker({ position: pos, map: map, label: { text: String((pi+1)%100), color: '#fff', fontSize: '12px', fontWeight: '700' },
+        icon: { path: google.maps.SymbolPath.CIRCLE, scale: 12, fillColor: day.color, fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 } });
+      mk.addListener('click', function(){ iw.setContent('<div style="font-weight:700;font-size:13px;padding:2px 4px">' + (p.time?('🕘 '+p.time+' '):'') + p.name + (p.meal?(' ('+p.meal+')'):'') + '</div>'); iw.open(map, mk); });
+    });
+    // 직선 먼저, 도로 경로로 갱신
+    var line = new google.maps.Polyline({ path: pts.map(function(p){return {lat:p.lat,lng:p.lng};}), map: map, strokeColor: day.color, strokeOpacity: 0.85, strokeWeight: 5 });
+    (async function(){
+      var full = [];
+      for (var i = 0; i < pts.length - 1; i++) {
+        full.push({lat:pts[i].lat, lng:pts[i].lng});
+        try { var seg = await osrmSeg(pts[i], pts[i+1]); seg.forEach(function(c){ full.push(c); }); } catch(e) {}
+      }
+      full.push({lat:pts[pts.length-1].lat, lng:pts[pts.length-1].lng});
+      if (full.length > 1) line.setPath(full);
+    })();
+  });
+  if (!bounds.isEmpty()) map.fitBounds(bounds);
+}
+window.gm_authFailure = function(){ var t=document.getElementById('tmap'); if(t)t.style.display='none'; var f=document.getElementById('tmap-fallback'); if(f)f.style.display='block'; };
+<\/script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=${key}&callback=initTMap&language=ko&region=KR"><\/script>` : '';
 
   return `<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -1122,7 +1151,7 @@ function buildHistoryHTML(h, opts) {
   .btn-print{background:rgba(255,255,255,0.9);color:#4834d4}
   .btn-share{background:#00b894;color:#fff}
   .mapbox{padding:0;background:#e9ecf2}
-  .mapbox img{display:block;width:100%;height:auto}
+  #tmap{width:100%;height:440px}
   .day{padding:20px 26px}
   .day h2{font-size:16px;padding-bottom:8px;border-bottom:2px solid;margin-bottom:14px}
   .dbadge{color:#fff;font-size:13px;font-weight:700;padding:3px 12px;border-radius:20px}
@@ -1149,7 +1178,7 @@ function buildHistoryHTML(h, opts) {
   ${mapSection}
   ${daysHtml}
   <footer>AI 여행 플래너 · ${when} 생성</footer>
-</div></body></html>`;
+</div>${mapScript}</body></html>`;
 }
 
 // 검색 결과를 독립 HTML 문서로 생성해 새 탭 출력
