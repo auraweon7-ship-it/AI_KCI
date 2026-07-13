@@ -1526,8 +1526,13 @@ ${meals.lunch ? '   · 점심 맛집: 도착시각(time) 12:00~13:00 사이, mea
 
 "${dest}" 지역 여행 일정을 ${numDays}일 기준으로 설계해주세요. 하루에 ${perDay}개 장소.
 ${originBlock}
+[분량 — 반드시 지킬 것]
+- 총 ${numDays * perDay}개 장소를 빠짐없이 출력 (${numDays}일 × 하루 ${perDay}곳)
+- 유명 관광지가 부족하면 인근 소규모 명소·공원·전망대·카페·맛집·체험지로 반드시 채워 ${numDays * perDay}개를 완성
+- 절대 개수를 줄이지 말 것 — 마지막 날까지 ${perDay}곳씩 배정
+
 [핵심 요구사항 — 이동 편의성 최우선]
-1. 반드시 "${dest}" 지역 내 실제 존재하는 장소만 (타 도시 절대 금지)
+1. 반드시 "${dest}" 지역(또는 인접 근교 포함) 내 실제 존재하는 장소만
 2. 공간 유형: ${typeList}
 3. 동선 설계 원칙:
    - 같은 날의 장소들은 반드시 지리적으로 인접한 것끼리 묶기
@@ -1720,11 +1725,19 @@ function distributeStrict(places, numDays, perDay = 4) {
     if (!usedNames.has(p.name)) { pool.push({...p}); usedNames.add(p.name); }
   }
 
-  // ② 일자별 슬라이싱 (Gemini가 이미 동선 최적화하여 반환한 순서 존중)
+  // ② 일자별 분배 — 장소가 부족해도 모든 날에 고르게 (앞 날 몰빵 방지)
+  //    각 날 base개, 앞 날부터 나머지 +1, perDay 상한
+  const total = pool.length;
+  const base  = Math.floor(total / numDays);
+  let extra   = total % numDays;
+  let idx     = 0;
   const result = [];
   for (let d = 1; d <= numDays; d++) {
-    const start    = (d - 1) * perDay;
-    const daySlice = pool.slice(start, start + perDay);
+    let cnt = Math.min(perDay, base + (extra > 0 ? 1 : 0));
+    if (extra > 0) extra--;
+    if (cnt < 1 && idx < total) cnt = 1;              // 남은 장소 있으면 최소 1개
+    const daySlice = pool.slice(idx, idx + cnt);
+    idx += daySlice.length;
     if (!daySlice.length) break;
 
     // ③ 일자 내 최근접 이웃 정렬로 미세 최적화 (Gemini 순서 보정)
