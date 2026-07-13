@@ -1,0 +1,2391 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🗺️ AI 여행 플래너 — 대한민국 여행지도</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --ink: #1a1a2e;
+  --paper: #f5f0e8;
+  --cream: #faf6ee;
+  --gold: #c9a84c;
+  --gold-light: #e8c97a;
+  --rust: #c0392b;
+  --sky: #2980b9;
+  --forest: #27ae60;
+  --day1: #e74c3c;
+  --day2: #2980b9;
+  --day3: #f39c12;
+  --day4: #8e44ad;
+  --day5: #27ae60;
+  --shadow: rgba(26,26,46,0.15);
+  --border: rgba(201,168,76,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Sans KR', sans-serif;
+  background: var(--ink);
+  color: var(--paper);
+  min-height: 100vh;
+  overflow-x: hidden;
+  display: flex; flex-direction: column;
+}
+
+/* ── 배경 텍스처 ── */
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background:
+    radial-gradient(ellipse at 20% 10%, rgba(201,168,76,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 90%, rgba(41,128,185,0.08) 0%, transparent 50%),
+    repeating-linear-gradient(45deg, transparent, transparent 40px, rgba(255,255,255,0.01) 40px, rgba(255,255,255,0.01) 41px);
+  pointer-events: none; z-index: 0;
+}
+
+/* ── 헤더 ── */
+#header {
+  position: relative; z-index: 10;
+  background: linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 60%, #16213e 100%);
+  border-bottom: 2px solid var(--gold);
+  padding: 18px 32px;
+  display: flex; align-items: center; gap: 20px;
+  box-shadow: 0 4px 30px rgba(0,0,0,0.4);
+}
+
+.logo {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 22px; font-weight: 700;
+  color: var(--gold);
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+}
+.logo span { color: var(--paper); font-weight: 400; }
+
+/* ── 입력 폼 영역 ── */
+#input-bar {
+  display: flex; align-items: center; gap: 10px;
+  flex: 1; flex-wrap: wrap;
+}
+
+.input-group {
+  display: flex; align-items: center; gap: 8px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 14px;
+  transition: border-color 0.2s, background 0.2s;
+}
+.input-group:focus-within {
+  border-color: var(--gold);
+  background: rgba(201,168,76,0.08);
+}
+.input-group label {
+  font-size: 11px; color: var(--gold); font-weight: 500;
+  white-space: nowrap; letter-spacing: 0.5px;
+}
+.input-group input, .input-group select {
+  background: transparent; border: none; outline: none;
+  color: var(--paper); font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px; width: 100px;
+}
+.input-group select option { background: #1a1a2e; color: var(--paper); }
+#dest-input { width: 120px; }
+#dest-input::placeholder { color: rgba(245,240,232,0.35); font-size: 13px; }
+
+#plan-btn {
+  background: linear-gradient(135deg, var(--gold) 0%, #a8762a 100%);
+  border: none; border-radius: 8px;
+  padding: 10px 22px;
+  color: var(--ink); font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px; font-weight: 700;
+  cursor: pointer; white-space: nowrap;
+  transition: transform 0.15s, box-shadow 0.15s;
+  box-shadow: 0 3px 12px rgba(201,168,76,0.3);
+}
+#plan-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(201,168,76,0.4); }
+#plan-btn:active { transform: translateY(0); }
+#plan-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+/* ── 메인 레이아웃 ── */
+#main {
+  position: relative; z-index: 1;
+  display: grid;
+  grid-template-columns: 420px 1fr;
+  grid-template-rows: 1fr;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── 사이드패널 ── */
+#side-panel {
+  background: rgba(13,13,26,0.95);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  height: 100%;
+}
+
+/* ── 탭 ── */
+#tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border);
+  background: rgba(0,0,0,0.3);
+  flex-shrink: 0;
+}
+.tab-btn {
+  flex: 1; padding: 12px 8px;
+  background: transparent; border: none;
+  color: rgba(245,240,232,0.4);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all 0.2s;
+  border-bottom: 2px solid transparent;
+  letter-spacing: 0.3px;
+}
+.tab-btn:hover { color: var(--paper); }
+.tab-btn.active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+  background: rgba(201,168,76,0.05);
+}
+
+/* ── 패널 콘텐츠 ── */
+.panel-content { display: none; flex: 1; overflow-y: auto; }
+.panel-content.active { display: flex; flex-direction: column; }
+
+/* ── 스크롤바 ── */
+.panel-content::-webkit-scrollbar { width: 4px; }
+.panel-content::-webkit-scrollbar-track { background: transparent; }
+.panel-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── 초기 상태 ── */
+#welcome {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 32px; text-align: center;
+  gap: 16px;
+}
+.welcome-icon { font-size: 48px; margin-bottom: 8px; }
+.welcome-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 18px; font-weight: 600;
+  color: var(--gold);
+}
+.welcome-desc {
+  font-size: 13px; line-height: 1.8;
+  color: rgba(245,240,232,0.55);
+}
+.welcome-tip {
+  font-size: 11px; color: rgba(245,240,232,0.3);
+  background: rgba(201,168,76,0.08);
+  border: 1px solid var(--border);
+  border-radius: 6px; padding: 10px 16px;
+  line-height: 1.7;
+}
+
+/* ── 로딩 ── */
+#loading {
+  display: none; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 60px 32px; gap: 20px; flex: 1;
+}
+.spinner {
+  width: 40px; height: 40px;
+  border: 3px solid rgba(201,168,76,0.2);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text {
+  font-size: 13px; color: rgba(245,240,232,0.5);
+  font-family: 'Noto Serif KR', serif;
+}
+
+/* ── 일정 결과 ── */
+#schedule-result { padding: 0; }
+
+.day-section { border-bottom: 1px solid rgba(255,255,255,0.06); }
+
+.day-header {
+  padding: 14px 20px 10px;
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer;
+  background: rgba(0,0,0,0.2);
+  transition: background 0.15s;
+  position: sticky; top: 0; z-index: 5;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.day-header:hover { background: rgba(255,255,255,0.04); }
+
+.day-badge {
+  width: 28px; height: 28px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  flex-shrink: 0;
+  font-family: 'Space Mono', monospace;
+}
+.day-title {
+  font-size: 13px; font-weight: 600;
+  color: var(--paper);
+}
+.day-subtitle { font-size: 11px; color: rgba(245,240,232,0.4); margin-left: auto; }
+
+/* 장소 카드 */
+.place-card {
+  padding: 0;
+  display: flex; flex-direction: column;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  cursor: pointer;
+  transition: background 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.place-card:hover { background: rgba(255,255,255,0.04); }
+.place-card.active { background: rgba(201,168,76,0.08); }
+
+/* 카드 썸네일 이미지 */
+.place-thumb {
+  width: 100%; height: 140px;
+  object-fit: cover; display: block;
+  background: #0d0d1a;
+  flex-shrink: 0;
+}
+.place-thumb-placeholder {
+  width: 100%; height: 140px;
+  background: linear-gradient(135deg, #0d0d1a 0%, #1a1a2e 100%);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.place-thumb-placeholder span { font-size: 32px; opacity: 0.3; }
+
+/* 카드 본문 */
+.place-card-body {
+  padding: 12px 16px 14px;
+  display: flex; gap: 10px;
+}
+
+.place-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  flex-shrink: 0; margin-top: 2px;
+  font-family: 'Space Mono', monospace;
+  color: white;
+}
+
+.place-info { flex: 1; min-width: 0; }
+.place-name {
+  font-size: 14px; font-weight: 600;
+  color: var(--paper);
+  margin-bottom: 3px;
+}
+.place-meta {
+  display: flex; align-items: center; gap: 8px;
+  flex-wrap: wrap;
+}
+.place-cat {
+  font-size: 10px; padding: 2px 7px;
+  border-radius: 10px; border: 1px solid;
+  opacity: 0.8;
+}
+.place-rating {
+  font-size: 11px; color: var(--gold-light);
+  font-family: 'Space Mono', monospace;
+}
+.place-time {
+  font-size: 10px; color: rgba(245,240,232,0.4);
+  font-family: 'Space Mono', monospace;
+}
+.place-travel {
+  font-size: 10px; color: rgba(41,128,185,0.8);
+  font-family: 'Space Mono', monospace;
+  background: rgba(41,128,185,0.1);
+  border-radius: 6px; padding: 1px 5px;
+}
+.place-tip {
+  font-size: 11px; color: rgba(245,240,232,0.55);
+  margin-top: 6px; line-height: 1.7;
+  display: -webkit-box; -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical; overflow: hidden;
+}
+.place-detail-row {
+  font-size: 10.5px; color: rgba(245,240,232,0.5);
+  margin-top: 3px; line-height: 1.5;
+  display: flex; align-items: flex-start; gap: 4px;
+  word-break: keep-all;
+}
+
+/* ── 장소 간 이동 배너 ── */
+.travel-banner {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 16px;
+  background: rgba(0,0,0,0.15);
+}
+.travel-line {
+  flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(201,168,76,0.3), transparent);
+}
+.travel-info {
+  font-size: 10px; color: rgba(201,168,76,0.7);
+  white-space: nowrap; font-family: 'Space Mono', monospace;
+  letter-spacing: 0.3px;
+}
+.travel-dist { color: rgba(245,240,232,0.3); margin-left: 4px; }
+
+/* ── KML 영역 ── */
+#kml-panel { padding: 20px; }
+.kml-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.kml-title {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 15px; font-weight: 600; color: var(--gold);
+}
+#copy-kml-btn, #download-kml-btn {
+  background: rgba(201,168,76,0.15);
+  border: 1px solid var(--border);
+  border-radius: 6px; padding: 6px 12px;
+  color: var(--gold); font-size: 11px;
+  cursor: pointer; transition: all 0.2s;
+  font-family: 'Noto Sans KR', sans-serif;
+}
+#copy-kml-btn:hover, #download-kml-btn:hover {
+  background: rgba(201,168,76,0.25);
+}
+.kml-btns { display: flex; gap: 6px; }
+#kml-output {
+  background: rgba(0,0,0,0.4);
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 14px;
+  font-family: 'Space Mono', monospace;
+  font-size: 10px; line-height: 1.6;
+  color: rgba(245,240,232,0.6);
+  white-space: pre-wrap; word-break: break-all;
+  max-height: calc(100vh - 200px);
+  overflow-y: auto;
+}
+#kml-empty {
+  text-align: center; padding: 60px 20px;
+  color: rgba(245,240,232,0.3); font-size: 13px;
+}
+
+/* ── 표 패널 ── */
+#table-panel { padding: 16px; overflow-x: auto; }
+#schedule-table {
+  width: 100%; border-collapse: collapse;
+  font-size: 11px;
+}
+#schedule-table th {
+  background: rgba(201,168,76,0.15);
+  color: var(--gold);
+  padding: 8px 10px; text-align: left;
+  font-weight: 600; letter-spacing: 0.3px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+#schedule-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  vertical-align: top; color: rgba(245,240,232,0.75);
+  line-height: 1.5;
+}
+#schedule-table tr:hover td { background: rgba(255,255,255,0.03); }
+.table-empty { text-align: center; padding: 60px 20px; color: rgba(245,240,232,0.3); font-size: 13px; }
+
+/* ── 지도 ── */
+#map-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: calc(100vh - 70px);
+}
+#map {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── 지도 범례 ── */
+#map-legend {
+  position: absolute; top: 16px; right: 16px; z-index: 10;
+  background: rgba(13,13,26,0.92);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 16px;
+  backdrop-filter: blur(10px);
+  min-width: 120px;
+  display: none;
+}
+.legend-title {
+  font-size: 11px; color: var(--gold);
+  font-weight: 600; margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+.legend-item {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 5px; cursor: pointer;
+  transition: opacity 0.2s;
+}
+.legend-item:hover { opacity: 0.7; }
+.legend-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  flex-shrink: 0;
+}
+.legend-label { font-size: 11px; color: rgba(245,240,232,0.7); }
+
+/* ── 인포윈도우 커스텀 ── */
+.info-window {
+  font-family: 'Noto Sans KR', sans-serif;
+  min-width: 200px; max-width: 260px;
+}
+.iw-img {
+  width: 100%; height: 140px;
+  object-fit: cover; display: block;
+}
+.iw-img-placeholder {
+  width: 100%; height: 90px;
+  background: #e8e8e8;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 28px;
+}
+/* 지명 배너 — 컬러 배경으로 최상단 강조 */
+.iw-name-banner {
+  padding: 10px 14px 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.iw-num {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: white;
+  flex-shrink: 0;
+}
+.iw-title {
+  font-size: 15px; font-weight: 800;
+  color: #fff; line-height: 1.3;
+  letter-spacing: -0.3px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+.iw-header {
+  background: #1a1a2e; padding: 7px 14px;
+  display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.iw-header-badge {
+  font-size: 10px; padding: 2px 8px; border-radius: 10px;
+  font-weight: 600; color: white;
+}
+.iw-body { padding: 10px 14px; background: #f5f0e8; }
+.iw-row { display: flex; gap: 6px; margin-bottom: 5px; font-size: 11px; }
+.iw-label { color: #888; font-weight: 500; white-space: nowrap; }
+.iw-val { color: #333; }
+.iw-tip { font-size: 11px; color: #555; line-height: 1.5; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e0e0e0; }
+
+/* ── 인포윈도우 YouTube ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.iw-yt-wrap {
+  background: #0f0f0f;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+.iw-yt-label {
+  font-size: 10px; font-weight: 700;
+  color: #ff4444; padding: 5px 10px 3px;
+  font-family: 'Space Mono', monospace;
+  letter-spacing: 0.5px;
+}
+.iw-yt-frame-wrap {
+  width: 300px; height: 155px;
+  overflow: hidden; background: #000;
+  display: block;
+}
+.iw-yt-more {
+  display: block; text-align: right;
+  font-size: 10px; color: #aaa;
+  padding: 3px 10px 5px;
+  text-decoration: none;
+}
+.iw-yt-more:hover { color: #ff4444; }
+.iw-yt-thumb-wrap {
+  position: relative; cursor: pointer;
+  width: 300px; height: 155px; overflow: hidden; display: block;
+}
+.iw-yt-play-btn {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(255,0,0,0.85);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: white;
+  transition: transform 0.15s, background 0.15s;
+  pointer-events: none;
+}
+.iw-yt-thumb-wrap:hover .iw-yt-play-btn {
+  background: rgb(255,0,0);
+  transform: translate(-50%,-50%) scale(1.12);
+}
+.iw-info-row {
+  display: flex; align-items: flex-start; gap: 6px;
+  margin-bottom: 5px; font-size: 11px;
+}
+.iw-info-icon { flex-shrink: 0; width: 16px; text-align: center; margin-top: 1px; }
+.iw-info-val { color: #333; line-height: 1.5; word-break: keep-all; }
+
+/* ── 토스트 ── */
+#toast {
+  position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+  background: rgba(26,26,46,0.95);
+  border: 1px solid var(--gold);
+  border-radius: 30px; padding: 10px 24px;
+  font-size: 13px; color: var(--paper);
+  z-index: 9999; opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none; white-space: nowrap;
+}
+#toast.show { opacity: 1; }
+
+/* ── 공간 유형 칩 ── */
+.space-type-group {
+  padding: 5px 12px !important;
+  gap: 6px !important;
+  align-items: center;
+}
+#space-chips {
+  display: flex; gap: 5px; flex-wrap: wrap;
+}
+.space-chip {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1px solid rgba(201,168,76,0.25);
+  color: rgba(245,240,232,0.4);
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.18s;
+  white-space: nowrap;
+  background: transparent;
+}
+.space-chip:hover {
+  border-color: rgba(201,168,76,0.5);
+  color: rgba(245,240,232,0.7);
+}
+.space-chip.active {
+  background: rgba(201,168,76,0.18);
+  border-color: var(--gold);
+  color: var(--gold-light);
+  font-weight: 500;
+}
+
+.api-key-group { gap: 6px !important; }
+.gemini-key-group { gap: 6px !important; }
+.yt-key-group { gap: 6px !important; }
+#yt-save-btn {
+  background: rgba(255,0,0,0.12);
+  border: 1px solid rgba(255,80,80,0.35);
+  border-radius: 6px; padding: 4px 10px;
+  color: #ff6b6b; font-size: 11px;
+  cursor: pointer; white-space: nowrap;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: background 0.2s;
+}
+#yt-save-btn:hover { background: rgba(255,0,0,0.25); }
+#yt-clear-btn {
+  background: rgba(192,57,43,0.12);
+  border: 1px solid rgba(192,57,43,0.3);
+  border-radius: 6px; padding: 4px 8px;
+  color: #e74c3c; font-size: 12px;
+  cursor: pointer; white-space: nowrap;
+  transition: background 0.2s;
+}
+#yt-clear-btn:hover { background: rgba(192,57,43,0.25); }
+#gemini-save-btn {
+  background: rgba(201,168,76,0.15);
+  border: 1px solid var(--border);
+  border-radius: 6px; padding: 4px 10px;
+  color: var(--gold); font-size: 11px;
+  cursor: pointer; white-space: nowrap;
+  font-family: 'Noto Sans KR', sans-serif;
+  transition: background 0.2s;
+}
+#gemini-save-btn:hover { background: rgba(201,168,76,0.3); }
+#gemini-clear-btn {
+  background: rgba(192,57,43,0.12);
+  border: 1px solid rgba(192,57,43,0.3);
+  border-radius: 6px; padding: 4px 8px;
+  color: #e74c3c; font-size: 12px;
+  cursor: pointer; white-space: nowrap;
+  transition: background 0.2s;
+}
+#gemini-clear-btn:hover { background: rgba(192,57,43,0.25); }
+.key-status { font-size: 11px; white-space: nowrap; }
+.key-status.ok  { color: #27ae60; }
+.key-status.err { color: #e74c3c; }
+
+/* ── 반응형 ── */
+@media (max-width: 900px) {
+  #main { grid-template-columns: 1fr; grid-template-rows: 50vh 50vh; }
+  #header { padding: 12px 16px; flex-wrap: wrap; }
+  #input-bar { width: 100%; }
+}
+
+/* ── 푸터 ── */
+#site-footer {
+  position: relative; z-index: 10;
+  background: linear-gradient(135deg, #0a0a1a 0%, #0d0d1a 100%);
+  border-top: 1px solid var(--border);
+  padding: 14px 32px;
+  flex-shrink: 0;
+}
+.footer-inner {
+  display: flex; flex-direction: column; gap: 5px;
+  max-width: 1400px;
+}
+.footer-name {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 14px; font-weight: 700;
+  color: var(--gold);
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.footer-name-cn { color: var(--gold-light); font-weight: 400; }
+.footer-name-en { color: rgba(245,240,232,0.6); font-size: 12px; font-weight: 400; }
+.footer-title {
+  font-size: 11px; color: var(--gold);
+  background: rgba(201,168,76,0.12);
+  border: 1px solid var(--border);
+  border-radius: 10px; padding: 1px 8px;
+}
+.footer-info {
+  font-size: 11px; color: rgba(245,240,232,0.45);
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.footer-sep { color: var(--border); }
+.footer-link {
+  color: var(--gold-light); text-decoration: none;
+  transition: color 0.2s;
+}
+.footer-link:hover { color: var(--gold); text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<!-- 헤더 -->
+<header id="header">
+  <div class="logo">🗺️ AI 여행<span>플래너</span></div>
+  <div id="input-bar">
+    <div class="input-group">
+      <label>목적지</label>
+      <input type="text" id="dest-input" placeholder="파주, 경주, 제주…" />
+    </div>
+    <div class="input-group">
+      <label>기간</label>
+      <select id="duration-select">
+        <option value="당일치기">당일치기</option>
+        <option value="1박 2일">1박 2일</option>
+        <option value="2박 3일" selected>2박 3일</option>
+        <option value="3박 4일">3박 4일</option>
+        <option value="4박 5일">4박 5일</option>
+      </select>
+    </div>
+    <div class="input-group">
+      <label>일일 장소 수</label>
+      <select id="places-per-day">
+        <option value="3">3곳</option>
+        <option value="4" selected>4곳</option>
+        <option value="5">5곳</option>
+      </select>
+    </div>
+    <div class="input-group gemini-key-group">
+      <label>🤖 Gemini Key</label>
+      <input type="password" id="gemini-key-input"
+             placeholder="AIzaSy…"
+             autocomplete="off" style="width:150px"
+             title="Google AI Studio에서 발급한 Gemini API 키 (https://aistudio.google.com/)" />
+      <button id="gemini-save-btn" title="API 키 저장">💾 저장</button>
+      <button id="gemini-clear-btn" title="API 키 초기화">🗑</button>
+      <span id="gemini-key-status" class="key-status"></span>
+    </div>
+    <div class="input-group yt-key-group">
+      <label>▶ YouTube Key</label>
+      <input type="password" id="yt-key-input"
+             placeholder="AIzaSy…"
+             autocomplete="off" style="width:150px"
+             title="Google Cloud Console에서 발급한 YouTube Data API v3 키" />
+      <button id="yt-save-btn" title="YouTube API 키 저장">💾 저장</button>
+      <button id="yt-clear-btn" title="YouTube API 키 초기화">🗑</button>
+      <span id="yt-key-status" class="key-status"></span>
+    </div>
+    <div class="input-group space-type-group" id="space-type-group">
+      <label>공간 유형</label>
+      <div id="space-chips">
+        <span class="space-chip active" data-val="역사유적지">🏯 유적지</span>
+        <span class="space-chip active" data-val="출사지/자연경관">📷 출사지</span>
+        <span class="space-chip active" data-val="맛집">🍜 맛집</span>
+        <span class="space-chip active" data-val="카페">☕ 카페</span>
+        <span class="space-chip" data-val="전시/박물관">🖼 전시</span>
+        <span class="space-chip" data-val="쇼핑">🛍 쇼핑</span>
+        <span class="space-chip" data-val="액티비티/체험">🎯 액티비티</span>
+        <span class="space-chip" data-val="야경/드라이브">🌙 야경</span>
+        <span class="space-chip" data-val="휴양림">🌲 휴양림</span>
+        <span class="space-chip" data-val="수목원">🌸 수목원</span>
+      </div>
+    </div>
+    <button id="plan-btn">✦ 여행 계획 생성</button>
+  </div>
+</header>
+
+<!-- 메인 -->
+<div id="main">
+  <!-- 사이드 패널 -->
+  <div id="side-panel">
+    <div id="tabs">
+      <button class="tab-btn active" data-tab="schedule">📋 일정</button>
+      <button class="tab-btn" data-tab="table">📊 표</button>
+      <button class="tab-btn" data-tab="kml">📍 KML</button>
+    </div>
+
+    <!-- 일정 탭 -->
+    <div id="tab-schedule" class="panel-content active">
+      <div id="welcome">
+        <div class="welcome-icon">🧭</div>
+        <div class="welcome-title">AI 여행 플래너</div>
+        <div class="welcome-desc">
+          목적지와 기간을 입력하면<br>
+          역사 유적지 + 핫플레이스를 조합한<br>
+          최적 동선 여행 일정을 생성합니다
+        </div>
+        <div class="welcome-tip">
+          ✦ 역사 유적지 : 핫플 = 5 : 5 비율<br>
+          ✦ 구글맵 평점 4.0 이상 검증 장소<br>
+          ✦ 도로 동선 최적화 자동 적용<br>
+          ✦ 지도에 날짜별 경로 자동 표시<br>
+          <span style="color:rgba(201,168,76,0.6);font-size:10px">※ Claude API 키 없이도 데모 모드로 동작합니다</span>
+        </div>
+      </div>
+      <div id="loading">
+        <div class="spinner"></div>
+        <div class="loading-text">AI가 최적 여행 동선을 계획 중입니다…</div>
+      </div>
+      <div id="schedule-result"></div>
+    </div>
+
+    <!-- 표 탭 -->
+    <div id="tab-table" class="panel-content">
+      <div id="table-panel">
+        <div class="table-empty">일정을 먼저 생성해주세요.</div>
+      </div>
+    </div>
+
+    <!-- KML 탭 -->
+    <div id="tab-kml" class="panel-content">
+      <div id="kml-panel">
+        <div class="kml-header">
+          <div class="kml-title">KML 내보내기</div>
+          <div class="kml-btns">
+            <button id="copy-kml-btn">복사</button>
+            <button id="download-kml-btn">다운로드</button>
+          </div>
+        </div>
+        <div id="kml-output"><div id="kml-empty">일정을 먼저 생성하면<br>KML 코드가 여기 표시됩니다.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 지도 -->
+  <div id="map-container">
+    <div id="map"></div>
+    <div id="map-legend">
+      <div class="legend-title">일자별 경로</div>
+      <div id="legend-items"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- 푸터 -->
+<footer id="site-footer">
+  <div class="footer-inner">
+    <div class="footer-name">
+      박정원 <span class="footer-name-cn">朴正元</span>
+      <span class="footer-name-en">Park Jeong Weon</span>
+      <span class="footer-title">교수</span>
+    </div>
+    <div class="footer-info">
+      <span>🏫 한국외국어대학교 중국학대학 중국언어문화학부</span>
+      <span class="footer-sep">|</span>
+      <span>Division of Chinese Language, Literature and Culture</span>
+    </div>
+    <div class="footer-info">
+      <span>🏛 국가교육위원회 AI특별위원회 위원</span>
+      <span class="footer-sep">|</span>
+      <span>교육부 AI인재양성추진단</span>
+      <span class="footer-sep">|</span>
+      <a href="https://k-ai.it.kr/" target="_blank" class="footer-link">🌐 K-AI 교육네트워크</a>
+    </div>
+    <div class="footer-info">
+      <span>📱 010-9131-6127</span>
+      <span class="footer-sep">|</span>
+      <span>✉️ <a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="bbcbdac9d0828d898dfbd3dad5d6dad2d795d5decf">[email&#160;protected]</a></span>
+      <span class="footer-sep">|</span>
+      <span>📍 02450 서울특별시 동대문구 이문로 107 교수회관 529호</span>
+    </div>
+    <div class="footer-info">
+      <span>APP:</span>
+      <a href="https://kletter.kr" target="_blank" class="footer-link">kletter.kr</a>
+      <span class="footer-sep">/</span>
+      <a href="https://kteacher.kr" target="_blank" class="footer-link">kteacher.kr</a>
+    </div>
+  </div>
+</footer>
+
+
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+// ── 상수 ──────────────────────────────────────────
+const CLAUDE_API = 'https://api.anthropic.com/v1/messages';
+const DAY_COLORS = ['#e74c3c','#2980b9','#f39c12','#8e44ad','#27ae60'];
+const DAY_NAMES  = ['1일차','2일차','3일차','4일차','5일차'];
+
+// ── 상태 ──────────────────────────────────────────
+let map = null;
+let tripData = null;       // 파싱된 여행 데이터 [{day,places:[...]}]
+let markers = [];
+let polylines = [];
+let infoWindows = [];
+let currentKML = '';
+
+// ── 지도 초기화 ────────────────────────────────────
+window.initMap = function() {
+  map = new google.maps.Map(document.getElementById('map'), {
+    center: { lat: 37.5665, lng: 126.9780 },
+    zoom: 7,
+    mapTypeId: 'roadmap',
+    styles: [
+      { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
+      { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
+      { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] },
+      { featureType: 'administrative.country', elementType: 'geometry.stroke', stylers: [{ color: '#4b6878' }] },
+      { featureType: 'administrative.province', elementType: 'geometry.stroke', stylers: [{ color: '#4b6878' }] },
+      { featureType: 'landscape.natural', elementType: 'geometry', stylers: [{ color: '#023e58' }] },
+      { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#283d6a' }] },
+      { featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#6f9ba5' }] },
+      { featureType: 'poi.park', elementType: 'geometry.fill', stylers: [{ color: '#023e58' }] },
+      { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#304a7d' }] },
+      { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#98a5be' }] },
+      { featureType: 'road', elementType: 'labels.text.stroke', stylers: [{ color: '#1d2c4d' }] },
+      { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#2c6675' }] },
+      { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#255763' }] },
+      { featureType: 'transit', elementType: 'labels.text.fill', stylers: [{ color: '#98a5be' }] },
+      { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0e1626' }] },
+      { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4e6d70' }] }
+    ]
+  });
+  // 컨테이너 크기 확정 후 타일 강제 재로드
+  setTimeout(() => {
+    google.maps.event.trigger(map, 'resize');
+    map.setCenter({ lat: 37.5665, lng: 126.9780 });
+  }, 200);
+  // 추가 안전망
+  window.addEventListener('load', () => {
+    if (map) { google.maps.event.trigger(map, 'resize'); }
+  });
+};
+
+// ── 탭 전환 ────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', ['schedule','table','kml'][i] === name);
+  });
+  document.querySelectorAll('.panel-content').forEach(p => p.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+}
+
+// ── 공간 유형 칩 토글 ──────────────────────────────
+function toggleChip(el) {
+  // 최소 1개 선택 유지
+  const chips = document.querySelectorAll('.space-chip');
+  const activeCount = [...chips].filter(c => c.classList.contains('active')).length;
+  if (el.classList.contains('active') && activeCount === 1) {
+    showToast('최소 1개 이상 선택해야 합니다.');
+    return;
+  }
+  el.classList.toggle('active');
+}
+
+function getSelectedSpaceTypes() {
+  return [...document.querySelectorAll('.space-chip.active')]
+    .map(c => c.dataset.val);
+}
+
+// ── 메인: 계획 생성 ────────────────────────────────
+async function generatePlan() {
+  const dest         = document.getElementById('dest-input').value.trim();
+  const dur          = document.getElementById('duration-select').value;
+  const spaceTypes   = getSelectedSpaceTypes();
+  const perDay       = parseInt(document.getElementById('places-per-day').value, 10) || 4;
+
+  if (!dest) { showToast('목적지를 입력해주세요.'); return; }
+  if (spaceTypes.length === 0) { showToast('공간 유형을 1개 이상 선택해주세요.'); return; }
+
+  setLoading(true);
+  clearMap();
+
+  try {
+    const dayMap = {'당일치기':1,'1박 2일':2,'2박 3일':3,'3박 4일':4,'4박 5일':5};
+    const numDays     = dayMap[dur] || 2;
+    const totalNeeded = numDays * perDay;
+
+    // Gemini로 직접 검색 (내장 DB 우선 없음 — 항상 실시간)
+    setLoadingMsg(`Gemini AI로 "${dest}" 유적지 검색 중…`);
+    let allPlaces = await searchWithGemini(dest, spaceTypes, totalNeeded);
+
+    // Gemini 실패 시 내장 DB 폴백
+    if (!allPlaces.length) {
+      setLoadingMsg(`내장 DB에서 "${dest}" 장소 로드 중…`);
+      allPlaces = getFromDB(dest, spaceTypes);
+    }
+
+    // Gemini 실패 시 오류 표시 (searchWithGemini 내에서 이미 showError 처리)
+    if (!allPlaces.length) {
+      setLoading(false);
+      return;
+    }
+
+    setLoadingMsg(`${allPlaces.length}개 장소 검색 완료 — 지도 표시 중…`);
+    tripData = distributeStrict(allPlaces, numDays, perDay);
+    await new Promise(r => setTimeout(r, 80));
+
+    renderSchedule(dest, dur);
+    renderTable();
+    plotOnMap();
+    generateKML(dest);
+    document.getElementById('map-legend').style.display = 'block';
+
+  } catch (err) {
+    console.error('[TravelPlanner]', err);
+    showError(err.message);
+  }
+
+  setLoading(false);
+}
+
+// ── 내장 DB 비활성화 (Gemini 전용) ──────────────────
+function getFromDB(dest, spaceTypes) {
+  return []; // 내장 DB 사용 금지 — Gemini API 전용
+}
+
+// ── Gemini API 키 관리 ────────────────────────────
+const GEMINI_DEFAULT_KEY = 'AIzaSyBhy-wrKtNcoIvByzIvbiNn85KynkWawnk';
+
+function getGeminiKey() {
+  const inputEl = document.getElementById('gemini-key-input');
+  const inputVal = inputEl ? inputEl.value.trim() : '';
+  if (inputVal && inputVal.startsWith('AIza')) {
+    localStorage.setItem('gemini_api_key', inputVal); // 저장
+    return inputVal;
+  }
+  // localStorage 저장값 복원
+  const saved = localStorage.getItem('gemini_api_key');
+  if (saved && saved.startsWith('AIza')) {
+    if (inputEl && !inputEl.value) inputEl.value = saved;
+    return saved;
+  }
+  return GEMINI_DEFAULT_KEY;
+}
+
+function getGeminiURL(key) {
+  return `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
+}
+
+async function searchWithGemini(dest, spaceTypes, count) {
+  const ks = document.getElementById('gemini-key-status');
+  const apiKey = getGeminiKey();
+
+  if (!apiKey || !apiKey.startsWith('AIza')) {
+    showToast('❌ 유효한 Gemini API 키를 입력하고 저장해주세요.');
+    if (ks) { ks.textContent = '키 없음'; ks.className = 'key-status err'; }
+    return [];
+  }
+
+  const geminiUrl = getGeminiURL(apiKey);
+  if (ks) { ks.textContent = '검색 중…'; ks.className = 'key-status'; }
+
+  const typeList = spaceTypes.join(', ');
+  const perDay = Math.round(count / Math.max(1, Math.ceil(count / 5)));
+  const numDays = Math.ceil(count / perDay);
+
+  const prompt = `당신은 대한민국 전문 여행 가이드이자 베테랑 드라이버입니다.
+
+"${dest}" 지역 여행 일정을 ${numDays}일 기준으로 설계해주세요. 하루에 ${perDay}개 장소.
+
+[핵심 요구사항 — 이동 편의성 최우선]
+1. 반드시 "${dest}" 지역 내 실제 존재하는 장소만 (타 도시 절대 금지)
+2. 공간 유형: ${typeList}
+3. 동선 설계 원칙:
+   - 같은 날의 장소들은 반드시 지리적으로 인접한 것끼리 묶기
+   - 하루 동선은 한 방향으로 흐르도록 (U턴·역방향 금지)
+   - 장소 간 이동 거리 합계가 최소가 되도록 순서 최적화
+   - 자동차 도로(국도·고속도로) 동선 기준으로 순서 배치
+   - 오전: 이른 개관 장소 → 오후: 늦게까지 운영 장소
+   - 점심·저녁 식사 가능한 맛집이 있다면 적절한 시간대에 배치
+4. 각 장소의 정확한 실제 정보 입력 (주소, 전화, 운영시간, 입장료)
+5. 장소 간 예상 자동차 이동 시간(분)을 travel_min 필드에 입력
+
+JSON 배열만 출력 (코드블록 없이, 설명 텍스트 없이, \`\`\` 절대 사용 금지):
+[{"name":"장소명","category":"분류","rating":4.3,"tip":"역사·볼거리·방문팁 2~3문장","duration":"1시간","address":"도로명주소","phone":"전화번호","hours":"운영시간","fee":"입장료","website":"","travel_min":10,"youtube_id":"","lat":37.1234,"lng":126.5678}]
+
+travel_min은 이전 장소에서 현재 장소까지 자동차로 이동하는 예상 시간(분)입니다. 첫 번째 장소는 0으로 설정하세요.
+youtube_id는 해당 장소를 잘 소개하는 실제 YouTube 영상의 11자리 ID입니다 (예: dQw4w9WgXcQ). 모르면 빈 문자열("")로 두세요.`;
+
+  // 최대 2회 시도
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      if (attempt > 1) {
+        setLoadingMsg(`재시도 중… (${attempt}/2)`);
+        await new Promise(r => setTimeout(r, 1000));
+      }
+
+      const res = await fetch(geminiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
+        })
+      });
+
+      if (res.status === 400) {
+        const err = await res.json().catch(() => ({}));
+        const msg = err?.error?.message || '잘못된 요청';
+        if (ks) { ks.textContent = '키 오류'; ks.className = 'key-status err'; }
+        showToast(`❌ Gemini 키 오류: ${msg.slice(0, 60)}`);
+        return [];
+      }
+      if (res.status === 429) {
+        showToast('⏳ Gemini 요청 한도 초과. 잠시 후 다시 시도해주세요.');
+        if (ks) { ks.textContent = '한도 초과'; ks.className = 'key-status err'; }
+        return [];
+      }
+      if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`HTTP ${res.status}: ${errText.slice(0, 150)}`);
+      }
+
+      const data = await res.json();
+      const raw  = (data.candidates?.[0]?.content?.parts?.[0]?.text || '').trim();
+
+      if (!raw) throw new Error('Gemini 응답이 비어 있습니다.');
+
+      // JSON 추출 — 다단계 강건 파싱
+      let jsonStr = '';
+
+      // ① 코드블록 안의 JSON (닫는 ``` 없어도 처리)
+      const fenceOpen = raw.match(/```(?:json)?\s*\n?([\s\S]+)/);
+      if (fenceOpen) {
+        // 닫는 ``` 가 있으면 그 앞까지, 없으면 끝까지
+        const inner = fenceOpen[1];
+        const closeIdx = inner.indexOf('```');
+        jsonStr = (closeIdx !== -1 ? inner.slice(0, closeIdx) : inner).trim();
+      }
+
+      // ② 코드블록 없으면 [ ... ] 추출
+      if (!jsonStr) {
+        const start = raw.indexOf('[');
+        const end   = raw.lastIndexOf(']');
+        if (start !== -1 && end > start) {
+          jsonStr = raw.slice(start, end + 1);
+        }
+      }
+
+      // ③ 그래도 없으면 raw 전체에서 { 로 시작하는 첫 배열 시도
+      if (!jsonStr) {
+        throw new Error('JSON 배열을 찾을 수 없습니다.\n응답 앞부분:\n' + raw.slice(0, 200));
+      }
+
+      // ④ 파싱 시도 — 잘린 JSON은 마지막 완성 객체까지 복구
+      let places;
+      try {
+        places = JSON.parse(jsonStr);
+      } catch {
+        // 잘린 경우 복구: 마지막 완성 객체(},) 기준
+        const lastObj = jsonStr.lastIndexOf('},');
+        const lastArr = jsonStr.lastIndexOf('}]');
+        const cutAt   = Math.max(lastObj, lastArr);
+        if (cutAt > 0) {
+          const recovered = lastArr >= lastObj
+            ? jsonStr.slice(0, cutAt + 2)          // }] 로 끝나는 경우
+            : jsonStr.slice(0, cutAt + 1) + ']';   // }, 로 끝나는 경우
+          try {
+            places = JSON.parse(recovered);
+            console.warn(`[Gemini] JSON 잘림 복구: ${places.length}개`);
+          } catch {
+            throw new Error('JSON 복구 실패.\n' + jsonStr.slice(0, 200));
+          }
+        } else {
+          throw new Error('JSON 파싱 실패.\n' + jsonStr.slice(0, 200));
+        }
+      }
+
+      if (!Array.isArray(places)) throw new Error('응답이 배열 형식이 아닙니다.');
+
+      const valid = places.filter(p =>
+        p.name && typeof p.lat === 'number' && typeof p.lng === 'number'
+        && Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180
+      );
+
+      if (!valid.length) throw new Error(`"${dest}" 내 유효한 장소를 찾지 못했습니다.`);
+
+      if (ks) { ks.textContent = `✓ ${valid.length}곳`; ks.className = 'key-status ok'; }
+      return valid;
+
+    } catch (e) {
+      console.error(`[Gemini 시도 ${attempt}]`, e);
+      if (attempt === 2) {
+        if (ks) { ks.textContent = '실패'; ks.className = 'key-status err'; }
+        // 상세 오류를 화면에 표시
+        showError(
+          `Gemini 검색 실패\n\n` +
+          `• 오류: ${e.message}\n\n` +
+          `해결 방법:\n` +
+          `1. Gemini API 키가 올바른지 확인 (AIzaSy…)\n` +
+          `2. https://aistudio.google.com 에서 키 재발급\n` +
+          `3. 네트워크 연결 확인 후 다시 시도`
+        );
+        return [];
+      }
+    }
+  }
+  return [];
+}
+
+// ── 두 좌표 간 거리 계산 (km, Haversine) ─────────
+function calcDist(a, b) {
+  const R = 6371;
+  const dLat = (b.lat - a.lat) * Math.PI / 180;
+  const dLng = (b.lng - a.lng) * Math.PI / 180;
+  const s = Math.sin(dLat/2) * Math.sin(dLat/2)
+          + Math.cos(a.lat * Math.PI/180) * Math.cos(b.lat * Math.PI/180)
+          * Math.sin(dLng/2) * Math.sin(dLng/2);
+  return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1-s));
+}
+
+// ── 최근접 이웃 순서 정렬 ─────────────────────────
+function nearestNeighborSort(places) {
+  if (places.length <= 2) return places;
+  const result = [places[0]];
+  const remaining = [...places.slice(1)];
+  while (remaining.length) {
+    const last = result[result.length - 1];
+    let minIdx = 0, minDist = Infinity;
+    remaining.forEach((p, i) => {
+      if (!p.lat || !p.lng) return;
+      const d = calcDist(last, p);
+      if (d < minDist) { minDist = d; minIdx = i; }
+    });
+    result.push(remaining.splice(minIdx, 1)[0]);
+  }
+  return result;
+}
+
+// ── 엄격 배분 + 동선 최적화 ──────────────────────
+// ── 동선 최적화 배분 ──────────────────────────────
+function distributeStrict(places, numDays, perDay = 4) {
+  // ① 중복 제거 (Gemini 반환 순서 유지)
+  const usedNames = new Set();
+  const pool = [];
+  for (const p of places) {
+    if (!usedNames.has(p.name)) { pool.push({...p}); usedNames.add(p.name); }
+  }
+
+  // ② 일자별 슬라이싱 (Gemini가 이미 동선 최적화하여 반환한 순서 존중)
+  const result = [];
+  for (let d = 1; d <= numDays; d++) {
+    const start    = (d - 1) * perDay;
+    const daySlice = pool.slice(start, start + perDay);
+    if (!daySlice.length) break;
+
+    // ③ 일자 내 최근접 이웃 정렬로 미세 최적화 (Gemini 순서 보정)
+    const sorted = nearestNeighborSort(daySlice);
+
+    // ④ 이동 거리·시간 자동 계산 (travel_min 없는 경우 보완)
+    sorted.forEach((p, i) => {
+      if (i === 0) {
+        p._distKm   = 0;
+        p._travelMin = 0;
+      } else {
+        const prev  = sorted[i - 1];
+        const km    = calcDist(prev, p);
+        p._distKm   = Math.round(km * 10) / 10;
+        // travel_min이 Gemini에서 왔으면 그대로, 없으면 추정 (평균 40km/h)
+        p._travelMin = p.travel_min || Math.round((km / 40) * 60);
+      }
+    });
+
+    result.push({ day: d, places: sorted });
+  }
+  return result;
+}
+
+// ── 내장 DB 반환 ──────────────────────────────────
+function getDB() {
+  const DB = {
+    '서울': [
+      {name:'경복궁',category:'역사유적지',rating:4.6,tip:'조선 태조 4년(1395) 창건된 법궁. 근정전·경회루·향원정 등 국보급 건축물과 수문장 교대 의식(10:00·14:00)이 볼거리.',address:'서울특별시 종로구 사직로 161',phone:'02-3700-3900',hours:'09:00~18:00 (화요일 휴관)',fee:'성인 3,000원',duration:'2시간',lat:37.5796,lng:126.9770},
+      {name:'창덕궁 후원',category:'역사유적지',rating:4.7,tip:'UNESCO 세계문화유산. 자연 지형을 살린 왕실 비원. 시간당 제한 인원 해설 투어로만 입장 가능, 사전 예약 필수.',address:'서울특별시 종로구 율곡로 99',phone:'02-3668-2300',hours:'09:00~18:00 (월요일 휴관)',fee:'성인 8,000원',duration:'2시간',lat:37.5824,lng:126.9910},
+      {name:'종묘',category:'역사유적지',rating:4.5,tip:'조선 역대 왕·왕비 신위를 모신 사당. UNESCO 세계문화유산이자 무형유산. 정전은 세계 최장 단일 목조건물.',address:'서울특별시 종로구 종로 157',phone:'02-765-0195',hours:'09:00~18:00 (화요일 휴관)',fee:'성인 1,000원',duration:'1시간 30분',lat:37.5748,lng:126.9947},
+      {name:'덕수궁',category:'역사유적지',rating:4.4,tip:'대한제국 황궁. 전통 건축과 서양식 석조전이 공존. 수문장 교대식과 야간 개장이 인기.',address:'서울특별시 중구 세종대로 99',phone:'02-771-9951',hours:'09:00~21:00 (월요일 휴관)',fee:'성인 1,000원',duration:'1시간 30분',lat:37.5657,lng:126.9752},
+      {name:'북촌 한옥마을',category:'역사유적지',rating:4.2,tip:'600여 채 한옥 밀집 조선 사대부 거주지. 가회동 31번지 골목이 포토스팟. 이른 아침 방문 추천.',duration:'1시간 30분',lat:37.5826,lng:126.9830},
+      {name:'국립중앙박물관',category:'전시/박물관',rating:4.6,tip:'세계 6위 규모, 43만 점 유물 소장. 상설전시 무료. 고려 청자·금동 미륵보살 등 국보급 유물 다수.',duration:'2시간',lat:37.5236,lng:126.9805},
+      {name:'광장시장',category:'맛집',rating:4.4,tip:'1905년 개설 서울 최초 상설 재래시장. 육회·빈대떡·마약김밥 3대 명물. 오전 방문이 한산.',duration:'1시간 30분',lat:37.5699,lng:126.9994},
+      {name:'성수동 카페거리',category:'카페',rating:4.3,tip:'공장 개조 힙스터 카페 밀집지. 팝업 스토어와 서울숲 연계 코스로 인기.',duration:'1시간 30분',lat:37.5445,lng:127.0558},
+      {name:'남산타워',category:'출사지/자연경관',rating:4.3,tip:'해발 480m 서울 전경 360도 조망. 야경 명소. 케이블카·버스·둘레길로 오를 수 있음.',duration:'1시간 30분',lat:37.5512,lng:126.9882},
+    ],
+    '경주': [
+      {name:'불국사',category:'역사유적지',rating:4.7,tip:'신라 경덕왕 때 창건. UNESCO 세계문화유산. 석가탑·다보탑·청운교·백운교 등 국보 건축의 정수.',address:'경상북도 경주시 불국로 385',phone:'054-746-9913',hours:'07:00~18:00 (연중무휴)',fee:'성인 6,000원',duration:'2시간',lat:35.7897,lng:129.3317},
+      {name:'석굴암',category:'역사유적지',rating:4.6,tip:'국보 24호 화강암 석굴 사원. 본존불 표정이 압도적. 토함산 일출 명소.',address:'경상북도 경주시 불국로 873-243',phone:'054-746-9933',hours:'07:00~18:00 (연중무휴)',fee:'성인 6,000원',duration:'1시간 30분',lat:35.7948,lng:129.3476},
+      {name:'동궁과 월지',category:'역사유적지',rating:4.5,tip:'신라 문무왕 조성 왕궁 별궁 연못. 야경이 환상적. 3만여 점 유물 출토.',address:'경상북도 경주시 원화로 102',phone:'054-750-8655',hours:'09:00~22:00 (연중무휴)',fee:'성인 3,000원',duration:'1시간',lat:35.8348,lng:129.2257},
+      {name:'대릉원',category:'역사유적지',rating:4.4,tip:'신라 고분 23기 밀집 공원. 천마총 내부 관람 가능. 황금관·천마도 복제품 전시.',address:'경상북도 경주시 황남동 33',phone:'054-750-8650',hours:'09:00~22:00 (연중무휴)',fee:'성인 3,000원',duration:'1시간',lat:35.8340,lng:129.2178},
+      {name:'첨성대',category:'역사유적지',rating:4.4,tip:'선덕여왕 때 축조된 동양 최고(最古) 천문대. 봄 유채꽃·가을 코스모스와 어우러진 풍경이 아름다움.',address:'경상북도 경주시 첨성로 169-5',phone:'054-750-8655',hours:'연중 24시간 개방',fee:'무료',duration:'40분',lat:35.8348,lng:129.2193},
+      {name:'국립경주박물관',category:'전시/박물관',rating:4.5,tip:'신라 천년 유물 집대성. 성덕대왕신종(에밀레종) 실물 전시.',address:'경상북도 경주시 일정로 186',phone:'054-740-7500',hours:'10:00~18:00 (월요일 휴관)',fee:'무료',duration:'2시간',lat:35.8352,lng:129.2242},
+      {name:'황리단길',category:'맛집',rating:4.3,tip:'대릉원 인근 감성 골목 상권. 경주빵·황남빵 원조와 한복 체험.',duration:'1시간 30분',lat:35.8312,lng:129.2151},
+      {name:'교촌 한옥마을',category:'카페',rating:4.2,tip:'경주 최씨 최부자댁 인근 전통 한옥 카페 거리. 교리김밥과 전통차가 명물.',duration:'1시간 30분',lat:35.8349,lng:129.2118},
+      {name:'경주 최부자댁',category:'역사유적지',rating:4.1,tip:'9대 300년 만석꾼 종가 고택. 노블레스 오블리주의 상징. 독립운동 자금 지원의 역사.',duration:'40분',lat:35.8336,lng:129.2105},
+    ],
+    '부여': [
+      {name:'부소산성',category:'역사유적지',rating:4.4,tip:'백제 사비 시대 왕도 수호 산성. 낙화암·고란사·백마강이 어우러진 절경. 백제 멸망의 역사적 현장.',duration:'1시간 30분',lat:36.2798,lng:126.9098},
+      {name:'국립부여박물관',category:'전시/박물관',rating:4.4,tip:'백제 최고 걸작 금동대향로(국보 287호) 실물 전시. 백제 문화의 세련된 예술성 총망라.',duration:'1시간 30분',lat:36.2745,lng:126.9129},
+      {name:'정림사지 5층 석탑',category:'역사유적지',rating:4.3,tip:'국보 9호 백제 대표 석탑. 당나라 소정방의 전승문이 탑 몸돌에 새겨진 역사 현장.',duration:'1시간',lat:36.2730,lng:126.9091},
+      {name:'궁남지',category:'역사유적지',rating:4.3,tip:'백제 무왕 조성 우리나라 최초 인공 연못. 7월 연꽃 축제 때 방문하면 장관.',duration:'1시간',lat:36.2612,lng:126.9095},
+      {name:'능산리 고분군',category:'역사유적지',rating:4.2,tip:'백제 왕릉 추정 고분 7기. 금동대향로 출토지 능산리 사지 포함.',duration:'1시간',lat:36.2860,lng:126.9256},
+      {name:'백제문화단지',category:'역사유적지',rating:4.1,tip:'사비 시대 왕궁·사찰 재현 테마파크. 백제 문화 체험에 최적.',duration:'2시간',lat:36.2889,lng:126.8997},
+      {name:'부여 구드래 나루터',category:'출사지/자연경관',rating:4.1,tip:'백마강 유람선 선착장. 낙화암·고란사를 뱃길로 감상. 해질 녘 강 노을이 아름다움.',duration:'1시간',lat:36.2774,lng:126.9070},
+      {name:'굿뜨래 웰빙마루',category:'맛집',rating:4.1,tip:'부여 특산 연잎밥·연근 요리 향토 음식점. 청정 식재료 건강식.',duration:'1시간',lat:36.2741,lng:126.9103},
+      {name:'부여 서동공원',category:'출사지/자연경관',rating:4.0,tip:'서동과 선화공주의 사랑 이야기가 깃든 공원. 봄 벚꽃과 연꽃 연못이 아름다운 시민 휴식처.',duration:'1시간',lat:36.2723,lng:126.9089},
+    ],
+    '공주': [
+      {name:'공산성',category:'역사유적지',rating:4.4,tip:'백제 웅진 시대 왕성. 금강 절벽 위 성벽 따라 걷는 금강 조망이 압권. UNESCO 세계유산.',duration:'1시간 30분',lat:36.4593,lng:127.1184},
+      {name:'무령왕릉',category:'역사유적지',rating:4.5,tip:'백제 무령왕·왕비 무덤. 피장자 확인된 유일한 삼국시대 왕릉. 국립공주박물관에서 출토 유물 관람.',duration:'1시간',lat:36.4556,lng:127.1133},
+      {name:'국립공주박물관',category:'전시/박물관',rating:4.4,tip:'무령왕릉 출토 유물 집중 전시. 금제 관식·진묘수 등 백제 왕실 문화의 정수.',duration:'1시간 30분',lat:36.4549,lng:127.1163},
+      {name:'마곡사',category:'역사유적지',rating:4.4,tip:'신라 자장율사 창건. 백범 김구 은거 사찰. 춘마곡 추갑사 불릴 만큼 봄 풍경이 수려. UNESCO 세계유산.',duration:'1시간 30분',lat:36.5323,lng:126.9091},
+      {name:'갑사',category:'역사유적지',rating:4.3,tip:'420년 창건 고찰. 계룡산 단풍 명소. 가을 전국 사진 작가들이 몰리는 출사 성지.',duration:'1시간 30분',lat:36.4200,lng:127.0760},
+      {name:'계룡산 국립공원',category:'출사지/자연경관',rating:4.5,tip:'충청도 영산. 주상절리대와 갑사·동학사·신원사 등 고찰 연계 산행이 인기.',duration:'3시간',lat:36.3700,lng:127.1800},
+      {name:'공주 제민천 거리',category:'카페',rating:4.1,tip:'구도심 제민천 변 감성 카페·공방 거리. 공주 알밤 디저트 맛집이 많음.',duration:'1시간',lat:36.4468,lng:127.1197},
+      {name:'산성시장',category:'맛집',rating:4.1,tip:'공주 전통 재래시장. 알밤·밤 막걸리와 국밥·두부 요리를 저렴하게 즐길 수 있음.',duration:'1시간',lat:36.4478,lng:127.1209},
+      {name:'연미산 자연미술공원',category:'전시/박물관',rating:4.0,tip:'금강변 언덕 야외 자연미술 전시공원. 자연과 예술이 어우러진 독특한 사진 명소.',duration:'1시간',lat:36.4701,lng:127.0876},
+    ],
+    '수원': [
+      {name:'수원화성',category:'역사유적지',rating:4.6,tip:'정조가 사도세자를 위해 쌓은 조선 최고 성곽. UNESCO 세계문화유산. 총 길이 5.74km 성벽이 원형 보존.',duration:'2시간',lat:37.2882,lng:127.0133},
+      {name:'화성행궁',category:'역사유적지',rating:4.4,tip:'정조의 현륭원 행차 시 머물던 행궁. 원형 복원된 576칸 규모.',duration:'1시간 30분',lat:37.2840,lng:127.0122},
+      {name:'팔달문',category:'역사유적지',rating:4.3,tip:'수원화성 남문. 보물 402호. 2층 누각 형식의 성문.',duration:'30분',lat:37.2794,lng:127.0125},
+      {name:'수원화성박물관',category:'전시/박물관',rating:4.2,tip:'수원화성 축성 과정과 정조대왕의 꿈을 전시. 화성 모형과 의궤 자료.',duration:'1시간',lat:37.2877,lng:127.0163},
+      {name:'수원 통닭거리',category:'맛집',rating:4.2,tip:'1970년대부터 이어진 명물 통닭 골목. 통째로 튀긴 수원식 통닭은 전국 미식가들의 성지.',duration:'1시간 30분',lat:37.2842,lng:127.0142},
+      {name:'행리단길',category:'카페',rating:4.1,tip:'화성행궁 주변 감성 카페·맛집 골목. 수원판 황리단길.',duration:'1시간',lat:37.2845,lng:127.0134},
+      {name:'광교호수공원',category:'출사지/자연경관',rating:4.4,tip:'광교 신도시 대형 수변 공원. 계절별 꽃밭과 야경이 아름다움.',duration:'1시간 30분',lat:37.2929,lng:127.0576},
+      {name:'서북공심돈',category:'역사유적지',rating:4.3,tip:'수원화성 서쪽 치성. 적을 감시하던 원통형 망루로 화성 최고의 포토스팟 중 하나.',duration:'30분',lat:37.2927,lng:127.0067},
+      {name:'화서문',category:'역사유적지',rating:4.2,tip:'수원화성 서문. 서북공심돈과 함께 성곽 산책로의 핵심 구간.',duration:'30분',lat:37.2916,lng:127.0056},
+    ],
+    '전주': [
+      {name:'전주 한옥마을',category:'역사유적지',rating:4.3,tip:'700여 채 한옥 밀집 지역. 조선왕조 발상지 전주의 역사와 문화. 한복 체험과 전주비빔밥 필수.',duration:'2시간',lat:35.8145,lng:127.1526},
+      {name:'경기전',category:'역사유적지',rating:4.4,tip:'태조 이성계 어진 봉안 전각(1410년 창건). 어진박물관에서 조선 왕실 미술 감상.',duration:'1시간',lat:35.8141,lng:127.1519},
+      {name:'전동성당',category:'역사유적지',rating:4.4,tip:'호남 최초 서양식 성당(1914년 완공). 순교자 처형 터 위 비잔틴·로마네스크 양식.',duration:'40분',lat:35.8148,lng:127.1497},
+      {name:'오목대',category:'역사유적지',rating:4.1,tip:'이성계 황산대첩 기념 언덕. 전주 한옥마을 전경 최고 조망 포인트.',duration:'40분',lat:35.8128,lng:127.1558},
+      {name:'전주향교',category:'역사유적지',rating:4.2,tip:'고려 시대 창건 향교. 은행나무 고목과 대성전이 고즈넉한 분위기.',duration:'40분',lat:35.8130,lng:127.1561},
+      {name:'전주 막걸리 골목',category:'맛집',rating:4.2,tip:'막걸리 한 주전자에 안주 20여 가지. 삼천동 일대 전문 식당 밀집.',duration:'1시간 30분',lat:35.8187,lng:127.1487},
+      {name:'남부시장 청년몰',category:'맛집',rating:4.1,tip:'100년 전통 시장 2층 청년 창업 상권. 금·토 야시장이 특히 인기.',duration:'1시간 30분',lat:35.8094,lng:127.1531},
+      {name:'카페 베케',category:'카페',rating:4.3,tip:'한옥 개조 감성 카페. 인절미 라떼·흑임자 크림 등 지역 식재료 메뉴가 인기.',duration:'1시간',lat:35.8150,lng:127.1530},
+      {name:'전주 객사',category:'역사유적지',rating:4.0,tip:'조선 시대 관청 건물. 풍남문·전동성당과 도보 연계 역사 거리 투어 거점.',duration:'40분',lat:35.8192,lng:127.1499},
+    ],
+    '강릉': [
+      {name:'오죽헌',category:'역사유적지',rating:4.3,tip:'신사임당·율곡 이이 생가. 5000원권 지폐 배경 건물. 강릉시립박물관 유품 병행 관람.',duration:'1시간',lat:37.7481,lng:128.8767},
+      {name:'경포대',category:'역사유적지',rating:4.3,tip:'조선 관동팔경 제1경. 경포호 북쪽 언덕 조망이 압권.',duration:'1시간',lat:37.7983,lng:128.8977},
+      {name:'선교장',category:'역사유적지',rating:4.4,tip:'국내 최대 민가 한옥. 10대 300년 안동 김씨 종가. 활래정 연못이 동양화 같음.',duration:'1시간 30분',lat:37.7782,lng:128.8831},
+      {name:'경포해변',category:'출사지/자연경관',rating:4.4,tip:'동해 최대 해수욕장. 새벽 일출이 강릉 여행의 백미.',duration:'1시간 30분',lat:37.8021,lng:128.9058},
+      {name:'정동진',category:'출사지/자연경관',rating:4.2,tip:'세계에서 바다와 가장 가까운 기차역(기네스). 드라마 모래시계 촬영지. 일출 사진 명소.',duration:'1시간',lat:37.6820,lng:129.0590},
+      {name:'테라로사 커피공장',category:'카페',rating:4.5,tip:'국내 스페셜티 커피 1번지. 창고형 오픈 로스터리에서 직접 로스팅한 원두 커피.',duration:'1시간',lat:37.7127,lng:128.8863},
+      {name:'강릉 중앙시장',category:'맛집',rating:4.2,tip:'강릉 막국수·순두부찌개·닭강정 삼위일체. 현지인 맛집 밀집.',duration:'1시간',lat:37.7499,lng:128.8997},
+      {name:'주문진 방사제',category:'출사지/자연경관',rating:4.3,tip:'BTS 뮤직비디오·드라마 도깨비 촬영지. 빨간·파란 등대 포토존.',duration:'40분',lat:37.8963,lng:128.8214},
+      {name:'강문해변 솟대다리',category:'출사지/자연경관',rating:4.2,tip:'경포호와 바다를 연결하는 다리. 일출·일몰 시 솟대 실루엣 사진 명소.',duration:'40분',lat:37.8009,lng:128.9101},
+    ],
+    '제주': [
+      {name:'성산일출봉',category:'출사지/자연경관',rating:4.7,tip:'UNESCO 세계자연유산. 해 뜨기 1시간 전 도착 권장. 정상 파노라마가 장관.',duration:'2시간',lat:33.4580,lng:126.9425},
+      {name:'한라산 영실 코스',category:'출사지/자연경관',rating:4.6,tip:'영실 기암절벽과 선작지왓 초원이 장관. 봄 철쭉·가을 단풍·겨울 설경이 계절별로 극적.',duration:'4시간',lat:33.3617,lng:126.4893},
+      {name:'협재해수욕장',category:'출사지/자연경관',rating:4.5,tip:'에메랄드빛 바다와 흰 모래사장. 비양도 노을 뷰가 제주 최고 일몰 명소.',duration:'1시간 30분',lat:33.3942,lng:126.2394},
+      {name:'성읍 민속마을',category:'역사유적지',rating:4.2,tip:'500년 역사 돌담 마을. 국가민속문화재. 전통 초가·오메기술·고소리술 체험.',duration:'1시간',lat:33.3826,lng:126.8014},
+      {name:'제주 항파두리 항몽유적지',category:'역사유적지',rating:4.1,tip:'고려 삼별초 마지막 항쟁지. 몽골 침략에 맞선 고려인의 저항 역사.',duration:'1시간',lat:33.4762,lng:126.3524},
+      {name:'우도',category:'출사지/자연경관',rating:4.5,tip:'성산항에서 15분. 서빈백사 홍조단괴 해변과 땅콩 아이스크림이 유명.',duration:'3시간',lat:33.5048,lng:126.9526},
+      {name:'흑돼지거리',category:'맛집',rating:4.4,tip:'제주 재래 흑돼지 연탄 직화구이. 한라산 소주와의 궁합이 으뜸.',duration:'1시간 30분',lat:33.4967,lng:126.5312},
+      {name:'카멜리아힐',category:'카페',rating:4.4,tip:'동양 최대 동백 수목원. 1~4월 동백꽃 만발하는 봄철 포토스팟 성지.',duration:'1시간 30분',lat:33.2972,lng:126.3867},
+      {name:'천지연 폭포',category:'출사지/자연경관',rating:4.3,tip:'높이 22m 폭포. 야간 조명 쇼가 환상적. 올레길 6코스와 연결.',duration:'1시간',lat:33.2463,lng:126.5594},
+    ],
+    '파주': [
+      {name:'임진각 평화누리공원',category:'역사유적지',rating:4.3,tip:'남북 분단의 상징. 장단역 증기기관차·자유의다리·바람개비 언덕.',address:'경기도 파주시 문산읍 임진각로 148',phone:'031-953-4744',hours:'연중 24시간 개방',fee:'무료',duration:'1시간 30분',lat:37.8859,lng:126.7417},
+      {name:'화석정',category:'역사유적지',rating:4.2,tip:'율곡 이이의 조선 정자. 임진왜란 때 선조의 피난로를 밝혔다는 일화.',address:'경기도 파주시 파평면 화석정로 152',phone:'031-954-3721',hours:'09:00~18:00 (연중무휴)',fee:'무료',duration:'40분',lat:37.8463,lng:126.7637},
+      {name:'율곡 자운서원',category:'역사유적지',rating:4.2,tip:'율곡 이이·신사임당 묘소 보유. 조선 교육의 중심지. 소나무숲 산책로.',address:'경기도 파주시 법원읍 자운서원로 204',phone:'031-958-5114',hours:'09:00~18:00 (월요일 휴관)',fee:'무료',duration:'1시간',lat:37.8041,lng:126.8723},
+      {name:'반구정',category:'역사유적지',rating:4.1,tip:'황희 정승 여생의 정자. 임진강 굽어보는 조망이 일품.',address:'경기도 파주시 문산읍 반구정로 60',phone:'031-954-5504',hours:'09:00~18:00',fee:'무료',duration:'40분',lat:37.8712,lng:126.7892},
+      {name:'출판도시 지혜의숲',category:'전시/박물관',rating:4.4,tip:'13m 천장까지 50만 권 책이 가득한 세계 최대 공개 서재. 24시간 무료 개방.',address:'경기도 파주시 회동길 145 아시아출판문화정보센터',phone:'031-955-0082',hours:'10:00~20:00 (연중무휴)',fee:'무료',duration:'1시간 30분',lat:37.7617,lng:126.7231},
+      {name:'헤이리 예술마을',category:'카페',rating:4.1,tip:'380여 명 예술인 거주·운영 마을. 갤러리·카페·공방 탐방.',address:'경기도 파주시 탄현면 헤이리마을길 93',phone:'031-946-8551',hours:'매장마다 상이 (보통 10:00~18:00)',fee:'무료(입장)',duration:'2시간',lat:37.7853,lng:126.7136},
+      {name:'프로방스 마을',category:'카페',rating:4.0,tip:'남프랑스 풍 유럽 테마 마을. 봄 라벤더·튤립 시즌이 아름다움.',address:'경기도 파주시 탄현면 새오리로 69',phone:'031-946-8700',hours:'10:00~21:00 (연중무휴)',fee:'무료(입장)',duration:'1시간',lat:37.7742,lng:126.7058},
+      {name:'파주 삼릉',category:'역사유적지',rating:4.0,tip:'조선 왕실 UNESCO 세계유산 왕릉 3기. 울창한 소나무 숲과 능침 석물.',address:'경기도 파주시 조리읍 삼릉로 89',phone:'031-941-4208',hours:'09:00~18:00 (월요일 휴관)',fee:'성인 500원',duration:'1시간',lat:37.7388,lng:126.8062},
+      {name:'파주 프리미엄 아울렛',category:'쇼핑',rating:4.2,tip:'국내 최대 프리미엄 아울렛. 200여 개 브랜드 입점.',address:'경기도 파주시 탄현면 필승로 200',phone:'031-956-2000',hours:'10:30~21:00 (연중무휴)',fee:'무료',duration:'2시간',lat:37.7495,lng:126.7142},
+    ],
+    '양주': [
+      {name:'양주 회암사지',category:'역사유적지',rating:4.4,tip:'고려~조선 최대 왕실 사찰 터. 태조 이성계가 왕위 후 머문 곳. 유네스코 잠정 목록 등재.',duration:'1시간 30분',lat:37.8282,lng:127.0711},
+      {name:'양주 별산대놀이 전수관',category:'역사유적지',rating:4.1,tip:'국가무형문화재 2호 탈춤 전수관. 조선 시대부터 이어진 해학·풍자 탈춤 체험.',duration:'1시간',lat:37.7854,lng:127.0456},
+      {name:'송암 스페이스센터',category:'전시/박물관',rating:4.3,tip:'국내 최대 민간 천문대. 태양 관측·야간 별자리 관측·4D 우주 체험관.',duration:'2시간',lat:37.8512,lng:127.0234},
+      {name:'양주 나리공원',category:'출사지/자연경관',rating:4.2,tip:'봄 청보리·유채꽃, 가을 코스모스 장관. 수도권 대표 꽃밭 나들이·출사 명소.',duration:'1시간 30분',lat:37.8103,lng:127.0445},
+      {name:'양주시립 장욱진미술관',category:'전시/박물관',rating:4.3,tip:'거장 장욱진 화백 전문 미술관. 자연 속 아담한 공간에서 유화·먹그림·판화 상설 전시.',duration:'1시간',lat:37.7923,lng:127.0578},
+      {name:'백화암',category:'역사유적지',rating:4.0,tip:'신라 시대 창건 사찰. 불곡산 자락 고즈넉한 산사. 봄 벚꽃·가을 단풍이 절경.',duration:'1시간',lat:37.7756,lng:127.0812},
+      {name:'양주 옥정 카페거리',category:'카페',rating:4.1,tip:'양주 신도시 감각적인 카페 거리. 야외 정원·루프탑 카페들이 수도권 카페 투어 코스.',duration:'1시간 30분',lat:37.8201,lng:127.0634},
+      {name:'양주 천보산 산림욕장',category:'출사지/자연경관',rating:4.1,tip:'편백·잣나무 울창한 산림욕장. 완만한 산책로와 계곡 쉼터.',duration:'1시간 30분',lat:37.8445,lng:127.0567},
+      {name:'양주 통일공원',category:'역사유적지',rating:4.0,tip:'6·25 전쟁 역사 공원. 실물 전쟁 장비 전시와 넓은 잔디광장.',duration:'1시간',lat:37.8312,lng:127.0123},
+    ],
+    '인천': [
+      {name:'인천 개항장 역사문화거리',category:'역사유적지',rating:4.3,tip:'개항기 근대 건축물 밀집 역사 지구. 일본·청나라 조계지 건물 현존.',duration:'1시간 30분',lat:37.4756,lng:126.6176},
+      {name:'자유공원',category:'역사유적지',rating:4.2,tip:'국내 최초 서구식 공원(1888년). 맥아더 장군 동상과 인천항 조망.',duration:'1시간',lat:37.4775,lng:126.6147},
+      {name:'인천 차이나타운',category:'역사유적지',rating:4.1,tip:'한국 최초·최대 차이나타운. 짜장면 발상지. 삼국지 벽화거리와 패루.',duration:'1시간 30분',lat:37.4756,lng:126.6164},
+      {name:'강화 고인돌 유적',category:'역사유적지',rating:4.3,tip:'UNESCO 세계문화유산 고인돌 밀집 지역. 청동기 시대 거석 문화. 부근리 지석묘 대표적.',duration:'1시간',lat:37.7412,lng:126.4627},
+      {name:'강화 고려궁지',category:'역사유적지',rating:4.2,tip:'고려 대몽 항쟁기 39년 임시 수도. 외규장각이 있던 곳.',duration:'1시간',lat:37.7480,lng:126.4879},
+      {name:'전등사',category:'역사유적지',rating:4.4,tip:'고구려 소수림왕 창건(381년) 국내 최고(最古) 사찰 중 하나. 강화도 정족산성 안에 위치.',duration:'1시간 30분',lat:37.6896,lng:126.4371},
+      {name:'인천 연안부두',category:'맛집',rating:4.2,tip:'서해 최대 수산물 시장. 꽃게·새우·조개 등 당일 어획 해산물을 저렴하게.',duration:'1시간 30분',lat:37.4701,lng:126.6099},
+      {name:'영종도 을왕리 해수욕장',category:'출사지/자연경관',rating:4.3,tip:'서해 노을 명소. 갯벌 위로 물드는 석양이 사진 출사지로 손꼽힘.',duration:'1시간',lat:37.4869,lng:126.3878},
+      {name:'마니산 참성단',category:'역사유적지',rating:4.2,tip:'단군왕검이 하늘에 제사 지냈다는 강화도 마니산 정상 제단. 국조 단군의 숨결이 깃든 역사 성지.',duration:'2시간',lat:37.6342,lng:126.4388},
+    ],
+    '광주': [
+      {name:'국립5·18민주묘지',category:'역사유적지',rating:4.5,tip:'5·18 광주 민주화 운동 희생자 묘역. UNESCO 기록유산 등재. 엄숙하고 경건한 역사적 성지.',duration:'1시간 30분',lat:35.1779,lng:126.8897},
+      {name:'5·18 기념공원',category:'역사유적지',rating:4.3,tip:'광주 민주화 운동 기념 시민 공원. 추모탑과 야외 전시물.',duration:'1시간',lat:35.1523,lng:126.9107},
+      {name:'광주 국립박물관',category:'전시/박물관',rating:4.3,tip:'전남 지역 선사~근현대 유물 집대성. 호남 도자기 문화와 민중 미술 컬렉션.',duration:'1시간 30분',lat:35.1757,lng:126.8895},
+      {name:'양림동 역사문화마을',category:'역사유적지',rating:4.2,tip:'근대 선교사 사택이 남아 있는 광주 최고 근대 역사 마을. 펭귄 마을·이장우 가옥 포토스팟.',duration:'1시간 30분',lat:35.1393,lng:126.9074},
+      {name:'무등산 국립공원',category:'출사지/자연경관',rating:4.5,tip:'광주 시민의 영산. 주상절리대 서석대·입석대가 장관.',duration:'3시간',lat:35.1319,lng:126.9898},
+      {name:'1913 송정역시장',category:'맛집',rating:4.3,tip:'1913년 개장 역사 있는 시장이 청년 상인들로 재탄생. 떡갈비와 감성 먹거리.',duration:'1시간',lat:35.1398,lng:126.7924},
+      {name:'광주 동명동 카페거리',category:'카페',rating:4.2,tip:'광주 최고 감성 카페 거리. 개성 넘치는 공간과 디저트.',duration:'1시간',lat:35.1512,lng:126.9234},
+      {name:'담양 죽녹원',category:'출사지/자연경관',rating:4.6,tip:'광주 근교 담양 대나무 숲 정원. 빽빽한 대나무 오솔길이 신비롭고 여름에도 서늘.',duration:'1시간 30분',lat:35.3209,lng:126.9835},
+      {name:'충장로',category:'맛집',rating:4.1,tip:'광주 최대 번화가이자 5·18 역사 현장. 광주식 육전·한정식·떡갈비 맛집 밀집.',duration:'1시간',lat:35.1474,lng:126.9184},
+    ],
+    '대구': [
+      {name:'달성토성',category:'역사유적지',rating:4.1,tip:'삼한 시대 토성. 달성공원 내 위치. 대구의 기원이 된 고대 성곽.',duration:'1시간',lat:35.8742,lng:128.5839},
+      {name:'국채보상운동기념공원',category:'역사유적지',rating:4.2,tip:'1907년 국채 상환 국민 운동 발상지. UNESCO 기록유산 등재.',duration:'1시간',lat:35.8693,lng:128.5970},
+      {name:'이상화·서상돈 고택',category:'역사유적지',rating:4.2,tip:'저항 시인 이상화·국채보상운동 주도자 서상돈의 고택이 나란히 위치. 근대 대구 민족정신.',duration:'1시간',lat:35.8681,lng:128.5924},
+      {name:'대구 근대역사관',category:'전시/박물관',rating:4.3,tip:'조선식산은행 건물 활용 근대 박물관. 대구 개항기~근대화 과정 전시.',duration:'1시간',lat:35.8680,lng:128.5957},
+      {name:'팔공산 동화사',category:'역사유적지',rating:4.4,tip:'통일신라 창건 고찰. 높이 33m 통일약사여래대불이 장관. 단풍 시즌 팔공산 전경 절경.',duration:'2시간',lat:35.9936,lng:128.6947},
+      {name:'서문시장',category:'맛집',rating:4.3,tip:'대구 최대 전통 시장. 납작만두·야시장 먹거리 유명. 화요일·금요일 야시장.',duration:'1시간 30분',lat:35.8682,lng:128.5789},
+      {name:'김광석 거리',category:'출사지/자연경관',rating:4.3,tip:'고 김광석 가수를 기리는 350m 벽화 거리. 노래비·조형물과 버스킹 공연.',duration:'1시간',lat:35.8645,lng:128.6008},
+      {name:'앞산 공원',category:'출사지/자연경관',rating:4.2,tip:'대구 시민의 진산 앞산 자락 공원. 케이블카로 정상에서 시가지 전경 조망.',duration:'1시간 30분',lat:35.8252,lng:128.5784},
+      {name:'수성못',category:'카페',rating:4.2,tip:'대구 수성구 유원지. 분수 쇼·야경이 아름다우며 주변 카페·음식점 즐비.',duration:'1시간',lat:35.8489,lng:128.6351},
+    ],
+    '부산': [
+      {name:'동래읍성',category:'역사유적지',rating:4.2,tip:'임진왜란 당시 동래부사 송상현이 끝까지 항전한 역사의 성곽. 동래읍성 임진왜란 역사축제 매년 개최.',duration:'1시간',lat:35.2049,lng:129.0836},
+      {name:'복천동 고분군',category:'역사유적지',rating:4.1,tip:'가야~신라 시대 고분 밀집 지역. 갑옷·무기 출토 유물이 복천박물관에 전시.',duration:'1시간',lat:35.2021,lng:129.0813},
+      {name:'해동 용궁사',category:'역사유적지',rating:4.4,tip:'바다 위 절벽에 세워진 고려 시대 사찰. 파도 소리와 함께하는 기도 분위기가 독특.',duration:'1시간',lat:35.1884,lng:129.2227},
+      {name:'국립해양박물관',category:'전시/박물관',rating:4.5,tip:'국내 최대 해양 전문 박물관. 해양 역사·생태·문화 총망라.',duration:'1시간 30분',lat:35.0710,lng:129.0798},
+      {name:'감천문화마을',category:'출사지/자연경관',rating:4.3,tip:'산비탈 형형색색 집들의 미로 마을. 부산판 마추픽추. 포토스팟 넘침.',duration:'1시간 30분',lat:35.0973,lng:129.0105},
+      {name:'광안리 해수욕장',category:'출사지/자연경관',rating:4.4,tip:'광안대교 야경이 환상적. 불꽃축제와 서핑 명소.',duration:'1시간 30분',lat:35.1531,lng:129.1183},
+      {name:'부산 자갈치시장',category:'맛집',rating:4.3,tip:'국내 최대 수산물 시장. 싱싱한 회·해산물을 시세에.',duration:'1시간 30분',lat:35.0968,lng:129.0300},
+      {name:'해운대 해수욕장',category:'출사지/자연경관',rating:4.4,tip:'국내 최고 인기 해수욕장. 마린시티 야경과 백사장 파노라마.',duration:'1시간 30분',lat:35.1587,lng:129.1604},
+      {name:'UN기념공원',category:'역사유적지',rating:4.3,tip:'세계 유일 유엔군 전몰장병 묘역. 6·25 전쟁 참전국 용사들이 안장된 역사적 성지.',duration:'1시간',lat:35.1342,lng:129.0928},
+    ],
+    '울산': [
+      {name:'반구대 암각화',category:'역사유적지',rating:4.5,tip:'신석기~청동기 시대 세계 최초 고래 사냥 암각화(국보 285호). UNESCO 잠정 목록 등재.',duration:'1시간 30분',lat:35.6059,lng:129.1644},
+      {name:'천전리 각석',category:'역사유적지',rating:4.3,tip:'국보 147호 선사 암각화. 신라 화랑의 기록도 새겨진 역사 유물.',duration:'1시간',lat:35.6133,lng:129.1732},
+      {name:'울산 장생포 고래문화특구',category:'전시/박물관',rating:4.2,tip:'고래박물관·고래생태체험관 운영. 국내 유일 귀신고래 체험 가능.',duration:'1시간 30분',lat:35.4839,lng:129.4176},
+      {name:'태화강 국가정원',category:'출사지/자연경관',rating:4.4,tip:'울산 태화강변 십리 대숲과 봄 유채꽃밭이 장관. 국내 두 번째 국가 지정 정원.',duration:'1시간 30분',lat:35.5495,lng:129.3301},
+      {name:'간절곶',category:'출사지/자연경관',rating:4.3,tip:'한반도에서 새해 첫 해를 가장 먼저 볼 수 있는 동쪽 끝 해돋이 명소.',duration:'1시간',lat:35.3659,lng:129.5066},
+      {name:'울산 왜성',category:'역사유적지',rating:4.0,tip:'임진왜란 때 왜군이 쌓은 성곽. 울산 시가지와 태화강 조망.',duration:'1시간',lat:35.5367,lng:129.3589},
+      {name:'현대예술관',category:'전시/박물관',rating:4.1,tip:'울산 대표 복합 문화 공간. 미술 전시·공연이 상시 운영.',duration:'1시간',lat:35.5384,lng:129.3116},
+      {name:'슬도',category:'출사지/자연경관',rating:4.2,tip:'방어진 앞바다 작은 섬. 파도가 바위 구멍을 통과할 때 나는 거문고 소리로 유명한 해안 명소.',duration:'1시간',lat:35.5066,lng:129.4248},
+      {name:'울산 쇠부리 축제',category:'역사유적지',rating:4.0,tip:'철을 만들던 쇠부리 전통 문화를 재현하는 축제. 울산 산업의 뿌리를 체험하는 독특한 역사 행사.',duration:'1시간',lat:35.5434,lng:129.3115},
+    ],
+    '안동': [
+      {name:'하회마을',category:'역사유적지',rating:4.6,tip:'UNESCO 세계문화유산 조선 시대 전통 마을. 낙동강이 마을을 감싸는 독특한 지형. 류씨 종가 문화.',duration:'2시간',lat:36.5387,lng:128.5196},
+      {name:'도산서원',category:'역사유적지',rating:4.5,tip:'퇴계 이황이 직접 건립한 조선 최고의 서원. UNESCO 세계문화유산. 1000원권 지폐 배경.',duration:'1시간 30분',lat:36.6693,lng:128.7121},
+      {name:'봉정사',category:'역사유적지',rating:4.4,tip:'현존 최고(最古) 목조 건물 극락전(국보 15호) 보유. 신라 문무왕 창건 고찰.',duration:'1시간 30분',lat:36.5990,lng:128.5997},
+      {name:'안동 임청각',category:'역사유적지',rating:4.3,tip:'임시정부 초대 국무령 이상룡 선생 생가. 99칸 고택. 독립운동의 정신이 깃든 역사 현장.',duration:'1시간',lat:36.5676,lng:128.7256},
+      {name:'안동 민속박물관',category:'전시/박물관',rating:4.3,tip:'안동댐 수몰 지역 전통 문화재 집합소. 하회탈춤 상설 공연.',duration:'1시간 30분',lat:36.5714,lng:127.7163},
+      {name:'월영교',category:'출사지/자연경관',rating:4.4,tip:'낙동강 위 국내 최장 목책 인도교(387m). 야간 조명이 강물에 반사되는 야경이 낭만적.',duration:'40분',lat:36.5572,lng:128.7218},
+      {name:'안동찜닭 골목',category:'맛집',rating:4.3,tip:'안동 명물 찜닭 발상지 구시장 골목. 달콤 짭짤한 간장 양념 찜닭.',duration:'1시간',lat:36.5671,lng:128.7238},
+      {name:'안동 간고등어 거리',category:'맛집',rating:4.2,tip:'소금에 절인 안동 간고등어는 내륙 지방 지혜의 향토 별미.',duration:'1시간',lat:36.5659,lng:128.7245},
+      {name:'병산서원',category:'역사유적지',rating:4.4,tip:'류성룡이 중건한 서원. UNESCO 세계유산. 낙동강을 배경으로 한 만대루의 풍경이 압권.',duration:'1시간',lat:36.5234,lng:128.4948},
+    ],
+    '순천': [
+      {name:'순천만 습지',category:'출사지/자연경관',rating:4.6,tip:'국내 최대 갈대밭과 흑두루미 도래지. UNESCO 세계유산 잠정 목록 등재 국제 람사르 습지.',duration:'2시간',lat:34.8987,lng:127.5148},
+      {name:'낙안읍성',category:'역사유적지',rating:4.5,tip:'조선 시대 지방 관아 석성 원형 보존 읍성. 초가집에 실제 주민 거주하는 살아 있는 민속 마을.',duration:'1시간 30분',lat:34.9784,lng:127.3830},
+      {name:'선암사',category:'역사유적지',rating:4.5,tip:'통일신라 창건 고찰. UNESCO 세계유산. 무지개형 승선교와 천연기념물 매화·차나무.',duration:'1시간 30분',lat:34.9788,lng:127.4890},
+      {name:'송광사',category:'역사유적지',rating:4.5,tip:'한국 삼보 사찰 중 승보 사찰. 보조국사 지눌 중창. 16 국사 배출 선 수행 도량.',duration:'1시간 30분',lat:34.9705,lng:127.3289},
+      {name:'순천만 국가정원',category:'출사지/자연경관',rating:4.4,tip:'국내 첫 국가 지정 정원. 계절별 꽃 축제와 영국·프랑스 테마 정원.',duration:'1시간 30분',lat:34.9325,lng:127.5041},
+      {name:'순천 드라마 촬영장',category:'전시/박물관',rating:4.1,tip:'1960~80년대 거리 재현 오픈 세트장. 다양한 드라마·영화 촬영지.',duration:'1시간',lat:34.9498,lng:127.5209},
+      {name:'조계산 도립공원',category:'출사지/자연경관',rating:4.3,tip:'송광사·선암사를 품은 조계산. 봄 진달래·가을 단풍 사진 명소.',duration:'3시간',lat:34.9753,lng:127.4082},
+      {name:'순천 웃장',category:'맛집',rating:4.1,tip:'5일장 전통 재래시장. 순천식 국밥·한정식·통닭을 저렴하게.',duration:'1시간',lat:34.9504,lng:127.4895},
+      {name:'향동 카페거리',category:'카페',rating:4.1,tip:'순천 구도심 감성 카페 거리. 순천만 갈대밭 인근 여행 마무리 커피 타임.',duration:'1시간',lat:34.9499,lng:127.4897},
+    ],
+    '여수': [
+      {name:'진남관',category:'역사유적지',rating:4.4,tip:'국보 304호 조선 최대 규모 목조 관아. 이순신 장군 지휘 전라좌수영 본영. 임진왜란 역사.',duration:'1시간',lat:34.7395,lng:127.7333},
+      {name:'향일암',category:'역사유적지',rating:4.4,tip:'원효대사 창건 기암절벽 사찰. 일출 명소. 새해 일출 인파와 남해 바다 파노라마.',duration:'1시간 30분',lat:34.6557,lng:127.8026},
+      {name:'오동도',category:'출사지/자연경관',rating:4.4,tip:'동백나무 3000여 그루 섬. 봄 동백꽃 시즌과 해식 동굴·등대 풍경.',duration:'1시간 30분',lat:34.7362,lng:127.7567},
+      {name:'이순신 광장',category:'역사유적지',rating:4.3,tip:'이순신 장군 동상과 거북선 전시. 야경과 함께 즐기는 해양 문화 탐방 출발점.',duration:'40분',lat:34.7393,lng:127.7373},
+      {name:'여수 밤바다 거리',category:'출사지/자연경관',rating:4.5,tip:'BTS 노래로 유명해진 돌산대교 야경 명소. 낭만 포차 거리.',duration:'1시간',lat:34.7414,lng:127.7419},
+      {name:'여수 수산시장',category:'맛집',rating:4.3,tip:'전남 최대 수산물 시장. 싱싱한 해산물을 활어 회·탕으로.',duration:'1시간 30분',lat:34.7379,lng:127.7397},
+      {name:'돌산도 카페거리',category:'카페',rating:4.2,tip:'돌산대교 건너 해안 카페 거리. 바다를 바라보며 즐기는 커피와 석양.',duration:'1시간',lat:34.7282,lng:127.7474},
+      {name:'흥국사',category:'역사유적지',rating:4.2,tip:'임진왜란 당시 승병의 활약지. 400년 수령 비자나무 군락과 홍교(무지개다리)가 유명.',duration:'1시간',lat:34.7763,lng:127.7003},
+      {name:'여수해양레일바이크',category:'액티비티/체험',rating:4.2,tip:'바다 위 레일 위를 달리는 이색 체험. 돌산도 해안 절경 감상.',duration:'1시간',lat:34.7210,lng:127.7472},
+    ],
+    '춘천': [
+      {name:'청평사',category:'역사유적지',rating:4.3,tip:'고려 광종 때 창건 고찰. 소양강 배로 접근하는 운치. 회전문·공주 전설.',duration:'1시간 30분',lat:37.8793,lng:127.8601},
+      {name:'소양강 스카이워크',category:'출사지/자연경관',rating:4.2,tip:'소양강 위 유리 바닥 전망대. 56m 높이에서 강 풍경 조망.',duration:'1시간',lat:37.8840,lng:127.7241},
+      {name:'남이섬',category:'출사지/자연경관',rating:4.4,tip:'드라마 겨울연가 촬영지. 자작나무·메타세쿼이아 가로수길.',duration:'2시간',lat:37.7903,lng:127.5261},
+      {name:'강촌 레일바이크',category:'액티비티/체험',rating:4.3,tip:'북한강변을 달리는 레일바이크. 봄 벚꽃·가을 단풍 시즌이 아름다움.',duration:'1시간 30분',lat:37.8072,lng:127.6624},
+      {name:'의암호 물레길',category:'출사지/자연경관',rating:4.2,tip:'의암댐이 만들어낸 호수 카약 코스. 수려한 자연 속 패들링.',duration:'2시간',lat:37.8573,lng:127.7126},
+      {name:'춘천 명동 닭갈비 골목',category:'맛집',rating:4.3,tip:'춘천 명물 닭갈비 전문 골목. 볶음 닭갈비와 막국수는 춘천 여행 불변 루틴.',duration:'1시간',lat:37.8778,lng:127.7314},
+      {name:'삼악산 케이블카',category:'출사지/자연경관',rating:4.2,tip:'의암호와 춘천 시가지 전망 케이블카. 봄꽃·가을 단풍 탑승 추천.',duration:'1시간',lat:37.8629,lng:127.6888},
+      {name:'공지천 유원지',category:'출사지/자연경관',rating:4.1,tip:'춘천 대표 시민 유원지. 강변 산책로와 카페·식당이 늘어선 낭만적인 수변 공간.',duration:'1시간',lat:37.8706,lng:127.7239},
+      {name:'애니메이션 박물관',category:'전시/박물관',rating:4.1,tip:'국내 유일 애니메이션 전문 박물관. 한국 애니메이션 역사와 캐릭터 체험.',duration:'1시간',lat:37.8896,lng:127.7302},
+    ],
+    '충주': [
+      {name:'충주 고구려비',category:'역사유적지',rating:4.4,tip:'국보 205호. 한반도 유일 고구려 석비. 5세기 고구려 영역 확장을 증명하는 귀중한 유물.',duration:'1시간',lat:37.0197,lng:127.9284},
+      {name:'충주 중앙탑',category:'역사유적지',rating:4.3,tip:'국보 6호 통일신라 최대 7층 석탑. 한반도 중앙에 위치한다는 의미.',duration:'40분',lat:37.0109,lng:127.9533},
+      {name:'중원 미륵리 사지',category:'역사유적지',rating:4.2,tip:'고려 시대 석불 입상과 오층 석탑. 고려 시대 교통로의 거점.',duration:'1시간',lat:36.9534,lng:128.0134},
+      {name:'충주 탄금대',category:'역사유적지',rating:4.2,tip:'가야금의 신 우륵이 연주하던 언덕. 임진왜란 신립 장군 배수진 전투지.',duration:'1시간',lat:37.0059,lng:127.9399},
+      {name:'충주호 유람선',category:'출사지/자연경관',rating:4.3,tip:'충주댐이 만든 충주호 유람선. 삼면이 산으로 둘러싸인 호수 풍경.',duration:'1시간 30분',lat:36.9939,lng:127.9980},
+      {name:'월악산 국립공원',category:'출사지/자연경관',rating:4.4,tip:'기암절벽 영봉이 솟은 국립공원. 덕주사·미륵리 사지와 연계한 역사 산행 코스.',duration:'3시간',lat:36.8867,lng:128.0844},
+      {name:'수안보 온천',category:'액티비티/체험',rating:4.1,tip:'국내 최초 자연 용출 온천. 36~53도 알칼리성 온천수.',duration:'1시간 30분',lat:36.8601,lng:127.9989},
+      {name:'앙성 온천',category:'액티비티/체험',rating:4.0,tip:'탄산 온천으로 유명한 충주 앙성 온천. 피부 미용에 효과적인 탄산수 온천.',duration:'1시간 30분',lat:36.9612,lng:127.9887},
+      {name:'충주 사과 농원',category:'출사지/자연경관',rating:4.0,tip:'충주 특산 사과 농원. 가을 수확 시즌 사과 따기 체험과 사과 와인·주스 시음.',duration:'1시간',lat:37.0124,lng:127.9198},
+    ],
+  };
+  return DB;
+}
+
+// ── YouTube embed 로드 ────────────────────────────
+const _ytCache = {};
+const YT_DEFAULT_KEY = 'AIzaSyB2DzHnaB0-VqBwaCqmgVbqa2E7T6UZGog';
+
+function getYtApiKey() {
+  const inputEl = document.getElementById('yt-key-input');
+  const inputVal = inputEl ? inputEl.value.trim() : '';
+  if (inputVal && inputVal.startsWith('AIza')) {
+    localStorage.setItem('yt_api_key', inputVal);
+    return inputVal;
+  }
+  const saved = localStorage.getItem('yt_api_key');
+  if (saved && saved.startsWith('AIza')) {
+    if (inputEl && !inputEl.value) inputEl.value = saved;
+    return saved;
+  }
+  return YT_DEFAULT_KEY;
+}
+
+// YouTube Data API v3로 장소명 검색 → 첫 번째 videoId 반환
+async function fetchYtVideoId(query) {
+  try {
+    const apiKey = getYtApiKey();
+    const q   = encodeURIComponent(query + ' 여행');
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&maxResults=1&key=${apiKey}&regionCode=KR&relevanceLanguage=ko`;
+    const r   = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if (!r.ok) {
+      const ks = document.getElementById('yt-key-status');
+      if (ks) { ks.textContent = `오류 ${r.status}`; ks.className = 'key-status err'; }
+      console.warn('[YT API]', r.status, await r.text());
+      return null;
+    }
+    const d = await r.json();
+    return d.items?.[0]?.id?.videoId || null;
+  } catch (e) { console.warn('[YT API]', e); return null; }
+}
+
+async function loadYouTubeEmbed(placeName, containerId, geminiVideoId = '') {
+  const wrap = document.getElementById(containerId);
+  if (!wrap) return;
+  const frameWrap = wrap.querySelector('.iw-yt-frame-wrap');
+  if (!frameWrap) return;
+
+  // ① 캐시
+  const cached = _ytCache[placeName];
+  if (cached && cached !== 'pending') {
+    cached === 'fallback'
+      ? showYtFallback(frameWrap, placeName)
+      : showYtPlayer(frameWrap, placeName, cached);
+    setYtMoreLink(wrap, placeName);
+    return;
+  }
+  _ytCache[placeName] = 'pending';
+
+  // ② YouTube API로 직접 검색
+  const videoId = await fetchYtVideoId(placeName);
+  if (videoId) {
+    _ytCache[placeName] = videoId;
+    showYtPlayer(frameWrap, placeName, videoId);
+    setYtMoreLink(wrap, placeName);
+    const ks = document.getElementById('yt-key-status');
+    if (ks && ks.textContent !== '✓ 저장됨') { ks.textContent = '✓ 활성'; ks.className = 'key-status ok'; }
+    return;
+  }
+
+  // ③ API 실패 → fallback
+  _ytCache[placeName] = 'fallback';
+  showYtFallback(frameWrap, placeName);
+  setYtMoreLink(wrap, placeName);
+}
+
+// YouTube IFrame Player API 준비 상태
+let _ytApiReady = false;
+window.onYouTubeIframeAPIReady = function() { _ytApiReady = true; };
+
+// videoId로 썸네일 표시 → 클릭 시 IFrame API로 embed 재생
+function showYtPlayer(frameWrap, placeName, videoId) {
+  const thumb  = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+  const ytUrl  = `https://www.youtube.com/watch?v=${videoId}`;
+  const divId  = `yt-div-${videoId}-${Date.now()}`;
+
+  frameWrap.innerHTML = `
+    <div id="${divId}-thumb"
+         style="position:relative;width:300px;height:168px;cursor:pointer;background:#000;"
+         onclick="embedYtNow('${videoId}','${divId}')">
+      <img src="${thumb}" alt="${placeName}"
+           style="width:300px;height:168px;object-fit:cover;display:block;"
+           onerror="this.src='https://img.youtube.com/vi/${videoId}/mqdefault.jpg';this.onerror=null;">
+      <div style="position:absolute;top:0;left:0;width:100%;height:100%;
+                  display:flex;align-items:center;justify-content:center;">
+        <div style="width:68px;height:48px;background:rgba(255,0,0,0.93);border-radius:14px;
+                    display:flex;align-items:center;justify-content:center;
+                    box-shadow:0 2px 12px rgba(0,0,0,0.6);">
+          <span style="color:white;font-size:24px;margin-left:5px;">▶</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+// 클릭 → YouTube IFrame Player API로 팝업 내 embed 재생
+window.embedYtNow = function(videoId, divId) {
+  const thumb = document.getElementById(divId + '-thumb');
+  if (!thumb) return;
+  const parent = thumb.parentElement;
+
+  // 로딩 스피너 표시
+  parent.innerHTML = `
+    <div style="width:300px;height:168px;background:#0f0f0f;
+                display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;">
+      <div style="width:36px;height:36px;border:3px solid #333;border-top-color:#ff0000;
+                  border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <span style="color:#666;font-size:11px;">영상 준비 중…</span>
+    </div>`;
+
+  // YT API 준비 대기 (최대 5초)
+  let waited = 0;
+  const tryPlay = () => {
+    if (_ytApiReady && typeof YT !== 'undefined' && typeof YT.Player === 'function') {
+      const playerDiv = document.createElement('div');
+      playerDiv.id = divId + '-player';
+      playerDiv.style.cssText = 'width:300px;height:168px;';
+      parent.innerHTML = '';
+      parent.appendChild(playerDiv);
+
+      new YT.Player(playerDiv.id, {
+        width: '300', height: '168',
+        videoId: videoId,
+        playerVars: { autoplay: 1, rel: 0, modestbranding: 1, playsinline: 1 },
+        events: {
+          onReady: e => e.target.playVideo(),
+          onError: () => {
+            // YT.Player 실패 → 직접 iframe 삽입 (마지막 시도)
+            parent.innerHTML = `<iframe
+              src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1"
+              width="300" height="168" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen style="display:block;border:none;"></iframe>`;
+          }
+        }
+      });
+    } else if (waited < 5000) {
+      waited += 200;
+      setTimeout(tryPlay, 200);
+    } else {
+      // 5초 대기 후도 API 미준비 → iframe 직접 삽입
+      parent.innerHTML = `<iframe
+        src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1&playsinline=1"
+        width="300" height="168" frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen style="display:block;border:none;"></iframe>`;
+    }
+  };
+  tryPlay();
+};
+
+// fallback — YouTube 검색 새 탭
+function showYtFallback(frameWrap, placeName) {
+  const q   = encodeURIComponent(placeName + ' 여행');
+  const url = `https://www.youtube.com/results?search_query=${q}`;
+  frameWrap.innerHTML = `
+    <a href="${url}" target="_blank"
+       style="display:flex;width:300px;height:168px;background:#0f0f0f;
+              align-items:center;justify-content:center;flex-direction:column;
+              gap:10px;text-decoration:none;">
+      <div style="width:68px;height:48px;background:#ff0000;border-radius:14px;
+                  display:flex;align-items:center;justify-content:center;">
+        <span style="color:white;font-size:24px;margin-left:5px;">▶</span>
+      </div>
+      <span style="color:#ccc;font-size:12px;font-weight:600;">${placeName}</span>
+      <span style="color:#888;font-size:10px;">클릭하여 YouTube에서 검색</span>
+    </a>`;
+}
+
+function setYtMoreLink(wrap, placeName) {
+  let a = wrap.querySelector('.iw-yt-more');
+  if (!a) { a = document.createElement('a'); a.className = 'iw-yt-more'; wrap.appendChild(a); }
+  a.href   = `https://www.youtube.com/results?search_query=${encodeURIComponent(placeName + ' 여행')}`;
+  a.target = '_blank';
+  a.textContent = '🔍 YouTube에서 더 보기';
+}
+
+window.playYtVideo = (el, videoId) => embedYtNow(videoId);
+
+function getCategoryEmoji(cat) {
+  if (!cat) return '📍';
+  if (cat.includes('유적') || cat.includes('역사')) return '🏯';
+  if (cat.includes('카페'))   return '☕';
+  if (cat.includes('맛집'))   return '🍜';
+  if (cat.includes('출사') || cat.includes('자연')) return '📷';
+  if (cat.includes('전시') || cat.includes('박물')) return '🖼';
+  if (cat.includes('쇼핑'))   return '🛍';
+  if (cat.includes('액티비티')) return '🎯';
+  if (cat.includes('야경'))   return '🌙';
+  return '📍';
+}
+
+// ── Places API로 장소 사진 로드 ────────────────────
+const _photoCache = {};
+
+function loadPlacePhoto(placeName, placeholderId, emoji, callback, _retry = 0) {
+  // map 미준비 시 최대 10회(3초) 재시도
+  if (!map || !window.google?.maps?.places) {
+    if (_retry > 10) return;
+    setTimeout(() => loadPlacePhoto(placeName, placeholderId, emoji, callback, _retry + 1), 300);
+    return;
+  }
+
+  // 캐시 히트
+  if (_photoCache[placeName]) {
+    if (placeholderId) applyPhoto(placeholderId, _photoCache[placeName]);
+    if (callback) callback(_photoCache[placeName]);
+    return;
+  }
+
+  let svcDiv = document.getElementById('_places_svc_div');
+  if (!svcDiv) {
+    svcDiv = document.createElement('div');
+    svcDiv.id = '_places_svc_div';
+    svcDiv.style.cssText = 'display:none;position:absolute';
+    document.body.appendChild(svcDiv);
+  }
+
+  try {
+    const service = new google.maps.places.PlacesService(svcDiv);
+    service.textSearch(
+      { query: placeName + ' 한국', fields: ['photos', 'name', 'place_id'] },
+      (results, status) => {
+        if (
+          status === google.maps.places.PlacesServiceStatus.OK &&
+          results?.[0]?.photos?.length > 0
+        ) {
+          const url = results[0].photos[0].getUrl({ maxWidth: 520, maxHeight: 320 });
+          _photoCache[placeName] = url;
+          if (placeholderId) applyPhoto(placeholderId, url);
+          if (callback) callback(url);
+        }
+      }
+    );
+  } catch (e) {
+    console.warn('[Photo]', placeName, e.message);
+  }
+}
+
+function applyPhoto(placeholderId, url) {
+  const ph = document.getElementById(placeholderId);
+  if (!ph) return;
+  const img = document.createElement('img');
+  img.className = 'place-thumb';
+  img.src = url;
+  img.alt = '';
+  img.loading = 'lazy';
+  img.onerror = () => { /* 실패 시 placeholder 유지 */ };
+  ph.replaceWith(img);
+}
+
+// ── 프롬프트 빌드 ──────────────────────────────────
+function buildPrompt(dest, dur, spaceTypes) {
+  const typeList = spaceTypes.join(', ');
+  const typeCount = spaceTypes.length;
+  return `너는 대한민국 전문 여행가이드이자 베테랑 운전사야.
+
+목적지: ${dest}
+기간: ${dur}
+선택된 공간 유형: ${typeList}
+
+아래 조건으로 여행 계획을 세워줘:
+
+[조건]
+1. 반드시 아래 공간 유형(${typeList}) 안에서만 장소를 선정해줘. 선택된 유형이 ${typeCount}개이면 각 유형이 고르게 포함되도록 비율을 맞춰줘.
+2. 구글 맵 평점 4.0 이상 검증된 장소만 포함해줘.
+3. 자동차 도로 주행 방향 기준 U턴 없이 물 흐르듯 이어지는 최적 동선으로 설계해줘.
+4. 각 일자별 장소는 물리적 거리와 도로 진출입이 용이한 순서로 배치해줘.
+
+[출력 형식] 반드시 아래 JSON 형식으로만 응답해줘. 다른 텍스트 없이 JSON 코드블록만:
+
+\`\`\`json
+[
+  {
+    "day": 1,
+    "places": [
+      {
+        "name": "장소명",
+        "category": "${spaceTypes[0] || '명소'}",
+        "rating": 4.5,
+        "tip": "특징 및 한 줄 팁",
+        "duration": "1시간",
+        "lat": 37.1234,
+        "lng": 126.5678,
+        "photoUrl": "https://www.google.com/search?q=장소명+${dest}&tbm=isch"
+      }
+    ]
+  }
+]
+\`\`\`
+
+각 장소의 위도(lat)/경도(lng)는 실제 좌표를 최대한 정확하게 넣어줘.
+${dur}에 맞춰 일자 수를 맞춰줘 (당일치기=1일, 1박2일=2일, 2박3일=3일, 3박4일=4일, 4박5일=5일).
+하루에 4~6개 장소를 배치해줘.`;
+}
+
+// ── 일정 렌더링 ────────────────────────────────────
+function renderSchedule(dest, dur) {
+  const container = document.getElementById('schedule-result');
+  container.innerHTML = '';
+
+  tripData.forEach((day, di) => {
+    const color = DAY_COLORS[di % DAY_COLORS.length];
+    const section = document.createElement('div');
+    section.className = 'day-section';
+
+    // 헤더
+    const hdr = document.createElement('div');
+    hdr.className = 'day-header';
+    hdr.innerHTML = `
+      <div class="day-badge" style="background:${color}22;color:${color};border:1.5px solid ${color}">D${day.day}</div>
+      <div class="day-title">${dest} ${day.day}일차</div>
+      <div class="day-subtitle">${day.places.length}개 장소</div>
+    `;
+    section.appendChild(hdr);
+
+    // 카드들
+    day.places.forEach((p, pi) => {
+      const card = document.createElement('div');
+      card.className = 'place-card';
+      card.id = `card-d${di}-p${pi}`;
+      card.dataset.di = di;
+      card.dataset.pi = pi;
+
+      const isHistory = p.category && (p.category.includes('유적') || p.category.includes('역사') || p.category.includes('문화'));
+      const catColor = isHistory ? '#c9a84c' : '#27ae60';
+      const emoji = getCategoryEmoji(p.category);
+
+      // 썸네일 placeholder 먼저 렌더, 이후 Places API로 교체
+      card.innerHTML = `
+        <div class="place-thumb-placeholder" id="thumb-ph-d${di}-p${pi}">
+          <span>${emoji}</span>
+        </div>
+        <div class="place-card-body">
+          <div class="place-num" style="background:${color}">${pi+1}</div>
+          <div class="place-info">
+            <div class="place-name">${p.name}</div>
+            <div class="place-meta">
+              <span class="place-cat" style="color:${catColor};border-color:${catColor}22;background:${catColor}11">${p.category||'명소'}</span>
+              <span class="place-rating">★ ${p.rating||'4.0+'}</span>
+              <span class="place-time">⏱ ${p.duration||'1시간'}</span>
+            </div>
+            ${p.address  ? `<div class="place-detail-row">📍 ${p.address}</div>`  : ''}
+            ${p.phone    ? `<div class="place-detail-row">📞 ${p.phone}</div>`    : ''}
+            ${p.hours    ? `<div class="place-detail-row">🕐 ${p.hours}</div>`    : ''}
+            ${p.fee      ? `<div class="place-detail-row">🎟 ${p.fee}</div>`      : ''}
+            ${p.website  ? `<div class="place-detail-row">🌐 <a href="${p.website}" target="_blank" style="color:#c9a84c;text-decoration:none">공식 홈페이지</a></div>` : ''}
+            <div class="place-tip">${p.tip||''}</div>
+          </div>
+        </div>
+      `;
+      section.appendChild(card);
+
+      // 다음 장소로의 이동 배너 (마지막 장소 제외)
+      const travelMin = p._travelMin || p.travel_min;
+      const distKm    = p._distKm;
+      if (pi < day.places.length - 1 && travelMin > 0) {
+        const banner = document.createElement('div');
+        banner.className = 'travel-banner';
+        banner.innerHTML = `
+          <span class="travel-line"></span>
+          <span class="travel-info">
+            🚗 이동 ${travelMin}분
+            ${distKm ? `<span class="travel-dist">(약 ${distKm}km)</span>` : ''}
+          </span>
+          <span class="travel-line"></span>
+        `;
+        section.appendChild(banner);
+      }
+
+      // Places API로 사진 비동기 로드
+      loadPlacePhoto(p.name, `thumb-ph-d${di}-p${pi}`, emoji, (photoUrl) => {
+        p._photoUrl = photoUrl; // 인포윈도우에서 재사용
+      });
+    });
+
+    container.appendChild(section);
+  });
+
+  switchTab('schedule');
+}
+
+// ── 표 렌더링 ──────────────────────────────────────
+function renderTable() {
+  const panel = document.getElementById('table-panel');
+  if (!tripData || tripData.length === 0) return;
+
+  let html = `<table id="schedule-table">
+    <thead><tr>
+      <th>일자</th><th>장소명</th><th>카테고리</th>
+      <th>평점</th><th>대표 이미지</th><th>특징 & 팁</th><th>체류시간</th>
+    </tr></thead><tbody>`;
+
+  tripData.forEach((day, di) => {
+    const color = DAY_COLORS[di % DAY_COLORS.length];
+    day.places.forEach((p, pi) => {
+      const urlCellId = `tbl-url-d${di}-p${pi}`;
+      const urlVal = p._photoUrl
+        ? `<a href="${p._photoUrl}" target="_blank" style="color:#2980b9;font-size:10px;word-break:break-all">${p._photoUrl}</a>`
+        : `<span id="${urlCellId}" style="color:rgba(245,240,232,0.3);font-size:10px">로딩 중…</span>`;
+
+      html += `<tr>
+        <td style="color:${color};font-weight:700;white-space:nowrap">${day.day}일차</td>
+        <td style="font-weight:600;color:#f5f0e8">${p.name}</td>
+        <td>${p.category||'-'}</td>
+        <td style="color:#c9a84c">★ ${p.rating||'-'}</td>
+        <td style="max-width:200px">${urlVal}</td>
+        <td>${p.tip||'-'}</td>
+        <td style="white-space:nowrap">${p.duration||'-'}</td>
+      </tr>`;
+    });
+  });
+
+  html += '</tbody></table>';
+  panel.innerHTML = html;
+
+  // 아직 로드 안 된 사진 — 완료되면 셀 URL 업데이트
+  tripData.forEach((day, di) => {
+    day.places.forEach((p, pi) => {
+      if (p._photoUrl) return; // 이미 있으면 skip
+      const cellId = `tbl-url-d${di}-p${pi}`;
+      loadPlacePhoto(p.name, null, getCategoryEmoji(p.category), (url) => {
+        p._photoUrl = url;
+        const cell = document.getElementById(cellId);
+        if (cell) {
+          cell.outerHTML = `<a href="${url}" target="_blank" style="color:#2980b9;font-size:10px;word-break:break-all">${url}</a>`;
+        }
+      });
+    });
+  });
+}
+
+// ── 지도에 핀/경로 표시 ────────────────────────────
+function plotOnMap() {
+  if (!map || !tripData) return;
+
+  const bounds = new google.maps.LatLngBounds();
+  const legendItems = document.getElementById('legend-items');
+  legendItems.innerHTML = '';
+
+  tripData.forEach((day, di) => {
+    const color = DAY_COLORS[di % DAY_COLORS.length];
+    const pathCoords = [];
+
+    // 범례
+    legendItems.innerHTML += `
+      <div class="legend-item" data-day="${di}" style="cursor:pointer">
+        <div class="legend-dot" style="background:${color}"></div>
+        <div class="legend-label">${day.day}일차 (${day.places.length}곳)</div>
+      </div>`;
+
+    day.places.forEach((p, pi) => {
+      if (!p.lat || !p.lng) return;
+      const pos = { lat: parseFloat(p.lat), lng: parseFloat(p.lng) };
+      pathCoords.push(pos);
+      bounds.extend(pos);
+
+      // 커스텀 마커 SVG — 핀 + 하단 지명 라벨
+      const label    = p.name.length > 8 ? p.name.slice(0, 8) + '…' : p.name;
+      const charW    = 7.2;   // 글자당 평균 px (한글 기준)
+      const labelW   = Math.max(label.length * charW + 16, 60);
+      const labelX   = labelW / 2;
+      const totalH   = 46 + 6 + 20; // 핀 높이 + 간격 + 라벨 높이
+      const svgW     = Math.max(labelW + 4, 40);
+      const pinOffX  = svgW / 2 - 18;  // 핀을 중앙에 정렬
+
+      const svg = `
+        <svg width="${svgW}" height="${totalH}" viewBox="0 0 ${svgW} ${totalH}" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="ds${di}${pi}">
+              <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-opacity="0.35"/>
+            </filter>
+          </defs>
+          <!-- 핀 -->
+          <g transform="translate(${pinOffX},0)" filter="url(#ds${di}${pi})">
+            <path d="M18 0C8.06 0 0 8.06 0 18c0 12 18 28 18 28S36 30 36 18C36 8.06 27.94 0 18 0z"
+                  fill="${color}"/>
+            <circle cx="18" cy="18" r="10" fill="white" opacity="0.92"/>
+            <text x="18" y="23" text-anchor="middle" font-size="11" font-weight="700"
+                  font-family="monospace" fill="${color}">${pi+1}</text>
+          </g>
+          <!-- 지명 라벨 배경 -->
+          <rect x="0" y="52" width="${labelW}" height="18" rx="9"
+                fill="${color}" opacity="0.92" filter="url(#ds${di}${pi})"/>
+          <!-- 지명 텍스트 -->
+          <text x="${labelX}" y="65" text-anchor="middle"
+                font-size="9.5" font-weight="600" fill="white"
+                font-family="'Noto Sans KR', sans-serif">${label}</text>
+        </svg>`;
+
+      const marker = new google.maps.Marker({
+        position: pos, map,
+        icon: {
+          url: 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg),
+          anchor: new google.maps.Point(svgW / 2, 46),
+          scaledSize: new google.maps.Size(svgW, totalH)
+        },
+        title: p.name,
+        zIndex: 100 + pi
+      });
+
+      // 인포윈도우 — 지명 배너 + 대표사진 + YouTube + 상세 정보
+      const iwId   = `iw-img-d${di}-p${pi}`;
+      const iwYtId = `iw-yt-d${di}-p${pi}`;
+
+      const infoRow = (icon, val) =>
+        val ? `<div class="iw-info-row"><span class="iw-info-icon">${icon}</span><span class="iw-info-val">${val}</span></div>` : '';
+
+      const iw = new google.maps.InfoWindow({
+        maxWidth: 320,
+        content: `
+          <div class="info-window" style="width:300px;overflow:hidden;border-radius:10px;font-family:'Noto Sans KR',sans-serif;">
+            <!-- ① 지명 배너 -->
+            <div class="iw-name-banner" style="background:${color};">
+              <div class="iw-num" style="background:rgba(0,0,0,0.25)">${pi+1}</div>
+              <div class="iw-title">${p.name}</div>
+            </div>
+
+            <!-- ② 대표 사진 -->
+            <div class="iw-img-placeholder" id="${iwId}" style="height:150px;">
+              <span>${getCategoryEmoji(p.category)}</span>
+            </div>
+
+            <!-- ③ YouTube -->
+            <div class="iw-yt-wrap" id="${iwYtId}">
+              <div class="iw-yt-label">▶ YouTube</div>
+              <div class="iw-yt-frame-wrap">
+                <div style="width:300px;height:168px;background:#111;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;">
+                  <div style="width:40px;height:40px;border:3px solid #555;border-top-color:#fff;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+                  <span style="color:#666;font-size:11px;">영상 로딩 중…</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- ④ 메타 뱃지 -->
+            <div class="iw-header">
+              <span class="iw-header-badge" style="background:${color}88">${p.category||'명소'}</span>
+              <span style="color:${color};font-size:11px;font-weight:700">★ ${p.rating||'-'}</span>
+              <span style="color:rgba(245,240,232,0.45);font-size:10px;margin-left:auto">⏱ ${p.duration||'-'}</span>
+            </div>
+
+            <!-- ⑤ 상세 정보 -->
+            <div class="iw-body">
+              ${infoRow('📍', p.address)}
+              ${infoRow('📞', p.phone)}
+              ${infoRow('🕐', p.hours)}
+              ${infoRow('🎟', p.fee)}
+              ${p.website ? `<div class="iw-info-row"><span class="iw-info-icon">🌐</span><a href="${p.website}" target="_blank" class="iw-info-val" style="color:#2980b9">공식 홈페이지</a></div>` : ''}
+              ${p.tip ? `<div class="iw-tip">💡 ${p.tip}</div>` : ''}
+            </div>
+          </div>`
+      });
+
+      marker.addListener('click', () => {
+        infoWindows.forEach(w => w.close());
+        iw.open(map, marker);
+
+        google.maps.event.addListenerOnce(iw, 'domready', () => {
+          // ── 대표 사진 로드 ──
+          const ph = document.getElementById(iwId);
+          if (ph) {
+            if (p._photoUrl) {
+              const img = document.createElement('img');
+              img.className = 'iw-img';
+              img.src = p._photoUrl; img.alt = p.name;
+              img.style.cssText = 'width:100%;height:150px;object-fit:cover;display:block;';
+              ph.replaceWith(img);
+            } else {
+              loadPlacePhoto(p.name, iwId, getCategoryEmoji(p.category), (url) => {
+                p._photoUrl = url;
+              });
+            }
+          }
+
+          // ── YouTube 영상 embed ──
+          loadYouTubeEmbed(p.name, iwYtId, p.youtube_id || '');
+        });
+      });
+
+      markers.push({ marker, dayIdx: di, placeIdx: pi });
+      infoWindows.push(iw);
+    });
+
+    // 경로선
+    if (pathCoords.length > 1) {
+      const poly = new google.maps.Polyline({
+        path: pathCoords, map,
+        strokeColor: color,
+        strokeOpacity: 0.75,
+        strokeWeight: 3,
+        icons: [{
+          icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale: 3, strokeWeight: 1.5 },
+          offset: '50%', repeat: '120px'
+        }]
+      });
+      polylines.push({ poly, dayIdx: di });
+    }
+  });
+
+  map.fitBounds(bounds);
+}
+
+// ── 특정 마커 포커스 ───────────────────────────────
+function focusMarker(di, pi) {
+  const found = markers.find(m => m.dayIdx === di && m.placeIdx === pi);
+  if (!found) return;
+  map.panTo(found.marker.getPosition());
+  map.setZoom(15);
+  infoWindows.forEach(w => w.close());
+  infoWindows[markers.indexOf(found)].open(map, found.marker);
+
+  document.querySelectorAll('.place-card').forEach(c => c.classList.remove('active'));
+  const card = document.getElementById(`card-d${di}-p${pi}`);
+  if (card) { card.classList.add('active'); card.scrollIntoView({ behavior:'smooth', block:'nearest' }); }
+}
+
+// ── 일차 토글 ──────────────────────────────────────
+function toggleDay(di) {
+  const dayMarkers   = markers.filter(m => m.dayIdx === di);
+  const dayPolylines = polylines.filter(p => p.dayIdx === di);
+  const visible = dayMarkers[0]?.marker.getVisible();
+  dayMarkers.forEach(m => m.marker.setVisible(!visible));
+  dayPolylines.forEach(p => p.poly.setVisible(!visible));
+}
+
+// ── 지도 초기화 ────────────────────────────────────
+function clearMap() {
+  markers.forEach(m => m.marker.setMap(null));
+  polylines.forEach(p => p.poly.setMap(null));
+  infoWindows.forEach(w => w.close());
+  markers = []; polylines = []; infoWindows = [];
+  document.getElementById('schedule-result').innerHTML = '';
+  document.getElementById('map-legend').style.display = 'none';
+}
+
+// ── KML 생성 ───────────────────────────────────────
+function generateKML(dest) {
+  if (!tripData) return;
+
+  const colorMap = { 0:'ff2050e0', 1:'ffff6600', 2:'ff14b400', 3:'ffAA00AA', 4:'ff008080' };
+  // KML pin color (abgr): day1=빨, day2=파, day3=노
+  const pinColors = ['ff0000ff','ffff4422','ff00aaff','ff9900cc','ff00aa44'];
+
+  let kml = `<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+  <name>${dest} 여행 계획</name>
+  <description>AI 여행 플래너로 생성된 ${dest} 여행 일정</description>\n`;
+
+  // 스타일 정의
+  tripData.forEach((day, di) => {
+    const pc = pinColors[di % pinColors.length];
+    const lc = ['ff3333cc','ff0088ff','ff00ccff','ffaa55ff','ff55cc55'][di % 5];
+    kml += `  <Style id="pin_day${day.day}">
+    <IconStyle>
+      <color>${pc}</color>
+      <scale>1.2</scale>
+      <Icon><href>http://maps.google.com/mapfiles/kml/paddle/${di+1}.png</href></Icon>
+    </IconStyle>
+    <LabelStyle><scale>0.9</scale></LabelStyle>
+  </Style>
+  <Style id="line_day${day.day}">
+    <LineStyle><color>${lc}</color><width>3</width></LineStyle>
+  </Style>\n`;
+  });
+
+  tripData.forEach((day, di) => {
+    kml += `  <Folder>
+    <name>${day.day}일차</name>
+    <description>${dest} ${day.day}일차 여행 코스</description>\n`;
+
+    // 핀
+    day.places.forEach((p, pi) => {
+      kml += `    <Placemark>
+      <name>${pi+1}. ${p.name}</name>
+      <description><![CDATA[
+        <b>카테고리:</b> ${p.category||'-'}<br/>
+        <b>평점:</b> ★ ${p.rating||'-'}<br/>
+        <b>체류시간:</b> ${p.duration||'-'}<br/>
+        <b>특징:</b> ${p.tip||'-'}
+      ]]></description>
+      <styleUrl>#pin_day${day.day}</styleUrl>
+      <Point><coordinates>${p.lng||0},${p.lat||0},0</coordinates></Point>
+    </Placemark>\n`;
+    });
+
+    // 경로선
+    const validPlaces = day.places.filter(p => p.lat && p.lng);
+    if (validPlaces.length > 1) {
+      const coords = validPlaces.map(p => `${p.lng},${p.lat},0`).join('\n          ');
+      kml += `    <Placemark>
+      <name>${day.day}일차 경로</name>
+      <styleUrl>#line_day${day.day}</styleUrl>
+      <LineString>
+        <tessellate>1</tessellate>
+        <coordinates>
+          ${coords}
+        </coordinates>
+      </LineString>
+    </Placemark>\n`;
+    }
+
+    kml += `  </Folder>\n`;
+  });
+
+  kml += `</Document>\n</kml>`;
+  currentKML = kml;
+
+  const output = document.getElementById('kml-output');
+  output.textContent = kml;
+}
+
+// ── KML 복사 ───────────────────────────────────────
+function copyKML() {
+  if (!currentKML) { showToast('먼저 여행 계획을 생성해주세요.'); return; }
+
+  // Clipboard API (https/localhost)
+  if (navigator.clipboard && window.isSecureContext) {
+    navigator.clipboard.writeText(currentKML)
+      .then(() => showToast('✅ KML 코드가 클립보드에 복사되었습니다!'))
+      .catch(() => fallbackCopy());
+  } else {
+    fallbackCopy();
+  }
+}
+
+function fallbackCopy() {
+  const ta = document.createElement('textarea');
+  ta.value = currentKML;
+  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try {
+    document.execCommand('copy');
+    showToast('✅ KML 코드가 클립보드에 복사되었습니다!');
+  } catch {
+    showToast('복사 실패 — KML 탭에서 직접 선택 후 복사해주세요.');
+  }
+  document.body.removeChild(ta);
+}
+
+// ── KML 다운로드 ───────────────────────────────────
+function downloadKML() {
+  if (!currentKML) { showToast('먼저 여행 계획을 생성해주세요.'); return; }
+  const dest = document.getElementById('dest-input').value.trim() || 'travel';
+  try {
+    // Blob → Object URL 방식 (한글 포함 UTF-8 안전)
+    const blob = new Blob(['\uFEFF' + currentKML], { type: 'text/xml;charset=utf-8' });
+    const objUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objUrl;
+    a.download = `${dest}_여행계획.kml`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    // 메모리 해제 (짧은 딜레이 후)
+    setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
+    showToast('📥 KML 파일 다운로드를 시작합니다.');
+  } catch(e) {
+    console.error('downloadKML error:', e);
+    showToast('다운로드 실패: ' + e.message);
+  }
+}
+
+// ── 로딩 토글 ──────────────────────────────────────
+function setLoading(v) {
+  document.getElementById('welcome').style.display = 'none';
+  document.getElementById('loading').style.display = v ? 'flex' : 'none';
+  document.getElementById('plan-btn').disabled = v;
+  document.getElementById('plan-btn').textContent = v ? '생성 중…' : '✦ 여행 계획 생성';
+}
+
+function setLoadingMsg(msg) {
+  const el = document.querySelector('.loading-text');
+  if (el) el.textContent = msg;
+}
+
+function showError(msg) {
+  const container = document.getElementById('schedule-result');
+  container.innerHTML = `
+    <div style="padding:32px 24px;text-align:center">
+      <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+      <div style="color:#e74c3c;font-size:14px;font-weight:600;margin-bottom:10px">오류가 발생했습니다</div>
+      <div style="color:rgba(245,240,232,0.5);font-size:12px;line-height:1.7;white-space:pre-wrap;text-align:left;background:rgba(0,0,0,0.3);border-radius:8px;padding:12px 16px;border:1px solid rgba(231,76,60,0.3)">${msg}</div>
+      <div style="margin-top:16px;color:rgba(245,240,232,0.35);font-size:11px">다시 시도하거나 목적지를 바꿔보세요.</div>
+    </div>`;
+  switchTab('schedule');
+}
+
+// ── 토스트 ─────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── 이벤트 바인딩 (DOMContentLoaded) ──────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // 장소 카드 클릭 (이벤트 위임)
+  document.getElementById('schedule-result')
+    .addEventListener('click', e => {
+      const card = e.target.closest('.place-card[data-di]');
+      if (card) focusMarker(Number(card.dataset.di), Number(card.dataset.pi));
+    });
+
+  // Gemini API 키 localStorage 복원
+  const savedKey = localStorage.getItem('gemini_api_key');
+  if (savedKey) {
+    const el = document.getElementById('gemini-key-input');
+    if (el) el.value = savedKey;
+    const ks = document.getElementById('gemini-key-status');
+    if (ks) { ks.textContent = '✓ 저장됨'; ks.className = 'key-status ok'; }
+  }
+
+  // Gemini 키 저장 버튼
+  document.getElementById('gemini-save-btn').addEventListener('click', () => {
+    const val = document.getElementById('gemini-key-input').value.trim();
+    const ks  = document.getElementById('gemini-key-status');
+    if (!val || !val.startsWith('AIza')) {
+      ks.textContent = '유효하지 않은 키'; ks.className = 'key-status err';
+      showToast('AIzaSy… 형식의 Gemini API 키를 입력해주세요.');
+      return;
+    }
+    localStorage.setItem('gemini_api_key', val);
+    ks.textContent = '✓ 저장됨'; ks.className = 'key-status ok';
+    showToast('✅ Gemini API 키가 저장되었습니다.');
+  });
+
+  // Gemini 키 초기화 버튼
+  document.getElementById('gemini-clear-btn').addEventListener('click', () => {
+    localStorage.removeItem('gemini_api_key');
+    document.getElementById('gemini-key-input').value = '';
+    const ks = document.getElementById('gemini-key-status');
+    ks.textContent = '초기화됨'; ks.className = 'key-status';
+    showToast('🗑 Gemini API 키가 초기화되었습니다.');
+  });
+
+  // ── YouTube API 키 복원 ──
+  const savedYtKey = localStorage.getItem('yt_api_key');
+  if (savedYtKey) {
+    const el = document.getElementById('yt-key-input');
+    if (el) el.value = savedYtKey;
+    const ks = document.getElementById('yt-key-status');
+    if (ks) { ks.textContent = '✓ 저장됨'; ks.className = 'key-status ok'; }
+  }
+
+  // YouTube 키 저장 버튼
+  document.getElementById('yt-save-btn').addEventListener('click', () => {
+    const val = document.getElementById('yt-key-input').value.trim();
+    const ks  = document.getElementById('yt-key-status');
+    if (!val || !val.startsWith('AIza')) {
+      ks.textContent = '유효하지 않은 키'; ks.className = 'key-status err';
+      showToast('AIzaSy… 형식의 YouTube API 키를 입력해주세요.');
+      return;
+    }
+    localStorage.setItem('yt_api_key', val);
+    ks.textContent = '✓ 저장됨'; ks.className = 'key-status ok';
+    showToast('✅ YouTube API 키가 저장되었습니다.');
+  });
+
+  // YouTube 키 초기화 버튼
+  document.getElementById('yt-clear-btn').addEventListener('click', () => {
+    localStorage.removeItem('yt_api_key');
+    document.getElementById('yt-key-input').value = '';
+    const ks = document.getElementById('yt-key-status');
+    ks.textContent = '초기화됨'; ks.className = 'key-status';
+    showToast('🗑 YouTube API 키가 초기화되었습니다.');
+  });
+
+  // 생성 버튼
+  document.getElementById('plan-btn')
+    .addEventListener('click', generatePlan);
+
+  // 엔터키
+  document.getElementById('dest-input')
+    .addEventListener('keydown', e => { if (e.key === 'Enter') generatePlan(); });
+
+  // 공간 유형 칩
+  document.getElementById('space-chips')
+    .addEventListener('click', e => {
+      const chip = e.target.closest('.space-chip');
+      if (chip) toggleChip(chip);
+    });
+
+  // 탭 버튼
+  document.getElementById('tabs')
+    .addEventListener('click', e => {
+      const btn = e.target.closest('.tab-btn');
+      if (btn) switchTab(btn.dataset.tab);
+    });
+
+  // KML 버튼 — 부모에 이벤트 위임 (display:none 여부 무관하게 동작)
+  document.getElementById('kml-panel')
+    .addEventListener('click', e => {
+      if (e.target.closest('#copy-kml-btn'))     copyKML();
+      if (e.target.closest('#download-kml-btn')) downloadKML();
+    });
+
+  // 범례 토글 (지도 위 동적 생성 요소 — 이벤트 위임)
+  document.getElementById('map-legend')
+    .addEventListener('click', e => {
+      const item = e.target.closest('.legend-item[data-day]');
+      if (item) toggleDay(Number(item.dataset.day));
+    });
+});
+</script>
+
+<!-- Google Maps API (메인 스크립트 뒤에 위치 — initMap이 먼저 정의된 후 로드) -->
+<!-- 키는 메인 설정(google_maps_key) 우선, 없으면 기본값 -->
+<script>
+(function(){
+  var mk = '';
+  try { mk = localStorage.getItem('google_maps_key') || ''; } catch(_) {}
+  if (!mk || mk.indexOf('AIza') !== 0) mk = 'AIzaSyBpEN79WD3IRpzZ9LngdW-IKVYCImlmEPo';
+  var s = document.createElement('script');
+  s.src = 'https://maps.googleapis.com/maps/api/js?key=' + mk + '&libraries=places&callback=initMap&language=ko&loading=async';
+  s.async = true;
+  document.body.appendChild(s);
+})();
+</script>
+<!-- YouTube IFrame Player API -->
+<script src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>

@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.5</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.6</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -2013,6 +2013,19 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
   <p style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">메뉴 <b>📈 대학통계</b> 대시보드는 이 키가 있어야 작동합니다. 키는 이 브라우저에만 저장되며 Anthropic API로만 전송됩니다. <a href="https://console.anthropic.com/settings/keys" target="_blank" style="color:var(--accent2)">키 발급 →</a></p>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
+  <div class="settings-title" style="font-size:.9rem;">🗺️ 여행 교통 API (AI 여행 플래너)</div>
+  <input id="geminiApiKey" type="password" placeholder="Gemini API 키 (AIza...)" autocomplete="off"
+    style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;font-family:Consolas,monospace;"
+    oninput="localStorage.setItem('gemini_api_key', this.value.trim());">
+  <input id="ytApiKey" type="password" placeholder="YouTube Data API 키 (AIza...)" autocomplete="off"
+    style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;font-family:Consolas,monospace;"
+    oninput="localStorage.setItem('yt_api_key', this.value.trim());">
+  <input id="gmapsApiKey" type="password" placeholder="Google Maps API 키 (AIza...)" autocomplete="off"
+    style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;font-family:Consolas,monospace;"
+    oninput="localStorage.setItem('google_maps_key', this.value.trim());">
+  <p style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">메뉴 <b>🗺️ 여행 교통</b>의 장소 검색(Gemini)·영상(YouTube)·지도(Maps)에 사용됩니다. 비워두면 내장 기본 키로 작동합니다. 키는 이 브라우저에만 저장됩니다.</p>
+
+  <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
   <div class="settings-title" style="font-size:.9rem;">🎙 ElevenLabs API (시 낭송)</div>
   <input id="elevenApiKey" type="password" placeholder="ElevenLabs API 키" autocomplete="off"
     style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;"
@@ -2188,6 +2201,7 @@ let state = {
     { id: 'univstats', name: '대학통계',   emoji: '📈', special: 'univstats' },
     { id: 'lawai',    name: '법령 AI',     emoji: '⚖️', special: 'lawai' },
     { id: 'ai',       name: 'AI',          emoji: '🤖' },
+    { id: 'travel',   name: '여행 교통',   emoji: '🗺️', special: 'travel', pinned: true },
     { id: 'mybm',     name: '내 북마크',   emoji: '🔖' },
     { id: 'youtube',  name: 'AI YouTube',  emoji: '▶️' },
     { id: 'poems',    name: '좋아하는 시', emoji: '📜', special: 'poems' },
@@ -3919,7 +3933,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v16.5 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v16.6 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6248,6 +6262,20 @@ const MOE_LANDLINE = {
   "장관":"044-203-6007"
 };
 
+// 여행 교통 — AI 여행 플래너를 본문 영역에 임베드(헤더·시계·위젯 유지)
+function renderTravelView() {
+  const grid = document.getElementById('linksGrid');
+  const title = document.getElementById('sectionTitle');
+  const addBtn = document.getElementById('addLinkHeaderBtn');
+  if (addBtn) addBtn.style.display = 'none';
+  if (title) title.textContent = '🗺️ 여행 교통 — AI 여행 플래너';
+  if (grid) {
+    grid.classList.remove('univall-mode');
+    grid.innerHTML = `<iframe src="travel.html" title="AI 여행 플래너"
+      style="grid-column:1/-1;width:100%;height:calc(100vh - 210px);min-height:600px;border:1px solid var(--border);border-radius:12px;display:block;background:#1a1a2e"
+      allow="clipboard-write"></iframe>`;
+  }
+}
 function renderGovView() {
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
@@ -10423,6 +10451,12 @@ function renderLinks() {
   // Special: 정부·정책 뷰
   if (state.activeCat === 'gov') {
     renderGovView();
+    return;
+  }
+
+  // Special: 여행 교통 (AI 여행 플래너 — 본문 영역 임베드)
+  if (state.activeCat === 'travel') {
+    renderTravelView();
     return;
   }
 
@@ -27952,6 +27986,7 @@ render();
  () => { const p = document.getElementById('profileSel'); if (p) p.value = localStorage.getItem('active_profile') || ''; },
  () => { const k = document.getElementById('kciApiKey'); if (k) k.value = localStorage.getItem('kci_api_key') || ''; },
  () => { const k = document.getElementById('claudeApiKey'); if (k) k.value = localStorage.getItem('claude_api_key') || ''; },
+ () => { const g = document.getElementById('geminiApiKey'); if (g) g.value = localStorage.getItem('gemini_api_key') || ''; const y = document.getElementById('ytApiKey'); if (y) y.value = localStorage.getItem('yt_api_key') || ''; const mp = document.getElementById('gmapsApiKey'); if (mp) mp.value = localStorage.getItem('google_maps_key') || ''; },
  () => { const k = document.getElementById('elevenApiKey'); if (k) k.value = localStorage.getItem('eleven_api_key') || ''; const v = document.getElementById('elevenVoiceId'); if (v) v.value = localStorage.getItem('eleven_voice_id') || ''; },
  () => { let kws=[]; try{kws=JSON.parse(localStorage.getItem('book_keywords')||'[]');}catch(_){} ['bookKw1','bookKw2','bookKw3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=kws[i]||'';}); },
  () => { let ts=[]; try{ts=JSON.parse(localStorage.getItem('youtube_topics')||'[]');}catch(_){} ['ytTopic1','ytTopic2','ytTopic3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=ts[i]||'';}); },
