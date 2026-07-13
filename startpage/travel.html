@@ -652,6 +652,22 @@ body.light-mode select option { background: #ffffff !important; color: #1f2328 !
   font-weight: 500;
 }
 
+/* ── 식사 포함 체크 ── */
+#meal-chips { display: flex; gap: 8px; }
+.meal-chk {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 12px; color: var(--muted-text);
+  cursor: pointer; user-select: none; white-space: nowrap;
+}
+.meal-chk input { accent-color: var(--gold); cursor: pointer; margin: 0; }
+body.light-mode .meal-chk { color: #55503f !important; }
+.meal-badge {
+  font-size: 10px; font-weight: 600;
+  padding: 1px 6px; border-radius: 10px;
+  background: rgba(231,111,81,0.15); color: #e76f51;
+  vertical-align: middle; white-space: nowrap;
+}
+
 .api-key-group { gap: 6px !important; }
 .gemini-key-group { gap: 6px !important; }
 .yt-key-group { gap: 6px !important; }
@@ -798,6 +814,13 @@ body.light-mode select option { background: #ffffff !important; color: #1f2328 !
         <span class="space-chip" data-val="야경/드라이브">🌙 야경</span>
         <span class="space-chip" data-val="휴양림">🌲 휴양림</span>
         <span class="space-chip" data-val="수목원">🌸 수목원</span>
+      </div>
+    </div>
+    <div class="input-group" id="meal-group">
+      <label>식사 포함</label>
+      <div id="meal-chips">
+        <label class="meal-chk"><input type="checkbox" id="meal-lunch" checked> 🍚 점심</label>
+        <label class="meal-chk"><input type="checkbox" id="meal-dinner" checked> 🍖 저녁</label>
       </div>
     </div>
     <button id="plan-btn">✦ 여행 계획 생성</button>
@@ -1017,9 +1040,16 @@ async function generatePlan() {
   const dur          = document.getElementById('duration-select').value;
   const spaceTypes   = getSelectedSpaceTypes();
   const perDay       = parseInt(document.getElementById('places-per-day').value, 10) || 4;
+  const meals        = {
+    lunch:  !!document.getElementById('meal-lunch')?.checked,
+    dinner: !!document.getElementById('meal-dinner')?.checked
+  };
 
   if (!dest) { showToast('목적지를 입력해주세요.'); return; }
   if (spaceTypes.length === 0) { showToast('공간 유형을 1개 이상 선택해주세요.'); return; }
+
+  // 식사 포함 시 맛집 유형 자동 보장
+  if ((meals.lunch || meals.dinner) && !spaceTypes.includes('맛집')) spaceTypes.push('맛집');
 
   setLoading(true);
   clearMap();
@@ -1027,11 +1057,13 @@ async function generatePlan() {
   try {
     const dayMap = {'당일치기':1,'1박 2일':2,'2박 3일':3,'3박 4일':4,'4박 5일':5};
     const numDays     = dayMap[dur] || 2;
-    const totalNeeded = numDays * perDay;
+    const mealCount   = (meals.lunch ? 1 : 0) + (meals.dinner ? 1 : 0);
+    const dayPlaces   = perDay + mealCount;           // 식사 맛집만큼 하루 장소 추가
+    const totalNeeded = numDays * dayPlaces;
 
     // Claude AI로 직접 검색 (항상 실시간)
     setLoadingMsg(`Claude AI로 "${dest}" 여행지 검색 중…`);
-    let allPlaces = await searchWithGemini(dest, spaceTypes, totalNeeded);
+    let allPlaces = await searchWithGemini(dest, spaceTypes, totalNeeded, { meals, numDays, perDay: dayPlaces });
 
     // 실패 시 내장 DB 폴백
     if (!allPlaces.length) {
@@ -1046,7 +1078,7 @@ async function generatePlan() {
     }
 
     setLoadingMsg(`${allPlaces.length}개 장소 검색 완료 — 지도 표시 중…`);
-    tripData = distributeStrict(allPlaces, numDays, perDay);
+    tripData = distributeStrict(allPlaces, numDays, dayPlaces);
     await new Promise(r => setTimeout(r, 80));
 
     renderSchedule(dest, dur);
@@ -1088,7 +1120,9 @@ function extractBalancedObjects(s) {
   return objs;
 }
 
-async function searchWithGemini(dest, spaceTypes, count) {
+async function searchWithGemini(dest, spaceTypes, count, opts) {
+  opts = opts || {};
+  const meals = opts.meals || { lunch: false, dinner: false };
   const ks = document.getElementById('gemini-key-status');
   // 메인 설정(claude_api_key) 사용 — Claude API로 장소 검색
   const apiKey = (localStorage.getItem('claude_api_key') || '').trim();
@@ -1102,8 +1136,17 @@ async function searchWithGemini(dest, spaceTypes, count) {
   if (ks) { ks.textContent = '검색 중…'; ks.className = 'key-status'; }
 
   const typeList = spaceTypes.join(', ');
-  const perDay = Math.round(count / Math.max(1, Math.ceil(count / 5)));
-  const numDays = Math.ceil(count / perDay);
+  const perDay = opts.perDay || Math.round(count / Math.max(1, Math.ceil(count / 5)));
+  const numDays = opts.numDays || Math.ceil(count / perDay);
+
+  // 식사 배치 지시 (점심/저녁 체크 시)
+  const mealList = [meals.lunch && '점심', meals.dinner && '저녁'].filter(Boolean);
+  const mealBlock = mealList.length ? `
+[식사 배치 — 필수]
+- 매일 ${mealList.join('·')} 식사를 위한 실제 맛집(음식점)을 각각 1곳씩 반드시 포함
+${meals.lunch ? '   · 점심 맛집: 정오(12시경) 동선 위치에 배치, meal 필드="점심"\n' : ''}${meals.dinner ? '   · 저녁 맛집: 저녁(18~19시경) 동선 위치에 배치, meal 필드="저녁"\n' : ''}   · 식사 맛집은 category="맛집", 해당 시간대 이동 동선상 자연스러운 위치에 배치
+- 위 하루 ${perDay}개 장소에는 이 식사 맛집이 포함된 개수입니다.
+` : '';
 
   const prompt = `당신은 대한민국 전문 여행 가이드이자 베테랑 드라이버입니다.
 
@@ -1121,11 +1164,12 @@ async function searchWithGemini(dest, spaceTypes, count) {
    - 점심·저녁 식사 가능한 맛집이 있다면 적절한 시간대에 배치
 4. 각 장소의 정확한 실제 정보 입력 (주소, 전화, 운영시간, 입장료)
 5. 장소 간 예상 자동차 이동 시간(분)을 travel_min 필드에 입력
-
+${mealBlock}
 JSON 배열만 출력 (코드블록 없이, 설명 텍스트 없이, \`\`\` 절대 사용 금지):
-[{"name":"장소명","category":"분류","rating":4.3,"tip":"역사·볼거리·방문팁 2~3문장","duration":"1시간","address":"도로명주소","phone":"전화번호","hours":"운영시간","fee":"입장료","website":"","travel_min":10,"youtube_id":"","lat":37.1234,"lng":126.5678}]
+[{"name":"장소명","category":"분류","rating":4.3,"tip":"역사·볼거리·방문팁 2~3문장","duration":"1시간","address":"도로명주소","phone":"전화번호","hours":"운영시간","fee":"입장료","website":"","travel_min":10,"youtube_id":"","meal":"","lat":37.1234,"lng":126.5678}]
 
 travel_min은 이전 장소에서 현재 장소까지 자동차로 이동하는 예상 시간(분)입니다. 첫 번째 장소는 0으로 설정하세요.
+meal 필드는 식사 맛집이면 "점심" 또는 "저녁", 일반 장소는 빈 문자열("")입니다.
 youtube_id는 해당 장소를 잘 소개하는 실제 YouTube 영상의 11자리 ID입니다 (예: dQw4w9WgXcQ). 모르면 빈 문자열("")로 두세요.`;
 
   // 최대 2회 시도
@@ -1911,7 +1955,7 @@ function renderSchedule(dest, dur) {
         <div class="place-card-body">
           <div class="place-num" style="background:${color}">${pi+1}</div>
           <div class="place-info">
-            <div class="place-name">${p.name}</div>
+            <div class="place-name">${p.name}${p.meal ? ` <span class="meal-badge">${p.meal === '저녁' ? '🍖' : '🍚'} ${p.meal}</span>` : ''}</div>
             <div class="place-meta">
               <span class="place-cat" style="color:${catColor};border-color:${catColor}22;background:${catColor}11">${p.category||'명소'}</span>
               <span class="place-rating">★ ${p.rating||'4.0+'}</span>
