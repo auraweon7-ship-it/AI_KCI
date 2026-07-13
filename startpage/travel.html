@@ -1421,8 +1421,9 @@ async function generatePlan() {
     tripData = distributeStrict(allPlaces, numDays, dayPlaces);
     await new Promise(r => setTimeout(r, 80));
 
-    // 1일차를 출발지에서 시작 — 출발지 좌표 지오코딩
+    // 출발지에서 시작 — 좌표 지오코딩 (숙박 미체크 시 매일 출발지 기점)
     window.originName = origin;
+    window.travelLodging = lodging;
     window.originLatLng = origin ? await geocodeOrigin(origin) : null;
 
     renderSchedule(dest, dur);
@@ -2584,8 +2585,9 @@ function plotOnMap() {
       infoWindows.push(iw);
     });
 
-    // 1일차는 출발지에서 시작 — 경로 앞에 출발지 좌표·마커 추가
-    if (di === 0 && window.originLatLng && pathCoords.length) {
+    // 출발지에서 시작 — 경로 앞에 출발지 좌표·마커 추가
+    // 숙박 미체크(당일 왕복): 매일 출발지 기점 / 숙박: 1일차만
+    if ((window.travelLodging === false || di === 0) && window.originLatLng && pathCoords.length) {
       const oPos = window.originLatLng;
       pathCoords.unshift(oPos);
       bounds.extend(oPos);
