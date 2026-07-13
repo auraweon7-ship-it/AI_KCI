@@ -1556,7 +1556,7 @@ ${originBlock}
 - 저녁 식사(약 19:00~20:00 종료)를 마지막 일정으로 하여 하루를 마무리 (저녁 이후 추가 장소 배치 금지)
 ${mealBlock}
 JSON 배열만 출력 (코드블록 없이, 설명 텍스트 없이, \`\`\` 절대 사용 금지):
-[{"name":"장소명","category":"분류","rating":4.3,"tip":"역사·볼거리·방문팁 2~3문장","duration":"1시간","address":"도로명주소","phone":"전화번호","hours":"운영시간","fee":"입장료","website":"","travel_min":10,"youtube_id":"","meal":"","time":"09:00","lat":37.1234,"lng":126.5678}]
+[{"name":"장소명","category":"분류","rating":4.3,"tip":"핵심 볼거리·방문팁 1~2문장(간결히)","duration":"1시간","address":"도로명주소","phone":"전화번호","hours":"운영시간","fee":"입장료","website":"","travel_min":10,"youtube_id":"","meal":"","time":"09:00","lat":37.1234,"lng":126.5678}]
 
 travel_min은 이전 장소에서 현재 장소까지 자동차로 이동하는 예상 시간(분)입니다. 첫 번째 장소는 0으로 설정하세요.
 time은 해당 장소 도착 예정 시각("HH:MM")입니다. 매일 첫 장소는 "09:00"입니다.
@@ -1581,7 +1581,7 @@ youtube_id는 해당 장소를 잘 소개하는 실제 YouTube 영상의 11자�
         },
         body: JSON.stringify({
           model: 'claude-sonnet-5',
-          max_tokens: 16000,
+          max_tokens: 32000,
           messages: [{ role: 'user', content: prompt }]
         })
       });
@@ -1661,10 +1661,19 @@ youtube_id는 해당 장소를 잘 소개하는 실제 YouTube 영상의 11자�
 
       if (!Array.isArray(places)) throw new Error('응답이 배열 형식이 아닙니다.');
 
-      const valid = places.filter(p =>
-        p.name && typeof p.lat === 'number' && typeof p.lng === 'number'
-        && Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180
-      );
+      // 좌표를 관대하게 파싱 — 문자열 좌표 구제, 무효 좌표는 null로 두고 Places 보정에 맡김
+      const valid = [];
+      places.forEach(p => {
+        if (!p || !p.name) return;
+        const lat = parseFloat(p.lat), lng = parseFloat(p.lng);
+        if (isFinite(lat) && isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+          p.lat = lat; p.lng = lng;
+        } else {
+          p.lat = null; p.lng = null;  // correctPlaceCoords()가 Places로 좌표 채움
+        }
+        valid.push(p);
+      });
+      console.log(`[Claude] 파싱 ${places.length}개 → 유효 ${valid.length}개`);
 
       if (!valid.length) throw new Error(`"${dest}" 내 유효한 장소를 찾지 못했습니다.`);
 
