@@ -168,11 +168,28 @@ body.light-mode select option { background: #ffffff !important; color: #1f2328 !
 #main {
   position: relative; z-index: 1;
   display: grid;
-  grid-template-columns: 420px 1fr;
+  grid-template-columns: 420px 6px 1fr;
   grid-template-rows: 1fr;
   flex: 1;
   min-height: 0;
   overflow: hidden;
+}
+
+/* ── 크기 조절 핸들 ── */
+#panel-resizer {
+  background: var(--border);
+  cursor: col-resize;
+  position: relative;
+  z-index: 5;
+  transition: background 0.15s;
+}
+#panel-resizer:hover, #panel-resizer.dragging { background: var(--gold); }
+#panel-resizer::after {
+  content: '⋮';
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  color: var(--muted-text); font-size: 14px; line-height: 1;
+  pointer-events: none;
 }
 
 /* ── 사이드패널 ── */
@@ -446,12 +463,12 @@ body.light-mode select option { background: #ffffff !important; color: #1f2328 !
 }
 #schedule-table td {
   padding: 8px 10px;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
-  vertical-align: top; color: rgba(245,240,232,0.75);
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle; color: var(--ink);
   line-height: 1.5;
 }
-#schedule-table tr:hover td { background: rgba(255,255,255,0.03); }
-.table-empty { text-align: center; padding: 60px 20px; color: rgba(245,240,232,0.3); font-size: 13px; }
+#schedule-table tr:hover td { background: rgba(108,92,231,0.06); }
+.table-empty { text-align: center; padding: 60px 20px; color: var(--muted-text); font-size: 13px; }
 
 /* ── 지도 ── */
 #map-container {
@@ -782,7 +799,6 @@ body.light-mode select option { background: #ffffff !important; color: #1f2328 !
     <div id="tabs">
       <button class="tab-btn active" data-tab="schedule">📋 일정</button>
       <button class="tab-btn" data-tab="table">📊 표</button>
-      <button class="tab-btn" data-tab="kml">📍 KML</button>
       <button class="tab-btn" data-tab="history">🕘 히스토리</button>
     </div>
 
@@ -818,19 +834,8 @@ body.light-mode select option { background: #ffffff !important; color: #1f2328 !
       </div>
     </div>
 
-    <!-- KML 탭 -->
-    <div id="tab-kml" class="panel-content">
-      <div id="kml-panel">
-        <div class="kml-header">
-          <div class="kml-title">KML 내보내기</div>
-          <div class="kml-btns">
-            <button id="copy-kml-btn">복사</button>
-            <button id="download-kml-btn">다운로드</button>
-          </div>
-        </div>
-        <div id="kml-output"><div id="kml-empty">일정을 먼저 생성하면<br>KML 코드가 여기 표시됩니다.</div></div>
-      </div>
-    </div>
+    <!-- KML은 히스토리에서 다운로드 (생성용 숨은 출력) -->
+    <div id="kml-output" style="display:none"></div>
 
     <!-- 히스토리 탭 -->
     <div id="tab-history" class="panel-content">
@@ -841,6 +846,9 @@ body.light-mode select option { background: #ffffff !important; color: #1f2328 !
       <div id="history-list" style="flex:1;overflow-y:auto"></div>
     </div>
   </div>
+
+  <!-- 크기 조절 핸들 -->
+  <div id="panel-resizer" title="드래그하여 크기 조절"></div>
 
   <!-- 지도 -->
   <div id="map-container">
@@ -912,7 +920,7 @@ window.initMap = function() {
 
 // ── 탭 전환 ────────────────────────────────────────
 function switchTab(name) {
-  const order = ['schedule','table','kml','history'];
+  const order = ['schedule','table','history'];
   document.querySelectorAll('.tab-btn').forEach((b,i) => {
     b.classList.toggle('active', order[i] === name);
   });
@@ -942,9 +950,19 @@ function travelRenderHistory() {
     return `<div onclick="travelLoadHistory(${i})" style="position:relative;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer" onmouseover="this.style.background='rgba(108,92,231,0.08)'" onmouseout="this.style.background=''">
       <div style="font-size:14px;font-weight:700;color:var(--paper);margin-bottom:3px">📍 ${x.dest} <span style="font-size:11px;font-weight:400;color:var(--gold)">${x.dur}</span></div>
       <div style="font-size:11px;color:var(--paper);opacity:.55">${days}일 · ${spots}곳 · ${when}</div>
-      <button onclick="event.stopPropagation();travelDelHistory(${i})" title="삭제" style="position:absolute;top:10px;right:10px;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--paper);opacity:.6;cursor:pointer;font-size:11px;padding:2px 6px">✕</button>
+      <div style="position:absolute;top:9px;right:9px;display:flex;gap:5px">
+        <button onclick="event.stopPropagation();travelDownloadHistoryKML(${i})" title="KML 다운로드" style="background:var(--gold);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:11px;padding:3px 8px;font-weight:700">📥 KML</button>
+        <button onclick="event.stopPropagation();travelDelHistory(${i})" title="삭제" style="background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--paper);opacity:.6;cursor:pointer;font-size:11px;padding:3px 7px">✕</button>
+      </div>
     </div>`;
   }).join('');
+}
+function travelDownloadHistoryKML(i) {
+  const h = travelHistory()[i]; if (!h) return;
+  const prev = tripData;
+  tripData = h.tripData;
+  try { generateKML(h.dest); downloadKML(h.dest); }
+  finally { tripData = prev; }
 }
 function travelLoadHistory(i) {
   const h = travelHistory()[i]; if (!h) return;
@@ -1923,19 +1941,19 @@ function renderTable() {
   tripData.forEach((day, di) => {
     const color = DAY_COLORS[di % DAY_COLORS.length];
     day.places.forEach((p, pi) => {
-      const urlCellId = `tbl-url-d${di}-p${pi}`;
-      const urlVal = p._photoUrl
-        ? `<a href="${p._photoUrl}" target="_blank" style="color:#2980b9;font-size:10px;word-break:break-all">${p._photoUrl}</a>`
-        : `<span id="${urlCellId}" style="color:rgba(245,240,232,0.3);font-size:10px">로딩 중…</span>`;
+      const thumbCellId = `tbl-thumb-d${di}-p${pi}`;
+      const thumbVal = p._photoUrl
+        ? `<a href="${p._photoUrl}" target="_blank"><img src="${p._photoUrl}" alt="${p.name}" style="width:72px;height:54px;object-fit:cover;border-radius:6px;display:block" loading="lazy"></a>`
+        : `<div id="${thumbCellId}" style="width:72px;height:54px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:var(--border);font-size:11px;color:var(--muted-text)">…</div>`;
 
       html += `<tr>
         <td style="color:${color};font-weight:700;white-space:nowrap">${day.day}일차</td>
-        <td style="font-weight:600;color:#f5f0e8">${p.name}</td>
-        <td>${p.category||'-'}</td>
-        <td style="color:#6c5ce7">★ ${p.rating||'-'}</td>
-        <td style="max-width:200px">${urlVal}</td>
-        <td>${p.tip||'-'}</td>
-        <td style="white-space:nowrap">${p.duration||'-'}</td>
+        <td style="font-weight:600;color:var(--ink)">${p.name}</td>
+        <td style="color:var(--ink)">${p.category||'-'}</td>
+        <td style="color:var(--gold);font-weight:600">★ ${p.rating||'-'}</td>
+        <td style="width:80px">${thumbVal}</td>
+        <td style="color:var(--ink)">${p.tip||'-'}</td>
+        <td style="white-space:nowrap;color:var(--ink)">${p.duration||'-'}</td>
       </tr>`;
     });
   });
@@ -1947,12 +1965,12 @@ function renderTable() {
   tripData.forEach((day, di) => {
     day.places.forEach((p, pi) => {
       if (p._photoUrl) return; // 이미 있으면 skip
-      const cellId = `tbl-url-d${di}-p${pi}`;
+      const cellId = `tbl-thumb-d${di}-p${pi}`;
       loadPlacePhoto(p.name, null, getCategoryEmoji(p.category), (url) => {
         p._photoUrl = url;
         const cell = document.getElementById(cellId);
-        if (cell) {
-          cell.outerHTML = `<a href="${url}" target="_blank" style="color:#2980b9;font-size:10px;word-break:break-all">${url}</a>`;
+        if (cell && url) {
+          cell.outerHTML = `<a href="${url}" target="_blank"><img src="${url}" alt="${p.name}" style="width:72px;height:54px;object-fit:cover;border-radius:6px;display:block" loading="lazy"></a>`;
         }
       });
     });
@@ -2236,7 +2254,7 @@ function generateKML(dest) {
   currentKML = kml;
 
   const output = document.getElementById('kml-output');
-  output.textContent = kml;
+  if (output) output.textContent = kml;
 }
 
 // ── KML 복사 ───────────────────────────────────────
@@ -2269,9 +2287,9 @@ function fallbackCopy() {
 }
 
 // ── KML 다운로드 ───────────────────────────────────
-function downloadKML() {
+function downloadKML(destArg) {
   if (!currentKML) { showToast('먼저 여행 계획을 생성해주세요.'); return; }
-  const dest = document.getElementById('dest-input').value.trim() || 'travel';
+  const dest = (destArg || document.getElementById('dest-input').value.trim() || 'travel');
   try {
     // Blob → Object URL 방식 (한글 포함 UTF-8 안전)
     const blob = new Blob(['\uFEFF' + currentKML], { type: 'text/xml;charset=utf-8' });
@@ -2364,6 +2382,46 @@ document.addEventListener('DOMContentLoaded', () => {
   // 엔터키
   document.getElementById('dest-input')
     .addEventListener('keydown', e => { if (e.key === 'Enter') generatePlan(); });
+
+  // ── 좌측 패널 ↔ 지도 크기 조절 ──
+  (function initResizer() {
+    const main = document.getElementById('main');
+    const rz = document.getElementById('panel-resizer');
+    if (!main || !rz) return;
+    const MIN = 300, MAX = 720;
+    const saved = parseInt(localStorage.getItem('travel_panel_w') || '', 10);
+    if (saved >= MIN && saved <= MAX) main.style.gridTemplateColumns = `${saved}px 6px 1fr`;
+    let dragging = false;
+    const onMove = (clientX) => {
+      const rect = main.getBoundingClientRect();
+      let w = clientX - rect.left;
+      w = Math.max(MIN, Math.min(MAX, w));
+      main.style.gridTemplateColumns = `${w}px 6px 1fr`;
+    };
+    rz.addEventListener('mousedown', e => {
+      dragging = true; rz.classList.add('dragging');
+      document.body.style.userSelect = 'none'; document.body.style.cursor = 'col-resize';
+      e.preventDefault();
+    });
+    window.addEventListener('mousemove', e => { if (dragging) onMove(e.clientX); });
+    window.addEventListener('mouseup', () => {
+      if (!dragging) return;
+      dragging = false; rz.classList.remove('dragging');
+      document.body.style.userSelect = ''; document.body.style.cursor = '';
+      const w = parseInt(main.style.gridTemplateColumns, 10);
+      if (w) localStorage.setItem('travel_panel_w', String(w));
+      try { if (window.map) google.maps.event.trigger(window.map, 'resize'); } catch (_) {}
+    });
+    // 터치
+    rz.addEventListener('touchstart', () => { dragging = true; rz.classList.add('dragging'); }, {passive:true});
+    window.addEventListener('touchmove', e => { if (dragging && e.touches[0]) onMove(e.touches[0].clientX); }, {passive:true});
+    window.addEventListener('touchend', () => {
+      if (!dragging) return;
+      dragging = false; rz.classList.remove('dragging');
+      const w = parseInt(main.style.gridTemplateColumns, 10);
+      if (w) localStorage.setItem('travel_panel_w', String(w));
+    });
+  })();
 
   // 공간 유형 칩
   document.getElementById('space-chips')
