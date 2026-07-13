@@ -2518,8 +2518,10 @@ async function plotOnMap() {
       pathCoords.push(pos);
       bounds.extend(pos);
 
-      // 커스텀 마커 SVG — 핀 + 하단 지명 라벨
-      const label    = p.name.length > 8 ? p.name.slice(0, 8) + '…' : p.name;
+      // 커스텀 마커 SVG — 핀 + 하단 지명 라벨 (식당은 점심/저녁 접두)
+      const mealPre  = p.meal ? (p.meal === '저녁' ? '🍖저녁 ' : '🍚점심 ') : '';
+      const nameCut  = p.name.length > 8 ? p.name.slice(0, 8) + '…' : p.name;
+      const label    = mealPre + nameCut;
       const charW    = 7.2;   // 글자당 평균 px (한글 기준)
       const labelW   = Math.max(label.length * charW + 16, 60);
       const labelX   = labelW / 2;
