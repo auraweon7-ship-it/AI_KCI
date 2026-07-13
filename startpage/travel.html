@@ -24,6 +24,7 @@
   --day5: #27ae60;
   --shadow: rgba(26,26,46,0.15);
   --border: rgba(201,168,76,0.3);
+  --muted-text: rgba(245,240,232,0.4);
 }
 /* 라이트 모드(기본) — 메인 startpage 테마와 연동 */
 body.light-mode {
@@ -32,6 +33,7 @@ body.light-mode {
   --cream: #ffffff;
   --shadow: rgba(0,0,0,0.12);
   --border: rgba(201,168,76,0.55);
+  --muted-text: rgba(42,42,46,0.62);
 }
 body.light-mode { background: #faf6ee; color: #2a2a2e; }
 /* 라이트 모드 — 주요 다크 UI 요소 오버라이드 */
@@ -42,7 +44,27 @@ body.light-mode .place-card { border-bottom-color: rgba(201,168,76,0.22); }
 body.light-mode .place-card:hover { background: rgba(201,168,76,0.08); }
 body.light-mode .iw-body { background: #ffffff; }
 body.light-mode select, body.light-mode input { background: #fff; color: #2a2a2e; border-color: rgba(201,168,76,0.5); }
-body.light-mode .space-chip { background: #fff; }
+body.light-mode #dest-input::placeholder { color: rgba(42,42,46,0.45); }
+body.light-mode label { color: #5a5236; }
+/* 탭·칩 가독성 (밝은 배경에 어두운 텍스트) — !important로 원본 규칙 우선 */
+body.light-mode #tabs { background: rgba(201,168,76,0.12) !important; border-bottom-color: rgba(201,168,76,0.35); }
+body.light-mode .tab-btn { color: rgba(42,42,46,0.6) !important; }
+body.light-mode .tab-btn:hover { color: #2a2a2e !important; }
+body.light-mode .tab-btn.active { color: #a8842a !important; background: rgba(201,168,76,0.14); border-bottom-color: #c9a84c; }
+body.light-mode #space-chips .space-chip { background: #fff !important; color: rgba(42,42,46,0.65) !important; border-color: rgba(201,168,76,0.4) !important; }
+body.light-mode #space-chips .space-chip.active { background: rgba(201,168,76,0.2) !important; color: #8a6d1a !important; border-color: #c9a84c !important; }
+body.light-mode #space-chips .space-chip:hover { color: #2a2a2e !important; }
+body.light-mode label { color: #5a5236 !important; }
+body.light-mode #dest-input::placeholder { color: rgba(42,42,46,0.5) !important; }
+body.light-mode .welcome-title { color: #a8842a; }
+body.light-mode .welcome-desc, body.light-mode .welcome-tip { color: rgba(42,42,46,0.7); }
+body.light-mode #history-list { color: #2a2a2e; }
+/* 탭·칩 비활성 텍스트 — 초구체 셀렉터로 확실히 어둡게 */
+body.light-mode #tabs button.tab-btn { color: #55503f !important; }
+body.light-mode #tabs button.tab-btn.active { color: #a8842a !important; }
+body.light-mode #space-chips span.space-chip { color: #55503f !important; }
+body.light-mode #space-chips span.space-chip.active { color: #8a6d1a !important; }
+body.light-mode #tabs button.tab-btn, body.light-mode #space-chips span.space-chip { transition: none !important; }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -160,7 +182,7 @@ body::before {
 .tab-btn {
   flex: 1; padding: 12px 8px;
   background: transparent; border: none;
-  color: rgba(245,240,232,0.4);
+  color: var(--muted-text);
   font-family: 'Noto Sans KR', sans-serif;
   font-size: 12px; font-weight: 500;
   cursor: pointer; transition: all 0.2s;
@@ -254,7 +276,7 @@ body::before {
   font-size: 13px; font-weight: 600;
   color: var(--paper);
 }
-.day-subtitle { font-size: 11px; color: rgba(245,240,232,0.4); margin-left: auto; }
+.day-subtitle { font-size: 11px; color: var(--muted-text); margin-left: auto; }
 
 /* 장소 카드 */
 .place-card {
@@ -319,7 +341,7 @@ body::before {
   font-family: 'Space Mono', monospace;
 }
 .place-time {
-  font-size: 10px; color: rgba(245,240,232,0.4);
+  font-size: 10px; color: var(--muted-text);
   font-family: 'Space Mono', monospace;
 }
 .place-travel {
@@ -583,7 +605,7 @@ body::before {
   padding: 3px 9px;
   border-radius: 20px;
   border: 1px solid rgba(201,168,76,0.25);
-  color: rgba(245,240,232,0.4);
+  color: var(--muted-text);
   cursor: pointer;
   user-select: none;
   transition: all 0.18s;
@@ -749,6 +771,7 @@ body::before {
       <button class="tab-btn active" data-tab="schedule">📋 일정</button>
       <button class="tab-btn" data-tab="table">📊 표</button>
       <button class="tab-btn" data-tab="kml">📍 KML</button>
+      <button class="tab-btn" data-tab="history">🕘 히스토리</button>
     </div>
 
     <!-- 일정 탭 -->
@@ -795,6 +818,15 @@ body::before {
         </div>
         <div id="kml-output"><div id="kml-empty">일정을 먼저 생성하면<br>KML 코드가 여기 표시됩니다.</div></div>
       </div>
+    </div>
+
+    <!-- 히스토리 탭 -->
+    <div id="tab-history" class="panel-content">
+      <div style="padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)">
+        <span style="font-size:13px;font-weight:600;color:var(--gold)">🕘 검색 기록</span>
+        <button id="history-clear-btn" style="font-size:11px;padding:4px 9px;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--paper);cursor:pointer">전체 삭제</button>
+      </div>
+      <div id="history-list" style="flex:1;overflow-y:auto"></div>
     </div>
   </div>
 
@@ -868,11 +900,55 @@ window.initMap = function() {
 
 // ── 탭 전환 ────────────────────────────────────────
 function switchTab(name) {
+  const order = ['schedule','table','kml','history'];
   document.querySelectorAll('.tab-btn').forEach((b,i) => {
-    b.classList.toggle('active', ['schedule','table','kml'][i] === name);
+    b.classList.toggle('active', order[i] === name);
   });
   document.querySelectorAll('.panel-content').forEach(p => p.classList.remove('active'));
   document.getElementById(`tab-${name}`).classList.add('active');
+  if (name === 'history') travelRenderHistory();
+}
+
+// ── 검색 히스토리 (localStorage) ──
+function travelHistory() { try { return JSON.parse(localStorage.getItem('travel_history') || '[]'); } catch (_) { return []; } }
+function travelSaveHistory(dest, dur) {
+  if (!Array.isArray(tripData) || !tripData.length) return;
+  let h = travelHistory();
+  h.unshift({ dest, dur, tripData: JSON.parse(JSON.stringify(tripData)), at: new Date().toISOString() });
+  h = h.slice(0, 20);
+  localStorage.setItem('travel_history', JSON.stringify(h));
+}
+function travelRenderHistory() {
+  const wrap = document.getElementById('history-list'); if (!wrap) return;
+  const h = travelHistory();
+  if (!h.length) { wrap.innerHTML = '<div style="padding:26px 18px;text-align:center;color:var(--paper);opacity:.5;font-size:13px">저장된 검색 결과가 없습니다.<br>여행 계획을 생성하면 여기에 기록됩니다.</div>'; return; }
+  wrap.innerHTML = h.map((x, i) => {
+    const days = (x.tripData || []).length;
+    const spots = (x.tripData || []).reduce((s, d) => s + ((d.places || d || []).length || 0), 0);
+    const dt = new Date(x.at);
+    const when = `${dt.getFullYear()}.${dt.getMonth()+1}.${dt.getDate()} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    return `<div onclick="travelLoadHistory(${i})" style="position:relative;padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer" onmouseover="this.style.background='rgba(201,168,76,0.08)'" onmouseout="this.style.background=''">
+      <div style="font-size:14px;font-weight:700;color:var(--paper);margin-bottom:3px">📍 ${x.dest} <span style="font-size:11px;font-weight:400;color:var(--gold)">${x.dur}</span></div>
+      <div style="font-size:11px;color:var(--paper);opacity:.55">${days}일 · ${spots}곳 · ${when}</div>
+      <button onclick="event.stopPropagation();travelDelHistory(${i})" title="삭제" style="position:absolute;top:10px;right:10px;background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--paper);opacity:.6;cursor:pointer;font-size:11px;padding:2px 6px">✕</button>
+    </div>`;
+  }).join('');
+}
+function travelLoadHistory(i) {
+  const h = travelHistory()[i]; if (!h) return;
+  tripData = h.tripData;
+  renderSchedule(h.dest, h.dur);
+  renderTable();
+  plotOnMap();
+  generateKML(h.dest);
+  const lg = document.getElementById('map-legend'); if (lg) lg.style.display = 'block';
+  switchTab('schedule');
+  showToast(`🕘 "${h.dest} ${h.dur}" 불러왔습니다.`);
+}
+function travelDelHistory(i) {
+  const h = travelHistory(); h.splice(i, 1);
+  localStorage.setItem('travel_history', JSON.stringify(h));
+  travelRenderHistory();
 }
 
 // ── 공간 유형 칩 토글 ──────────────────────────────
@@ -935,6 +1011,7 @@ async function generatePlan() {
     plotOnMap();
     generateKML(dest);
     document.getElementById('map-legend').style.display = 'block';
+    try { travelSaveHistory(dest, dur); } catch (_) {}
 
   } catch (err) {
     console.error('[TravelPlanner]', err);
@@ -2249,6 +2326,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // 생성 버튼
   document.getElementById('plan-btn')
     .addEventListener('click', generatePlan);
+
+  // 히스토리 전체 삭제
+  const hcb = document.getElementById('history-clear-btn');
+  if (hcb) hcb.addEventListener('click', () => {
+    if (!confirm('검색 기록을 전체 삭제할까요?')) return;
+    localStorage.removeItem('travel_history');
+    travelRenderHistory();
+  });
 
   // 테마 — 기본 화이트, 메인(startpage) 다크/화이트 모드와 연동
   window.tvApplyParentTheme = function () {
