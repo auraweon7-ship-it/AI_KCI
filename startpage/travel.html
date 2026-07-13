@@ -527,6 +527,11 @@ body.light-mode select option { background: #ffffff !important; color: #1f2328 !
   transition: opacity 0.2s;
 }
 .legend-item:hover { opacity: 0.7; }
+.legend-item.active {
+  background: rgba(108,92,231,0.2);
+  border-radius: 6px; padding: 2px 6px; margin: 0 -6px 5px;
+  font-weight: 700;
+}
 .legend-dot {
   width: 12px; height: 12px; border-radius: 50%;
   flex-shrink: 0;
@@ -1428,7 +1433,7 @@ async function generatePlan() {
 
     renderSchedule(dest, dur);
     renderTable();
-    plotOnMap();
+    await plotOnMap();          // 좌표 보정 후 마커·경로 렌더
     generateKML(dest);
     document.getElementById('map-legend').style.display = 'block';
     try { travelSaveHistory(dest, dur); } catch (_) {}
@@ -2448,8 +2453,41 @@ function renderTable() {
 }
 
 // ── 지도에 핀/경로 표시 ────────────────────────────
-function plotOnMap() {
+// 각 장소 좌표를 Places 실제 좌표로 보정 (AI 좌표 오차 교정)
+function correctPlaceCoords() {
+  return new Promise(resolve => {
+    if (!window.google?.maps?.places || !tripData) { resolve(); return; }
+    let svc;
+    try { svc = new google.maps.places.PlacesService(map); } catch (_) { resolve(); return; }
+    const tasks = [];
+    tripData.forEach(day => (day.places || []).forEach(p => {
+      if (!p.name || p._coordFixed) return;
+      tasks.push(new Promise(res => {
+        try {
+          svc.findPlaceFromQuery(
+            { query: (p.name + ' ' + (p.address || '')).trim().slice(0, 120), fields: ['geometry'] },
+            (r, s) => {
+              if (s === google.maps.places.PlacesServiceStatus.OK && r && r[0]?.geometry?.location) {
+                const l = r[0].geometry.location;
+                const nlat = l.lat(), nlng = l.lng();
+                // 한국 범위 내일 때만 보정
+                if (nlat > 33 && nlat < 39 && nlng > 124 && nlng < 132) { p.lat = nlat; p.lng = nlng; }
+              }
+              p._coordFixed = true;
+              res();
+            }
+          );
+        } catch (_) { res(); }
+      }));
+    }));
+    Promise.all(tasks).then(() => resolve());
+  });
+}
+
+async function plotOnMap() {
   if (!map || !tripData) return;
+
+  await correctPlaceCoords();  // 마커·경로 그리기 전 좌표 보정
 
   const bounds = new google.maps.LatLngBounds();
   const legendItems = document.getElementById('legend-items');
@@ -2787,12 +2825,22 @@ function focusMarker(di, pi) {
 }
 
 // ── 일차 토글 ──────────────────────────────────────
+let selectedDay = null;
 function toggleDay(di) {
-  const dayMarkers   = markers.filter(m => m.dayIdx === di);
-  const dayPolylines = polylines.filter(p => p.dayIdx === di);
-  const visible = dayMarkers[0]?.marker.getVisible();
-  dayMarkers.forEach(m => m.marker.setVisible(!visible));
-  dayPolylines.forEach(p => p.poly.setVisible(!visible));
+  if (selectedDay === di) {
+    // 재클릭 → 전체 표시
+    selectedDay = null;
+    markers.forEach(m => m.marker.setVisible(true));
+    polylines.forEach(p => p.poly.setVisible(true));
+  } else {
+    // 해당 일차만 표시 (출발지 마커 placeIdx=-1은 1일차 그룹에 포함)
+    selectedDay = di;
+    markers.forEach(m => m.marker.setVisible(m.dayIdx === di));
+    polylines.forEach(p => p.poly.setVisible(p.dayIdx === di));
+  }
+  // 범례 active 표시
+  document.querySelectorAll('#legend-items .legend-item').forEach(el =>
+    el.classList.toggle('active', selectedDay !== null && Number(el.dataset.day) === selectedDay));
 }
 
 // ── 지도 초기화 ────────────────────────────────────
@@ -2800,7 +2848,7 @@ function clearMap() {
   markers.forEach(m => m.marker.setMap(null));
   polylines.forEach(p => p.poly.setMap(null));
   infoWindows.forEach(w => w.close());
-  markers = []; polylines = []; infoWindows = [];
+  markers = []; polylines = []; infoWindows = []; selectedDay = null;
   document.getElementById('schedule-result').innerHTML = '';
   document.getElementById('map-legend').style.display = 'none';
 }
