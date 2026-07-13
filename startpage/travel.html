@@ -1754,7 +1754,18 @@ function distributeStrict(places, numDays, perDay = 4) {
     if (!daySlice.length) break;
 
     // ③ 일자 내 최근접 이웃 정렬로 미세 최적화 (Gemini 순서 보정)
-    const sorted = nearestNeighborSort(daySlice);
+    const nn = nearestNeighborSort(daySlice);
+
+    // ③-2 식사 시간대 배치 — 점심은 오전 일정 뒤(중간), 저녁은 마지막
+    const lunch  = nn.find(p => p.meal === '점심');
+    const dinner = nn.find(p => p.meal === '저녁');
+    const others = nn.filter(p => p.meal !== '점심' && p.meal !== '저녁');
+    const sorted = [];
+    const mid = Math.ceil(others.length / 2);   // 오전/오후 분기점
+    sorted.push(...others.slice(0, mid));        // 오전 일정
+    if (lunch) sorted.push(lunch);               // 점심 (오전 후)
+    sorted.push(...others.slice(mid));           // 오후 일정
+    if (dinner) sorted.push(dinner);             // 저녁 (마지막)
 
     // ④ 이동 거리·시간 자동 계산 (travel_min 없는 경우 보완)
     sorted.forEach((p, i) => {
