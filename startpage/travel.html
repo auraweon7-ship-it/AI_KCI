@@ -1209,6 +1209,15 @@ async function travelShareHistory(i) {
     }
     const j = await res.json();
     const full = location.origin + j.url;
+    const label = `${h.dest} ${h.dur} 여행 일정`;
+    // 부모(startpage) 공유 모달 재사용 — 이미지와 동일한 팝업
+    try {
+      if (window.parent !== window && typeof window.parent.shareShowLink === 'function') {
+        window.parent.shareShowLink(full, label);
+        return;
+      }
+    } catch (_) {}
+    // fallback: 부모 접근 불가 시 복사+열기
     try { await navigator.clipboard.writeText(full); } catch (_) {}
     showToast('🔗 공유 링크 복사됨');
     window.open(full, '_blank');
