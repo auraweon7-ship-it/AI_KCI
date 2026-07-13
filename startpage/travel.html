@@ -2498,6 +2498,7 @@ async function plotOnMap() {
   await correctPlaceCoords();  // 마커·경로 그리기 전 좌표 보정
 
   const bounds = new google.maps.LatLngBounds();
+  const routePromises = [];
   const legendItems = document.getElementById('legend-items');
   legendItems.innerHTML = '';
 
@@ -2682,16 +2683,21 @@ async function plotOnMap() {
         }]
       });
       polylines.push({ poly, dayIdx: di });
-      routeAlongRoads(pathCoords, poly);
+      routePromises.push(routeAlongRoads(pathCoords, poly, bounds));
     }
   });
 
-  map.fitBounds(bounds);
+  // 1차: 마커·출발지 기준 즉시 맞춤 (여백 포함)
+  if (!bounds.isEmpty()) map.fitBounds(bounds, 70);
+  // 2차: 도로 경로까지 반영해 최종 스케일 재조정
+  Promise.all(routePromises).then(() => {
+    if (!bounds.isEmpty()) map.fitBounds(bounds, 70);
+  });
 }
 
 // ── 자동차 도로 기반 경로로 폴리라인 갱신 ──────────────
 // 인접 지점 쌍마다 개별 경로 요청 → 되는 구간은 도로, 안 되는 구간(DMZ 등)만 직선으로 격리
-async function routeAlongRoads(coords, poly) {
+async function routeAlongRoads(coords, poly, bounds) {
   if (!coords || coords.length < 2) return;
   const push = (path, pt) => {
     const last = path[path.length - 1];
@@ -2716,6 +2722,8 @@ async function routeAlongRoads(coords, poly) {
     seg.forEach(pt => push(path, pt));
   }
   if (path.length > 1) poly.setPath(path);
+  // 도로 경로 좌표까지 지도 범위에 포함 (우회로가 잘리지 않도록)
+  if (bounds) path.forEach(pt => bounds.extend(pt));
   if (anyFail && !window.__routeWarned) {
     window.__routeWarned = true;
     showToast('ℹ️ 일부 구간(도로 없는 지역)은 직선으로 표시됩니다.');
