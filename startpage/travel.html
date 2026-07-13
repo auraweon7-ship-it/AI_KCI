@@ -991,17 +991,17 @@ async function generatePlan() {
     const numDays     = dayMap[dur] || 2;
     const totalNeeded = numDays * perDay;
 
-    // Gemini로 직접 검색 (내장 DB 우선 없음 — 항상 실시간)
-    setLoadingMsg(`Gemini AI로 "${dest}" 유적지 검색 중…`);
+    // Claude AI로 직접 검색 (항상 실시간)
+    setLoadingMsg(`Claude AI로 "${dest}" 여행지 검색 중…`);
     let allPlaces = await searchWithGemini(dest, spaceTypes, totalNeeded);
 
-    // Gemini 실패 시 내장 DB 폴백
+    // 실패 시 내장 DB 폴백
     if (!allPlaces.length) {
       setLoadingMsg(`내장 DB에서 "${dest}" 장소 로드 중…`);
       allPlaces = getFromDB(dest, spaceTypes);
     }
 
-    // Gemini 실패 시 오류 표시 (searchWithGemini 내에서 이미 showError 처리)
+    // 실패 시 오류 표시 (searchWithGemini 내에서 이미 showError 처리)
     if (!allPlaces.length) {
       setLoading(false);
       return;
@@ -1031,28 +1031,8 @@ function getFromDB(dest, spaceTypes) {
   return []; // 내장 DB 사용 금지 — Gemini API 전용
 }
 
-// ── Gemini API 키 관리 ────────────────────────────
-const GEMINI_DEFAULT_KEY = 'AIzaSyBhy-wrKtNcoIvByzIvbiNn85KynkWawnk';
-
-function getGeminiKey() {
-  const inputEl = document.getElementById('gemini-key-input');
-  const inputVal = inputEl ? inputEl.value.trim() : '';
-  if (inputVal && inputVal.startsWith('AIza')) {
-    localStorage.setItem('gemini_api_key', inputVal); // 저장
-    return inputVal;
-  }
-  // localStorage 저장값 복원
-  const saved = localStorage.getItem('gemini_api_key');
-  if (saved && saved.startsWith('AIza')) {
-    if (inputEl && !inputEl.value) inputEl.value = saved;
-    return saved;
-  }
-  return GEMINI_DEFAULT_KEY;
-}
-
-function getGeminiURL(key) {
-  return `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`;
-}
+// ── 장소 검색은 Claude API 사용 (searchWithGemini 내부에서 claude_api_key 사용) ──
+// 구 Gemini 키 관리 함수 제거됨
 
 async function searchWithGemini(dest, spaceTypes, count) {
   const ks = document.getElementById('gemini-key-status');
@@ -1202,16 +1182,16 @@ youtube_id는 해당 장소를 잘 소개하는 실제 YouTube 영상의 11자�
       return valid;
 
     } catch (e) {
-      console.error(`[Gemini 시도 ${attempt}]`, e);
+      console.error(`[Claude 시도 ${attempt}]`, e);
       if (attempt === 2) {
         if (ks) { ks.textContent = '실패'; ks.className = 'key-status err'; }
         // 상세 오류를 화면에 표시
         showError(
-          `Gemini 검색 실패\n\n` +
+          `Claude 검색 실패\n\n` +
           `• 오류: ${e.message}\n\n` +
           `해결 방법:\n` +
-          `1. Gemini API 키가 올바른지 확인 (AIzaSy…)\n` +
-          `2. https://aistudio.google.com 에서 키 재발급\n` +
+          `1. 메인 설정 → 🧠 Claude API 키가 올바른지 확인 (sk-ant-…)\n` +
+          `2. https://console.anthropic.com/settings/keys 에서 키 재발급\n` +
           `3. 네트워크 연결 확인 후 다시 시도`
         );
         return [];
