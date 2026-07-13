@@ -1030,6 +1030,7 @@ function travelRenderHistory() {
       <div style="font-size:14px;font-weight:700;color:var(--paper);margin-bottom:3px">📍 ${x.dest} <span style="font-size:11px;font-weight:400;color:var(--gold)">${x.dur}</span></div>
       <div style="font-size:11px;color:var(--paper);opacity:.55">${days}일 · ${spots}곳 · ${when}</div>
       <div style="position:absolute;top:9px;right:9px;display:flex;gap:5px">
+        <button onclick="event.stopPropagation();travelShareHistory(${i})" title="공유 링크" style="background:#00b894;border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:11px;padding:3px 8px;font-weight:700">🔗 공유</button>
         <button onclick="event.stopPropagation();travelExportHistoryHTML(${i})" title="HTML 출력" style="background:#0984e3;border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:11px;padding:3px 8px;font-weight:700">📄 HTML</button>
         <button onclick="event.stopPropagation();travelDownloadHistoryKML(${i})" title="KML 다운로드" style="background:var(--gold);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:11px;padding:3px 8px;font-weight:700">📥 KML</button>
         <button onclick="event.stopPropagation();travelDelHistory(${i})" title="삭제" style="background:transparent;border:1px solid var(--border);border-radius:5px;color:var(--paper);opacity:.6;cursor:pointer;font-size:11px;padding:3px 7px">✕</button>
@@ -1044,9 +1045,28 @@ function travelDownloadHistoryKML(i) {
   try { generateKML(h.dest); downloadKML(h.dest); }
   finally { tripData = prev; }
 }
-// 검색 결과(여행 일정)를 독립 HTML 문서로 생성해 새 탭 출력
-function travelExportHistoryHTML(i) {
-  const h = travelHistory()[i]; if (!h || !Array.isArray(h.tripData)) return;
+// Google Static Maps URL 생성 — 일차별 마커(번호·색) + 경로선
+function buildStaticMapUrl(trip) {
+  const key = window.__gmapsKey || '';
+  const DAY_HEX = ['e74c3c','0984e3','00b894','e17055','6c5ce7','fdcb6e'];
+  let u = 'https://maps.googleapis.com/maps/api/staticmap?size=680x400&scale=2&language=ko&region=KR';
+  trip.forEach((day, di) => {
+    const hex = DAY_HEX[di % DAY_HEX.length];
+    const pts = (day.places || []).filter(p => p.lat && p.lng);
+    if (!pts.length) return;
+    pts.forEach((p, pi) => {
+      u += `&markers=color:0x${hex}%7Clabel:${(pi + 1) % 10}%7C${p.lat},${p.lng}`;
+    });
+    if (pts.length > 1) {
+      u += `&path=color:0x${hex}cc%7Cweight:3%7C` + pts.map(p => `${p.lat},${p.lng}`).join('%7C');
+    }
+  });
+  return u + '&key=' + key;
+}
+
+// 여행 일정 → 독립 HTML 문서 문자열 생성 (지도 포함) — 출력·공유 공용
+function buildHistoryHTML(h, opts) {
+  opts = opts || {};
   const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]));
   const dt = new Date(h.at);
   const when = `${dt.getFullYear()}.${dt.getMonth()+1}.${dt.getDate()}`;
@@ -1084,16 +1104,25 @@ function travelExportHistoryHTML(i) {
     </section>`;
   }).join('');
 
-  const doc = `<!doctype html><html lang="ko"><head><meta charset="utf-8">
+  const mapUrl = buildStaticMapUrl(h.tripData);
+  const mapSection = `<div class="mapbox"><img src="${mapUrl}" alt="여행 경로 지도" onerror="this.parentNode.style.display='none'"></div>`;
+
+  return `<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${esc(h.dest)} ${esc(h.dur)} 여행 일정</title>
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{font-family:'Noto Sans KR','Malgun Gothic',sans-serif;background:#f0f2f5;color:#1f2328;padding:24px;line-height:1.6}
   .wrap{max-width:760px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.08)}
-  header{background:linear-gradient(135deg,#6c5ce7,#4834d4);color:#fff;padding:28px 30px}
+  header{background:linear-gradient(135deg,#6c5ce7,#4834d4);color:#fff;padding:28px 30px;position:relative}
   header h1{font-size:24px;font-weight:800}
   header .sub{opacity:.85;font-size:14px;margin-top:6px}
+  .toolbar{display:flex;gap:8px;margin-top:14px}
+  .toolbar button{border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  .btn-print{background:rgba(255,255,255,0.9);color:#4834d4}
+  .btn-share{background:#00b894;color:#fff}
+  .mapbox{padding:0;background:#e9ecf2}
+  .mapbox img{display:block;width:100%;height:auto}
   .day{padding:20px 26px}
   .day h2{font-size:16px;padding-bottom:8px;border-bottom:2px solid;margin-bottom:14px}
   .dbadge{color:#fff;font-size:13px;font-weight:700;padding:3px 12px;border-radius:20px}
@@ -1107,19 +1136,56 @@ function travelExportHistoryHTML(i) {
   .pdetail div{margin-top:2px}
   .ptip{font-size:12.5px;color:#444;margin-top:6px;background:#f6f5ff;border-radius:8px;padding:7px 10px}
   footer{text-align:center;padding:16px;font-size:11px;color:#999}
-  @media print{body{background:#fff;padding:0}.wrap{box-shadow:none}}
+  @media print{body{background:#fff;padding:0}.wrap{box-shadow:none}.toolbar{display:none}}
 </style></head>
 <body><div class="wrap">
   <header><h1>🗺️ ${esc(h.dest)} 여행 일정</h1>
-    <div class="sub">${esc(h.dur)} · ${h.tripData.length}일 · 생성일 ${when}</div></header>
+    <div class="sub">${esc(h.dur)} · ${h.tripData.length}일 · 생성일 ${when}</div>
+    <div class="toolbar">
+      <button class="btn-print" onclick="window.print()">🖨 인쇄 / PDF 저장</button>
+      <button class="btn-share" onclick="(async()=>{const u=location.href;try{if(navigator.share){await navigator.share({title:document.title,url:u})}else{await navigator.clipboard.writeText(u);alert('링크 복사됨')}}catch(e){}})()">🔗 공유</button>
+    </div>
+  </header>
+  ${mapSection}
   ${daysHtml}
   <footer>AI 여행 플래너 · ${when} 생성</footer>
 </div></body></html>`;
+}
 
+// 검색 결과를 독립 HTML 문서로 생성해 새 탭 출력
+function travelExportHistoryHTML(i) {
+  const h = travelHistory()[i]; if (!h || !Array.isArray(h.tripData)) return;
+  const doc = buildHistoryHTML(h);
   const blob = new Blob([doc], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   window.open(url, '_blank');
   setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+// 여행 일정 HTML을 서버에 업로드해 공유 링크 발급
+async function travelShareHistory(i) {
+  const h = travelHistory()[i]; if (!h || !Array.isArray(h.tripData)) return;
+  const html = buildHistoryHTML(h);
+  showToast('🔗 공유 링크 생성 중…');
+  try {
+    const res = await fetch('/api/share', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ title: `${h.dest} ${h.dur} 여행 일정`, html })
+    });
+    if (!res.ok) {
+      const e = await res.json().catch(() => ({}));
+      showToast('공유 실패: ' + (e.error || `서버 ${res.status}`));
+      return;
+    }
+    const j = await res.json();
+    const full = location.origin + j.url;
+    try { await navigator.clipboard.writeText(full); } catch (_) {}
+    showToast('🔗 공유 링크 복사됨');
+    window.open(full, '_blank');
+  } catch (e) {
+    showToast('공유 실패: ' + e.message);
+  }
 }
 function travelLoadHistory(i) {
   const h = travelHistory()[i]; if (!h) return;
