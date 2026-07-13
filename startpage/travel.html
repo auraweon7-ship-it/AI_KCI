@@ -665,6 +665,21 @@ body.light-mode select option { background: #ffffff !important; color: #1f2328 !
 }
 .chip-tool:hover { background: rgba(108,92,231,0.15); }
 .chip-tool.on { background: rgba(108,92,231,0.25); border-style: solid; }
+/* 음식 종류 칩 (다중 선택, 작은 폰트) */
+#cuisine-chips { display: flex; gap: 4px; flex-wrap: wrap; }
+.cuisine-chip {
+  font-size: 10px; padding: 2px 7px;
+  border-radius: 12px; border: 1px solid rgba(108,92,231,0.25);
+  color: var(--muted-text); cursor: pointer; user-select: none;
+  white-space: nowrap; transition: all 0.15s; background: transparent;
+}
+.cuisine-chip:hover { border-color: rgba(108,92,231,0.5); }
+.cuisine-chip.active {
+  background: rgba(108,92,231,0.18); border-color: var(--gold);
+  color: var(--gold-light); font-weight: 600;
+}
+body.light-mode .cuisine-chip { color: #55503f; }
+body.light-mode .cuisine-chip.active { color: #6c5ce7; }
 .space-chip .chip-del {
   margin-left: 4px; color: #e74c3c; font-weight: 700; cursor: pointer;
 }
@@ -888,16 +903,15 @@ body.light-mode .meal-chk { color: #55503f !important; }
     </div>
     <div class="input-group" id="cuisine-group">
       <label>음식</label>
-      <select id="cuisine-select">
-        <option value="">무관</option>
-        <option value="한식">한식</option>
-        <option value="중식">중식</option>
-        <option value="양식">양식</option>
-        <option value="일식">일식</option>
-        <option value="분식">분식</option>
-        <option value="아시안">아시안</option>
-        <option value="향토·별미">향토·별미</option>
-      </select>
+      <div id="cuisine-chips">
+        <span class="cuisine-chip" data-val="한식">한식</span>
+        <span class="cuisine-chip" data-val="중식">중식</span>
+        <span class="cuisine-chip" data-val="양식">양식</span>
+        <span class="cuisine-chip" data-val="일식">일식</span>
+        <span class="cuisine-chip" data-val="분식">분식</span>
+        <span class="cuisine-chip" data-val="아시안">아시안</span>
+        <span class="cuisine-chip" data-val="향토·별미">향토</span>
+      </div>
     </div>
     <button id="plan-btn">✦ 여행 계획 생성</button>
   </div>
@@ -1474,8 +1488,8 @@ async function generatePlan() {
     dinner: !!document.getElementById('meal-dinner')?.checked
   };
   const lodging      = !!document.getElementById('lodging-chk')?.checked;
-  const cuisine      = document.getElementById('cuisine-select')?.value || '';
-  try { localStorage.setItem('travel_origin', origin); localStorage.setItem('travel_lodging', lodging ? '1' : '0'); localStorage.setItem('travel_cuisine', cuisine); } catch (_) {}
+  const cuisines     = [...document.querySelectorAll('.cuisine-chip.active')].map(c => c.dataset.val);
+  try { localStorage.setItem('travel_origin', origin); localStorage.setItem('travel_lodging', lodging ? '1' : '0'); localStorage.setItem('travel_cuisine', JSON.stringify(cuisines)); } catch (_) {}
 
   if (!dest) { showToast('목적지를 입력해주세요.'); return; }
   if (spaceTypes.length === 0) { showToast('공간 유형을 1개 이상 선택해주세요.'); return; }
@@ -1495,7 +1509,7 @@ async function generatePlan() {
 
     // Claude AI로 직접 검색 (항상 실시간)
     setLoadingMsg(`Claude AI로 "${dest}" 여행지 검색 중…`);
-    let allPlaces = await searchWithGemini(dest, spaceTypes, totalNeeded, { meals, numDays, perDay: dayPlaces, origin, lodging, cuisine });
+    let allPlaces = await searchWithGemini(dest, spaceTypes, totalNeeded, { meals, numDays, perDay: dayPlaces, origin, lodging, cuisines });
 
     // 실패 시 내장 DB 폴백
     if (!allPlaces.length) {
@@ -1606,8 +1620,8 @@ async function searchWithGemini(dest, spaceTypes, count, opts) {
   }
 
   // 식사 배치 지시 (점심/저녁 체크 시)
-  const cuisine = (opts.cuisine || '').trim();
-  const cuisineLine = cuisine ? `   · 식사 맛집은 "${cuisine}" 전문 음식점 위주로 선정 (해당 지역에 ${cuisine}이 마땅치 않으면 인근의 유사·대체 맛집)\n` : '';
+  const cuisines = Array.isArray(opts.cuisines) ? opts.cuisines.filter(Boolean) : [];
+  const cuisineLine = cuisines.length ? `   · 식사 맛집은 ${cuisines.map(c => `"${c}"`).join('·')} 중에서 선정 (해당 지역에 마땅치 않으면 인근의 유사·대체 맛집)\n` : '';
   const mealList = [meals.lunch && '점심', meals.dinner && '저녁'].filter(Boolean);
   const mealBlock = mealList.length ? `
 [식사 배치 — 필수]
@@ -3180,11 +3194,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const savedLodging = localStorage.getItem('travel_lodging');
     if (savedLodging === '0') lc.checked = false;
   }
-  // 음식 종류 저장값 복원
-  const cs = document.getElementById('cuisine-select');
-  if (cs) {
-    const savedCuisine = localStorage.getItem('travel_cuisine');
-    if (savedCuisine != null) cs.value = savedCuisine;
+  // 음식 종류 칩 (다중 선택 토글 + 저장값 복원)
+  const cchips = document.getElementById('cuisine-chips');
+  if (cchips) {
+    try {
+      const saved = JSON.parse(localStorage.getItem('travel_cuisine') || '[]');
+      if (Array.isArray(saved)) cchips.querySelectorAll('.cuisine-chip').forEach(c => {
+        if (saved.includes(c.dataset.val)) c.classList.add('active');
+      });
+    } catch (_) {}
+    cchips.addEventListener('click', e => {
+      const chip = e.target.closest('.cuisine-chip');
+      if (chip) chip.classList.toggle('active');
+    });
   }
 
   // 엔터키
