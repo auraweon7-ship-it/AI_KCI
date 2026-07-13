@@ -464,7 +464,7 @@ body.light-mode select option { background: #ffffff !important; color: #1f2328 !
 #schedule-table td {
   padding: 8px 10px;
   border-bottom: 1px solid var(--border);
-  vertical-align: middle; color: var(--ink);
+  vertical-align: middle; color: var(--paper);
   line-height: 1.5;
 }
 #schedule-table tr:hover td { background: rgba(108,92,231,0.06); }
@@ -1948,12 +1948,12 @@ function renderTable() {
 
       html += `<tr>
         <td style="color:${color};font-weight:700;white-space:nowrap">${day.day}일차</td>
-        <td style="font-weight:600;color:var(--ink)">${p.name}</td>
-        <td style="color:var(--ink)">${p.category||'-'}</td>
+        <td style="font-weight:600;color:var(--paper)">${p.name}</td>
+        <td style="color:var(--paper)">${p.category||'-'}</td>
         <td style="color:var(--gold);font-weight:600">★ ${p.rating||'-'}</td>
         <td style="width:80px">${thumbVal}</td>
-        <td style="color:var(--ink)">${p.tip||'-'}</td>
-        <td style="white-space:nowrap;color:var(--ink)">${p.duration||'-'}</td>
+        <td style="color:var(--paper)">${p.tip||'-'}</td>
+        <td style="white-space:nowrap;color:var(--paper)">${p.duration||'-'}</td>
       </tr>`;
     });
   });
