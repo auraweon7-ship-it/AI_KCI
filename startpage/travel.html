@@ -137,7 +137,9 @@ body::before {
   color: var(--paper); font-family: 'Noto Sans KR', sans-serif;
   font-size: 14px; width: 100px;
 }
-.input-group select option { background: #1a1a2e; color: var(--paper); }
+.input-group select option { background: var(--cream); color: var(--paper); }
+body.light-mode .input-group select option { background: #ffffff; color: #1f2328; }
+body.light-mode select option { background: #ffffff !important; color: #1f2328 !important; }
 #dest-input { width: 120px; }
 #dest-input::placeholder { color: rgba(245,240,232,0.35); font-size: 13px; }
 
