@@ -742,7 +742,19 @@ body.light-mode select option { background: #ffffff !important; color: #1f2328 !
 .footer-link:hover { color: var(--gold); text-decoration: underline; }
 </style>
 </head>
-<body>
+<body class="light-mode">
+<script>
+// FOUC 방지 — 렌더 전 부모(startpage) 테마 즉시 반영 (기본 화이트)
+(function(){
+  var light = true;
+  try {
+    if (window.parent !== window && window.parent.document && window.parent.document.body) {
+      light = window.parent.document.body.dataset.theme !== 'dark';
+    }
+  } catch(_) {}
+  document.body.classList.toggle('light-mode', light);
+})();
+</script>
 
 <!-- 헤더 -->
 <header id="header">
