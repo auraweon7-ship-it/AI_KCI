@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v20.5</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v20.6</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3931,7 +3931,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v20.5 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v20.6 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6915,7 +6915,7 @@ function ytChannels() {
   let raw = [];
   try { raw = JSON.parse(localStorage.getItem('yt_channels') || '[]'); } catch(_) {}
   // 레거시(문자열) → 객체 정규화
-  return raw.map(c => typeof c === 'string' ? ytParseChannel(c) : { name: c.name || '', url: c.url || '' }).filter(c => c.name || c.url);
+  return raw.map(c => typeof c === 'string' ? ytParseChannel(c) : { name: c.name || '', url: c.url || '', desc: c.desc || '' }).filter(c => c.name || c.url);
 }
 function saveYtChannels(a) { localStorage.setItem('yt_channels', JSON.stringify(a)); try { cloudPush('yt_channels'); } catch(_) {} }
 // 입력값(채널명 또는 URL) → {name, url}
@@ -6952,24 +6952,38 @@ function ytChannelRender() {
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   const list = ytChannels();
   const _ei = (typeof window._ytChEdit === 'number') ? window._ytChEdit : -1;
-  const rows = list.length ? list.map((ch, i) => i === _ei ? `
-    <div style="display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:7px;border:1px solid var(--accent2);background:var(--bg3)">
-      <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:4px">
-        <input id="ytChEditName" value="${esc(ch.name||'')}" placeholder="채널명" onkeydown="if(event.key==='Enter')ytChannelEditSave(${i})" style="width:100%;box-sizing:border-box;padding:5px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:.74rem;outline:none">
-        <input id="ytChEditUrl" value="${esc(ch.url||'')}" placeholder="채널 URL" onkeydown="if(event.key==='Enter')ytChannelEditSave(${i})" style="width:100%;box-sizing:border-box;padding:5px 8px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:.66rem;outline:none">
-      </div>
-      <button onclick="ytChannelEditSave(${i})" title="저장" style="flex-shrink:0;background:var(--accent);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:.7rem;padding:4px 8px">저장</button>
-      <button onclick="window._ytChEdit=-1;ytChannelRender()" title="취소" style="flex-shrink:0;background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.8rem">✕</button>
-    </div>` : `
-    <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--bg3)">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:.78rem;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">📺 ${esc(ch.name || '(이름없음)')}</div>
-        ${ch.url ? `<a href="${esc(ch.url)}" target="_blank" rel="noopener" style="font-size:.62rem;color:var(--accent2);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block">${esc(ch.url)}</a>` : ''}
-      </div>
-      <button onclick="window._ytChEdit=${i};ytChannelRender()" title="수정" style="flex-shrink:0;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:.78rem">✏️</button>
-      <button onclick="ytChannelDel(${i})" title="삭제" style="flex-shrink:0;background:none;border:none;color:var(--danger,#e74c3c);cursor:pointer;font-size:.8rem">✕</button>
-    </div>`).join('') : '<div style="font-size:.72rem;color:var(--text-muted);padding:10px">등록된 채널이 없습니다.</div>';
-  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:420px;width:100%;max-height:80vh;display:flex;flex-direction:column;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
+  const bodyRows = list.length ? list.map((ch, i) => i === _ei ? `
+    <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:6px 6px;text-align:center;color:var(--text-dim);font-size:.72rem">${i+1}</td>
+      <td style="padding:6px 6px"><input id="ytChEditName" value="${esc(ch.name||'')}" placeholder="채널명" onkeydown="if(event.key==='Enter')ytChannelEditSave(${i})" style="width:100%;box-sizing:border-box;padding:4px 6px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:.72rem;outline:none"></td>
+      <td style="padding:6px 6px"><input id="ytChEditUrl" value="${esc(ch.url||'')}" placeholder="URL" onkeydown="if(event.key==='Enter')ytChannelEditSave(${i})" style="width:100%;box-sizing:border-box;padding:4px 6px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:.66rem;outline:none"></td>
+      <td style="padding:6px 6px"><input id="ytChEditDesc" value="${esc(ch.desc||'')}" placeholder="주요 내용" onkeydown="if(event.key==='Enter')ytChannelEditSave(${i})" style="width:100%;box-sizing:border-box;padding:4px 6px;background:var(--bg2);border:1px solid var(--border);border-radius:5px;color:var(--text);font-size:.7rem;outline:none"></td>
+      <td style="padding:6px 6px;white-space:nowrap;text-align:center">
+        <button onclick="ytChannelEditSave(${i})" title="저장" style="background:var(--accent);border:none;border-radius:5px;color:#fff;cursor:pointer;font-size:.68rem;padding:4px 7px">저장</button>
+        <button onclick="window._ytChEdit=-1;ytChannelRender()" title="취소" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:.8rem">✕</button>
+      </td>
+    </tr>` : `
+    <tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:7px 6px;text-align:center;color:var(--text-dim);font-size:.72rem">${i+1}</td>
+      <td style="padding:7px 6px;font-size:.76rem;font-weight:700;color:var(--text)">📺 ${esc(ch.name || '(이름없음)')}</td>
+      <td style="padding:7px 6px;font-size:.64rem;max-width:150px">${ch.url ? `<a href="${esc(ch.url)}" target="_blank" rel="noopener" style="color:var(--accent2);text-decoration:none;word-break:break-all">${esc(ch.url)}</a>` : '<span style="color:var(--text-muted)">-</span>'}</td>
+      <td style="padding:7px 6px;font-size:.7rem;color:var(--text-dim);word-break:break-word">${esc(ch.desc || '-')}</td>
+      <td style="padding:7px 6px;white-space:nowrap;text-align:center">
+        <button onclick="window._ytChEdit=${i};ytChannelRender()" title="수정" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:.78rem">✏️</button>
+        <button onclick="ytChannelDel(${i})" title="삭제" style="background:none;border:none;color:var(--danger,#e74c3c);cursor:pointer;font-size:.8rem">✕</button>
+      </td>
+    </tr>`).join('') : '<tr><td colspan="5" style="padding:16px;text-align:center;font-size:.72rem;color:var(--text-muted)">등록된 채널이 없습니다.</td></tr>';
+  const rows = `<table style="width:100%;border-collapse:collapse">
+    <thead><tr style="border-bottom:2px solid var(--border);position:sticky;top:0;background:var(--bg2)">
+      <th style="padding:6px 6px;font-size:.66rem;color:var(--text-dim);text-align:center">번호</th>
+      <th style="padding:6px 6px;font-size:.66rem;color:var(--text-dim);text-align:left">채널명</th>
+      <th style="padding:6px 6px;font-size:.66rem;color:var(--text-dim);text-align:left">URL</th>
+      <th style="padding:6px 6px;font-size:.66rem;color:var(--text-dim);text-align:left">주요 내용</th>
+      <th style="padding:6px 6px;font-size:.66rem;color:var(--text-dim);text-align:center">관리</th>
+    </tr></thead>
+    <tbody>${bodyRows}</tbody>
+  </table>`;
+  ov.innerHTML = `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:680px;width:100%;max-height:80vh;display:flex;flex-direction:column;padding:22px 24px;box-shadow:0 8px 30px rgba(0,0,0,.4)">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
       <h3 style="flex:1;font-size:1.05rem;font-weight:800;color:var(--text);margin:0">📺 채널 등록</h3>
       <input type="file" id="ytChFile" accept=".html,.htm" style="display:none" onchange="ytChannelImportHtml(this)">
@@ -7009,7 +7023,7 @@ function ytChannelExportHtml() {
   const list = ytChannels();
   if (!list.length) { showToast('등록된 채널이 없습니다', 'ℹ️'); return; }
   const esc = s => (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const rows = list.map(c => `  <div class="yt-channel" data-name="${esc(c.name)}" data-url="${esc(c.url)}">📺 <b>${esc(c.name || '(이름없음)')}</b>${c.url ? ` — <a href="${esc(c.url)}" target="_blank">${esc(c.url)}</a>` : ''}</div>`).join('\n');
+  const rows = list.map(c => `  <div class="yt-channel" data-name="${esc(c.name)}" data-url="${esc(c.url)}" data-desc="${esc(c.desc||'')}">📺 <b>${esc(c.name || '(이름없음)')}</b>${c.url ? ` — <a href="${esc(c.url)}" target="_blank">${esc(c.url)}</a>` : ''}${c.desc ? ` <span style="color:#888">— ${esc(c.desc)}</span>` : ''}</div>`).join('\n');
   const doc = `<!doctype html><html lang="ko"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>YouTube 채널 목록 (${list.length})</title>
@@ -7034,12 +7048,13 @@ function ytChannelImportHtml(input) {
       const doc = new DOMParser().parseFromString(String(reader.result), 'text/html');
       let items = [...doc.querySelectorAll('.yt-channel')].map(el => ({
         name: el.getAttribute('data-name') || el.querySelector('b')?.textContent || '',
-        url:  el.getAttribute('data-url')  || el.querySelector('a')?.getAttribute('href') || ''
+        url:  el.getAttribute('data-url')  || el.querySelector('a')?.getAttribute('href') || '',
+        desc: el.getAttribute('data-desc') || ''
       }));
       if (!items.length) {
         // 폴백: 유튜브 링크 모두 추출
         items = [...doc.querySelectorAll('a[href*="youtube.com"],a[href*="youtu.be"]')].map(a => ({
-          name: (a.textContent || '').trim(), url: a.getAttribute('href') || ''
+          name: (a.textContent || '').trim(), url: a.getAttribute('href') || '', desc: ''
         }));
       }
       if (!items.length) { showToast('채널을 찾지 못했습니다', '⚠️'); input.value = ''; return; }
@@ -7048,6 +7063,7 @@ function ytChannelImportHtml(input) {
         const ch = ytParseChannel(it.url || it.name);
         if (it.name) ch.name = it.name.slice(0, 60);  // data-name(실제 채널명) 우선
         if (it.url) ch.url = it.url.slice(0, 300);      // data-url 원본 유지
+        if (it.desc) ch.desc = it.desc.slice(0, 200);   // 주요 내용
         if (!ch.name && !ch.url) return;
         const dup = list.some(c => (ch.url && c.url === ch.url) || (c.name && ch.name && c.name.toLowerCase() === ch.name.toLowerCase()));
         if (!dup) { list.push(ch); added++; }
@@ -7064,8 +7080,9 @@ function ytChannelEditSave(i) {
   const list = ytChannels(); if (!list[i]) return;
   const name = (document.getElementById('ytChEditName')?.value || '').trim();
   const url = (document.getElementById('ytChEditUrl')?.value || '').trim();
+  const desc = (document.getElementById('ytChEditDesc')?.value || '').trim();
   if (!name && !url) { showToast('채널명 또는 URL을 입력하세요', 'ℹ️'); return; }
-  list[i] = { name: name.slice(0,60), url: (url ? (/^https?:\/\//i.test(url) ? url : 'https://' + url) : '').slice(0,300) };
+  list[i] = { name: name.slice(0,60), url: (url ? (/^https?:\/\//i.test(url) ? url : 'https://' + url) : '').slice(0,300), desc: desc.slice(0,200) };
   saveYtChannels(list); window._ytChEdit = -1; ytChannelRender();
   showToast('채널 수정됨 ✏️');
 }
