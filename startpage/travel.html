@@ -1738,12 +1738,32 @@ function loadPlacePhoto(placeName, placeholderId, emoji, callback, _retry = 0) {
           _photoCache[placeName] = url;
           if (placeholderId) applyPhoto(placeholderId, url);
           if (callback) callback(url);
+        } else {
+          // Places 사진 없으면 Wikipedia 이미지 폴백
+          loadWikiPhoto(placeName, placeholderId, callback);
         }
       }
     );
   } catch (e) {
     console.warn('[Photo]', placeName, e.message);
+    loadWikiPhoto(placeName, placeholderId, callback);
   }
+}
+
+// Wikipedia 대표 이미지 폴백 (Places 사진 없을 때)
+function loadWikiPhoto(placeName, placeholderId, callback) {
+  const title = placeName.replace(/\s*\([^)]*\)\s*/g, '').trim();
+  fetch('https://ko.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title))
+    .then(r => r.ok ? r.json() : null)
+    .then(j => {
+      const url = j && (j.originalimage?.source || j.thumbnail?.source);
+      if (url) {
+        _photoCache[placeName] = url;
+        if (placeholderId) applyPhoto(placeholderId, url);
+        if (callback) callback(url);
+      }
+    })
+    .catch(() => {});
 }
 
 function applyPhoto(placeholderId, url) {
