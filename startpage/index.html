@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.7</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v16.8</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -2014,16 +2014,14 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
   <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
   <div class="settings-title" style="font-size:.9rem;">🗺️ 여행 교통 API (AI 여행 플래너)</div>
-  <input id="geminiApiKey" type="password" placeholder="Gemini API 키 (AIza...)" autocomplete="off"
-    style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;font-family:Consolas,monospace;"
-    oninput="localStorage.setItem('gemini_api_key', this.value.trim());">
+  <p style="font-size:.72rem;color:var(--text-dim);margin-top:8px;margin-bottom:4px;">🧠 <b>장소 검색은 위 Claude API 키</b>를 사용합니다. 아래는 영상·지도용 키(선택).</p>
   <input id="ytApiKey" type="password" placeholder="YouTube Data API 키 (AIza...)" autocomplete="off"
     style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;font-family:Consolas,monospace;"
     oninput="localStorage.setItem('yt_api_key', this.value.trim());">
   <input id="gmapsApiKey" type="password" placeholder="Google Maps API 키 (AIza...)" autocomplete="off"
     style="width:100%;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:.78rem;margin-top:8px;outline:none;font-family:Consolas,monospace;"
     oninput="localStorage.setItem('google_maps_key', this.value.trim());">
-  <p style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">메뉴 <b>🗺️ 여행 교통</b>의 장소 검색(Gemini)·영상(YouTube)·지도(Maps)에 사용됩니다. 비워두면 내장 기본 키로 작동합니다. 키는 이 브라우저에만 저장됩니다.</p>
+  <p style="font-size:.72rem;color:var(--text-dim);margin-top:6px;">메뉴 <b>🗺️ 여행 교통</b>의 장소 검색은 <b>🧠 Claude API 키</b>, 영상(YouTube)·지도(Maps)는 위 키를 사용합니다. 비워두면 내장 기본 키로 작동합니다. 키는 이 브라우저에만 저장됩니다.</p>
 
   <hr style="border:none;border-top:1px solid var(--border);margin:16px 0;">
   <div class="settings-title" style="font-size:.9rem;">🎙 ElevenLabs API (시 낭송)</div>
@@ -3933,7 +3931,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v16.7 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v16.8 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -27988,7 +27986,7 @@ render();
  () => { const p = document.getElementById('profileSel'); if (p) p.value = localStorage.getItem('active_profile') || ''; },
  () => { const k = document.getElementById('kciApiKey'); if (k) k.value = localStorage.getItem('kci_api_key') || ''; },
  () => { const k = document.getElementById('claudeApiKey'); if (k) k.value = localStorage.getItem('claude_api_key') || ''; },
- () => { const g = document.getElementById('geminiApiKey'); if (g) g.value = localStorage.getItem('gemini_api_key') || ''; const y = document.getElementById('ytApiKey'); if (y) y.value = localStorage.getItem('yt_api_key') || ''; const mp = document.getElementById('gmapsApiKey'); if (mp) mp.value = localStorage.getItem('google_maps_key') || ''; },
+ () => { const y = document.getElementById('ytApiKey'); if (y) y.value = localStorage.getItem('yt_api_key') || ''; const mp = document.getElementById('gmapsApiKey'); if (mp) mp.value = localStorage.getItem('google_maps_key') || ''; },
  () => { const k = document.getElementById('elevenApiKey'); if (k) k.value = localStorage.getItem('eleven_api_key') || ''; const v = document.getElementById('elevenVoiceId'); if (v) v.value = localStorage.getItem('eleven_voice_id') || ''; },
  () => { let kws=[]; try{kws=JSON.parse(localStorage.getItem('book_keywords')||'[]');}catch(_){} ['bookKw1','bookKw2','bookKw3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=kws[i]||'';}); },
  () => { let ts=[]; try{ts=JSON.parse(localStorage.getItem('youtube_topics')||'[]');}catch(_){} ['ytTopic1','ytTopic2','ytTopic3'].forEach((id,i)=>{const e=document.getElementById(id); if(e) e.value=ts[i]||'';}); },
