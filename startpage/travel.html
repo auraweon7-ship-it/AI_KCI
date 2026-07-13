@@ -527,10 +527,9 @@ body.light-mode select option { background: #ffffff !important; color: #1f2328 !
   transition: opacity 0.2s;
 }
 .legend-item:hover { opacity: 0.7; }
-.legend-item.active {
-  background: rgba(108,92,231,0.2);
-  border-radius: 6px; padding: 2px 6px; margin: 0 -6px 5px;
-  font-weight: 700;
+.legend-item.off {
+  opacity: 0.35;
+  text-decoration: line-through;
 }
 .legend-dot {
   width: 12px; height: 12px; border-radius: 50%;
@@ -2834,22 +2833,18 @@ function focusMarker(di, pi) {
 }
 
 // ── 일차 토글 ──────────────────────────────────────
-let selectedDay = null;
 function toggleDay(di) {
-  if (selectedDay === di) {
-    // 재클릭 → 전체 표시
-    selectedDay = null;
-    markers.forEach(m => m.marker.setVisible(true));
-    polylines.forEach(p => p.poly.setVisible(true));
-  } else {
-    // 해당 일차만 표시 (출발지 마커 placeIdx=-1은 1일차 그룹에 포함)
-    selectedDay = di;
-    markers.forEach(m => m.marker.setVisible(m.dayIdx === di));
-    polylines.forEach(p => p.poly.setVisible(p.dayIdx === di));
-  }
-  // 범례 active 표시
-  document.querySelectorAll('#legend-items .legend-item').forEach(el =>
-    el.classList.toggle('active', selectedDay !== null && Number(el.dataset.day) === selectedDay));
+  // 해당 일차 경로·마커를 개별 on/off (클릭 시 숨김, 재클릭 시 표시)
+  const dayMarkers = markers.filter(m => m.dayIdx === di);
+  const dayPolys   = polylines.filter(p => p.dayIdx === di);
+  const cur = dayMarkers[0]?.marker.getVisible();
+  const visible = (cur === undefined) ? (dayPolys[0]?.poly.getVisible() ?? true) : cur;
+  dayMarkers.forEach(m => m.marker.setVisible(!visible));
+  dayPolys.forEach(p => p.poly.setVisible(!visible));
+  // 숨김 상태면 범례 흐리게 표시
+  document.querySelectorAll('#legend-items .legend-item').forEach(el => {
+    if (Number(el.dataset.day) === di) el.classList.toggle('off', visible);
+  });
 }
 
 // ── 지도 초기화 ────────────────────────────────────
@@ -2857,7 +2852,7 @@ function clearMap() {
   markers.forEach(m => m.marker.setMap(null));
   polylines.forEach(p => p.poly.setMap(null));
   infoWindows.forEach(w => w.close());
-  markers = []; polylines = []; infoWindows = []; selectedDay = null;
+  markers = []; polylines = []; infoWindows = [];
   document.getElementById('schedule-result').innerHTML = '';
   document.getElementById('map-legend').style.display = 'none';
 }
