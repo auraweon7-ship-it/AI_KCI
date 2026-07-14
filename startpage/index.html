@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v20.9</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v21.0</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3931,7 +3931,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v20.9 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v21.0 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6721,6 +6721,19 @@ Object.defineProperty(window, 'YT_CATS', { get: ytAllCats, configurable: true })
 
 // YouTube 추천 영상 숨김·제목수정 (하드코딩 배열이라 id 없음 → vid/제목 키로 로컬 오버라이드)
 function ytUserVideos() { try { return JSON.parse(localStorage.getItem('yt_user') || '[]'); } catch(_) { return []; } }
+// 상대 업로드 시점 텍스트("3개월 전"/"3 months ago") → 경과 일수
+function ytParseAge(t) {
+  if (!t) return null;
+  const s = String(t);
+  if (/방금|오늘|시간\s*전|분\s*전|hour|minute|second|today|just now/i.test(s)) return 0;
+  if (/어제|yesterday/i.test(s)) return 1;
+  let m;
+  if ((m = s.match(/(\d+)\s*일\s*전/)) || (m = s.match(/(\d+)\s*days?\s*ago/i))) return +m[1];
+  if ((m = s.match(/(\d+)\s*주\s*전/)) || (m = s.match(/(\d+)\s*weeks?\s*ago/i))) return +m[1] * 7;
+  if ((m = s.match(/(\d+)\s*개월\s*전/)) || (m = s.match(/(\d+)\s*months?\s*ago/i))) return +m[1] * 30;
+  if ((m = s.match(/(\d+)\s*년\s*전/)) || (m = s.match(/(\d+)\s*years?\s*ago/i))) return +m[1] * 365;
+  return null;
+}
 function saveYtUser(a) { localStorage.setItem('yt_user', JSON.stringify(a)); try { cloudPush('yt_user'); } catch(_) {} }
 // AI YouTube 등록 영상 전체 초기화(백지 상태) — 채널·카테고리 설정은 유지
 async function ytClearAll() {
@@ -7241,7 +7254,16 @@ async function ytAiFill() {
     const html = await yr.text(); const out = [];
     const re = /"videoId":"([\w-]{11})"[\s\S]{0,700}?"title":\{"runs":\[\{"text":"([^"]{3,140})"[\s\S]{0,400}?"(?:longBylineText|ownerText)":\{"runs":\[\{"text":"([^"]{1,60})"/g;
     let m; while ((m = re.exec(html)) && out.length < 12) {
-      out.push({ vid: m[1], title: m[2].replace(/\\u0026/g,'&').replace(/\\"/g,'"').replace(/\\/g,'').trim(), ch: m[3].replace(/\\u0026/g,'&').replace(/\\/g,'').trim() });
+      // 같은 영상 블록에서 업로드 시점(publishedTimeText) 추출
+      const block = html.slice(m.index, m.index + 2000);
+      const pm = block.match(/"publishedTimeText":\{"simpleText":"([^"]{1,20})"/);
+      const published = pm ? pm[1].replace(/\\/g,'').trim() : '';
+      out.push({
+        vid: m[1],
+        title: m[2].replace(/\\u0026/g,'&').replace(/\\"/g,'"').replace(/\\/g,'').trim(),
+        ch: m[3].replace(/\\u0026/g,'&').replace(/\\/g,'').trim(),
+        published, ageDays: ytParseAge(published)
+      });
     }
     return out;
   };
@@ -7262,7 +7284,7 @@ async function ytAiFill() {
           if (cand.length >= count) break;
           if (!v.vid || seen.has(v.vid) || existIds.has(v.vid) || existTitles.has(normK(v.title))) continue;
           seen.add(v.vid);
-          cand.push({ vid: v.vid, title: v.title.slice(0,90), ch: (v.ch||chName).slice(0,50), cat, views: 0 });
+          cand.push({ vid: v.vid, title: v.title.slice(0,90), ch: (v.ch||chName).slice(0,50), cat, views: 0, published: v.published||'', ageDays: v.ageDays });
         }
       }
       if (!cand.length) { showToast('등록 채널에서 영상을 찾지 못했습니다', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
@@ -7551,13 +7573,15 @@ function renderYouTubeView() {
     if (!c) return { cardBg:'var(--card)', borderColor:'var(--border)', badgeBg:'var(--bg2)', badgeColor:'var(--accent2)' };
     return { cardBg: c.bg, borderColor: c.border, badgeBg: c.badge, badgeColor:'#fff' };
   }
-  let ytCat = '전체', ytPage = 0;
+  let ytCat = '전체', ytPage = 0, ytPeriod = 0;   // ytPeriod: 0=전체, 15/30/90/180/365일
 
   function getFiltered() {
     const hidden = ytHiddenSet();
     const tOv = ytTitleOverrides(), vOv = ytVidOverrides();
     const merged = ytUserVideos().map(v => ({ ...v, u: true }));   // 사용자 등록 영상만(내장 시드 숨김)
-    const base = ytCat === '전체' ? merged : merged.filter(v => v.cat === ytCat);
+    let base = ytCat === '전체' ? merged : merged.filter(v => v.cat === ytCat);
+    // 업로드 시점 필터 — ageDays 있는 영상만 기간 비교(날짜 미상은 특정 기간 선택 시 제외)
+    if (ytPeriod > 0) base = base.filter(v => typeof v.ageDays === 'number' && v.ageDays <= ytPeriod);
     return base.filter(v => !hidden.has(v.vid || v.title))
       .map(v => {
         const k = v.vid || v.title;
@@ -7608,6 +7632,17 @@ function renderYouTubeView() {
               ${c} <span style="opacity:.7;font-size:.9em">${n}</span>
             </button>`; }).join('');
           })()}
+        </div>
+
+        <!-- 업로드 시점 필터 -->
+        <div id="ytPeriodBar" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;align-items:center">
+          <span style="font-size:.72rem;color:var(--text-dim);margin-right:2px">📅 업로드</span>
+          ${[{v:0,t:'전체'},{v:15,t:'15일 이내'},{v:30,t:'1개월'},{v:90,t:'3개월'},{v:180,t:'6개월'},{v:365,t:'1년'}].map(p =>
+            `<button class="yt-period-btn ${p.v===ytPeriod?'active':''}" data-period="${p.v}"
+              style="padding:.3rem .7rem;border-radius:16px;border:1.5px solid ${p.v===ytPeriod?'var(--accent2)':'var(--border)'};
+                     background:${p.v===ytPeriod?'var(--accent2)':'var(--card)'};color:${p.v===ytPeriod?'#fff':'var(--text)'};
+                     font-size:.72rem;cursor:pointer;font-weight:${p.v===ytPeriod?700:400}">${p.t}</button>`
+          ).join('')}
         </div>
 
         <!-- 5×2 영상 그리드 -->
@@ -7690,6 +7725,9 @@ function renderYouTubeView() {
     // 이벤트 바인딩
     document.querySelectorAll('.yt-cat-btn').forEach(btn => {
       btn.addEventListener('click', () => { ytCat = btn.dataset.cat; ytPage = 0; render(); });
+    });
+    document.querySelectorAll('.yt-period-btn').forEach(btn => {
+      btn.addEventListener('click', () => { ytPeriod = parseInt(btn.dataset.period); ytPage = 0; render(); });
     });
     document.querySelectorAll('.yt-page-btn').forEach(btn => {
       btn.addEventListener('click', () => { ytPage = parseInt(btn.dataset.page); render(); });
