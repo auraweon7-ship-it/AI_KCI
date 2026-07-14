@@ -2119,8 +2119,8 @@ function getDB() {
 
 // ── YouTube embed 로드 ────────────────────────────
 const _ytCache = {};
-const YT_DEFAULT_KEY = 'AIzaSyB2DzHnaB0-VqBwaCqmgVbqa2E7T6UZGog';
 
+// 사용자 개인 키가 있으면 반환, 없으면 '' (기본 키는 서버 프록시로 처리 — 클라이언트 노출 방지)
 function getYtApiKey() {
   const inputEl = document.getElementById('yt-key-input');
   const inputVal = inputEl ? inputEl.value.trim() : '';
@@ -2133,7 +2133,7 @@ function getYtApiKey() {
     if (inputEl && !inputEl.value) inputEl.value = saved;
     return saved;
   }
-  return YT_DEFAULT_KEY;
+  return '';
 }
 
 // YouTube Data API v3로 장소명 검색 → 첫 번째 videoId 반환
@@ -2141,7 +2141,10 @@ async function fetchYtVideoId(query) {
   try {
     const apiKey = getYtApiKey();
     const q   = encodeURIComponent(query + ' 여행');
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&maxResults=1&key=${apiKey}&regionCode=KR&relevanceLanguage=ko`;
+    // 개인 키가 있으면 직접 호출, 없으면 서버 프록시(기본 키는 서버에 보관 — 노출 방지)
+    const url = apiKey
+      ? `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${q}&type=video&maxResults=1&key=${apiKey}&regionCode=KR&relevanceLanguage=ko`
+      : `/api/yt-search?q=${q}`;
     const r   = await fetch(url, { signal: AbortSignal.timeout(6000) });
     if (!r.ok) {
       const ks = document.getElementById('yt-key-status');
