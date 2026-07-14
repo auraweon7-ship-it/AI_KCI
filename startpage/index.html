@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v21.1</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v21.2</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3931,7 +3931,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v21.1 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v21.2 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6721,6 +6721,34 @@ Object.defineProperty(window, 'YT_CATS', { get: ytAllCats, configurable: true })
 
 // YouTube 추천 영상 숨김·제목수정 (하드코딩 배열이라 id 없음 → vid/제목 키로 로컬 오버라이드)
 function ytUserVideos() { try { return JSON.parse(localStorage.getItem('yt_user') || '[]'); } catch(_) { return []; } }
+// videoId들의 실제 업로드일을 YouTube watch 페이지에서 조회 → yt_user에 ageDays 저장
+async function ytEnrichDates(cat, onProgress) {
+  const arr = ytUserVideos();
+  const pool = (!cat || cat === '전체' ? arr : arr.filter(v => v.cat === cat))
+    .filter(v => v.vid && typeof v.ageDays !== 'number');
+  if (!pool.length) return 0;
+  const now = Date.now();
+  let done = 0;
+  const CONC = 6;
+  for (let i = 0; i < pool.length; i += CONC) {
+    await Promise.all(pool.slice(i, i + CONC).map(async v => {
+      try {
+        const r = await fetch('/api/proxy?url=' + encodeURIComponent('https://www.youtube.com/watch?v=' + v.vid));
+        if (!r.ok) return;
+        const h = await r.text();
+        const m = h.match(/"uploadDate":"([^"]+)"/) || h.match(/"publishDate":"([^"]+)"/);
+        if (m) {
+          const dt = new Date(m[1]);
+          if (!isNaN(dt)) { v.publishedAt = m[1]; v.ageDays = Math.max(0, Math.floor((now - dt.getTime()) / 86400000)); }
+        }
+      } catch (_) {}
+      done++; if (onProgress) onProgress(done, pool.length);
+    }));
+    localStorage.setItem('yt_user', JSON.stringify(arr));  // 중간 저장
+  }
+  try { cloudPush('yt_user'); } catch (_) {}
+  return pool.length;
+}
 // 상대 업로드 시점 텍스트("3개월 전"/"3 months ago") → 경과 일수
 function ytParseAge(t) {
   if (!t) return null;
@@ -7738,7 +7766,17 @@ function renderYouTubeView() {
       btn.addEventListener('click', () => { ytCat = btn.dataset.cat; ytPage = 0; render(); });
     });
     document.querySelectorAll('.yt-period-btn').forEach(btn => {
-      btn.addEventListener('click', () => { ytPeriod = parseInt(btn.dataset.period); ytPage = 0; render(); });
+      btn.addEventListener('click', async () => {
+        ytPeriod = parseInt(btn.dataset.period); ytPage = 0;
+        if (ytPeriod > 0) {
+          const orig = btn.textContent;
+          btn.textContent = '⏳ 조회 중…';
+          try { const n = await ytEnrichDates(ytCat, (d, t) => { btn.textContent = `⏳ ${d}/${t}`; }); if (n) showToast('업로드 날짜 조회 완료', '📅'); }
+          catch (_) {}
+          btn.textContent = orig;
+        }
+        render();
+      });
     });
     document.querySelectorAll('.yt-page-btn').forEach(btn => {
       btn.addEventListener('click', () => { ytPage = parseInt(btn.dataset.page); render(); });
