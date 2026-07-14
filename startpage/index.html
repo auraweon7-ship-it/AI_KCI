@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v20.8</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v20.9</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3931,7 +3931,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v20.8 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v20.9 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -4327,7 +4327,7 @@ function isLoggedIn() { try { return !!JSON.parse(localStorage.getItem('startpag
 // ── 클라우드 동기화 (Railway Postgres) ──
 let _cloudToken = null, _cloudTokenExp = 0;
 const CLOUD_BASE_KEYS = ['api_keys', 'apps', 'sched_events', 'lectures', 'todo_items'];  // 계정별(__이메일)
-const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden', 'uf_favs', 'bm_groups', 'bm_group_hidden', 'rss_feeds', 'rss_migrated', 'travel_history', 'travel_space_types'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube·여행 교통 히스토리·공간유형
+const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_watched', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden', 'uf_favs', 'bm_groups', 'bm_group_hidden', 'rss_feeds', 'rss_migrated', 'travel_history', 'travel_space_types'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube·여행 교통 히스토리·공간유형
 const CLOUD_ALL_KEYS = [...CLOUD_BASE_KEYS, ...CLOUD_PLAIN_KEYS];
 // 로컬 키 결정 — startpage_v7은 프로필별 키(getStateKey) 사용
 function _cloudLocalKey(base) {
@@ -4349,7 +4349,7 @@ function cloudToken() {
   return null;
 }
 // 개인 콘텐츠 키(계정별 데이터) — 로그인 시 초기화 후 해당 계정 것만 pull 복원
-const PERSONAL_CONTENT_KEYS = ['postit_notes','watch_univs','user_poems','poem_favs','poem_hidden','poem_over','poem_notes','user_music','music_favs','music_hidden','music_over','yt_user','yt_favs','yt_channels','yt_hidden','yt_vid_ov','yt_title_ov','yt_user_cats','yt_cat_hidden','uf_favs','bm_groups','bm_group_hidden'];
+const PERSONAL_CONTENT_KEYS = ['postit_notes','watch_univs','user_poems','poem_favs','poem_hidden','poem_over','poem_notes','user_music','music_favs','music_hidden','music_over','yt_user','yt_favs','yt_watched','yt_channels','yt_hidden','yt_vid_ov','yt_title_ov','yt_user_cats','yt_cat_hidden','uf_favs','bm_groups','bm_group_hidden'];
 function clearPersonalData() { PERSONAL_CONTENT_KEYS.forEach(k => localStorage.removeItem(k)); }
 // 서버 → 로컬 (로그인 직후)
 async function cloudPull() {
@@ -6814,6 +6814,17 @@ function ytToggleFav(key, ev) {
   try { cloudPush('yt_favs'); } catch(_) {}
   if (state.activeCat === 'youtube') renderYouTubeView();
 }
+// ── 시청완료 체크 ──
+function ytWatched() { try { return JSON.parse(localStorage.getItem('yt_watched') || '[]'); } catch(_) { return []; } }
+function ytIsWatched(key) { return ytWatched().includes(key); }
+function ytToggleWatched(key, ev) {
+  if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+  const w = ytWatched(); const at = w.indexOf(key);
+  if (at >= 0) w.splice(at, 1); else w.push(key);
+  localStorage.setItem('yt_watched', JSON.stringify(w));
+  try { cloudPush('yt_watched'); } catch(_) {}
+  if (state.activeCat === 'youtube') renderYouTubeView();
+}
 // ── YouTube 카테고리 추가/삭제 관리 ──
 function ytCatManageOpen() {
   let ov = document.getElementById('ytCatOverlay');
@@ -7612,8 +7623,9 @@ function renderYouTubeView() {
             const playAttr = v.vid ? `onclick="ytPlay('${v.vid}',this)"` : `onclick="window.open('${href}','_blank')"`;
             return `
             <div class="yt-card"
-               style="display:block;background:${cs.cardBg};border:1.5px solid ${cs.borderColor};border-radius:10px;overflow:hidden;position:relative">
+               style="display:block;background:${cs.cardBg};border:1.5px solid ${cs.borderColor};border-radius:10px;overflow:hidden;position:relative;${ytIsWatched(v.vid||v.title)?'opacity:.55':''}">
               <div class="yt-card-actions" style="position:absolute;top:5px;right:5px;display:flex;gap:3px;z-index:5">
+                <button class="watched" onclick="ytToggleWatched('${vkey}',event)" title="시청완료" style="width:20px;height:20px;border-radius:50%;border:none;background:${ytIsWatched(v.vid||v.title)?'#27ae60':'rgba(0,0,0,.65)'};color:#fff;font-size:.62rem;cursor:pointer;display:flex;align-items:center;justify-content:center">${ytIsWatched(v.vid||v.title)?'✓':'○'}</button>
                 <button class="fav" onclick="ytToggleFav('${vkey}',event)" title="즐겨찾기" style="width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:.62rem;cursor:pointer;display:flex;align-items:center;justify-content:center">${ytIsFav(v.vid||v.title)?'⭐':'☆'}</button>
                 <button class="edit" onclick="ytEditVideo('${vkey}',event)" title="제목 수정" style="width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✏️</button>
                 <button class="del" onclick="ytHideVideo('${vkey}',event)" title="삭제(숨김)" style="width:20px;height:20px;border-radius:50%;border:none;background:rgba(0,0,0,.65);color:#fff;font-size:.6rem;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
