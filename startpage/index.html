@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v21.0</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v21.1</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3931,7 +3931,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v21.0 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v21.1 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -7225,6 +7225,14 @@ function ytAiOpen() {
       <label style="font-size:.68rem;color:var(--text-dim)">주제·키워드 (선택) <input id="ytai_topic" placeholder="예: RAG, 파인튜닝, 프롬프트 엔지니어링" style="${inS}"></label>
       <label style="font-size:.68rem;color:var(--text-dim)">분류 <select id="ytai_cat" style="${inS}">${cOpts}</select></label>
       <label style="font-size:.68rem;color:var(--text-dim)">개수 <select id="ytai_count" style="${inS}">${nOpts}</select></label>
+      <label style="font-size:.68rem;color:var(--text-dim)">업로드 시간 <select id="ytai_period" style="${inS}">
+        <option value="0">전체</option>
+        <option value="15">15일 이내</option>
+        <option value="30">1개월 이내</option>
+        <option value="90">3개월 이내</option>
+        <option value="180">6개월 이내</option>
+        <option value="365">1년 이내</option>
+      </select></label>
       <label style="font-size:.7rem;color:var(--text);display:inline-flex;align-items:center;gap:6px;cursor:${ytChannels().length?'pointer':'not-allowed'};opacity:${ytChannels().length?1:.5}">
         <input type="checkbox" id="ytai_ch"${ytChannels().length?'':' disabled'} style="cursor:inherit">📺 등록한 채널에서 검색 (${ytChannels().length}개)
       </label>
@@ -7242,6 +7250,7 @@ async function ytAiFill() {
   const cat = document.getElementById('ytai_cat')?.value || 'AI 기초';
   const count = parseInt(document.getElementById('ytai_count')?.value, 10) || 5;
   const useCh = !!document.getElementById('ytai_ch')?.checked;   // 등록 채널에서 검색
+  const period = parseInt(document.getElementById('ytai_period')?.value, 10) || 0;  // 업로드 시간 필터(일)
   const btn = document.getElementById('ytAiFillBtn');
   const normK = s => (s || '').replace(/\s+/g,'').toLowerCase();
   const existTitles = new Set(ytUserVideos().map(v => normK(v.title)));
@@ -7283,11 +7292,13 @@ async function ytAiFill() {
         for (const v of vids) {
           if (cand.length >= count) break;
           if (!v.vid || seen.has(v.vid) || existIds.has(v.vid) || existTitles.has(normK(v.title))) continue;
+          // 업로드 시간 필터 — 기간 지정 시 날짜 정보 있고 기간 이내인 영상만
+          if (period > 0 && !(typeof v.ageDays === 'number' && v.ageDays <= period)) continue;
           seen.add(v.vid);
           cand.push({ vid: v.vid, title: v.title.slice(0,90), ch: (v.ch||chName).slice(0,50), cat, views: 0, published: v.published||'', ageDays: v.ageDays });
         }
       }
-      if (!cand.length) { showToast('등록 채널에서 영상을 찾지 못했습니다', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
+      if (!cand.length) { showToast(period ? '해당 기간 내 새 영상을 찾지 못했습니다' : '등록 채널에서 영상을 찾지 못했습니다', '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} return; }
       _ytAiCand = cand; ytAiPreview();
     } catch(e) { showToast('채널 검색 실패: ' + (e.message||'오류'), '⚠️'); if(btn){btn.disabled=false;btn.textContent='AI 추천';} }
     return;
