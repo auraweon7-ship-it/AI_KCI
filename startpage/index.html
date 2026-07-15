@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v21.3</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v21.4</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -2204,6 +2204,7 @@ let state = {
     { id: 'youtube',  name: 'AI YouTube',  emoji: '▶️' },
     { id: 'poems',    name: '좋아하는 시', emoji: '📜', special: 'poems' },
     { id: 'music',    name: '좋아하는 음악', emoji: '🎶', special: 'music' },
+    { id: 'profile',  name: '프로필',       emoji: '👤', special: 'profile' },
   ],
   links: [
     // ── 정부·정책 ──
@@ -3931,7 +3932,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v21.3 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v21.4 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -6271,6 +6272,20 @@ function renderTravelView() {
     grid.classList.remove('univall-mode');
     grid.innerHTML = `<iframe src="travel.html" title="AI 여행 플래너"
       style="grid-column:1/-1;width:100%;height:calc(100vh - 210px);min-height:600px;border:1px solid var(--border);border-radius:12px;display:block;background:#1a1a2e"
+      allow="clipboard-write"></iframe>`;
+  }
+}
+// 프로필 — 박정원 교수 프로필을 본문 영역에 임베드
+function renderProfileView() {
+  const grid = document.getElementById('linksGrid');
+  const title = document.getElementById('sectionTitle');
+  const addBtn = document.getElementById('addLinkHeaderBtn');
+  if (addBtn) addBtn.style.display = 'none';
+  if (title) title.textContent = '👤 프로필';
+  if (grid) {
+    grid.classList.remove('univall-mode');
+    grid.innerHTML = `<iframe src="profile.html" title="박정원 교수 프로필"
+      style="grid-column:1/-1;width:100%;height:calc(100vh - 210px);min-height:600px;border:1px solid var(--border);border-radius:12px;display:block;background:#fff"
       allow="clipboard-write"></iframe>`;
   }
 }
@@ -10664,6 +10679,12 @@ function renderLinks() {
   if (state.activeCat === 'music') {
     if (!isLoggedIn()) { state.activeCat = 'all'; saveState(); render(); return; }
     renderMusicView();
+    return;
+  }
+
+  // Special: 프로필 (박정원 교수)
+  if (state.activeCat === 'profile') {
+    renderProfileView();
     return;
   }
 
