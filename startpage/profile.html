@@ -846,9 +846,41 @@
         .cds-lightbox img { max-width: 92vw; max-height: 88vh; border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
         .cds-lb-close { position: absolute; top: 16px; right: 26px; font-size: 2.2rem; color: #fff; cursor: pointer; line-height: 1; opacity: 0.85; }
         .cds-lb-close:hover { opacity: 1; }
+
+        /* ── 화이트 모드 (메인 설정과 동기화, 기본값) ── */
+        body.light-mode { background: #f4f6fa !important; color: #1f2328 !important; }
+        body.light-mode::before, body.light-mode::after { display: none !important; }
+        body.light-mode .section, body.light-mode .full-width-section { background: rgba(255,255,255,0.95) !important; border-color: #e4e8ef !important; box-shadow: 0 2px 12px rgba(0,0,0,.05) !important; }
+        body.light-mode .section-title, body.light-mode [class$="-title"], body.light-mode h1, body.light-mode h2, body.light-mode h3 { color: #1a1a2e !important; }
+        body.light-mode .position-item, body.light-mode .publication-item, body.light-mode .lecture-item,
+        body.light-mode .course-item, body.light-mode .expertise-item, body.light-mode .cds-card,
+        body.light-mode .kmooc-course, body.light-mode .stat-item, body.light-mode .contact-item,
+        body.light-mode .career-item, body.light-mode .week-group {
+          background: #ffffff !important; border-color: #e4e8ef !important; color: #1f2328 !important;
+        }
+        body.light-mode [class$="-description"], body.light-mode [class$="-org"],
+        body.light-mode [class$="-meta-item"], body.light-mode [class$="-label"],
+        body.light-mode [class$="-category"], body.light-mode [class$="-duration"],
+        body.light-mode [class$="-hint"], body.light-mode p, body.light-mode li, body.light-mode span:not([class*="icon"]) {
+          color: #4a5260 !important;
+        }
+        body.light-mode a { color: #6c5ce7 !important; }
+        body.light-mode .stat-number, body.light-mode .stat-item .stat-number { color: #6c5ce7 !important; }
     </style>
 </head>
-<body>
+<body class="light-mode">
+<script>
+// 테마 동기화 — 메인(startpage) 모드 따름, 기본 화이트 (렌더 전 즉시 적용)
+(function(){
+  function apply(){
+    var light = true;
+    try { if (window.parent !== window && window.parent.document && window.parent.document.body) light = window.parent.document.body.dataset.theme !== 'dark'; } catch(_) {}
+    document.body.classList.toggle('light-mode', light);
+  }
+  apply();
+  window.pfApplyParentTheme = apply;
+})();
+</script>
     <div class="container">
         <div class="profile-card fade-in">
             <div class="header">
