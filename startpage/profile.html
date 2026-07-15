@@ -2802,13 +2802,12 @@
             card.dataset.cid = cid;
             if (edits.hidden.includes(cid)) { card.style.display='none'; return; }
             if (edits.overrides[cid]) applyOverride(card, edits.overrides[cid]);
-            addCardBtns(card, cid);
+            // 편집 버튼 비활성화(카드 추가·수정·삭제 UI 제거) — 저장된 편집분은 계속 반영
           });
           (edits.added['s'+si] || []).forEach((c, ai)=>{
             const el = makeCard(c); const cid = 's'+si+'a'+ai; el.dataset.cid = cid;
-            sec.appendChild(el); addCardBtns(el, cid);
+            sec.appendChild(el);
           });
-          addSectionBtn(sec, si);
         });
       }
 
