@@ -1,76 +1,58 @@
-# 🧠 뇌가 젊어지는 AI 리터러시 중국어
+# 🧭 연구나침반 AI
 
-> 인공지능과 함께 중국어를 배우며 인지 기능을 활성화하는 혁신적인 두뇌 훈련 플랫폼
+> AI 기반 학술연구 지원 대시보드 — KCI 논문 검색·인용 분석·연구역량 시각화
 
-**한국외국어대학교 중국언어문화학부 | 정상현 교수**
+**교육 공공데이터 활용 경진대회 출품작**
 
 ---
 
 ## 📌 프로젝트 개요
 
-노인 학습자를 대상으로 설계된 AI 기반 중국어 교육 플랫폼입니다.  
-중국어 학습과 인지 강화 훈련을 결합하여 언어 습득과 두뇌 활성화를 동시에 달성합니다.
+KCI(한국학술지인용색인) Open API를 활용하여 학술 논문 검색, 인용 분석, 대학별 연구역량을 시각화하는 웹 대시보드입니다.
 
-- **단일 HTML 파일** — 서버 불필요, 브라우저에서 바로 실행
-- **오프라인 동작** — 모든 리소스 내장 (사진 base64 포함)
-- **localStorage** 기반 데이터 영속성
+- **단일 SPA** — `index.html` 하나로 전체 UI 구현
+- **KCI API 프록시** — CORS 우회를 위한 Node.js 백엔드
+- **PostgreSQL** — 사용자 프로필·연구이력 클라우드 저장
+- **Google OAuth 2.0** — 로그인 후 데이터 영속성 보장
 
 ---
 
 ## 🎯 핵심 기능
 
-### 1. 🎙 AI 중국어 학습 (STT · TTS)
-- Web Speech API 기반 중국어 발음 연습
-- 텍스트 음성 변환(TTS)으로 원어민 발음 청취
-- **발음 채점** — STT 인식 후 한자 단위 정확도 채점 (5단계 레벨)
+### 1. 🔍 KCI 논문 검색
+- 키워드·저자·학술지별 논문 검색
+- 검색 결과 체크 → 연구이력 저장
 
-### 2. 📚 인지 백신 커리큘럼
-- 30회차 체계적 커리큘럼 카드
-- 여행 중국어 · 노래 · 감각 활동 통합 콘텐츠
-- 관리자 전용 자료 등록 시스템
+### 2. 📊 인용 분석
+- H-index, 피인용수, 연구 트렌드 차트
+- Chart.js 기반 도넛·라인·바·레이더 차트
 
-### 3. 🎬 두뇌 활력 미디어
-- YouTube 영상 연계 학습 자료
-- 노래·율동 융합 멀티미디어 콘텐츠
+### 3. 🗺 대학 연구역량 지도
+- Google Maps로 전국 201개 대학교 연구역량 시각화
+- 마커 클러스터링, 실시간 필터링
 
-### 4. 🎭 인사이트 극장
-- 블로그형 스크립트 자동 생성
-- YouTube URL 입력 → 제목·키워드·요약 자동 추출 (oEmbed API)
-- **블로그 글 자동 생성** — YouTube 썸네일 10장 + 섹션별 콘텐츠
-- 블로그 팝업 뷰어 + HTML 다운로드
+### 4. 🤖 Claude AI 연구 지원
+- Claude API 연동 학술 분석
+- 연구 동향 요약, 논문 추천
 
-### 5. 🏫 우리들의 공간
-- 학습자 포트폴리오 (이미지·인포그래픽·동영상·오디오)
-- 좋아요 · 댓글 · 불꽃놀이 애니메이션
-- **실시간 강의 만족도 투표** (5단계 평점)
-- 카테고리 필터
-
----
-
-## 🔐 관리자 모드
-
-우측 상단 🔐 아이콘 클릭 → 비밀번호 입력
-
-```
-비밀번호: ai1234
-```
-
-관리자 모드에서만 콘텐츠 등록 가능 (인지 백신 · 미디어 · 인사이트 극장).
+### 5. 👤 사용자 프로필
+- Google 로그인 기반 프로필 관리
+- 대학·전공·연구 키워드·단계 설정
+- 로그아웃 후 재로그인 시 데이터 유지 (PostgreSQL)
 
 ---
 
 ## 🚀 실행 방법
 
 ```bash
-# 방법 1: 브라우저에서 직접 열기
-open chinese-literacy-app.html
+# 로컬 실행
+npm install
+node server.js
+# → http://localhost:8080
 
-# 방법 2: 로컬 서버 (STT 기능 사용 시 권장)
-python -m http.server 8080
-# → http://localhost:8080/chinese-literacy-app.html
+# 환경변수 (선택)
+DATABASE_URL=postgresql://...  # PostgreSQL 연결 (미설정 시 localStorage 폴백)
 ```
-
-> **STT(음성 인식)** 는 HTTPS 또는 localhost 환경에서만 동작합니다.
 
 ---
 
@@ -78,43 +60,51 @@ python -m http.server 8080
 
 | 구분 | 기술 |
 |------|------|
-| 언어 | HTML5 · CSS3 · Vanilla JS |
-| 음성 | Web Speech API (STT · TTS) |
-| 데이터 | localStorage · sessionStorage |
-| 미디어 | YouTube oEmbed API · Object URL |
-| 애니메이션 | Canvas 파티클 엔진 (불꽃놀이) |
-| 배포 | 단일 HTML 파일 (외부 의존 없음) |
+| 프론트엔드 | HTML5 · CSS3 · Vanilla JS |
+| 차트 | Chart.js 4.x |
+| 지도 | Google Maps JavaScript API |
+| 인증 | Google Identity Services (OAuth 2.0) |
+| 백엔드 | Node.js (http 모듈) |
+| 데이터베이스 | PostgreSQL (pg) |
+| AI | Claude API (Anthropic) |
+| 배포 | Railway |
+| 도메인 | aikci.kr |
 
 ---
 
 ## 📁 프로젝트 구조
 
 ```
-AI KCI/
-├── chinese-literacy-app.html   # 메인 앱 (단일 파일)
-├── instructor.jpg              # 강사 사진 (base64로 HTML 내장)
-├── hanzi-writer-app/           # 한자 쓰기 연습 앱
-├── chinese-dictionary-app.html # AI 중국어 사전
-└── youtube-agent/              # YouTube 자동화 에이전트
+AI_KCI/
+├── index.html       # 메인 SPA (연구나침반 AI 대시보드)
+├── server.js        # KCI API 프록시 + PostgreSQL API + 정적 파일 서빙
+├── package.json     # Node.js 의존성 (pg)
+├── nixpacks.toml    # Railway 빌드 설정
+├── instructor.jpg   # 강사 이미지
+└── .gitignore
 ```
 
 ---
 
-## 📊 학습 설계 원칙
+## 📡 API 엔드포인트
 
-- **다중감각 학습법** — 시각·청각·운동감각 동시 활성화
-- **에빙하우스 망각 곡선** 기반 단계적 복습
-- **음악 융합 학습** — 멜로디로 기억 보존율 3배 향상
-- **뇌과학 기반 설계** — 전두엽·측두엽 동시 자극
+| 경로 | 메서드 | 설명 |
+|------|--------|------|
+| `/api/kci` | GET | KCI Open API 프록시 |
+| `/api/user/login` | POST | 사용자 등록/업데이트 |
+| `/api/user/profile` | GET/POST | 프로필 조회/저장 |
+| `/api/user/history` | GET/POST/DELETE | 연구이력 CRUD |
+| `/health` | GET | 서버 상태 확인 |
 
 ---
 
-## 👩‍🏫 개발 정보
+## 🔑 활용 공공데이터
 
-- **기관** : 한국외국어대학교 중국언어문화학부
-- **담당** : 정상현 교수
-- **연도** : 2026
-- **대상** : 노인 학습자 (AI 리터러시 교육 프로그램)
+| 제공기관 | 데이터명 | URL |
+|----------|----------|-----|
+| 한국학술지인용색인(KCI) | KCI 논문 검색 API | open.kci.go.kr |
+| NRF 한국연구재단 | KCI 피인용 지수 API | open.kci.go.kr |
+| 공공데이터포털 | 전국 대학교 좌표 정보 | api.data.go.kr |
 
 ---
 
