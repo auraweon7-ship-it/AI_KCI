@@ -2554,5 +2554,147 @@
             if (e.key === 'Escape') document.getElementById('cdsLightbox').classList.remove('open');
         });
     </script>
+    <!-- ── 프로필 카드 편집(CRUD)·공유 스크립트 ── -->
+    <script>
+    (function(){
+      const CARD_SEL = '.position-item,.publication-item,.lecture-item,.course-item,.expertise-item,.kmooc-course,.cds-card';
+      // 부모(startpage) iframe 안 + 로그인 상태에서만 편집 UI 노출 (공유 단독 페이지는 읽기전용)
+      const inApp = window.parent !== window;
+      let canEdit = false;
+      try { canEdit = inApp && window.parent.isLoggedIn && window.parent.isLoggedIn(); } catch(_) { canEdit = false; }
+
+      function loadEdits(){ try { return JSON.parse(localStorage.getItem('profile_edits') || '{}'); } catch(_) { return {}; } }
+      function saveEdits(){ localStorage.setItem('profile_edits', JSON.stringify(edits)); try { if (inApp && window.parent.cloudPush) window.parent.cloudPush('profile_edits'); } catch(_) {} }
+      let edits = loadEdits();
+      edits.hidden = edits.hidden || []; edits.overrides = edits.overrides || {}; edits.added = edits.added || {};
+
+      const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+      function titleEl(card){ return card.querySelector('.position-title,.publication-title,.lecture-title,.course-title,.kmooc-title,.expertise-item') || card; }
+      function subEl(card){ return card.querySelector('.position-org,.publication-category,.course-duration,.kmooc-duration'); }
+      function descEl(card){ return card.querySelector('.publication-description,.lecture-description,.course-description,.kmooc-description'); }
+      function readCard(card){ return { title: (titleEl(card)?.textContent||'').trim(), sub: (subEl(card)?.textContent||'').trim(), desc: (descEl(card)?.textContent||'').trim() }; }
+      function applyOverride(card, ov){
+        if (ov.title != null && titleEl(card)) titleEl(card).textContent = ov.title;
+        if (ov.sub != null && subEl(card)) subEl(card).textContent = ov.sub;
+        if (ov.desc != null && descEl(card)) descEl(card).textContent = ov.desc;
+      }
+      function makeCard(c){
+        const d = document.createElement('div');
+        d.className = 'position-item';
+        d.style.cssText = 'position:relative';
+        d.innerHTML = '<div class="position-title">'+esc(c.title||'제목')+'</div>' +
+          (c.sub?'<div class="position-org">'+esc(c.sub)+'</div>':'') +
+          (c.desc?'<div class="publication-description" style="margin-top:6px">'+esc(c.desc)+'</div>':'');
+        return d;
+      }
+      function addCardBtns(card, cid){
+        if (!canEdit) return;
+        card.style.position = card.style.position || 'relative';
+        const bar = document.createElement('div');
+        bar.className = 'pf-editbar';
+        bar.style.cssText = 'position:absolute;top:4px;right:4px;display:flex;gap:4px;z-index:10';
+        bar.innerHTML = '<button class="pf-edit" title="수정" style="width:22px;height:22px;border:none;border-radius:5px;background:rgba(0,0,0,.55);color:#fff;cursor:pointer;font-size:11px">✏️</button>' +
+                        '<button class="pf-del" title="삭제" style="width:22px;height:22px;border:none;border-radius:5px;background:rgba(192,57,43,.8);color:#fff;cursor:pointer;font-size:11px">✕</button>';
+        bar.querySelector('.pf-edit').onclick = (e)=>{ e.stopPropagation(); editCard(card, cid); };
+        bar.querySelector('.pf-del').onclick = (e)=>{ e.stopPropagation(); if(confirm('이 카드를 삭제할까요?')){ edits.hidden.push(cid); saveEdits(); card.remove(); } };
+        card.appendChild(bar);
+      }
+      function editCard(card, cid){
+        const cur = readCard(card);
+        const title = prompt('제목', cur.title); if (title==null) return;
+        const sub = prompt('부제·분류·기간 (없으면 비움)', cur.sub);
+        const desc = prompt('설명 (없으면 비움)', cur.desc);
+        const ov = { title: title.trim(), sub: (sub||'').trim(), desc: (desc||'').trim() };
+        edits.overrides[cid] = ov; saveEdits(); applyOverride(card, ov);
+      }
+      function addSectionBtn(sec, si){
+        if (!canEdit) return;
+        const b = document.createElement('button');
+        b.textContent = '＋ 카드 추가';
+        b.style.cssText = 'display:block;margin:14px auto 0;padding:8px 18px;border:1.5px dashed #6c5ce7;border-radius:20px;background:transparent;color:#6c5ce7;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit';
+        b.onclick = ()=>{
+          const title = prompt('새 카드 제목'); if (!title) return;
+          const sub = prompt('부제·분류 (선택)') || '';
+          const desc = prompt('설명 (선택)') || '';
+          const c = { title:title.trim(), sub:sub.trim(), desc:desc.trim() };
+          edits.added['s'+si] = edits.added['s'+si] || [];
+          edits.added['s'+si].push(c);
+          saveEdits();
+          const el = makeCard(c);
+          const cid = 's'+si+'a'+(edits.added['s'+si].length-1);
+          el.dataset.cid = cid;
+          sec.insertBefore(el, b);
+          addCardBtns(el, cid);
+        };
+        sec.appendChild(b);
+      }
+
+      function initEdit(){
+        const sections = [...document.querySelectorAll('.section')];
+        sections.forEach((sec, si)=>{
+          [...sec.querySelectorAll(CARD_SEL)].forEach((card, ci)=>{
+            const cid = 's'+si+'c'+ci;
+            card.dataset.cid = cid;
+            if (edits.hidden.includes(cid)) { card.style.display='none'; return; }
+            if (edits.overrides[cid]) applyOverride(card, edits.overrides[cid]);
+            addCardBtns(card, cid);
+          });
+          (edits.added['s'+si] || []).forEach((c, ai)=>{
+            const el = makeCard(c); const cid = 's'+si+'a'+ai; el.dataset.cid = cid;
+            sec.appendChild(el); addCardBtns(el, cid);
+          });
+          addSectionBtn(sec, si);
+        });
+      }
+
+      // ── 상단 툴바 (HTML 가져오기·내보내기·SHARE) — 편집 권한 시만 ──
+      function cleanHTML(){
+        const clone = document.documentElement.cloneNode(true);
+        clone.querySelectorAll('.pf-editbar, #pfToolbar, .pf-addbtn').forEach(e=>e.remove());
+        clone.querySelectorAll('button').forEach(b=>{ if(b.textContent.includes('카드 추가')) b.remove(); });
+        return '<!doctype html>\n' + clone.outerHTML;
+      }
+      function exportHTML(){
+        const blob = new Blob([cleanHTML()], {type:'text/html;charset=utf-8'});
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = '박정원_프로필.html'; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href), 10000);
+      }
+      function importHTML(input){
+        const f = input.files && input.files[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = ()=>{ document.open(); document.write(String(r.result)); document.close(); };
+        r.readAsText(f); input.value='';
+      }
+      async function shareHTML(){
+        try {
+          const res = await fetch('/api/share', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({ title:'박정원 교수 프로필', html: cleanHTML() }) });
+          if (!res.ok) { alert('공유 실패: 서버 ' + res.status); return; }
+          const j = await res.json(); const full = location.origin + j.url;
+          try { if (inApp && window.parent.shareShowLink) { window.parent.shareShowLink(full, '박정원 교수 프로필'); return; } } catch(_){}
+          try { await navigator.clipboard.writeText(full); } catch(_){}
+          alert('공유 링크 복사됨:\n' + full); window.open(full,'_blank');
+        } catch(e){ alert('공유 실패: ' + e.message); }
+      }
+      function addToolbar(){
+        if (!canEdit) return;
+        const bar = document.createElement('div');
+        bar.id = 'pfToolbar';
+        bar.style.cssText = 'position:fixed;top:10px;right:12px;display:flex;gap:6px;z-index:9999';
+        bar.innerHTML =
+          '<input type="file" id="pfImportFile" accept=".html,.htm" style="display:none">' +
+          '<button id="pfImp" style="padding:6px 11px;border:1px solid #ccc;border-radius:7px;background:#fff;color:#333;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)">📥 가져오기</button>' +
+          '<button id="pfExp" style="padding:6px 11px;border:1px solid #ccc;border-radius:7px;background:#fff;color:#333;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)">📤 내보내기</button>' +
+          '<button id="pfShr" style="padding:6px 11px;border:none;border-radius:7px;background:#6c5ce7;color:#fff;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)">🔗 SHARE</button>';
+        document.body.appendChild(bar);
+        document.getElementById('pfImp').onclick = ()=>document.getElementById('pfImportFile').click();
+        document.getElementById('pfImportFile').onchange = function(){ importHTML(this); };
+        document.getElementById('pfExp').onclick = exportHTML;
+        document.getElementById('pfShr').onclick = shareHTML;
+      }
+
+      if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', ()=>{ initEdit(); addToolbar(); });
+      else { initEdit(); addToolbar(); }
+    })();
+    </script>
 </body>
 </html>

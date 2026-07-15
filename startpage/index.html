@@ -951,7 +951,7 @@ body[data-theme="light"] input[type="time"], body[data-theme="light"] input[type
 
 <!-- ── HEADER ── -->
 <header class="header">
-  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v21.4</span></div>
+  <div class="logo">🏠 시작 페이지 | Start Page<span id="verBadge" style="font-size:.55rem;color:#e74c3c;-webkit-text-fill-color:#e74c3c;font-weight:600;margin-left:6px;vertical-align:middle;opacity:.9">v21.5</span></div>
 
   <div class="header-right">
     <span class="hdr-dday" id="hdrDday" style="display:none"></span>
@@ -3932,7 +3932,7 @@ function updateVersionBadge() {
   if (!el) return;
   try {
     const d = new Date(document.lastModified);
-    if (!isNaN(d)) el.textContent = `v21.4 (${d.getMonth()+1}.${d.getDate()})`;
+    if (!isNaN(d)) el.textContent = `v21.5 (${d.getMonth()+1}.${d.getDate()})`;
   } catch(_) {}
 }
 
@@ -4328,7 +4328,7 @@ function isLoggedIn() { try { return !!JSON.parse(localStorage.getItem('startpag
 // ── 클라우드 동기화 (Railway Postgres) ──
 let _cloudToken = null, _cloudTokenExp = 0;
 const CLOUD_BASE_KEYS = ['api_keys', 'apps', 'sched_events', 'lectures', 'todo_items'];  // 계정별(__이메일)
-const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_watched', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden', 'uf_favs', 'bm_groups', 'bm_group_hidden', 'rss_feeds', 'rss_migrated', 'travel_history', 'travel_space_types'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube·여행 교통 히스토리·공간유형
+const CLOUD_PLAIN_KEYS = ['quick_links', 'quick_hidden', 'quick_order', 'startpage_v7', 'postit_notes', 'biblio', 'ddays', 'watch_univs', 'kci_keywords', 'poem_favs', 'user_poems', 'poem_hidden', 'poem_over', 'poem_notes', 'music_favs', 'user_music', 'music_hidden', 'music_over', 'yt_user', 'yt_favs', 'yt_watched', 'yt_channels', 'yt_hidden', 'yt_vid_ov', 'yt_title_ov', 'yt_user_cats', 'yt_cat_hidden', 'uf_favs', 'bm_groups', 'bm_group_hidden', 'rss_feeds', 'rss_migrated', 'travel_history', 'travel_space_types', 'profile_edits'];  // 공용 — 북마크·링크·설정·포스트잇·서지·D-day·관심대학·연구키워드·좋아하는 시·감상메모·좋아하는 음악·YouTube·여행 교통 히스토리·공간유형·프로필
 const CLOUD_ALL_KEYS = [...CLOUD_BASE_KEYS, ...CLOUD_PLAIN_KEYS];
 // 로컬 키 결정 — startpage_v7은 프로필별 키(getStateKey) 사용
 function _cloudLocalKey(base) {
@@ -4350,7 +4350,7 @@ function cloudToken() {
   return null;
 }
 // 개인 콘텐츠 키(계정별 데이터) — 로그인 시 초기화 후 해당 계정 것만 pull 복원
-const PERSONAL_CONTENT_KEYS = ['postit_notes','watch_univs','user_poems','poem_favs','poem_hidden','poem_over','poem_notes','user_music','music_favs','music_hidden','music_over','yt_user','yt_favs','yt_watched','yt_channels','yt_hidden','yt_vid_ov','yt_title_ov','yt_user_cats','yt_cat_hidden','uf_favs','bm_groups','bm_group_hidden'];
+const PERSONAL_CONTENT_KEYS = ['postit_notes','watch_univs','user_poems','poem_favs','poem_hidden','poem_over','poem_notes','user_music','music_favs','music_hidden','music_over','yt_user','yt_favs','yt_watched','yt_channels','yt_hidden','yt_vid_ov','yt_title_ov','yt_user_cats','yt_cat_hidden','uf_favs','bm_groups','bm_group_hidden','profile_edits'];
 function clearPersonalData() { PERSONAL_CONTENT_KEYS.forEach(k => localStorage.removeItem(k)); }
 // 서버 → 로컬 (로그인 직후)
 async function cloudPull() {
@@ -6277,6 +6277,7 @@ function renderTravelView() {
 }
 // 프로필 — 박정원 교수 프로필을 본문 영역에 임베드
 function renderProfileView() {
+  if (!isLoggedIn()) { state.activeCat = 'all'; saveState(); render(); return; }
   const grid = document.getElementById('linksGrid');
   const title = document.getElementById('sectionTitle');
   const addBtn = document.getElementById('addLinkHeaderBtn');
@@ -10610,11 +10611,11 @@ function renderLinks() {
     sortSel.value = state.sortMode || 'default';
   }
 
-  // 로그인·관리자 승인 게이트: 내 북마크·AI YouTube·좋아하는 시·좋아하는 음악
-  if (['mybm','youtube','poems','music'].includes(state.activeCat)) {
+  // 로그인·관리자 승인 게이트: 내 북마크·AI YouTube·좋아하는 시·좋아하는 음악·프로필
+  if (['mybm','youtube','poems','music','profile'].includes(state.activeCat)) {
     if (!isLoggedIn()) { state.activeCat = 'all'; saveState(); render(); return; }
     if (!isApproved()) {
-      const nm = ({mybm:'🔖 내 북마크', youtube:'▶️ AI YouTube', poems:'📜 좋아하는 시', music:'🎶 좋아하는 음악'})[state.activeCat] || '';
+      const nm = ({mybm:'🔖 내 북마크', youtube:'▶️ AI YouTube', poems:'📜 좋아하는 시', music:'🎶 좋아하는 음악', profile:'👤 프로필'})[state.activeCat] || '';
       if (title) title.textContent = nm;
       grid.classList.remove('univall-mode');
       grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px 16px;color:var(--text-muted)">
