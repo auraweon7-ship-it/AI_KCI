@@ -866,6 +866,14 @@
         }
         body.light-mode a { color: #6c5ce7 !important; }
         body.light-mode .stat-number, body.light-mode .stat-item .stat-number { color: #6c5ce7 !important; }
+    
+        /* 주요 논문 현황 표 */
+        .paper-table th { color:#e2e8f0; border-bottom:2px solid rgba(255,255,255,0.15); }
+        .paper-table td { color:#cbd5e1; }
+        body.light-mode .paper-table thead tr { background:#efeafb !important; }
+        body.light-mode .paper-table th { color:#3a2f6b !important; border-bottom-color:#d8cff0 !important; }
+        body.light-mode .paper-table td { color:#333 !important; border-bottom-color:#e8e8ef !important; }
+        body.light-mode .paper-table td[style*="f0abfc"] { color:#7c3aed !important; }
     </style>
 </head>
 <body class="light-mode">
@@ -1190,7 +1198,99 @@
                 </div>
             </div>
 
-            <!-- 주요 강의 교과목 섹션 -->
+            
+        <!-- 주요 논문 현황 섹션 -->
+        <div class="section full-width-section fade-in">
+            <h2 class="section-title">📄 주요 논문 현황</h2>
+            <div style="overflow-x:auto">
+                <table class="paper-table" style="width:100%;border-collapse:collapse;font-size:.82rem;min-width:760px">
+                    <thead>
+                        <tr style="background:rgba(120,60,180,0.2)">
+                            <th style="padding:9px 10px;text-align:center;white-space:nowrap">번호</th>
+                            <th style="padding:9px 10px;text-align:center;white-space:nowrap">게재연월</th>
+                            <th style="padding:9px 10px;text-align:left">논문명</th>
+                            <th style="padding:9px 10px;text-align:center;white-space:nowrap">학술지명</th>
+                            <th style="padding:9px 10px;text-align:center;white-space:nowrap">발행처명</th>
+                            <th style="padding:9px 10px;text-align:center;white-space:nowrap">학술지구분</th>
+                            <th style="padding:9px 10px;text-align:center;white-space:nowrap">전체저자수</th>
+                        </tr>
+                    </thead>
+                    <tbody><tr>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">1</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">2025.09</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06);color:#f0abfc">바이브 코딩 중국어 교육 게임 웹앱 제작 연구</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">중국연구</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">중국연구소</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">국내전문학술지(KCI급)</td>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">1</td>
+</tr>
+<tr>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">2</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">2025.08</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06);color:#f0abfc">Vibe Coding 기반 중국어 교육 웹앱 제작 연구* — Replit 플랫폼을 중심으로 —</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">중국학연구</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">중국학연구회</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">국내전문학술지(KCI급)</td>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">1</td>
+</tr>
+<tr>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">3</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">2024.12</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06);color:#f0abfc">중국에서의 한강 작품 수용 분석</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">외국문학연구</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">외국문학연구소</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">국내전문학술지(KCI급)</td>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">1</td>
+</tr>
+<tr>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">4</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">2024.09</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06);color:#f0abfc">중국어문 텍스트 시각화 및 공유 플랫폼 구축 전략 연구 ― AI 프롬프트 엔지니어링을 중심으로</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">중국어문학지</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">중국어문학회</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">국내전문학술지(KCI급)</td>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">1</td>
+</tr>
+<tr>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">5</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">2024.09</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06);color:#f0abfc">중국학 AI 챗봇 프롬프트 엔지니어링</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">중국연구</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">중국연구소</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">국내전문학술지(KCI급)</td>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">1</td>
+</tr>
+<tr>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">6</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">2024.08</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06);color:#f0abfc">AI시대 중국현당대 문학 텍스트 분석 전략 - Word2vec, 감성분석, 네트워크 분석, LDA 분석을 중심으로</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">중국문학</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">한국중국어문학회</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">국내전문학술지(KCI급)</td>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">1</td>
+</tr>
+<tr>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">7</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">2023.11</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06);color:#f0abfc">중국어 교육 콘텐츠 큐레이팅 플랫폼</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">중국어교육과 연구</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">한국중국어교육학회</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">국내전문학술지(KCI급)</td>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">1</td>
+</tr>
+<tr>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">8</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">2023.06</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06);color:#f0abfc">중국문학 리소스 시각화와 서비스 플랫폼 구축</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">중어중문학</td>
+  <td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,0.06)">한국중어중문학회</td>
+  <td style="padding:8px 10px;text-align:center;white-space:nowrap;border-bottom:1px solid rgba(255,255,255,0.06)">국내전문학술지(KCI급)</td>
+  <td style="padding:8px 10px;text-align:center;border-bottom:1px solid rgba(255,255,255,0.06)">1</td>
+</tr></tbody>
+                </table>
+            </div>
+        </div>
+        <!-- 주요 강의 교과목 섹션 -->
             <div class="section full-width-section fade-in stagger-4">
                 <h2 class="section-title">🎓 주요 강의 교과목</h2>
                 <div class="courses-grid">
@@ -1502,7 +1602,7 @@
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 14px;">
 
                 <!-- 올인원 강의콘텐츠 빌더 -->
-                <div style="background: rgba(28, 35, 51, 0.6); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 14px; padding: 20px; position: relative; overflow: hidden;">
+                <div class="dev-app-card" style="background: rgba(28, 35, 51, 0.6); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 14px; padding: 20px; position: relative; overflow: hidden;">
                     <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #ff6b8a, #c084fc, #818cf8);"></div>
                     <h3 style="font-size: 0.95rem; color: #f0abfc; margin-bottom: 4px; font-weight: 700; letter-spacing: -0.01em;">🏗️ 올인원 강의콘텐츠 빌더</h3>
                     <a href="https://kteacher.kr/" target="_blank" style="color: #a78bfa; font-weight: 600; font-size: 0.82rem; text-decoration: none;">kteacher.kr →</a>
@@ -1550,7 +1650,7 @@
                 </div>
 
                 <!-- AI 뉴스레터 빌더 -->
-                <div style="background: rgba(28, 35, 51, 0.6); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 14px; padding: 20px; position: relative; overflow: hidden;">
+                <div class="dev-app-card" style="background: rgba(28, 35, 51, 0.6); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: 14px; padding: 20px; position: relative; overflow: hidden;">
                     <div style="position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, #c084fc, #ff6b8a, #f43f5e);"></div>
                     <h3 style="font-size: 0.95rem; color: #f0abfc; margin-bottom: 4px; font-weight: 700; letter-spacing: -0.01em;">📧 AI 뉴스레터 빌더</h3>
                     <a href="https://kletter.kr/" target="_blank" style="color: #a78bfa; font-weight: 600; font-size: 0.82rem; text-decoration: none;">kletter.kr →</a>
@@ -2589,7 +2689,7 @@
     <!-- ── 프로필 카드 편집(CRUD)·공유 스크립트 ── -->
     <script>
     (function(){
-      const CARD_SEL = '.position-item,.publication-item,.lecture-item,.course-item,.expertise-item,.kmooc-course,.cds-card';
+      const CARD_SEL = '.position-item,.publication-item,.lecture-item,.course-item,.expertise-item,.kmooc-course,.cds-card,.dev-app-card';
       // 부모(startpage) iframe 안 + 로그인 상태에서만 편집 UI 노출 (공유 단독 페이지는 읽기전용)
       const inApp = window.parent !== window;
       let canEdit = false;
@@ -2601,7 +2701,7 @@
       edits.hidden = edits.hidden || []; edits.overrides = edits.overrides || {}; edits.added = edits.added || {};
 
       const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-      function titleEl(card){ return card.querySelector('.position-title,.publication-title,.lecture-title,.course-title,.kmooc-title,.expertise-item') || card; }
+      function titleEl(card){ return card.querySelector('.position-title,.publication-title,.lecture-title,.course-title,.kmooc-title,.expertise-item') || (card.classList.contains('dev-app-card') ? card.querySelector('h3') : null) || card; }
       function subEl(card){ return card.querySelector('.position-org,.publication-category,.course-duration,.kmooc-duration'); }
       function descEl(card){ return card.querySelector('.publication-description,.lecture-description,.course-description,.kmooc-description'); }
       function readCard(card){ return { title: (titleEl(card)?.textContent||'').trim(), sub: (subEl(card)?.textContent||'').trim(), desc: (descEl(card)?.textContent||'').trim() }; }
