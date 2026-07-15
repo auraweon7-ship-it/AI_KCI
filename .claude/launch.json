@@ -4,13 +4,17 @@
     {
       "name": "ai-kci",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["server.js"],
+      "runtimeArgs": [
+        "server.js"
+      ],
       "port": 3000
     },
     {
       "name": "hanzi-writer",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["hanzi-writer-app/server.js"],
+      "runtimeArgs": [
+        "hanzi-writer-app/server.js"
+      ],
       "port": 3001,
       "env": {
         "PORT": "3001",
@@ -20,53 +24,103 @@
     {
       "name": "youtube-agent",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["youtube-agent/server.js"],
+      "runtimeArgs": [
+        "youtube-agent/server.js"
+      ],
       "port": 3003
     },
     {
       "name": "dingdong-dashboard",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["serve-dashboard.js"],
+      "runtimeArgs": [
+        "serve-dashboard.js"
+      ],
       "port": 3099
     },
     {
       "name": "website-generator",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["website-generator/server.js"],
+      "runtimeArgs": [
+        "website-generator/server.js"
+      ],
       "port": 3847
     },
     {
       "name": "univ-dashboard",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["serve-dashboard-univ.js"],
+      "runtimeArgs": [
+        "serve-dashboard-univ.js"
+      ],
       "port": 3200
     },
     {
       "name": "ai-course",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["-e", "const h=require('http'),f=require('fs'),p=require('path'),m={'html':'text/html','css':'text/css','js':'application/javascript','json':'application/json','png':'image/png','jpg':'image/jpeg','svg':'image/svg+xml'};h.createServer((q,r)=>{let u=q.url.split('?')[0];if(u==='/') u='/index.html';const fp=p.join('C:\\\\Users\\\\park9\\\\ai_course',u);f.readFile(fp,(e,d)=>{if(e){r.writeHead(404);r.end('Not found');return}const ext=p.extname(fp).slice(1);r.writeHead(200,{'Content-Type':m[ext]||'application/octet-stream'});r.end(d)})}).listen(3100,()=>console.log('ai-course on 3100'))"],
+      "runtimeArgs": [
+        "-e",
+        "const h=require('http'),f=require('fs'),p=require('path'),m={'html':'text/html','css':'text/css','js':'application/javascript','json':'application/json','png':'image/png','jpg':'image/jpeg','svg':'image/svg+xml'};h.createServer((q,r)=>{let u=q.url.split('?')[0];if(u==='/') u='/index.html';const fp=p.join('C:\\\\Users\\\\park9\\\\ai_course',u);f.readFile(fp,(e,d)=>{if(e){r.writeHead(404);r.end('Not found');return}const ext=p.extname(fp).slice(1);r.writeHead(200,{'Content-Type':m[ext]||'application/octet-stream'});r.end(d)})}).listen(3100,()=>console.log('ai-course on 3100'))"
+      ],
       "port": 3100
     },
     {
       "name": "timeline",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["-e", "const h=require('http'),f=require('fs'),p=require('path'),m={'html':'text/html','css':'text/css','js':'application/javascript'};h.createServer((q,r)=>{let u=q.url.split('?')[0];if(u==='/') u='/index.html';const fp=p.join('C:\\\\Users\\\\park9\\\\timeline-maker',u);f.readFile(fp,(e,d)=>{if(e){r.writeHead(404);r.end('Not found');return}const ext=p.extname(fp).slice(1);r.writeHead(200,{'Content-Type':m[ext]||'text/html'});r.end(d)})}).listen(3170,()=>console.log('on 3170'))"],
+      "runtimeArgs": [
+        "-e",
+        "const h=require('http'),f=require('fs'),p=require('path'),m={'html':'text/html','css':'text/css','js':'application/javascript'};h.createServer((q,r)=>{let u=q.url.split('?')[0];if(u==='/') u='/index.html';const fp=p.join('C:\\\\Users\\\\park9\\\\timeline-maker',u);f.readFile(fp,(e,d)=>{if(e){r.writeHead(404);r.end('Not found');return}const ext=p.extname(fp).slice(1);r.writeHead(200,{'Content-Type':m[ext]||'text/html'});r.end(d)})}).listen(3170,()=>console.log('on 3170'))"
+      ],
       "port": 3170
     },
     {
       "name": "chinese-dictionary",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["-e", "const h=require('http'),f=require('fs');h.createServer((q,r)=>{f.readFile('C:\\\\Users\\\\park9\\\\AI KCI\\\\chinese-dictionary-app.html',(e,d)=>{if(e){r.writeHead(404);r.end('Not found');return}r.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});r.end(d)})}).listen(3220,()=>console.log('chinese-dictionary on 3220'))"],
+      "runtimeArgs": [
+        "-e",
+        "const h=require('http'),f=require('fs');h.createServer((q,r)=>{f.readFile('C:\\\\Users\\\\park9\\\\AI KCI\\\\chinese-dictionary-app.html',(e,d)=>{if(e){r.writeHead(404);r.end('Not found');return}r.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});r.end(d)})}).listen(3220,()=>console.log('chinese-dictionary on 3220'))"
+      ],
       "port": 3220
     },
     {
       "name": "chinese-audiobook",
       "runtimeExecutable": "node",
-      "runtimeArgs": ["C:\\Users\\park9\\AI KCI\\_cab-deploy\\server.js"],
+      "runtimeArgs": [
+        "C:\\Users\\park9\\AI KCI\\_cab-deploy\\server.js"
+      ],
       "port": 3160,
       "autoPort": false,
       "env": {
         "PORT": "3160"
+      }
+    },
+    {
+      "name": "project1-downloads",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "C:\\Users\\park9\\AppData\\Local\\Temp\\claude\\C--Users-park9-AI-KCI\\7f2d4c8b-7540-4f04-bd2f-3fa62f51cf83\\scratchpad\\project1",
+        "run",
+        "dev"
+      ],
+      "port": 8080
+    },
+    {
+      "name": "reroom-ai",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "-e",
+        "process.chdir('F:/[프롬프트 엔지니어링]/AntiGravity/ReRoomAI/ReRoomAI');require('child_process').spawn(process.execPath,['node_modules/next/dist/bin/next','dev','-p','3210'],{stdio:'inherit'})"
+      ],
+      "port": 3210
+    },
+    {
+      "name": "startpage",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "startpage/server.js"
+      ],
+      "port": 3345,
+      "env": {
+        "PORT": "3345"
       }
     }
   ]
