@@ -874,6 +874,39 @@
         body.light-mode .paper-table th { color:#3a2f6b !important; border-bottom-color:#d8cff0 !important; }
         body.light-mode .paper-table td { color:#333 !important; border-bottom-color:#e8e8ef !important; }
         body.light-mode .paper-table td[style*="f0abfc"] { color:#7c3aed !important; }
+
+        /* ── 헤더(히어로) 화이트모드 — 보라 배경 유지 + 흰 글자로 선명하게 ── */
+        body.light-mode .header { background: linear-gradient(135deg,#6c5ce7 0%,#4834d4 100%) !important; }
+        body.light-mode .header, body.light-mode .header *,
+        body.light-mode .profile-name, body.light-mode .profile-name span,
+        body.light-mode .profile-title, body.light-mode .profile-intro,
+        body.light-mode .header-content * {
+          color: #ffffff !important; -webkit-text-fill-color: #ffffff !important;
+        }
+        body.light-mode .profile-intro strong, body.light-mode .header strong { color: #ffe08a !important; -webkit-text-fill-color: #ffe08a !important; }
+        /* 통계 카드 */
+        body.light-mode .stat-item { background:#fff !important; }
+        body.light-mode .stat-number { color:#6c5ce7 !important; -webkit-text-fill-color:#6c5ce7 !important; }
+        body.light-mode .stat-label { color:#555 !important; }
+
+        /* ── 개발 APP 카드 화이트모드 (인라인 배경/색 오버라이드) ── */
+        body.light-mode .dev-app-card { background:#ffffff !important; border-color:#e4e8ef !important; }
+        body.light-mode .dev-app-card, body.light-mode .dev-app-card div,
+        body.light-mode .dev-app-card li, body.light-mode .dev-app-card span,
+        body.light-mode .dev-app-card p, body.light-mode .dev-app-card strong {
+          color:#3a3f4b !important;
+        }
+        body.light-mode .dev-app-card h3 { color:#6c3aed !important; }
+        body.light-mode .dev-app-card strong { color:#1a1a2e !important; }
+        body.light-mode .dev-app-card a { color:#6c5ce7 !important; }
+        /* 내부 정보 박스(연한 배경) */
+        body.light-mode .dev-app-card [style*="background: rgba(255"],
+        body.light-mode .dev-app-card [style*="background:rgba(255"] { background:#f6f5ff !important; }
+
+        /* ── 연락처 섹션 화이트모드 ── */
+        body.light-mode .contact-info { background:#eef0f6 !important; }
+        body.light-mode .contact-info > div:first-child, body.light-mode .contact-info h3 { color:#1a1a2e !important; -webkit-text-fill-color:#1a1a2e !important; }
+        body.light-mode .contact-item { background:#ffffff !important; color:#2a2f3a !important; border:1px solid #e4e8ef !important; }
     </style>
 </head>
 <body class="light-mode">
