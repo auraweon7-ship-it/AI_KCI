@@ -1,8 +1,5 @@
-[phases.setup]
-nixPkgs = ["...", "ffmpeg"]
-
 [phases.install]
-cmds = ["npm install", "cd youtube-agent && npm install"]
+cmds = ["npm install"]
 
 [start]
-cmd = "cd youtube-agent && node server.js"
+cmd = "node server.js"
