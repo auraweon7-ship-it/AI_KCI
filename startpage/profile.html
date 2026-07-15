@@ -2852,9 +2852,9 @@
         bar.style.cssText = 'position:fixed;top:10px;right:12px;display:flex;gap:6px;z-index:9999';
         bar.innerHTML =
           '<input type="file" id="pfImportFile" accept=".html,.htm" style="display:none">' +
-          '<button id="pfImp" style="padding:6px 11px;border:1px solid #ccc;border-radius:7px;background:#fff;color:#333;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)">📥 가져오기</button>' +
-          '<button id="pfExp" style="padding:6px 11px;border:1px solid #ccc;border-radius:7px;background:#fff;color:#333;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)">📤 내보내기</button>' +
-          '<button id="pfShr" style="padding:6px 11px;border:none;border-radius:7px;background:#6c5ce7;color:#fff;font-size:12px;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)">🔗 SHARE</button>';
+          '<button id="pfImp" style="padding:4px 8px;border:1px solid #ccc;border-radius:6px;background:#fff;color:#333;font-size:9px;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)">📥 가져오기</button>' +
+          '<button id="pfExp" style="padding:4px 8px;border:1px solid #ccc;border-radius:6px;background:#fff;color:#333;font-size:9px;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)">📤 내보내기</button>' +
+          '<button id="pfShr" style="padding:4px 8px;border:none;border-radius:6px;background:#6c5ce7;color:#fff;font-size:9px;font-weight:700;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.15)">🔗 SHARE</button>';
         document.body.appendChild(bar);
         document.getElementById('pfImp').onclick = ()=>document.getElementById('pfImportFile').click();
         document.getElementById('pfImportFile').onchange = function(){ importHTML(this); };
