@@ -3476,15 +3476,33 @@
             initNewFeatures();
         }
 
+        var SUPER_CATEGORIES = [
+            {id:'basics', name:'기초·숫자', icon:'🔢', sub:['numbers']},
+            {id:'nature_life', name:'자연·생물', icon:'🌿', sub:['nature','animals','plants','water']},
+            {id:'body_health', name:'인체·건강', icon:'🧬', sub:['body','medicine']},
+            {id:'life_home', name:'생활·가정', icon:'🏠', sub:['family','daily','food','clothing','ceremony']},
+            {id:'mind_virtue', name:'심성·덕목', icon:'💎', sub:['emotions','virtues','religion','confucian']},
+            {id:'action_state', name:'행동·상태', icon:'⚡', sub:['actions','direction','time','colors','state','abstract']},
+            {id:'culture', name:'학문·문화', icon:'📚', sub:['language','education','arts','astronomy']},
+            {id:'politics_law', name:'정치·법률', icon:'⚖️', sub:['politics','law','military','governance']},
+            {id:'industry', name:'경제·산업', icon:'🏭', sub:['economy','building','transport','tools','metals','crafts']},
+            {id:'society', name:'사회·지리', icon:'🌐', sub:['occupation','geography']}
+        ];
+
         function renderCategoryTabs() {
             var tabs = document.getElementById('categoryTabs');
             var totalChars = 0;
             HANZI_CATEGORIES.forEach(function(c) { totalChars += c.chars.length; });
 
+            var catIdSet = {};
+            HANZI_CATEGORIES.forEach(function(c) { catIdSet[c.id] = c.chars.length; });
+
             var html = '<div class="cat-tab active" data-cat="all" onclick="selectCategory(\'all\')">전체 <span class="cat-count">' + totalChars + '</span></div>';
-            HANZI_CATEGORIES.forEach(function(cat) {
-                html += '<div class="cat-tab" data-cat="' + cat.id + '" onclick="selectCategory(\'' + cat.id + '\')">'
-                    + cat.icon + ' ' + cat.name + ' <span class="cat-count">' + cat.chars.length + '</span></div>';
+            SUPER_CATEGORIES.forEach(function(sc) {
+                var count = 0;
+                sc.sub.forEach(function(sid) { count += (catIdSet[sid] || 0); });
+                html += '<div class="cat-tab" data-cat="' + sc.id + '" onclick="selectCategory(\'' + sc.id + '\')">'
+                    + sc.icon + ' ' + sc.name + ' <span class="cat-count">' + count + '</span></div>';
             });
             tabs.innerHTML = html;
         }
@@ -3525,9 +3543,20 @@
                     document.getElementById('gridTitle').textContent = '전체 한자';
                 }
             } else {
-                var cat = HANZI_CATEGORIES.find(function(c) { return c.id === currentCategory; });
-                chars = cat ? cat.chars : [];
-                if (cat) document.getElementById('gridTitle').textContent = cat.icon + ' ' + cat.name;
+                var sc = SUPER_CATEGORIES.find(function(s) { return s.id === currentCategory; });
+                if (sc) {
+                    chars = [];
+                    var subSet = {};
+                    sc.sub.forEach(function(sid) { subSet[sid] = true; });
+                    HANZI_CATEGORIES.forEach(function(cat) {
+                        if (subSet[cat.id]) cat.chars.forEach(function(c) { chars.push(c); });
+                    });
+                    document.getElementById('gridTitle').textContent = sc.icon + ' ' + sc.name;
+                } else {
+                    var cat = HANZI_CATEGORIES.find(function(c) { return c.id === currentCategory; });
+                    chars = cat ? cat.chars : [];
+                    if (cat) document.getElementById('gridTitle').textContent = cat.icon + ' ' + cat.name;
+                }
             }
 
             if (currentHSK !== 'all') {
