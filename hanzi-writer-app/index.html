@@ -107,9 +107,10 @@
         }
         .main-tabs {
             display: flex;
-            max-width: 1200px;
-            margin: 8px auto 0;
+            max-width: 400px;
+            margin: 4px auto 0;
             gap: 0;
+            justify-content: center;
         }
         .main-tab {
             flex: 1;
@@ -2674,6 +2675,10 @@
             .nav-admin-btn { font-size: 10px; padding: 5px 8px; }
             .theme-toggle { width: 30px; height: 30px; font-size: 14px; }
 
+            /* Main tabs — compact on small screens */
+            .main-tabs { max-width: 300px; margin: 2px auto 0; }
+            .main-tab { padding: 8px 0; font-size: 13px; }
+
             /* Header — compact hero */
             header { padding: 10px 10px 6px; }
             header h1 { font-size: 20px; margin-bottom: 2px; }
@@ -2861,7 +2866,7 @@
     <!-- Top Navigation -->
     <nav class="top-nav">
         <div class="nav-inner">
-            <div class="nav-brand">漢字 쓰기마스터 <span class="app-version">v2.5</span></div>
+            <div class="nav-brand">漢字 쓰기마스터 <span class="app-version">v2.6</span></div>
             <div class="nav-visitor" id="navVisitor" style="display:none;">
                 <span class="visitor-dot"></span>
                 <span id="visitorCount">0</span>명 방문
@@ -2877,10 +2882,10 @@
                 <button class="nav-btn nav-admin-btn" onclick="showAdminLogin()">관리자</button>
                 <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="테마 전환">🌙</button>
             </div>
-            <div class="main-tabs">
-                <button class="main-tab active" id="tabHanzi" onclick="switchMainTab('hanzi')">✏️ 한자쓰기</button>
-                <button class="main-tab" id="tabIdiom" onclick="switchMainTab('idiom')">📜 고사성어</button>
-            </div>
+        </div>
+        <div class="main-tabs">
+            <button class="main-tab active" id="tabHanzi" onclick="switchMainTab('hanzi')">✏️ 한자쓰기</button>
+            <button class="main-tab" id="tabIdiom" onclick="switchMainTab('idiom')">📜 고사성어</button>
         </div>
     </nav>
 
