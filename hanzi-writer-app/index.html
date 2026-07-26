@@ -3043,6 +3043,7 @@
                                 <div class="flip-card-pinyin" id="flipPinyin"></div>
                                 <div class="flip-card-hsk" id="flipHsk"></div>
                                 <button class="flip-card-share" onclick="shareFlipCard(event)" title="공유 링크 복사">🔗</button>
+                                <button class="flip-card-share" style="right:80px;" onclick="generateHanziCardImage(event)" title="이미지 저장">📸</button>
                                 <button class="fav-btn-card" id="favBtn" onclick="toggleFavorite(event)" title="즐겨찾기">☆</button>
                                 <div class="flip-card-hint">클릭하여 뒤집기</div>
                             </div>
@@ -3342,6 +3343,7 @@
                 <div class="idiom-detail-meaning" id="idiomDetailMeaning"></div>
                 <div class="idiom-detail-tts-row">
                     <button class="idiom-detail-tts" id="idiomDetailTts" onclick="event.stopPropagation()">🔊 발음 듣기</button>
+                    <button class="idiom-detail-tts" onclick="generateIdiomCardImage(event)" style="margin-left:8px;">📸 이미지 저장</button>
                 </div>
             </div>
             <div class="idiom-detail-body" id="idiomDetailBody"></div>
@@ -4037,16 +4039,21 @@
         }
 
         function updateWriterCharInfo(char) {
-            var info = charLookup[char];
-            var pinyin = (typeof PINYIN_DATA !== 'undefined' && PINYIN_DATA[char]) ? PINYIN_DATA[char] : '';
-            var html = '';
-            if (info) {
-                html = '<span style="color:var(--accent)">' + info.reading + '</span>';
-                if (pinyin) html += ' <span style="color:#a78bfa">[' + pinyin + ']</span>';
-                html += ' · ' + info.meaning;
-            } else if (pinyin) {
-                html = '<span style="color:#a78bfa">[' + pinyin + ']</span>';
-            }
+            var chars = dualMode ? [char, currentChars2] : [char];
+            var parts = chars.map(function(c) {
+                var info = charLookup[c];
+                var pinyin = (typeof PINYIN_DATA !== 'undefined' && PINYIN_DATA[c]) ? PINYIN_DATA[c] : '';
+                var h = '<span style="font-size:18px;font-weight:800;">' + c + '</span> ';
+                if (info) {
+                    h += '<span style="color:var(--accent)">' + info.reading + '</span>';
+                    if (pinyin) h += ' <span style="color:#a78bfa">[' + pinyin + ']</span>';
+                    h += ' · ' + info.meaning;
+                } else if (pinyin) {
+                    h += '<span style="color:#a78bfa">[' + pinyin + ']</span>';
+                }
+                return h;
+            }).filter(Boolean);
+            var html = parts.join(dualMode ? '<br>' : '');
             ['animCharInfo','quizCharInfo'].forEach(function(id) {
                 var el = document.getElementById(id);
                 if (html) { el.innerHTML = html; el.style.display = 'block'; }
@@ -4446,6 +4453,205 @@
                     showToast('카드 이미지가 저장되었습니다');
                 }
             }, 'image/png');
+        }
+
+        function generateHanziCardImage(event) {
+            event.stopPropagation();
+            var char = document.getElementById('flipCard').dataset.char;
+            var info = charLookup[char];
+            var pinyin = (typeof PINYIN_DATA !== 'undefined' && PINYIN_DATA[char]) || '';
+            var reading = info ? info.meaning + ' ' + info.reading : char;
+            var hskLevel = (typeof HSK_DATA !== 'undefined' && HSK_DATA[char]) || 0;
+            var emoji = getCharEmoji(char);
+
+            var W = 520, H = 760, R = 40;
+            var canvas = document.createElement('canvas');
+            canvas.width = W; canvas.height = H;
+            var ctx = canvas.getContext('2d');
+
+            var bg = ctx.createLinearGradient(0, 0, W * 0.6, H);
+            bg.addColorStop(0, '#121223'); bg.addColorStop(1, '#1e1440');
+            drawRoundRect(ctx, 0, 0, W, H, R);
+            ctx.fillStyle = bg; ctx.fill();
+            ctx.strokeStyle = 'rgba(80,80,140,0.3)'; ctx.lineWidth = 2; ctx.stroke();
+
+            var topLine = ctx.createLinearGradient(0, 0, W, 0);
+            topLine.addColorStop(0, '#7c6aff'); topLine.addColorStop(0.5, '#5eead4'); topLine.addColorStop(1, '#f472b6');
+            ctx.fillStyle = topLine; ctx.fillRect(R, 0, W - R * 2, 3);
+
+            ctx.save(); ctx.globalAlpha = 0.07;
+            ctx.font = '200px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#fff'; ctx.fillText(emoji, W / 2, H * 0.35); ctx.restore();
+
+            ctx.font = '60px serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+            ctx.fillText(emoji, W / 2, H * 0.13);
+
+            var charGrad = ctx.createLinearGradient(W * 0.3, H * 0.15, W * 0.7, H * 0.45);
+            charGrad.addColorStop(0, '#7c6aff'); charGrad.addColorStop(1, '#5eead4');
+
+            if (dualMode && currentChars2) {
+                var info2 = charLookup[currentChars2];
+                var pinyin2 = (typeof PINYIN_DATA !== 'undefined' && PINYIN_DATA[currentChars2]) || '';
+                var reading2 = info2 ? info2.meaning + ' ' + info2.reading : currentChars2;
+                ctx.font = '900 120px "Noto Serif KR", serif';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillStyle = charGrad;
+                ctx.fillText(char + currentChars2, W / 2, H * 0.33);
+                ctx.font = '700 26px "Noto Sans KR", sans-serif'; ctx.fillStyle = '#eaeaf4';
+                ctx.fillText(char + ' : ' + reading, W / 2, H * 0.50);
+                ctx.fillText(currentChars2 + ' : ' + reading2, W / 2, H * 0.56);
+                if (pinyin || pinyin2) {
+                    ctx.font = 'italic 600 22px "Inter", sans-serif'; ctx.fillStyle = '#5eead4';
+                    ctx.fillText('[' + pinyin + '] [' + pinyin2 + ']', W / 2, H * 0.63);
+                }
+            } else {
+                ctx.font = '900 180px "Noto Serif KR", serif';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillStyle = charGrad; ctx.fillText(char, W / 2, H * 0.36);
+                ctx.font = '700 32px "Noto Sans KR", sans-serif';
+                ctx.fillStyle = '#eaeaf4'; ctx.fillText(reading, W / 2, H * 0.55);
+                if (pinyin) {
+                    ctx.font = 'italic 600 26px "Inter", sans-serif';
+                    ctx.fillStyle = '#5eead4'; ctx.fillText('[' + pinyin + ']', W / 2, H * 0.62);
+                }
+                if (hskLevel > 0) {
+                    var hskText = 'HSK ' + (hskLevel >= 7 ? '7-9' : hskLevel) + '급';
+                    var hskColors = { 1: '#22c55e', 2: '#3b82f6', 3: '#8b5cf6', 4: '#f59e0b', 5: '#ef4444', 6: '#ec4899', 7: '#6366f1' };
+                    var hskColor = hskColors[hskLevel >= 7 ? 7 : hskLevel] || '#64748b';
+                    ctx.font = '700 20px "Inter", sans-serif';
+                    var tw = ctx.measureText(hskText).width;
+                    var bx = (W - tw - 24) / 2, by = H * 0.66, bw = tw + 24, bh = 32, br = 8;
+                    ctx.fillStyle = hskColor;
+                    drawRoundRect(ctx, bx, by, bw, bh, br); ctx.fill();
+                    ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                    ctx.fillText(hskText, W / 2, by + 16);
+                }
+            }
+
+            ctx.font = '500 16px "Inter", sans-serif';
+            ctx.fillStyle = 'rgba(120,120,160,0.5)'; ctx.textAlign = 'center';
+            ctx.fillText('hanzi.up.railway.app', W / 2, H - 30);
+
+            canvas.toBlob(function(blob) {
+                if (!blob) { showToast('이미지 생성 실패'); return; }
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = char + (currentChars2 || '') + '_card.png';
+                a.click(); URL.revokeObjectURL(a.href);
+                showToast('카드 이미지 저장 완료');
+            }, 'image/png');
+        }
+
+        function generateIdiomCardImage(event) {
+            event.stopPropagation();
+            var chars = document.getElementById('idiomDetailChars').textContent;
+            var reading = document.getElementById('idiomDetailReading').textContent;
+            var meaning = document.getElementById('idiomDetailMeaning').textContent;
+            var emoji = document.getElementById('idiomDetailEmoji').textContent || '📜';
+            var idiom = IDIOM_DATA.find(function(d) { return d.chars === chars; });
+            var origin = idiom ? idiom.origin : '';
+
+            var W = 600, H = 900, R = 40;
+            var canvas = document.createElement('canvas');
+            canvas.width = W; canvas.height = H;
+            var ctx = canvas.getContext('2d');
+
+            var bg = ctx.createLinearGradient(0, 0, W * 0.4, H);
+            bg.addColorStop(0, '#0f1528'); bg.addColorStop(1, '#1a0f2e');
+            drawRoundRect(ctx, 0, 0, W, H, R);
+            ctx.fillStyle = bg; ctx.fill();
+            ctx.strokeStyle = 'rgba(100,80,160,0.3)'; ctx.lineWidth = 2; ctx.stroke();
+
+            var topLine = ctx.createLinearGradient(0, 0, W, 0);
+            topLine.addColorStop(0, '#f472b6'); topLine.addColorStop(0.5, '#a78bfa'); topLine.addColorStop(1, '#5eead4');
+            ctx.fillStyle = topLine; ctx.fillRect(R, 0, W - R * 2, 3);
+
+            ctx.save(); ctx.globalAlpha = 0.06;
+            ctx.font = '240px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = '#fff'; ctx.fillText(emoji, W / 2, H * 0.28); ctx.restore();
+
+            ctx.font = '60px serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+            ctx.fillText(emoji, W / 2, H * 0.08);
+
+            var cGrad = ctx.createLinearGradient(W * 0.2, H * 0.12, W * 0.8, H * 0.3);
+            cGrad.addColorStop(0, '#a78bfa'); cGrad.addColorStop(1, '#5eead4');
+            ctx.font = '900 110px "Noto Serif KR", serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillStyle = cGrad;
+            ctx.fillText(chars, W / 2, H * 0.22);
+
+            ctx.font = '700 28px "Noto Sans KR", sans-serif';
+            ctx.fillStyle = '#d4d4f8'; ctx.textAlign = 'center';
+            ctx.fillText(reading, W / 2, H * 0.34);
+
+            ctx.font = '600 24px "Noto Sans KR", sans-serif';
+            ctx.fillStyle = '#eaeaf4';
+            wrapText(ctx, meaning, W / 2, H * 0.42, W - 80, 34);
+
+            if (origin) {
+                ctx.fillStyle = 'rgba(167,139,250,0.3)';
+                drawRoundRect(ctx, 40, H * 0.52, W - 80, H * 0.32, 16); ctx.fill();
+                ctx.font = '700 18px "Noto Sans KR", sans-serif';
+                ctx.fillStyle = '#a78bfa'; ctx.textAlign = 'left';
+                ctx.fillText('📖 유래', 60, H * 0.57);
+                ctx.font = '500 17px "Noto Sans KR", sans-serif';
+                ctx.fillStyle = '#c8c8e0'; ctx.textAlign = 'left';
+                wrapTextLeft(ctx, origin, 60, H * 0.62, W - 120, 26);
+            }
+
+            var charY = H * 0.88;
+            ctx.font = '700 16px "Noto Sans KR", sans-serif';
+            ctx.fillStyle = 'rgba(120,120,180,0.6)'; ctx.textAlign = 'center';
+            var charBreakdown = '';
+            for (var i = 0; i < chars.length; i++) {
+                var ch = chars[i], inf = charLookup[ch];
+                charBreakdown += ch + (inf ? '(' + inf.reading + ')' : '') + ' ';
+            }
+            ctx.fillText(charBreakdown.trim(), W / 2, charY);
+
+            ctx.font = '500 16px "Inter", sans-serif';
+            ctx.fillStyle = 'rgba(120,120,160,0.5)'; ctx.textAlign = 'center';
+            ctx.fillText('hanzi.up.railway.app', W / 2, H - 30);
+
+            canvas.toBlob(function(blob) {
+                if (!blob) { showToast('이미지 생성 실패'); return; }
+                var a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = chars + '_idiom_card.png';
+                a.click(); URL.revokeObjectURL(a.href);
+                showToast('고사성어 카드 이미지 저장 완료');
+            }, 'image/png');
+        }
+
+        function drawRoundRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y); ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r); ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h); ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r); ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        function wrapText(ctx, text, x, y, maxW, lineH) {
+            var words = text.split(''); var line = '';
+            for (var i = 0; i < words.length; i++) {
+                var test = line + words[i];
+                if (ctx.measureText(test).width > maxW && line) {
+                    ctx.fillText(line, x, y); y += lineH; line = words[i];
+                } else { line = test; }
+            }
+            if (line) ctx.fillText(line, x, y);
+        }
+
+        function wrapTextLeft(ctx, text, x, y, maxW, lineH) {
+            var words = text.split(''); var line = '';
+            for (var i = 0; i < words.length; i++) {
+                var test = line + words[i];
+                if (ctx.measureText(test).width > maxW && line) {
+                    ctx.fillText(line, x, y); y += lineH; line = words[i];
+                } else { line = test; }
+            }
+            if (line) ctx.fillText(line, x, y);
         }
 
         // ===== FEATURE 1: SPACED REPETITION (SM-2) =====
