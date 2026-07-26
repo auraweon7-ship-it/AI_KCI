@@ -102,8 +102,32 @@
             background: rgba(12, 12, 22, 0.9);
             backdrop-filter: blur(16px) saturate(180%);
             -webkit-backdrop-filter: blur(16px) saturate(180%);
-            border-bottom: 1px solid var(--border);
-            padding: 10px 20px;
+            border-bottom: none;
+            padding: 10px 20px 0;
+        }
+        .main-tabs {
+            display: flex;
+            max-width: 1200px;
+            margin: 8px auto 0;
+            gap: 0;
+        }
+        .main-tab {
+            flex: 1;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--text-dim);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.25s;
+            background: none;
+            border-top: none; border-left: none; border-right: none;
+        }
+        .main-tab:hover { color: var(--text); }
+        .main-tab.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
         }
 
         .nav-inner {
@@ -2841,7 +2865,7 @@
     <!-- Top Navigation -->
     <nav class="top-nav">
         <div class="nav-inner">
-            <div class="nav-brand">漢字 쓰기마스터 <span class="app-version">v2.2</span></div>
+            <div class="nav-brand">漢字 쓰기마스터 <span class="app-version">v2.3</span></div>
             <div class="nav-visitor" id="navVisitor" style="display:none;">
                 <span class="visitor-dot"></span>
                 <span id="visitorCount">0</span>명 방문
@@ -2856,6 +2880,10 @@
                 </div>
                 <button class="nav-btn nav-admin-btn" onclick="showAdminLogin()">관리자</button>
                 <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="테마 전환">🌙</button>
+            </div>
+            <div class="main-tabs">
+                <button class="main-tab active" id="tabHanzi" onclick="switchMainTab('hanzi')">✏️ 한자쓰기</button>
+                <button class="main-tab" id="tabIdiom" onclick="switchMainTab('idiom')">📜 고사성어</button>
             </div>
         </div>
     </nav>
@@ -2934,6 +2962,7 @@
 
     <!-- Main Content -->
     <div id="mainContent">
+        <div id="hanziContent">
         <header>
             <div class="header-eyebrow">
                 <span class="dot"></span>
@@ -3215,7 +3244,11 @@
                 <div class="badge-grid" id="badgeGrid"></div>
             </div>
 
-            <!-- 고사성어 Idiom Cards -->
+        </div>
+        </div><!-- /hanziContent -->
+
+        <div id="idiomContent" style="display:none;">
+        <div class="container">
             <div class="idiom-section" id="idiomSection">
                 <div class="my-stats-header">
                     <div class="my-stats-title">📜 고사성어 <span style="font-size:12px;color:var(--text-dim);font-weight:400;" id="idiomTotal"></span></div>
@@ -3235,6 +3268,7 @@
             </div>
 
         </div>
+        </div><!-- /idiomContent -->
 
         <footer>
             <div class="footer-inner">
@@ -3340,6 +3374,25 @@
         let currentStrokeNum = 0;
 
         const charLookup = {};
+
+        function switchMainTab(tab) {
+            var hanzi = document.getElementById('hanziContent');
+            var idiom = document.getElementById('idiomContent');
+            var tabH = document.getElementById('tabHanzi');
+            var tabI = document.getElementById('tabIdiom');
+            if (tab === 'hanzi') {
+                hanzi.style.display = '';
+                idiom.style.display = 'none';
+                tabH.classList.add('active');
+                tabI.classList.remove('active');
+            } else {
+                hanzi.style.display = 'none';
+                idiom.style.display = '';
+                tabH.classList.remove('active');
+                tabI.classList.add('active');
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
         function getHSK(char) {
             return HSK_DATA[char] || 0;
