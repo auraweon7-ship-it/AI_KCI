@@ -96,9 +96,10 @@
 
         /* ===== TOP NAV ===== */
         .top-nav {
-            position: relative;
-            z-index: 10;
-            background: rgba(12, 12, 22, 0.85);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(12, 12, 22, 0.9);
             backdrop-filter: blur(16px) saturate(180%);
             -webkit-backdrop-filter: blur(16px) saturate(180%);
             border-bottom: 1px solid var(--border);
@@ -2641,50 +2642,122 @@
         }
 
         @media (max-width: 480px) {
-            /* Nav — stack brand + actions */
-            .nav-inner { flex-wrap: wrap; justify-content: center; gap: 6px; }
-            .nav-brand { width: 100%; text-align: center; font-size: 15px; }
-            .nav-actions { justify-content: center; width: 100%; }
+            /* Nav — compact single row */
+            .nav-inner { flex-wrap: nowrap; gap: 6px; }
+            .nav-brand { font-size: 14px; white-space: nowrap; }
+            .nav-actions { gap: 4px; }
+            .nav-btn { padding: 5px 8px; font-size: 10px; }
+            .nav-login-btn { padding: 5px 10px; font-size: 11px; }
+            .nav-admin-btn { font-size: 10px; padding: 5px 8px; }
+            .theme-toggle { width: 30px; height: 30px; font-size: 14px; }
 
-            /* Header */
-            header { padding: 16px 10px 8px; }
-            header h1 { font-size: 22px; }
+            /* Header — compact hero */
+            header { padding: 10px 10px 6px; }
+            header h1 { font-size: 20px; margin-bottom: 2px; }
+            .header-eyebrow { font-size: 10px; padding: 3px 10px; margin-bottom: 6px; }
+            .subtitle { font-size: 11px; margin-bottom: 4px; }
+            .total-count { font-size: 11px; padding: 4px 12px; margin-top: 6px; }
 
-            /* Grid */
-            .char-grid { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); max-height: 260px; }
+            /* Sticky search */
+            .search-section {
+                position: sticky; top: 48px; z-index: 90;
+                background: var(--bg); padding: 8px 0; margin: 0 -10px;
+                padding-left: 10px; padding-right: 10px;
+                border-bottom: 1px solid var(--border);
+            }
+            .search-input { font-size: 15px; padding: 12px 14px; }
+            .search-section .btn { padding: 10px 20px; font-size: 13px; }
+
+            /* Category tabs — fade hint */
+            .category-tabs {
+                position: relative;
+                mask-image: linear-gradient(to right, black 85%, transparent 100%);
+                -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+            }
+            .cat-tab { padding: 5px 10px; font-size: 11px; }
+
+            /* HSK tabs — fade hint */
+            .hsk-filter {
+                mask-image: linear-gradient(to right, black 85%, transparent 100%);
+                -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+            }
+
+            /* Quiz launcher — horizontal compact */
+            .quiz-launcher {
+                flex-direction: row; flex-wrap: wrap; gap: 6px;
+                padding: 8px 10px;
+            }
+            .quiz-launcher .btn {
+                flex: 1 1 calc(50% - 6px); min-width: 0;
+                padding: 10px 8px; font-size: 12px; justify-content: center;
+            }
+
+            /* Grid — tighter */
+            .char-grid { grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); max-height: 280px; gap: 5px; }
             .char-cell .hz { font-size: 24px; }
-            .char-cell { min-height: 60px; padding: 6px 2px; }
+            .char-cell { min-height: 58px; padding: 6px 2px; }
+            .char-grid-section { padding: 12px 10px; }
 
             /* Flip card */
             .flip-card { max-width: 230px; height: 400px; }
             .flip-card-char { font-size: 68px !important; }
             .flip-card-reading { font-size: 15px !important; }
             .flip-card-pinyin { font-size: 13px !important; }
+            .flip-card-emoji-label { font-size: 28px; }
 
-            /* Writer */
-            .controls .btn { padding: 8px 14px; font-size: 12px; }
+            /* Writer containers — compact */
+            .card { padding: 14px; }
+            .card-title { font-size: 14px; margin-bottom: 10px; }
+            .controls { gap: 4px; flex-wrap: wrap; }
+            .controls .btn { padding: 8px 12px; font-size: 11px; }
 
-            /* Stats */
-            .stats-bar { gap: 8px; }
-            .stat-value { font-size: 20px; }
-            .stat-label { font-size: 9px; }
+            /* Stats — 4 across */
+            .stats-bar { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+            .stat-card { padding: 10px 6px; }
+            .stat-value { font-size: 18px; }
+            .stat-label { font-size: 8px; }
 
-            /* My stats — 1 row still */
+            /* My stats */
             .my-stats-grid { gap: 6px; }
             .my-stat-val { font-size: 20px; }
+
+            /* Daily goal — compact */
+            .daily-goal-bar { padding: 8px 12px; }
+
+            /* Badge section — compact */
+            .badge-grid { grid-template-columns: repeat(4, 1fr); gap: 6px; }
+            .badge-icon { font-size: 22px; }
+            .badge-name { font-size: 9px; }
+
+            /* Vocab chips — compact */
+            .vocab-chip { padding: 8px 10px 6px; min-width: 64px; }
+            .vocab-chip-chars { font-size: 17px; }
+            .vocab-chip-reading { font-size: 10px; }
+            .vocab-chip-meaning { font-size: 9px; max-width: 68px; }
+
+            /* Idiom cards */
+            .idiom-card { padding: 14px 12px 12px; }
+            .idiom-card-chars { font-size: 22px; letter-spacing: 2px; }
 
             /* Footer */
             .footer-links { flex-direction: column; align-items: center; }
             .footer-name { font-size: 13px; }
 
-            /* New features */
+            /* Tighter section spacing */
+            .search-section { margin-bottom: 12px; }
+            .category-tabs { margin-bottom: 8px; }
+            .hsk-filter { padding: 6px 10px; margin-bottom: 8px; }
+            .daily-goal-bar { margin-bottom: 8px; padding: 8px 12px; }
+            .badge-section { padding: 12px; }
+            .idiom-section { padding: 12px; }
+            .my-stats-section { padding: 12px; }
+            .history-section { margin-top: 14px; }
+
+            /* Other features */
             .quiz-options { grid-template-columns: 1fr; }
             .quiz-question-char { font-size: 56px; }
             .hsk-progress-grid { grid-template-columns: 1fr; }
             .dashboard-chart-wrap canvas { max-height: 150px; }
-            .quiz-launcher { flex-direction: column; }
-            .quiz-launcher .btn { width: 100%; justify-content: center; }
-            .badge-grid { grid-template-columns: repeat(3, 1fr); }
             .mistake-grid { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); }
 
             /* Admin panel — smaller phones */
