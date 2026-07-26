@@ -162,26 +162,6 @@
             letter-spacing: 0;
         }
 
-        .nav-visitor {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            padding: 5px 14px;
-            background: rgba(94,234,212,0.08);
-            border: 1px solid rgba(94,234,212,0.2);
-            border-radius: 100px;
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--accent2);
-        }
-
-        .visitor-dot {
-            width: 6px; height: 6px;
-            background: var(--accent2);
-            border-radius: 50%;
-            box-shadow: 0 0 6px var(--accent2);
-            animation: pulse 2s ease-in-out infinite;
-        }
 
         .nav-actions {
             display: flex;
@@ -2467,7 +2447,6 @@
             .nav-inner { gap: 8px; }
             .nav-actions { gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
             .nav-username { display: none; }
-            .nav-visitor { font-size: 11px; padding: 4px 10px; }
             .nav-btn { padding: 6px 10px; font-size: 11px; }
             .nav-admin-btn { padding: 6px 10px; font-size: 11px; }
             .api-key-btn { padding: 6px 10px; font-size: 11px; }
@@ -2867,10 +2846,6 @@
     <nav class="top-nav">
         <div class="nav-inner">
             <div class="nav-brand">漢字 쓰기마스터 <span class="app-version">v2.6</span></div>
-            <div class="nav-visitor" id="navVisitor" style="display:none;">
-                <span class="visitor-dot"></span>
-                <span id="visitorCount">0</span>명 방문
-            </div>
             <div class="nav-actions">
                 <span class="admin-active-badge" id="adminBadge" style="display:none;">ADMIN</span>
                 <button id="loginBtn" class="nav-login-btn" onclick="showLoginModal()">로그인</button>
@@ -5847,20 +5822,6 @@
         }
 
         // ===== INIT NEW FEATURES =====
-        // ===== VISITOR COUNTER =====
-        function initVisitorCounter() {
-            fetch('/api/visit', { method: 'POST' })
-                .then(function(r) { return r.json(); })
-                .then(function(data) {
-                    if (data.count) {
-                        document.getElementById('visitorCount').textContent = data.count.toLocaleString();
-                        document.getElementById('navVisitor').style.display = 'flex';
-                    }
-                })
-                .catch(function() {
-                    // DB unavailable — hide counter
-                });
-        }
 
         // ===== FEATURE: SEARCH AUTOCOMPLETE =====
         var _acIndex = -1;
@@ -6115,7 +6076,6 @@
             renderBadgeSection();
             checkAchievements();
             initIdiomSection();
-            initVisitorCounter();
             initSearchAutocomplete();
             initMistakeReviewHook();
         }
