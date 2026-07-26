@@ -17,6 +17,7 @@
     <script src="idiom-data.js"></script>
     <script src="idiom-detail-data.js"></script>
     <script src="example-data.js"></script>
+    <script src="vocab-data.js"></script>
     <style>
         :root {
             --bg: #06060b;
@@ -2194,6 +2195,42 @@
             position: absolute; top: 8px; right: 8px; font-size: 10px; padding: 2px 8px;
             border-radius: 10px; background: var(--surface3); color: var(--text-dim); font-weight: 600;
         }
+        .vocab-section {
+            margin-top: 16px;
+        }
+        .vocab-section-title {
+            font-size: 13px; font-weight: 700; color: var(--accent2);
+            margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+        }
+        .vocab-section-title span {
+            font-size: 11px; font-weight: 500; color: var(--text-dim);
+        }
+        .vocab-grid {
+            display: flex; flex-wrap: wrap; gap: 8px;
+        }
+        .vocab-chip {
+            display: inline-flex; flex-direction: column; align-items: center;
+            padding: 10px 14px 8px; border-radius: 12px;
+            background: var(--surface2); border: 1px solid var(--border);
+            cursor: pointer; transition: all 0.25s; min-width: 72px;
+        }
+        .vocab-chip:hover {
+            border-color: var(--accent); transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(124,106,255,0.2);
+        }
+        .vocab-chip:active { transform: scale(0.96); }
+        .vocab-chip-chars {
+            font-family: 'Noto Serif KR', serif; font-size: 20px; font-weight: 700;
+            color: var(--text); letter-spacing: 2px; line-height: 1.3;
+        }
+        .vocab-chip:hover .vocab-chip-chars { color: var(--accent); }
+        .vocab-chip-reading {
+            font-size: 11px; color: var(--accent2); font-weight: 600; margin-top: 2px;
+        }
+        .vocab-chip-meaning {
+            font-size: 10px; color: var(--text-dim); margin-top: 1px; text-align: center;
+            max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
         .idiom-card-chars-detail {
             display: none; margin-top: 8px; gap: 4px; flex-wrap: wrap; justify-content: center;
         }
@@ -2927,6 +2964,10 @@
                                 <div id="radicalInfo"></div>
                                 <div id="radicalRelated" class="radical-related"></div>
                                 <div id="relatedIdioms" class="related-idioms"></div>
+                                <div id="vocabSection" class="vocab-section" style="display:none;">
+                                    <div class="vocab-section-title">📝 한자어휘 <span id="vocabCount"></span></div>
+                                    <div class="vocab-grid" id="vocabGrid"></div>
+                                </div>
                             </div>
                         </div>
                         <div class="example-panel" id="examplePanel" style="display:none;">
@@ -3473,6 +3514,7 @@
             updateWriterFavBtn();
             showRadicalInfo(mainChar);
             showRelatedIdioms(mainChar);
+            showVocabSection(mainChar);
             updateCharNav();
             updateWriterCharInfo(mainChar);
 
@@ -5276,6 +5318,29 @@
 
         function scrollToIdiom(chars) {
             openIdiomDetail(chars);
+        }
+
+        function showVocabSection(char) {
+            var section = document.getElementById('vocabSection');
+            var grid = document.getElementById('vocabGrid');
+            var countEl = document.getElementById('vocabCount');
+            if (!section || typeof VOCAB_DATA === 'undefined') return;
+            var vocabs = VOCAB_DATA[char];
+            if (!vocabs || vocabs.length === 0) {
+                section.style.display = 'none';
+                return;
+            }
+            var html = '';
+            vocabs.forEach(function(v) {
+                html += '<div class="vocab-chip" onclick="selectChar(\'' + v[0] + '\')" title="' + v[1] + ' - ' + v[2] + '">'
+                    + '<div class="vocab-chip-chars">' + v[0] + '</div>'
+                    + '<div class="vocab-chip-reading">' + v[1] + '</div>'
+                    + '<div class="vocab-chip-meaning">' + v[2] + '</div>'
+                    + '</div>';
+            });
+            grid.innerHTML = html;
+            countEl.textContent = '(' + vocabs.length + '개)';
+            section.style.display = '';
         }
 
         // Idiom quiz mode
