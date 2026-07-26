@@ -2865,7 +2865,7 @@
     <!-- Top Navigation -->
     <nav class="top-nav">
         <div class="nav-inner">
-            <div class="nav-brand">漢字 쓰기마스터 <span class="app-version">v2.4</span></div>
+            <div class="nav-brand">漢字 쓰기마스터 <span class="app-version">v2.5</span></div>
             <div class="nav-visitor" id="navVisitor" style="display:none;">
                 <span class="visitor-dot"></span>
                 <span id="visitorCount">0</span>명 방문
@@ -4237,7 +4237,37 @@
             '봄':'🌱','여름':'☀️','가을':'🍂','겨울':'⛄',
             '동녘':'🌅','서녘':'🌇','남녘':'🧭','북녘':'🧊',
             '골짜기':'🏞️','들':'🌾','수풀':'🌲','섬':'🏝️','호수':'🏞️',
-            '나라':'🏛️','고을':'🏘️','서울':'🏙️'
+            '나라':'🏛️','고을':'🏘️','서울':'🏙️',
+            '아버지':'👨‍👦','어머니':'👩‍👦','형':'👦','아우':'👧','아들':'👦','딸':'👧',
+            '할아버지':'👴','할머니':'👵','아내':'👩','남편':'👨','며느리':'👰','사위':'🤵',
+            '스승':'🧑‍🏫','제자':'🧑‍🎓','벼슬':'🏛️','신하':'🙇','백성':'👥',
+            '머리':'🧠','얼굴':'😃','목':'🦒','어깨':'💪','등':'🔙',
+            '이':'🦷','혀':'👅','가슴':'🫁','허리':'🔄',
+            '웃다':'😄','울다':'😭','놀라다':'😲','부끄럽다':'😳','그리워하다':'🥺',
+            '생각하다':'🤔','원망하다':'😤','미워하다':'😡','즐기다':'🥳','걱정하다':'😟',
+            '힘':'💪','재주':'🎯','슬기':'🧠','어질다':'🤲','착하다':'😇',
+            '참다':'🧘','용감하다':'🦁','부지런하다':'🐝','게으르다':'🦥','정성':'🙏',
+            '나다':'🌅','죽다':'💀','살다':'🏡','쉬다':'😴','잠':'😴',
+            '서다':'🧍','앉다':'🪑','눕다':'🛏️','달리다':'🏃','날다':'🕊️',
+            '열다':'🔓','닫다':'🔒','오르다':'⬆️','내리다':'⬇️','넘다':'🧗',
+            '먹다':'🍽️','마시다':'🥤','입다':'👔','쓰다':'✍️','짓다':'🏗️',
+            '심다':'🌱','거두다':'🧺','베다':'🪓','캐다':'⛏️','갈다':'🔧',
+            '팔다':'💰','사다':'🛒','주다':'🎁','받다':'📬','바꾸다':'🔄',
+            '법':'⚖️','예':'🎎','효':'🧎','충':'🛡️',
+            '밝다':'🔆','어둡다':'🌑','맑다':'💎','흐리다':'🌫️','뜨겁다':'🌡️',
+            '차다':'🥶','무겁다':'🏋️','가볍다':'🪶','빠르다':'⚡','느리다':'🐌',
+            '길다':'📏','짧다':'📎','둥글다':'⭕','곧다':'📍',
+            '날카롭다':'🔪','굳다':'🪨','부드럽다':'🧸',
+            '이기다':'🏆','지다':'😞','화평':'🕊️','다스리다':'👨‍⚖️',
+            '모으다':'🗂️','세우다':'🏗️','무너지다':'💥',
+            '노래':'🎵','춤':'💃','그림':'🎨','거문고':'🎸','피리':'🎺',
+            '약':'💊','병':'🤒','낫다':'💉','아프다':'🤕',
+            '밭':'🌾','논':'🌾','씨':'🌰',
+            '실':'🧵','베':'🧶','그릇':'🍲','항아리':'🏺','종':'🔔',
+            '거짓':'🎭','참':'✅','악하다':'👿','아름답다':'🌺',
+            '두껍다':'📚','얇다':'📄','새롭다':'✨','오래되다':'📦',
+            '강하다':'💪','약하다':'😔','높이':'⬆️','낮다':'⬇️',
+            '넓다':'🌐','좁다':'📎'
         };
         var CATEGORY_EMOJI = {};
         HANZI_CATEGORIES.forEach(function(cat) { CATEGORY_EMOJI[cat.id] = cat.icon; });
@@ -4545,73 +4575,137 @@
         function generateIdiomCardImage(event) {
             event.stopPropagation();
             var chars = document.getElementById('idiomDetailChars').textContent;
+            var pinyin = document.getElementById('idiomDetailPinyin').textContent;
             var reading = document.getElementById('idiomDetailReading').textContent;
             var meaning = document.getElementById('idiomDetailMeaning').textContent;
             var emoji = document.getElementById('idiomDetailEmoji').textContent || '📜';
             var idiom = IDIOM_DATA.find(function(d) { return d.chars === chars; });
             var origin = idiom ? idiom.origin : '';
+            var category = idiom ? idiom.category : '';
+            var catLabels = {wisdom:'지혜·교훈',virtue:'덕목·인성',nature:'자연·풍경',effort:'노력·성공',warning:'경계·교훈',society:'인간·세상',economy:'경제·교훈'};
+            var catLabel = catLabels[category] || category;
 
-            var W = 600, H = 900, R = 40;
+            var W = 600, H = 960, R = 24;
             var canvas = document.createElement('canvas');
             canvas.width = W; canvas.height = H;
             var ctx = canvas.getContext('2d');
 
-            var bg = ctx.createLinearGradient(0, 0, W * 0.4, H);
-            bg.addColorStop(0, '#0f1528'); bg.addColorStop(1, '#1a0f2e');
+            // Card background matching .idiom-detail-modal
+            var bg = ctx.createLinearGradient(0, 0, 0, H);
+            bg.addColorStop(0, '#16152a'); bg.addColorStop(1, '#1a1230');
             drawRoundRect(ctx, 0, 0, W, H, R);
             ctx.fillStyle = bg; ctx.fill();
-            ctx.strokeStyle = 'rgba(100,80,160,0.3)'; ctx.lineWidth = 2; ctx.stroke();
+            ctx.strokeStyle = 'rgba(80,70,130,0.4)'; ctx.lineWidth = 1.5; ctx.stroke();
 
+            // Top gradient line matching .idiom-detail-header::before
             var topLine = ctx.createLinearGradient(0, 0, W, 0);
-            topLine.addColorStop(0, '#f472b6'); topLine.addColorStop(0.5, '#a78bfa'); topLine.addColorStop(1, '#5eead4');
-            ctx.fillStyle = topLine; ctx.fillRect(R, 0, W - R * 2, 3);
+            topLine.addColorStop(0, '#f472b6'); topLine.addColorStop(0.5, '#7c6aff'); topLine.addColorStop(1, '#5eead4');
+            ctx.fillStyle = topLine;
+            ctx.fillRect(0, 0, W, 3);
 
-            ctx.save(); ctx.globalAlpha = 0.06;
-            ctx.font = '240px serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillStyle = '#fff'; ctx.fillText(emoji, W / 2, H * 0.28); ctx.restore();
+            // Header background matching .idiom-detail-header
+            var headerBg = ctx.createLinearGradient(0, 0, 0, 340);
+            headerBg.addColorStop(0, 'rgba(124,106,255,0.08)'); headerBg.addColorStop(1, 'rgba(124,106,255,0)');
+            ctx.fillStyle = headerBg;
+            ctx.fillRect(0, 3, W, 340);
 
-            ctx.font = '60px serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
-            ctx.fillText(emoji, W / 2, H * 0.08);
+            // Header border-bottom
+            ctx.strokeStyle = 'rgba(80,70,130,0.3)'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(0, 343); ctx.lineTo(W, 343); ctx.stroke();
 
-            var cGrad = ctx.createLinearGradient(W * 0.2, H * 0.12, W * 0.8, H * 0.3);
-            cGrad.addColorStop(0, '#a78bfa'); cGrad.addColorStop(1, '#5eead4');
-            ctx.font = '900 110px "Noto Serif KR", serif';
+            // Emoji (large)
+            ctx.font = '52px serif'; ctx.textAlign = 'center'; ctx.fillStyle = '#fff';
+            ctx.fillText(emoji, W / 2, 60);
+
+            // Background emoji watermark
+            ctx.save(); ctx.globalAlpha = 0.04;
+            ctx.font = '280px serif'; ctx.textBaseline = 'middle';
+            ctx.fillText(emoji, W / 2, 200); ctx.restore();
+
+            // Chars with gradient matching .idiom-detail-chars
+            var cGrad = ctx.createLinearGradient(100, 80, W - 100, 200);
+            cGrad.addColorStop(0, '#e8e6f0'); cGrad.addColorStop(1, '#5eead4');
+            ctx.font = '900 72px "Noto Serif KR", serif';
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillStyle = cGrad;
-            ctx.fillText(chars, W / 2, H * 0.22);
+            ctx.letterSpacing = '6px';
+            ctx.fillText(chars.split('').join(' '), W / 2, 140);
 
-            ctx.font = '700 28px "Noto Sans KR", sans-serif';
-            ctx.fillStyle = '#d4d4f8'; ctx.textAlign = 'center';
-            ctx.fillText(reading, W / 2, H * 0.34);
+            // Pinyin matching .idiom-detail-pinyin
+            if (pinyin) {
+                ctx.font = '600 20px "Inter", sans-serif';
+                ctx.fillStyle = '#5eead4';
+                ctx.fillText(pinyin, W / 2, 190);
+            }
 
-            ctx.font = '600 24px "Noto Sans KR", sans-serif';
-            ctx.fillStyle = '#eaeaf4';
-            wrapText(ctx, meaning, W / 2, H * 0.42, W - 80, 34);
+            // Reading matching .idiom-detail-reading
+            ctx.font = '600 22px "Noto Sans KR", sans-serif';
+            ctx.fillStyle = '#9090b8';
+            ctx.fillText(reading, W / 2, 225);
 
+            // Meaning matching .idiom-detail-meaning
+            ctx.font = '500 22px "Noto Sans KR", sans-serif';
+            ctx.fillStyle = '#e8e6f0';
+            wrapText(ctx, meaning, W / 2, 268, W - 80, 30);
+
+            // Category badge
+            if (catLabel) {
+                ctx.font = '700 14px "Noto Sans KR", sans-serif';
+                var tw = ctx.measureText(catLabel).width;
+                var bx = (W - tw - 20) / 2, by = 310, bw = tw + 20, bh = 26, br = 13;
+                ctx.fillStyle = 'rgba(124,106,255,0.15)';
+                drawRoundRect(ctx, bx, by, bw, bh, br); ctx.fill();
+                ctx.fillStyle = '#a78bfa'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(catLabel, W / 2, by + 13);
+            }
+
+            // Origin section matching .idiom-detail-section
+            var originY = 370;
             if (origin) {
-                ctx.fillStyle = 'rgba(167,139,250,0.3)';
-                drawRoundRect(ctx, 40, H * 0.52, W - 80, H * 0.32, 16); ctx.fill();
-                ctx.font = '700 18px "Noto Sans KR", sans-serif';
-                ctx.fillStyle = '#a78bfa'; ctx.textAlign = 'left';
-                ctx.fillText('📖 유래', 60, H * 0.57);
-                ctx.font = '500 17px "Noto Sans KR", sans-serif';
-                ctx.fillStyle = '#c8c8e0'; ctx.textAlign = 'left';
-                wrapTextLeft(ctx, origin, 60, H * 0.62, W - 120, 26);
+                ctx.fillStyle = 'rgba(124,106,255,0.06)';
+                drawRoundRect(ctx, 30, originY, W - 60, 280, 16); ctx.fill();
+                ctx.strokeStyle = 'rgba(124,106,255,0.15)'; ctx.lineWidth = 1;
+                drawRoundRect(ctx, 30, originY, W - 60, 280, 16); ctx.stroke();
+
+                ctx.font = '700 16px "Noto Sans KR", sans-serif';
+                ctx.fillStyle = '#a78bfa'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+                ctx.fillText('📖 유래', 52, originY + 18);
+
+                ctx.font = '400 16px "Noto Sans KR", sans-serif';
+                ctx.fillStyle = '#b8b8d0'; ctx.textAlign = 'left';
+                wrapTextLeft(ctx, origin, 52, originY + 50, W - 104, 24);
             }
 
-            var charY = H * 0.88;
-            ctx.font = '700 16px "Noto Sans KR", sans-serif';
-            ctx.fillStyle = 'rgba(120,120,180,0.6)'; ctx.textAlign = 'center';
-            var charBreakdown = '';
+            // Character breakdown matching .idiom-detail-char-tags
+            var tagY = originY + 300;
+            ctx.font = '700 14px "Noto Sans KR", sans-serif';
+            ctx.fillStyle = '#7070a0'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+            ctx.fillText('글자 분석', 52, tagY);
+
+            var tagBoxY = tagY + 26;
+            var tagW = (W - 60 - 12 * (chars.length - 1)) / chars.length;
             for (var i = 0; i < chars.length; i++) {
-                var ch = chars[i], inf = charLookup[ch];
-                charBreakdown += ch + (inf ? '(' + inf.reading + ')' : '') + ' ';
-            }
-            ctx.fillText(charBreakdown.trim(), W / 2, charY);
+                var tx = 30 + i * (tagW + 12);
+                ctx.fillStyle = 'rgba(124,106,255,0.08)';
+                drawRoundRect(ctx, tx, tagBoxY, tagW, 56, 12); ctx.fill();
+                ctx.strokeStyle = 'rgba(124,106,255,0.2)'; ctx.lineWidth = 1;
+                drawRoundRect(ctx, tx, tagBoxY, tagW, 56, 12); ctx.stroke();
 
-            ctx.font = '500 16px "Inter", sans-serif';
-            ctx.fillStyle = 'rgba(120,120,160,0.5)'; ctx.textAlign = 'center';
-            ctx.fillText('hanzi.up.railway.app', W / 2, H - 30);
+                var ch = chars[i], inf = charLookup[ch];
+                ctx.font = '800 24px "Noto Serif KR", serif';
+                ctx.fillStyle = '#e8e6f0'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(ch, tx + tagW / 2, tagBoxY + 22);
+                if (inf) {
+                    ctx.font = '500 11px "Noto Sans KR", sans-serif';
+                    ctx.fillStyle = '#9090b8';
+                    ctx.fillText(inf.reading + ' · ' + inf.meaning, tx + tagW / 2, tagBoxY + 44);
+                }
+            }
+
+            // Footer
+            ctx.font = '500 14px "Inter", sans-serif';
+            ctx.fillStyle = 'rgba(120,120,160,0.4)'; ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+            ctx.fillText('hanzi.up.railway.app', W / 2, H - 20);
 
             canvas.toBlob(function(blob) {
                 if (!blob) { showToast('이미지 생성 실패'); return; }
