@@ -1399,8 +1399,16 @@
         .flip-card-hsk {
             z-index: 1; margin-bottom: 12px;
         }
+        .flip-card-bottom-bar {
+            position: absolute; bottom: 10px; left: 10px; right: 10px; z-index: 2;
+            display: flex; align-items: center; justify-content: space-between;
+            pointer-events: none;
+        }
+        .flip-card-bottom-bar > * { pointer-events: auto; }
+        .flip-card-actions {
+            display: flex; gap: 8px;
+        }
         .flip-card-share {
-            position: absolute; bottom: 12px; right: 12px; z-index: 2;
             width: 36px; height: 36px;
             background: rgba(94,234,212,0.1); border: 1px solid rgba(94,234,212,0.25);
             border-radius: 50%; color: var(--accent2); cursor: pointer;
@@ -1411,9 +1419,8 @@
             background: rgba(94,234,212,0.25); border-color: var(--accent2); transform: scale(1.1);
         }
         .flip-card-hint {
-            position: absolute; bottom: 14px; left: 0; right: 0;
-            text-align: center; font-size: 11px; color: var(--text-dim);
-            opacity: 0.6; z-index: 1; pointer-events: none;
+            font-size: 11px; color: var(--text-dim);
+            opacity: 0.6; pointer-events: none;
         }
         .flip-card-back {
             background: linear-gradient(160deg, rgba(18,18,35,0.98), rgba(25,18,50,0.98));
@@ -1936,7 +1943,6 @@
 
         /* ===== FAVORITES / WORD LISTS ===== */
         .fav-btn-card {
-            position: absolute; bottom: 12px; left: 12px; z-index: 2;
             width: 36px; height: 36px;
             background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.25);
             border-radius: 50%; color: var(--text-dim); cursor: pointer;
@@ -3042,10 +3048,14 @@
                                 <div class="flip-card-reading" id="flipReading"></div>
                                 <div class="flip-card-pinyin" id="flipPinyin"></div>
                                 <div class="flip-card-hsk" id="flipHsk"></div>
-                                <button class="flip-card-share" onclick="shareFlipCard(event)" title="공유 링크 복사">🔗</button>
-                                <button class="flip-card-share" style="right:80px;" onclick="generateHanziCardImage(event)" title="이미지 저장">📸</button>
-                                <button class="fav-btn-card" id="favBtn" onclick="toggleFavorite(event)" title="즐겨찾기">☆</button>
-                                <div class="flip-card-hint">클릭하여 뒤집기</div>
+                                <div class="flip-card-bottom-bar">
+                                    <button class="fav-btn-card" id="favBtn" onclick="toggleFavorite(event)" title="즐겨찾기">☆</button>
+                                    <div class="flip-card-hint">클릭하여 뒤집기</div>
+                                    <div class="flip-card-actions">
+                                        <button class="flip-card-share" onclick="generateHanziCardImage(event)" title="이미지 저장">📸</button>
+                                        <button class="flip-card-share" onclick="shareFlipCard(event)" title="공유 링크 복사">🔗</button>
+                                    </div>
+                                </div>
                             </div>
                             <div class="flip-card-back">
                                 <div class="flip-card-back-title">예문 Examples</div>
