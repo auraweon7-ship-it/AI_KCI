@@ -2483,20 +2483,13 @@
             /* Container */
             .container { padding: 0 10px 40px; }
 
-            /* Category tabs — horizontal scroll */
+            /* Category tabs — wrap on mobile (10 items fit in 2-3 rows) */
             .category-tabs {
-                flex-wrap: nowrap;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                scrollbar-width: none;
-                padding-bottom: 6px;
-                margin-left: -10px;
-                margin-right: -10px;
-                padding-left: 10px;
-                padding-right: 10px;
+                flex-wrap: wrap;
+                gap: 5px;
+                padding-bottom: 4px;
             }
-            .category-tabs::-webkit-scrollbar { display: none; }
-            .cat-tab { flex-shrink: 0; padding: 6px 12px; font-size: 12px; }
+            .cat-tab { padding: 6px 10px; font-size: 12px; flex-shrink: 0; }
 
             /* HSK filter — horizontal scroll */
             .hsk-filter {
@@ -2698,13 +2691,10 @@
             .search-input { font-size: 15px; padding: 12px 14px; }
             .search-section .btn { padding: 10px 20px; font-size: 13px; }
 
-            /* Category tabs — fade hint */
             .category-tabs {
-                position: relative;
-                mask-image: linear-gradient(to right, black 85%, transparent 100%);
-                -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+                gap: 4px;
             }
-            .cat-tab { padding: 5px 10px; font-size: 11px; }
+            .cat-tab { padding: 5px 8px; font-size: 11px; }
 
             /* HSK tabs — fade hint */
             .hsk-filter {
