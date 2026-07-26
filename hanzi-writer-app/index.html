@@ -1348,6 +1348,11 @@
             font-size: 140px; opacity: 0.07; pointer-events: none;
             filter: grayscale(30%);
         }
+        .flip-card-emoji-label {
+            font-size: 36px; z-index: 1; margin-bottom: 6px;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+            line-height: 1;
+        }
         .flip-card-char {
             font-size: 100px; line-height: 1; z-index: 1;
             font-family: 'Noto Serif KR', serif;
@@ -2893,6 +2898,7 @@
                         <div class="flip-card-body" id="flipCardBody">
                             <div class="flip-card-front">
                                 <div class="flip-card-emoji-bg" id="flipEmojiBg"></div>
+                                <div class="flip-card-emoji-label" id="flipEmojiLabel"></div>
                                 <div class="flip-card-char" id="flipChar"></div>
                                 <div class="flip-card-reading" id="flipReading"></div>
                                 <div class="flip-card-pinyin" id="flipPinyin"></div>
@@ -4089,7 +4095,9 @@
             document.getElementById('flipChar').textContent = char;
             document.getElementById('flipReading').textContent = info ? info.meaning + ' ' + info.reading : char;
             document.getElementById('flipPinyin').textContent = (typeof PINYIN_DATA !== 'undefined' && PINYIN_DATA[char]) ? '[' + PINYIN_DATA[char] + ']' : '';
-            document.getElementById('flipEmojiBg').textContent = getCharEmoji(char);
+            var emoji = getCharEmoji(char);
+            document.getElementById('flipEmojiBg').textContent = emoji;
+            document.getElementById('flipEmojiLabel').textContent = emoji;
             document.getElementById('flipHsk').innerHTML = hskBadgeHTML(char);
 
             // Reset back face
