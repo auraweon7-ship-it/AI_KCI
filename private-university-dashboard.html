@@ -135,29 +135,32 @@
   .empty-state .icon{font-size:2.5rem;margin-bottom:0.8rem;}
 
   /* Analytics Section (통합) */
-  .analytics-section{padding:1.5rem 2rem 1rem;border-top:2px solid var(--border);position:relative;}
-  .analytics-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;margin-bottom:1.2rem;padding-left:1rem;border-left:4px solid var(--accent);}
+  .analytics-section{padding:1.5rem 2rem 1.2rem;background:linear-gradient(180deg,rgba(15,17,23,0.6) 0%,transparent 100%);border-top:2px solid var(--accent);position:relative;}
+  .analytics-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;margin-bottom:1.2rem;padding:0.8rem 1.2rem;background:linear-gradient(135deg,rgba(108,92,231,0.08),rgba(168,85,247,0.04));border-radius:12px;border:1px solid rgba(108,92,231,0.15);}
   .analytics-title{font-size:1.15rem;font-weight:800;color:var(--accent2);}
-  .analytics-period{font-size:0.75rem;color:var(--text-dim);background:var(--card);padding:0.2rem 0.7rem;border-radius:20px;border:1px solid var(--border);margin-left:0.6rem;}
+  .analytics-period{font-size:0.72rem;color:var(--text-dim);background:rgba(255,255,255,0.05);padding:0.2rem 0.7rem;border-radius:20px;border:1px solid var(--border);margin-left:0.6rem;}
+  .analytics-count{font-size:0.72rem;color:#10b981;background:rgba(16,185,129,0.1);padding:0.2rem 0.7rem;border-radius:20px;border:1px solid rgba(16,185,129,0.2);margin-left:0.4rem;font-weight:700;}
   .analytics-actions{display:flex;gap:0.5rem;align-items:center;}
   .analytics-export-btn{background:linear-gradient(135deg,#10b981,#06b6d4);color:#fff;border:none;border-radius:8px;padding:0.4rem 1rem;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
   .analytics-export-btn:hover{transform:scale(1.05);box-shadow:0 4px 15px rgba(16,185,129,0.4);}
   .charts-row{display:grid;gap:1rem;margin-bottom:1rem;}
   .charts-row-3{grid-template-columns:repeat(3,1fr);}
   .charts-row-2{grid-template-columns:repeat(2,1fr);}
-  .chart-card{background:linear-gradient(135deg,var(--card),rgba(30,30,46,0.8));border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:1rem 1.2rem;min-height:300px;box-shadow:0 2px 12px rgba(0,0,0,0.15);}
-  .chart-card h3{font-size:0.85rem;color:var(--text);font-weight:700;margin-bottom:0.6rem;text-align:center;}
+  .chart-card{background:linear-gradient(145deg,rgba(30,30,46,0.95),rgba(20,20,35,0.85));border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:1rem 1.2rem;min-height:300px;box-shadow:0 4px 20px rgba(0,0,0,0.2);transition:border-color 0.2s,box-shadow 0.2s;}
+  .chart-card:hover{border-color:rgba(108,92,231,0.2);box-shadow:0 6px 24px rgba(0,0,0,0.3);}
+  .chart-card h3{font-size:0.82rem;color:var(--accent2);font-weight:700;margin-bottom:0.6rem;text-align:center;padding-bottom:0.4rem;border-bottom:1px solid rgba(255,255,255,0.04);}
   .chart-card canvas{width:100%!important;height:260px!important;}
 
   /* Word Cloud */
   .wordcloud-box{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:0.15rem;min-height:240px;padding:0.4rem;}
-  .wc-word{display:inline-block;padding:0.05rem 0.3rem;border-radius:4px;font-weight:700;cursor:default;transition:transform 0.15s;line-height:1.4;}
-  .wc-word:hover{transform:scale(1.15);}
-  .wc-reset-btn{display:inline-block;background:rgba(255,255,255,0.08);color:var(--text-dim);border:1px solid var(--border);border-radius:6px;padding:0.2rem 0.6rem;font-size:0.7rem;cursor:pointer;margin-top:0.3rem;}
+  .wc-word{display:inline-block;padding:0.05rem 0.3rem;border-radius:4px;font-weight:700;cursor:pointer;transition:transform 0.15s,text-shadow 0.15s;line-height:1.4;}
+  .wc-word:hover{transform:scale(1.15);text-shadow:0 0 8px currentColor;}
+  .wc-reset-btn{display:inline-block;background:rgba(255,255,255,0.06);color:var(--text-dim);border:1px solid var(--border);border-radius:6px;padding:0.2rem 0.6rem;font-size:0.7rem;cursor:pointer;margin-top:0.3rem;transition:background 0.2s;}
+  .wc-reset-btn:hover{background:rgba(255,255,255,0.12);}
 
   /* AI Insight */
-  .ai-insight-unified{padding:1.2rem 1.5rem;background:linear-gradient(135deg,#1a1040,#0f1117);border:1px solid rgba(108,92,231,0.3);border-radius:14px;position:relative;margin-top:1rem;}
-  .ai-insight-unified::before{content:'AI';position:absolute;top:-10px;left:16px;background:var(--accent);color:#fff;font-size:0.65rem;font-weight:800;padding:0.15rem 0.5rem;border-radius:4px;letter-spacing:0.1em;}
+  .ai-insight-unified{padding:1.2rem 1.5rem;background:linear-gradient(135deg,rgba(26,16,64,0.9),rgba(15,17,23,0.9));border:1px solid rgba(108,92,231,0.25);border-radius:14px;position:relative;margin-top:1rem;backdrop-filter:blur(4px);}
+  .ai-insight-unified::before{content:'AI';position:absolute;top:-10px;left:16px;background:linear-gradient(135deg,#6c5ce7,#a855f7);color:#fff;font-size:0.65rem;font-weight:800;padding:0.15rem 0.5rem;border-radius:4px;letter-spacing:0.1em;}
   .ai-insight-title{font-size:0.9rem;font-weight:800;color:var(--accent2);margin-bottom:0.6rem;display:flex;align-items:center;gap:0.8rem;}
   .ai-gen-btn{background:linear-gradient(135deg,#6c5ce7,#a855f7);color:#fff;border:none;border-radius:8px;padding:0.4rem 1rem;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
   .ai-gen-btn:hover{transform:scale(1.05);box-shadow:0 4px 15px rgba(108,92,231,0.4);}
@@ -451,6 +454,7 @@
     <div>
       <span class="analytics-title">📊 뉴스 분석 & AI 인사이트</span>
       <span class="analytics-period" id="analyticsPeriod"></span>
+      <span class="analytics-count" id="analyticsCount"></span>
     </div>
     <div class="analytics-actions">
       <button class="analytics-export-btn" onclick="exportAnalyticsHTML()">📥 HTML 내보내기</button>
@@ -1093,14 +1097,16 @@ function renderCharts(f){
   renderSourceChart(f);
   renderTimelineChart(f);
   renderSentimentGauge(f);
-  updateAnalyticsPeriod();
+  updateAnalyticsPeriod(f.length);
 }
 
-function updateAnalyticsPeriod(){
+function updateAnalyticsPeriod(count){
   const from=document.getElementById('dateFrom').value;
   const to=document.getElementById('dateTo').value;
   const el=document.getElementById('analyticsPeriod');
   if(el&&from&&to) el.textContent=from.replace(/-/g,'.')+' ~ '+to.replace(/-/g,'.');
+  const ce=document.getElementById('analyticsCount');
+  if(ce&&count!==undefined) ce.textContent='검색 '+count+'건';
 }
 
 function renderSubCatChart(f){
