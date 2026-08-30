@@ -176,7 +176,7 @@
   .top-news-reason{color:#06b6d4;font-size:0.65rem;font-weight:700;background:rgba(6,182,212,0.1);padding:0.1rem 0.4rem;border-radius:4px;white-space:nowrap;}
 
   /* AI Insight */
-  .ai-insight-unified{padding:1.2rem 1.5rem;background:linear-gradient(135deg,rgba(26,16,64,0.9),rgba(15,17,23,0.9));border:1px solid rgba(108,92,231,0.25);border-radius:14px;position:relative;margin-top:1rem;backdrop-filter:blur(4px);}
+  .ai-insight-unified{padding:1.2rem 1.5rem;background:linear-gradient(135deg,rgba(26,16,64,0.9),rgba(15,17,23,0.9));border:1px solid rgba(108,92,231,0.25);border-radius:14px;position:relative;margin-top:1rem;backdrop-filter:blur(4px);word-break:keep-all;overflow-wrap:break-word;}
   .ai-insight-unified::before{content:'AI';position:absolute;top:-10px;left:16px;background:linear-gradient(135deg,#6c5ce7,#a855f7);color:#fff;font-size:0.65rem;font-weight:800;padding:0.15rem 0.5rem;border-radius:4px;letter-spacing:0.1em;}
   .ai-insight-title{font-size:0.9rem;font-weight:800;color:var(--accent2);margin-bottom:0.6rem;display:flex;align-items:center;gap:0.8rem;}
   .ai-gen-btn{background:linear-gradient(135deg,#6c5ce7,#a855f7);color:#fff;border:none;border-radius:8px;padding:0.4rem 1rem;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
@@ -353,7 +353,7 @@
 <div class="header">
   <div class="header-top">
     <div>
-      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.6.1</span></h1>
+      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.6.2</span></h1>
       <div class="subtitle">5대 유형 + 관점 + 지역별 사립대 이슈 모니터링</div>
     </div>
     <div class="meta-info">
@@ -1558,6 +1558,11 @@ function highlightKeywords(text){
   return html;
 }
 function formatAIInsight(text){
+  text=text.replace(/^#\s+.+$/gm,'');
+  const lines=text.trimEnd().split('\n');
+  const lastLine=lines[lines.length-1].trim();
+  if(lastLine&&!/[.。!?]$/.test(lastLine)&&!/^##/.test(lastLine))lines.pop();
+  text=lines.join('\n').trim();
   let html=text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   html=html.replace(/^## (.+)$/gm,'<div class="ai-section-title">$1</div>');
   html=html.replace(/^### (.+)$/gm,'<div class="ai-sub-title">$1</div>');
@@ -1594,24 +1599,29 @@ async function fetchAIInsight(){
 
 [뉴스 제목 목록] ${titles}
 
-위 뉴스들을 종합 분석하여 다음 구조로 인사이트를 작성하세요. 반드시 모든 문장을 완성하고 중간에 끊기지 않도록 하세요.
+위 뉴스들을 종합 분석하여 다음 구조로 인사이트를 작성하세요.
+
+중요 규칙:
+- 제목(# 또는 ## 로 시작하는 "한국 사립대학 현황 종합 분석 인사이트" 등)을 절대 쓰지 마세요. 바로 본문 섹션부터 시작하세요.
+- 각 섹션은 1~2문장으로 간결하게 작성하세요.
+- 반드시 모든 문장을 완성형으로 마무리하고, 중간에 끊기지 않도록 하세요. 마지막 문장도 반드시 마침표로 끝내세요.
 
 ## 📌 핵심 이슈 (2~3가지)
-각 이슈를 **굵은 소제목**과 함께 2~3문장으로 설명
+각 이슈를 **굵은 소제목**과 함께 1~2문장으로 간결하게 설명
 
 ## 🔗 이슈 간 연관성
-이슈들이 어떻게 서로 연결되는지 설명
+1~2문장으로 핵심 연결점만 설명
 
 ## 🔮 향후 전망 및 시사점
-정책적 시사점과 전망을 구체적으로 제시
+1~2문장으로 핵심 시사점만 제시
 
-한국어로 작성하고, 구체적 수치와 사례를 포함하세요. 각 섹션은 ##로 시작하는 마크다운 소제목을 사용하세요.`;
+한국어로 작성하고, 각 섹션은 ##로 시작하는 마크다운 소제목을 사용하세요. 전체 분량은 300자 이내로 간결하게 유지하세요.`;
 
   try{
     const res=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:3000,messages:[{role:'user',content:userPrompt}]})
+      body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1500,messages:[{role:'user',content:userPrompt}]})
     });
     let data=await res.json();
     if(data.error){
@@ -1625,7 +1635,7 @@ async function fetchAIInsight(){
         const res2=await fetch('https://api.anthropic.com/v1/messages',{
           method:'POST',
           headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:2000,messages:[{role:'user',content:userPrompt},{role:'assistant',content:text}],})
+          body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:1000,messages:[{role:'user',content:userPrompt},{role:'assistant',content:text}],})
         });
         const data2=await res2.json();
         if(data2.content?.[0]?.text)text+=data2.content[0].text;
@@ -2575,7 +2585,7 @@ h1{font-size:1.4rem;font-weight:800;color:#a29bfe;margin-bottom:0.3rem;border-le
 .card img{width:100%;max-height:260px;height:auto;object-fit:contain;}
 .wc-box{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:0.15rem;min-height:180px;padding:0.4rem;}
 .wc-box span{display:inline-block;padding:0.05rem 0.3rem;border-radius:4px;font-weight:700;line-height:1.4;}
-.ai-box{margin-top:1rem;padding:1.2rem 1.5rem;background:linear-gradient(135deg,#1a1040,#0f1117);border:1px solid rgba(108,92,231,0.3);border-radius:14px;position:relative;font-size:0.82rem;line-height:1.8;}
+.ai-box{margin-top:1rem;padding:1.2rem 1.5rem;background:linear-gradient(135deg,#1a1040,#0f1117);border:1px solid rgba(108,92,231,0.3);border-radius:14px;position:relative;font-size:0.82rem;line-height:1.8;word-break:keep-all;overflow-wrap:break-word;}
 .ai-box::before{content:'AI';position:absolute;top:-10px;left:16px;background:#6c5ce7;color:#fff;font-size:0.65rem;font-weight:800;padding:0.15rem 0.5rem;border-radius:4px;}
 .ai-box p{margin-bottom:0.6rem;}
 .ai-section-title{font-size:0.92rem;font-weight:800;color:#a29bfe;margin:1.2rem 0 0.5rem;padding-bottom:0.3rem;border-bottom:1px solid rgba(108,92,231,0.2);}
