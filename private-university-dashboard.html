@@ -347,7 +347,7 @@
 <div class="header">
   <div class="header-top">
     <div>
-      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.3.2</span></h1>
+      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.4.0</span></h1>
       <div class="subtitle">5대 유형 + 관점 + 지역별 사립대 이슈 모니터링</div>
     </div>
     <div class="meta-info">
@@ -497,6 +497,11 @@
   <div class="charts-row charts-row-2">
     <div class="chart-card"><h3>📅 일별 뉴스 추이</h3><canvas id="chartTimeline"></canvas></div>
     <div class="chart-card"><h3>😊 감성 분석 게이지</h3><canvas id="chartSentiment"></canvas><div class="sentiment-indicators" id="sentimentIndicators"></div></div>
+  </div>
+  <div class="charts-row charts-row-3">
+    <div class="chart-card"><h3>📈 주간 트렌드 비교</h3><canvas id="chartWeeklyTrend"></canvas></div>
+    <div class="chart-card"><h3>🔗 키워드 연관 네트워크</h3><div id="keywordNetwork" style="width:100%;height:280px;position:relative;"></div></div>
+    <div class="chart-card"><h3>🏫 대학별 언급 빈도 TOP 10</h3><canvas id="chartUnivMention"></canvas></div>
   </div>
   <div class="top-news-card" id="topNewsCard">
     <h3>🔥 중요도 상위 뉴스 TOP 5</h3>
@@ -1110,7 +1115,7 @@ document.getElementById('sortBy').addEventListener('change',render);
 document.getElementById('searchInput').addEventListener('input',render);
 
 // ═══ Charts ═══
-let chartMajorInst, chartSourceInst, chartTimelineInst, chartSentimentInst, chartSubCatInst, chartRegionInst;
+let chartMajorInst, chartSourceInst, chartTimelineInst, chartSentimentInst, chartSubCatInst, chartRegionInst, chartWeeklyTrendInst, chartUnivMentionInst;
 const CHART_COLORS = ['#ef4444','#06b6d4','#10b981','#f59e0b','#8b5cf6'];
 const MAJOR_NAMES = ['재정 건전성','교육 투자','학생 경쟁력','법인 책무성','지속가능성'];
 const MAJOR_IDS = ['fiscal','invest','student','account','sustain'];
@@ -1124,6 +1129,9 @@ function renderCharts(f){
   renderTimelineChart(f);
   renderSentimentGauge(f);
   renderTopNews(f);
+  renderWeeklyTrend(f);
+  renderKeywordNetwork(f);
+  renderUnivMention(f);
   updateAnalyticsPeriod(f.length);
 }
 
@@ -1139,6 +1147,94 @@ function renderTopNews(f){
     const cleanCat=cat.replace(/^[\p{Emoji}\p{Emoji_Component}️‍]+\s*/u,'');
     return `<li class="top-news-item"><span class="top-news-rank ${rc}">${i+1}</span><div class="top-news-info"><a class="top-news-title" href="${n.link}" target="_blank" rel="noopener">${cleanTitle}</a><div class="top-news-meta"><span class="top-news-stars">${stars}</span><span>${cleanCat}</span><span>${n.pubDate||''}</span></div></div></li>`;
   }).join('');
+}
+
+function renderWeeklyTrend(f){
+  const now=new Date();
+  const thisWeekStart=new Date(now);thisWeekStart.setDate(now.getDate()-now.getDay());thisWeekStart.setHours(0,0,0,0);
+  const lastWeekStart=new Date(thisWeekStart);lastWeekStart.setDate(lastWeekStart.getDate()-7);
+  const thisWeek=f.filter(n=>n.dateObj>=thisWeekStart);
+  const lastWeek=f.filter(n=>n.dateObj>=lastWeekStart&&n.dateObj<thisWeekStart);
+  const labels=MAJOR_NAMES;
+  const thisData=MAJOR_IDS.map(id=>thisWeek.filter(n=>n.major===id).length);
+  const lastData=MAJOR_IDS.map(id=>lastWeek.filter(n=>n.major===id).length);
+  if(chartWeeklyTrendInst){chartWeeklyTrendInst.data.datasets[0].data=lastData;chartWeeklyTrendInst.data.datasets[1].data=thisData;chartWeeklyTrendInst.update('none');return;}
+  const ctx=document.getElementById('chartWeeklyTrend');
+  chartWeeklyTrendInst=new Chart(ctx,{type:'bar',data:{labels,datasets:[
+    {label:'지난주',data:lastData,backgroundColor:'rgba(139,143,163,0.5)',borderColor:'#8b8fa3',borderWidth:1,borderRadius:4},
+    {label:'이번주',data:thisData,backgroundColor:'rgba(108,92,231,0.7)',borderColor:'#6c5ce7',borderWidth:1,borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},plugins:{legend:{labels:{color:'#e4e6eb',font:{size:10}}}},scales:{x:{ticks:{color:'#e4e6eb',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#e4e6eb',font:{size:10},stepSize:1},grid:{color:'#2d314830'}}}}});
+}
+
+function renderKeywordNetwork(f){
+  const box=document.getElementById('keywordNetwork');
+  if(!box)return;
+  const pairs={};
+  f.forEach(n=>{
+    const kws=n.kw||[];
+    for(let i=0;i<kws.length;i++){
+      for(let j=i+1;j<kws.length;j++){
+        const key=[kws[i],kws[j]].sort().join('|');
+        pairs[key]=(pairs[key]||0)+1;
+      }
+    }
+  });
+  const sorted=Object.entries(pairs).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  if(!sorted.length){box.innerHTML='<div style="text-align:center;color:#8b8fa3;padding:2rem;">데이터 부족</div>';return;}
+  const nodes=new Set();
+  sorted.forEach(([k])=>{const[a,b]=k.split('|');nodes.add(a);nodes.add(b);});
+  const nodeArr=[...nodes];
+  const nodeCount={};
+  sorted.forEach(([k,v])=>{const[a,b]=k.split('|');nodeCount[a]=(nodeCount[a]||0)+v;nodeCount[b]=(nodeCount[b]||0)+v;});
+  const W=box.clientWidth||280,H=280;
+  const cx=W/2,cy=H/2;
+  const positions={};
+  nodeArr.forEach((n,i)=>{
+    const angle=(2*Math.PI*i)/nodeArr.length - Math.PI/2;
+    const r=Math.min(W,H)*0.35;
+    positions[n]={x:cx+r*Math.cos(angle),y:cy+r*Math.sin(angle)};
+  });
+  const maxW=Math.max(...sorted.map(s=>s[1]));
+  let svg=`<svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg">`;
+  sorted.forEach(([k,v])=>{
+    const[a,b]=k.split('|');
+    const pa=positions[a],pb=positions[b];
+    const opacity=0.2+0.6*(v/maxW);
+    const sw=1+3*(v/maxW);
+    svg+=`<line x1="${pa.x}" y1="${pa.y}" x2="${pb.x}" y2="${pb.y}" stroke="#6c5ce7" stroke-opacity="${opacity}" stroke-width="${sw}"/>`;
+  });
+  const maxN=Math.max(...Object.values(nodeCount));
+  nodeArr.forEach(n=>{
+    const p=positions[n];
+    const r=6+12*(nodeCount[n]/maxN);
+    svg+=`<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="#6c5ce7" fill-opacity="0.7" stroke="#a29bfe" stroke-width="1.5"/>`;
+    svg+=`<text x="${p.x}" y="${p.y+r+12}" text-anchor="middle" fill="#e4e6eb" font-size="9" font-weight="600">${n}</text>`;
+  });
+  svg+=`</svg>`;
+  box.innerHTML=svg;
+}
+
+function renderUnivMention(f){
+  const UNIV_NAMES=['서울대','연세대','고려대','성균관대','한양대','중앙대','경희대','한국외대','서강대','이화여대','숙명여대','건국대','동국대','홍익대','세종대','단국대','국민대','숭실대','광운대','명지대','상명대','가천대','인하대','아주대','경기대','한신대','수원대','용인대','강남대','남서울대','백석대','호서대','순천향대','한서대','공주대','충남대','충북대','한남대','대전대','배재대','목원대','우송대','건양대','전남대','전북대','조선대','원광대','호남대','광주대','부산대','경북대','영남대','계명대','대구대','동아대','부경대','경상대','창원대','인제대','동서대','신라대','동의대','한라대','제주대','강원대','한림대','춘천교대','상지대','경동대','한동대','포항공대','울산대','동명대','동양대','서울시립대','광주과기원','대구경북과기원','한국과기원','서울과기대','한국산업기술대','서울여대','덕성여대','동덕여대','성신여대','한성대','삼육대','서경대','총신대','감리교신학대','그리스도대','KC대','서울한영대','장로회신학대','한세대','협성대','안양대','평택대','루터대','중부대','극동대','청주대','한국교통대','세명대','유원대','서원대','목포대','순천대','동신대','초당대','세한대','한국국제대','영산대','부산외대','위덕대','경운대','안동대','김천대','경일대','대구가톨릭대','대구한의대','영진전문대','동양대','가톨릭관동대','연세대 미래','한국해양대'];
+  const counts={};
+  f.forEach(n=>{
+    const text=(n.title||'')+' '+(n.desc||'');
+    UNIV_NAMES.forEach(u=>{
+      if(text.includes(u))counts[u]=(counts[u]||0)+1;
+    });
+  });
+  const sorted=Object.entries(counts).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  if(!sorted.length){
+    const ctx=document.getElementById('chartUnivMention');
+    if(ctx){const c=ctx.getContext('2d');c.fillStyle='#8b8fa3';c.font='13px Pretendard';c.textAlign='center';c.fillText('대학 언급 데이터 없음',ctx.width/2,ctx.height/2);}
+    return;
+  }
+  const labels=sorted.map(s=>s[0]);
+  const data=sorted.map(s=>s[1]);
+  const colors=['#ef4444','#f97316','#f59e0b','#eab308','#84cc16','#22c55e','#14b8a6','#06b6d4','#3b82f6','#8b5cf6'];
+  if(chartUnivMentionInst){chartUnivMentionInst.data.labels=labels;chartUnivMentionInst.data.datasets[0].data=data;chartUnivMentionInst.update('none');return;}
+  const ctx=document.getElementById('chartUnivMention');
+  chartUnivMentionInst=new Chart(ctx,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:6,barThickness:14}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#e4e6eb',font:{size:10},stepSize:1},grid:{color:'#2d314830'}},y:{ticks:{color:'#e4e6eb',font:{size:10}},grid:{display:false}}}}});
 }
 
 function updateAnalyticsPeriod(count){
@@ -2405,10 +2501,11 @@ function exportAnalyticsHTML(){
   const aiHtml=document.getElementById('aiBody')?.innerHTML||'';
   const aiVisible=document.getElementById('aiBody')?.style.display!=='none';
   const topNewsHtml=document.getElementById('topNewsList')?.innerHTML||'';
-  const canvasIds=['chartMajor','chartSubCat','chartRegion','chartSource','chartTimeline','chartSentiment'];
-  const chartTitles=['📁 대유형별 분포','📊 세부카테고리별 기사 수','🗺️ 지역별 기사 분포','📰 언론사별 보도량','📅 일별 뉴스 추이','😊 감성 분석 게이지'];
+  const canvasIds=['chartMajor','chartSubCat','chartRegion','chartSource','chartTimeline','chartSentiment','chartWeeklyTrend','chartUnivMention'];
+  const chartTitles=['📁 대유형별 분포','📊 세부카테고리별 기사 수','🗺️ 지역별 기사 분포','📰 언론사별 보도량','📅 일별 뉴스 추이','😊 감성 분석 게이지','📈 주간 트렌드 비교','🏫 대학별 언급 빈도 TOP 10'];
   const imgs=canvasIds.map(id=>{const c=document.getElementById(id);return c?c.toDataURL('image/png'):''});
   const sentHtml=document.getElementById('sentimentIndicators')?.innerHTML||'';
+  const networkHtml=document.getElementById('keywordNetwork')?.innerHTML||'';
   const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>뉴스 분석 리포트 - ${period}</title>
 <style>*{margin:0;padding:0;box-sizing:border-box;}body{background:#0f1117;color:#e4e6eb;font-family:'Pretendard',system-ui,sans-serif;padding:2rem;max-width:1200px;margin:0 auto;}
 h1{font-size:1.4rem;font-weight:800;color:#a29bfe;margin-bottom:0.3rem;border-left:4px solid #6c5ce7;padding-left:1rem;}
@@ -2465,6 +2562,11 @@ h1{font-size:1.4rem;font-weight:800;color:#a29bfe;margin-bottom:0.3rem;border-le
 <div class="grid2">
 <div class="card"><h3>${chartTitles[4]}</h3><img src="${imgs[4]}"></div>
 <div class="card"><h3>${chartTitles[5]}</h3><img src="${imgs[5]}"><div class="sent">${sentHtml}</div></div>
+</div>
+<div class="grid3">
+<div class="card"><h3>${chartTitles[6]}</h3><img src="${imgs[6]}"></div>
+<div class="card"><h3>🔗 키워드 연관 네트워크</h3><div style="display:flex;justify-content:center;align-items:center;min-height:260px;">${networkHtml}</div></div>
+<div class="card"><h3>${chartTitles[7]}</h3><img src="${imgs[7]}"></div>
 </div>
 ${topNewsHtml?`<div class="top5"><h3>🔥 중요도 상위 뉴스 TOP 5</h3><ol>${topNewsHtml}</ol></div>`:''}
 ${aiVisible?`<div class="ai-box"><h3 style="text-align:left;margin-bottom:0.6rem;">🧠 AI 종합 분석 인사이트</h3>${aiHtml}</div>`:''}
