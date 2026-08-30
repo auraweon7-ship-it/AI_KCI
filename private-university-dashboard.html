@@ -347,7 +347,7 @@
 <div class="header">
   <div class="header-top">
     <div>
-      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.3.1</span></h1>
+      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.3.2</span></h1>
       <div class="subtitle">5대 유형 + 관점 + 지역별 사립대 이슈 모니터링</div>
     </div>
     <div class="meta-info">
@@ -1135,7 +1135,9 @@ function renderTopNews(f){
     const stars='★'.repeat(n.imp||3)+'☆'.repeat(5-(n.imp||3));
     const rc=i<1?'r1':i<2?'r2':i<3?'r3':'';
     const cat=SUB_CATS[n.sub]?.label||'';
-    return `<li class="top-news-item"><span class="top-news-rank ${rc}">${i+1}</span><div class="top-news-info"><a class="top-news-title" href="${n.link}" target="_blank" rel="noopener">${n.title.replace(/^.\s*/,'')}</a><div class="top-news-meta"><span class="top-news-stars">${stars}</span><span>${cat}</span><span>${n.pubDate||''}</span></div></div></li>`;
+    const cleanTitle=n.title.replace(/^[\p{Emoji}\p{Emoji_Component}️‍]+\s*/u,'');
+    const cleanCat=cat.replace(/^[\p{Emoji}\p{Emoji_Component}️‍]+\s*/u,'');
+    return `<li class="top-news-item"><span class="top-news-rank ${rc}">${i+1}</span><div class="top-news-info"><a class="top-news-title" href="${n.link}" target="_blank" rel="noopener">${cleanTitle}</a><div class="top-news-meta"><span class="top-news-stars">${stars}</span><span>${cleanCat}</span><span>${n.pubDate||''}</span></div></div></li>`;
   }).join('');
 }
 
@@ -1153,7 +1155,7 @@ function renderSubCatChart(f){
   Object.keys(SUB_CATS).forEach(k=>{counts[k]=0;});
   f.forEach(n=>{if(counts[n.sub]!==undefined)counts[n.sub]++;});
   const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  const labels=entries.map(e=>SUB_CATS[e[0]]?SUB_CATS[e[0]].label.replace(/^.\s*/,''):e[0]);
+  const labels=entries.map(e=>SUB_CATS[e[0]]?SUB_CATS[e[0]].label.replace(/^[\p{Emoji}\p{Emoji_Component}️‍]+\s*/u,''):e[0]);
   const data=entries.map(e=>e[1]);
   const colors=['#ef4444','#f59e0b','#10b981','#06b6d4','#8b5cf6','#ec4899','#6366f1','#14b8a6','#f97316','#a78bfa','#22d3ee','#fb923c'];
   if(chartSubCatInst){chartSubCatInst.data.labels=labels;chartSubCatInst.data.datasets[0].data=data;chartSubCatInst.update('none');return;}
