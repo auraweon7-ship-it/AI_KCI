@@ -158,6 +158,22 @@
   .wc-reset-btn{display:inline-block;background:rgba(255,255,255,0.06);color:var(--text-dim);border:1px solid var(--border);border-radius:6px;padding:0.2rem 0.6rem;font-size:0.7rem;cursor:pointer;margin-top:0.3rem;transition:background 0.2s;}
   .wc-reset-btn:hover{background:rgba(255,255,255,0.12);}
 
+  /* Top News */
+  .top-news-card{background:linear-gradient(145deg,rgba(30,30,46,0.95),rgba(20,20,35,0.85));border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:1rem 1.2rem;margin-bottom:1rem;box-shadow:0 4px 20px rgba(0,0,0,0.2);}
+  .top-news-card h3{font-size:0.85rem;color:var(--accent2);font-weight:700;margin-bottom:0.8rem;padding-bottom:0.4rem;border-bottom:1px solid rgba(255,255,255,0.04);}
+  .top-news-list{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0.5rem;}
+  .top-news-item{display:flex;align-items:center;gap:0.8rem;padding:0.6rem 0.8rem;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);transition:background 0.2s;}
+  .top-news-item:hover{background:rgba(108,92,231,0.08);}
+  .top-news-rank{font-size:1.1rem;font-weight:900;min-width:1.8rem;text-align:center;color:#f59e0b;}
+  .top-news-rank.r1{color:#ef4444;font-size:1.3rem;}
+  .top-news-rank.r2{color:#f97316;}
+  .top-news-rank.r3{color:#f59e0b;}
+  .top-news-info{flex:1;min-width:0;}
+  .top-news-title{font-size:0.8rem;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
+  .top-news-title:hover{color:var(--accent);}
+  .top-news-meta{font-size:0.68rem;color:var(--text-dim);margin-top:0.15rem;display:flex;gap:0.6rem;align-items:center;}
+  .top-news-stars{color:#f59e0b;font-size:0.75rem;white-space:nowrap;}
+
   /* AI Insight */
   .ai-insight-unified{padding:1.2rem 1.5rem;background:linear-gradient(135deg,rgba(26,16,64,0.9),rgba(15,17,23,0.9));border:1px solid rgba(108,92,231,0.25);border-radius:14px;position:relative;margin-top:1rem;backdrop-filter:blur(4px);}
   .ai-insight-unified::before{content:'AI';position:absolute;top:-10px;left:16px;background:linear-gradient(135deg,#6c5ce7,#a855f7);color:#fff;font-size:0.65rem;font-weight:800;padding:0.15rem 0.5rem;border-radius:4px;letter-spacing:0.1em;}
@@ -331,7 +347,7 @@
 <div class="header">
   <div class="header-top">
     <div>
-      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.0.0</span></h1>
+      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.1.0</span></h1>
       <div class="subtitle">5대 유형 + 관점 + 지역별 사립대 이슈 모니터링</div>
     </div>
     <div class="meta-info">
@@ -473,6 +489,10 @@
   <div class="charts-row charts-row-2">
     <div class="chart-card"><h3>📅 일별 뉴스 추이</h3><canvas id="chartTimeline"></canvas></div>
     <div class="chart-card"><h3>😊 감성 분석 게이지</h3><canvas id="chartSentiment"></canvas><div class="sentiment-indicators" id="sentimentIndicators"></div></div>
+  </div>
+  <div class="top-news-card" id="topNewsCard">
+    <h3>🔥 중요도 상위 뉴스 TOP 5</h3>
+    <ol class="top-news-list" id="topNewsList"></ol>
   </div>
   <div class="ai-insight-unified" id="aiInsight">
     <div class="ai-insight-title">🧠 AI 종합 분석 인사이트</div>
@@ -1097,7 +1117,20 @@ function renderCharts(f){
   renderSourceChart(f);
   renderTimelineChart(f);
   renderSentimentGauge(f);
+  renderTopNews(f);
   updateAnalyticsPeriod(f.length);
+}
+
+function renderTopNews(f){
+  const top5=[...f].sort((a,b)=>(b.imp||3)-(a.imp||3)||(b.pubDate||'').localeCompare(a.pubDate||'')).slice(0,5);
+  const list=document.getElementById('topNewsList');
+  if(!list)return;
+  list.innerHTML=top5.map((n,i)=>{
+    const stars='★'.repeat(n.imp||3)+'☆'.repeat(5-(n.imp||3));
+    const rc=i<1?'r1':i<2?'r2':i<3?'r3':'';
+    const cat=SUB_CATS[n.sub]?.label||'';
+    return `<li class="top-news-item"><span class="top-news-rank ${rc}">${i+1}</span><div class="top-news-info"><a class="top-news-title" href="${n.link}" target="_blank" rel="noopener">${n.title.replace(/^.\s*/,'')}</a><div class="top-news-meta"><span class="top-news-stars">${stars}</span><span>${cat}</span><span>${n.pubDate||''}</span></div></div></li>`;
+  }).join('');
 }
 
 function updateAnalyticsPeriod(count){
