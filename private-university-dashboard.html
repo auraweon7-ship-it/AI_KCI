@@ -353,7 +353,7 @@
 <div class="header">
   <div class="header-top">
     <div>
-      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.7.0</span></h1>
+      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.7.1</span></h1>
       <div class="subtitle">5대 유형 + 관점 + 지역별 사립대 이슈 모니터링</div>
     </div>
     <div class="meta-info">
@@ -2549,7 +2549,8 @@ function exportAnalyticsHTML(){
   const wcHtml=document.getElementById('wordcloud')?.innerHTML||'';
   const aiHtml=document.getElementById('aiBody')?.innerHTML||'';
   const aiVisible=document.getElementById('aiBody')?.style.display!=='none';
-  const topNewsHtml=document.getElementById('topNewsList')?.innerHTML||'';
+  let topNewsHtml=document.getElementById('topNewsList')?.innerHTML||'';
+  topNewsHtml=topNewsHtml.replace(/href="([^"]*)"/g,(m,url)=>'href="'+url.replace(/&(?!amp;)/g,'&amp;')+'"');
   const canvasIds=['chartMajor','chartSubCat','chartRegion','chartSource','chartTimeline','chartSentiment','chartUnivMention'];
   const chartTitles=['📁 대유형별 분포','📊 세부카테고리별 기사 수','🗺️ 지역별 기사 분포','📰 언론사별 보도량','📅 일별 뉴스 추이','😊 감성 분석 게이지','🏫 대학별 언급 빈도 TOP 10'];
   const imgs=canvasIds.map(id=>{const c=document.getElementById(id);return c?c.toDataURL('image/png'):''});
@@ -2636,10 +2637,9 @@ h1{font-size:1.4rem;font-weight:800;color:#a29bfe;margin-bottom:0.3rem;border-le
 <div class="card"><h3>${chartTitles[4]}</h3><img src="${imgs[4]}"></div>
 <div class="card"><h3>${chartTitles[5]}</h3><img src="${imgs[5]}"><div class="sent">${sentHtml}</div></div>
 </div>
-<div class="grid3">
-<div class="card"><h3>${chartTitles[6]}</h3><img src="${imgs[6]}"></div>
+<div class="grid2">
 <div class="card"><h3>🔗 키워드 연관 네트워크</h3><div style="display:flex;justify-content:center;align-items:center;min-height:200px;overflow-x:auto;">${networkHtml}</div></div>
-<div class="card"><h3>${chartTitles[7]}</h3><img src="${imgs[7]}"></div>
+<div class="card"><h3>${chartTitles[6]}</h3><img src="${imgs[6]}"></div>
 </div>
 ${topNewsHtml?`<div class="top5"><h3>🔥 중요도 상위 뉴스 TOP 5</h3><ol>${topNewsHtml}</ol></div>`:''}
 ${aiVisible?`<div class="ai-box"><h3 style="text-align:left;margin-bottom:0.6rem;">🧠 AI 종합 분석 인사이트</h3>${aiHtml}</div>`:''}
