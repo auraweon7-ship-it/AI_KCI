@@ -134,23 +134,30 @@
   .empty-state{grid-column:1/-1;text-align:center;padding:3rem 2rem;color:var(--text-dim);}
   .empty-state .icon{font-size:2.5rem;margin-bottom:0.8rem;}
 
-  /* Charts Section */
-  .charts-section{padding:1.2rem 2rem 0.8rem;border-top:2px solid var(--border);}
-  .charts-title{font-size:1.1rem;font-weight:800;color:var(--accent2);margin-bottom:1rem;}
-  .charts-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;}
-  .charts-grid-row2{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem;}
-  .chart-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.2rem;min-height:340px;}
-  .chart-card h3{font-size:0.88rem;color:var(--text);font-weight:700;margin-bottom:0.8rem;text-align:center;}
-  .chart-card canvas{width:100%!important;height:280px!important;}
+  /* Analytics Section (통합) */
+  .analytics-section{padding:1.5rem 2rem 1rem;border-top:2px solid var(--border);position:relative;}
+  .analytics-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.6rem;margin-bottom:1.2rem;padding-left:1rem;border-left:4px solid var(--accent);}
+  .analytics-title{font-size:1.15rem;font-weight:800;color:var(--accent2);}
+  .analytics-period{font-size:0.75rem;color:var(--text-dim);background:var(--card);padding:0.2rem 0.7rem;border-radius:20px;border:1px solid var(--border);margin-left:0.6rem;}
+  .analytics-actions{display:flex;gap:0.5rem;align-items:center;}
+  .analytics-export-btn{background:linear-gradient(135deg,#10b981,#06b6d4);color:#fff;border:none;border-radius:8px;padding:0.4rem 1rem;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
+  .analytics-export-btn:hover{transform:scale(1.05);box-shadow:0 4px 15px rgba(16,185,129,0.4);}
+  .charts-row{display:grid;gap:1rem;margin-bottom:1rem;}
+  .charts-row-3{grid-template-columns:repeat(3,1fr);}
+  .charts-row-2{grid-template-columns:repeat(2,1fr);}
+  .chart-card{background:linear-gradient(135deg,var(--card),rgba(30,30,46,0.8));border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:1rem 1.2rem;min-height:300px;box-shadow:0 2px 12px rgba(0,0,0,0.15);}
+  .chart-card h3{font-size:0.85rem;color:var(--text);font-weight:700;margin-bottom:0.6rem;text-align:center;}
+  .chart-card canvas{width:100%!important;height:260px!important;}
 
   /* Word Cloud */
-  .wordcloud-box{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:0.4rem;min-height:280px;padding:0.8rem;}
-  .wc-word{display:inline-block;padding:0.15rem 0.4rem;border-radius:4px;font-weight:700;cursor:default;transition:transform 0.15s;}
+  .wordcloud-box{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:0.15rem;min-height:240px;padding:0.4rem;}
+  .wc-word{display:inline-block;padding:0.05rem 0.3rem;border-radius:4px;font-weight:700;cursor:default;transition:transform 0.15s;line-height:1.4;}
   .wc-word:hover{transform:scale(1.15);}
+  .wc-reset-btn{display:inline-block;background:rgba(255,255,255,0.08);color:var(--text-dim);border:1px solid var(--border);border-radius:6px;padding:0.2rem 0.6rem;font-size:0.7rem;cursor:pointer;margin-top:0.3rem;}
 
   /* AI Insight */
-  .ai-insight{margin:1rem 2rem;padding:1.2rem 1.5rem;background:linear-gradient(135deg,#1a1040,#0f1117);border:1px solid var(--accent);border-radius:12px;position:relative;}
-  .ai-insight::before{content:'AI';position:absolute;top:-10px;left:16px;background:var(--accent);color:#fff;font-size:0.65rem;font-weight:800;padding:0.15rem 0.5rem;border-radius:4px;letter-spacing:0.1em;}
+  .ai-insight-unified{padding:1.2rem 1.5rem;background:linear-gradient(135deg,#1a1040,#0f1117);border:1px solid rgba(108,92,231,0.3);border-radius:14px;position:relative;margin-top:1rem;}
+  .ai-insight-unified::before{content:'AI';position:absolute;top:-10px;left:16px;background:var(--accent);color:#fff;font-size:0.65rem;font-weight:800;padding:0.15rem 0.5rem;border-radius:4px;letter-spacing:0.1em;}
   .ai-insight-title{font-size:0.9rem;font-weight:800;color:var(--accent2);margin-bottom:0.6rem;display:flex;align-items:center;gap:0.8rem;}
   .ai-gen-btn{background:linear-gradient(135deg,#6c5ce7,#a855f7);color:#fff;border:none;border-radius:8px;padding:0.4rem 1rem;font-size:0.75rem;font-weight:700;cursor:pointer;transition:all 0.2s;white-space:nowrap;}
   .ai-gen-btn:hover{transform:scale(1.05);box-shadow:0 4px 15px rgba(108,92,231,0.4);}
@@ -158,8 +165,10 @@
   .ai-insight-loading{text-align:center;padding:2rem;color:var(--text-dim);font-size:0.85rem;}
   .ai-insight-loading .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin-right:0.5rem;vertical-align:middle;}
   @keyframes spin{to{transform:rotate(360deg);}}
+  .sentiment-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+  .sentiment-indicators{display:flex;justify-content:center;gap:1.5rem;margin-top:0.5rem;font-size:0.78rem;color:var(--text-dim);}
 
-  @media(max-width:768px){.charts-grid{grid-template-columns:1fr;}.charts-grid-row2{grid-template-columns:1fr;}}
+  @media(max-width:768px){.charts-row-3,.charts-row-2{grid-template-columns:1fr;}}
 
   /* Footer */
   .site-footer{background:linear-gradient(135deg,#1a1040 0%,#0f1117 100%);border-top:1px solid var(--border);padding:1.5rem 2rem 1rem;margin-top:1rem;}
@@ -436,25 +445,36 @@
 <div class="sub-categories" id="subCategories"></div>
 <div class="stats-bar" id="statsBar"></div>
 
-<!-- Charts Section (통계 바 바로 아래) -->
-<div class="charts-section">
-  <div class="charts-title">📊 뉴스 분석 차트</div>
-  <div class="charts-grid">
+<!-- Analytics Section (통합) -->
+<div class="analytics-section" id="analyticsSection">
+  <div class="analytics-header">
+    <div>
+      <span class="analytics-title">📊 뉴스 분석 & AI 인사이트</span>
+      <span class="analytics-period" id="analyticsPeriod"></span>
+    </div>
+    <div class="analytics-actions">
+      <button class="analytics-export-btn" onclick="exportAnalyticsHTML()">📥 HTML 내보내기</button>
+      <button class="ai-gen-btn" id="aiGenBtn" onclick="fetchAIInsight()">🧠 AI 작성</button>
+    </div>
+  </div>
+  <div class="charts-row charts-row-3">
     <div class="chart-card"><h3>🔤 키워드 워드클라우드</h3><div id="wordcloud" class="wordcloud-box"></div></div>
     <div class="chart-card"><h3>📁 대유형별 분포</h3><canvas id="chartMajor"></canvas></div>
+    <div class="chart-card"><h3>📊 세부카테고리별 기사 수</h3><canvas id="chartSubCat"></canvas></div>
   </div>
-  <div class="charts-grid-row2">
+  <div class="charts-row charts-row-2">
+    <div class="chart-card"><h3>🗺️ 지역별 기사 분포</h3><canvas id="chartRegion"></canvas></div>
     <div class="chart-card"><h3>📰 언론사별 보도량</h3><canvas id="chartSource"></canvas></div>
+  </div>
+  <div class="charts-row charts-row-2">
     <div class="chart-card"><h3>📅 일별 뉴스 추이</h3><canvas id="chartTimeline"></canvas></div>
     <div class="chart-card"><h3>😊 감성 분석 게이지</h3><canvas id="chartSentiment"></canvas><div class="sentiment-indicators" id="sentimentIndicators"></div></div>
   </div>
-</div>
-
-<!-- AI Insight (차트 바로 아래) -->
-<div class="ai-insight" id="aiInsight">
-  <div class="ai-insight-title">🧠 AI 종합 분석 인사이트 <button class="ai-gen-btn" id="aiGenBtn" onclick="fetchAIInsight()">AI 작성</button></div>
-  <div class="ai-insight-loading" id="aiLoading" style="display:none;"><span class="spinner"></span>Claude AI 분석 중...</div>
-  <div class="ai-insight-body" id="aiBody" style="display:none;"></div>
+  <div class="ai-insight-unified" id="aiInsight">
+    <div class="ai-insight-title">🧠 AI 종합 분석 인사이트</div>
+    <div class="ai-insight-loading" id="aiLoading" style="display:none;"><span class="spinner"></span>Claude AI 분석 중...</div>
+    <div class="ai-insight-body" id="aiBody" style="display:none;"></div>
+  </div>
 </div>
 
 <!-- Live Search Loading Overlay -->
@@ -1060,7 +1080,7 @@ document.getElementById('sortBy').addEventListener('change',render);
 document.getElementById('searchInput').addEventListener('input',render);
 
 // ═══ Charts ═══
-let chartMajorInst, chartSourceInst, chartTimelineInst, chartSentimentInst;
+let chartMajorInst, chartSourceInst, chartTimelineInst, chartSentimentInst, chartSubCatInst, chartRegionInst;
 const CHART_COLORS = ['#ef4444','#06b6d4','#10b981','#f59e0b','#8b5cf6'];
 const MAJOR_NAMES = ['재정 건전성','교육 투자','학생 경쟁력','법인 책무성','지속가능성'];
 const MAJOR_IDS = ['fiscal','invest','student','account','sustain'];
@@ -1068,9 +1088,44 @@ const MAJOR_IDS = ['fiscal','invest','student','account','sustain'];
 function renderCharts(f){
   renderWordCloud(f);
   renderMajorChart(f);
+  renderSubCatChart(f);
+  renderRegionChart(f);
   renderSourceChart(f);
   renderTimelineChart(f);
   renderSentimentGauge(f);
+  updateAnalyticsPeriod();
+}
+
+function updateAnalyticsPeriod(){
+  const from=document.getElementById('dateFrom').value;
+  const to=document.getElementById('dateTo').value;
+  const el=document.getElementById('analyticsPeriod');
+  if(el&&from&&to) el.textContent=from.replace(/-/g,'.')+' ~ '+to.replace(/-/g,'.');
+}
+
+function renderSubCatChart(f){
+  const counts={};
+  Object.keys(SUB_CATS).forEach(k=>{counts[k]=0;});
+  f.forEach(n=>{if(counts[n.sub]!==undefined)counts[n.sub]++;});
+  const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+  const labels=entries.map(e=>SUB_CATS[e[0]]?SUB_CATS[e[0]].label.replace(/^.\s*/,''):e[0]);
+  const data=entries.map(e=>e[1]);
+  const colors=['#ef4444','#f59e0b','#10b981','#06b6d4','#8b5cf6','#ec4899','#6366f1','#14b8a6','#f97316','#a78bfa','#22d3ee','#fb923c'];
+  if(chartSubCatInst){chartSubCatInst.data.labels=labels;chartSubCatInst.data.datasets[0].data=data;chartSubCatInst.update('none');return;}
+  const ctx=document.getElementById('chartSubCat');
+  chartSubCatInst=new Chart(ctx,{type:'bar',data:{labels,datasets:[{data,backgroundColor:colors,borderRadius:6,barThickness:16}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#e4e6eb',font:{size:10}},grid:{color:'#2d314830'}},y:{ticks:{color:'#e4e6eb',font:{size:10}},grid:{display:false}}}}});
+}
+
+function renderRegionChart(f){
+  const rc={};
+  f.forEach(n=>{const r=n.region||'national';rc[r]=(rc[r]||0)+1;});
+  const entries=Object.entries(rc).sort((a,b)=>b[1]-a[1]);
+  const labels=entries.map(e=>REGION_LABELS[e[0]]||e[0]);
+  const data=entries.map(e=>e[1]);
+  const colors=['#6366f1','#06b6d4','#10b981','#f59e0b','#ef4444','#ec4899'];
+  if(chartRegionInst){chartRegionInst.data.labels=labels;chartRegionInst.data.datasets[0].data=data;chartRegionInst.update('none');return;}
+  const ctx=document.getElementById('chartRegion');
+  chartRegionInst=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},plugins:{legend:{display:true,position:'bottom',labels:{color:'#e4e6eb',font:{size:11},padding:10,usePointStyle:true}}}}});
 }
 
 function renderWordCloud(f){
@@ -2213,7 +2268,61 @@ function renderSentimentGauge(f){
   const last=new Date(y,m+1,0);
   document.getElementById('dateFrom').value=first.toISOString().split('T')[0];
   document.getElementById('dateTo').value=last.toISOString().split('T')[0];
+  updateAnalyticsPeriod();
 })();
+
+function exportAnalyticsHTML(){
+  const period=document.getElementById('analyticsPeriod')?.textContent||'';
+  const wcHtml=document.getElementById('wordcloud')?.innerHTML||'';
+  const aiHtml=document.getElementById('aiBody')?.innerHTML||'';
+  const aiVisible=document.getElementById('aiBody')?.style.display!=='none';
+  const canvasIds=['chartMajor','chartSubCat','chartRegion','chartSource','chartTimeline','chartSentiment'];
+  const chartTitles=['📁 대유형별 분포','📊 세부카테고리별 기사 수','🗺️ 지역별 기사 분포','📰 언론사별 보도량','📅 일별 뉴스 추이','😊 감성 분석 게이지'];
+  const imgs=canvasIds.map(id=>{const c=document.getElementById(id);return c?c.toDataURL('image/png'):''});
+  const sentHtml=document.getElementById('sentimentIndicators')?.innerHTML||'';
+  const html=`<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>뉴스 분석 리포트 - ${period}</title>
+<style>*{margin:0;padding:0;box-sizing:border-box;}body{background:#0f1117;color:#e4e6eb;font-family:'Pretendard',system-ui,sans-serif;padding:2rem;max-width:1200px;margin:0 auto;}
+h1{font-size:1.4rem;font-weight:800;color:#a29bfe;margin-bottom:0.3rem;border-left:4px solid #6c5ce7;padding-left:1rem;}
+.period{font-size:0.8rem;color:#8b8fa3;margin-bottom:1.5rem;padding-left:1.2rem;}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1rem;}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1rem;}
+.card{background:linear-gradient(135deg,#1e1e2e,rgba(30,30,46,0.8));border:1px solid rgba(255,255,255,0.06);border-radius:14px;padding:1rem 1.2rem;min-height:300px;box-shadow:0 2px 12px rgba(0,0,0,0.15);}
+.card h3{font-size:0.85rem;font-weight:700;text-align:center;margin-bottom:0.8rem;color:#e4e6eb;}
+.card img{width:100%;height:260px;object-fit:contain;}
+.wc-box{display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:0.15rem;min-height:240px;padding:0.4rem;}
+.wc-box span{display:inline-block;padding:0.05rem 0.3rem;border-radius:4px;font-weight:700;line-height:1.4;}
+.ai-box{margin-top:1rem;padding:1.2rem 1.5rem;background:linear-gradient(135deg,#1a1040,#0f1117);border:1px solid rgba(108,92,231,0.3);border-radius:14px;position:relative;font-size:0.82rem;line-height:1.8;}
+.ai-box::before{content:'AI';position:absolute;top:-10px;left:16px;background:#6c5ce7;color:#fff;font-size:0.65rem;font-weight:800;padding:0.15rem 0.5rem;border-radius:4px;}
+.sent{display:flex;justify-content:center;gap:1.5rem;margin-top:0.5rem;font-size:0.78rem;color:#8b8fa3;}
+.sent .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle;}
+.footer{text-align:center;margin-top:2rem;font-size:0.7rem;color:#555;}
+@media(max-width:768px){.grid3,.grid2{grid-template-columns:1fr;}}
+</style></head><body>
+<h1>📊 뉴스 분석 리포트</h1>
+<div class="period">${period}</div>
+<div class="grid3">
+<div class="card"><h3>🔤 키워드 워드클라우드</h3><div class="wc-box">${wcHtml.replace(/<button[^>]*>.*?<\/button>/g,'')}</div></div>
+<div class="card"><h3>${chartTitles[0]}</h3><img src="${imgs[0]}"></div>
+<div class="card"><h3>${chartTitles[1]}</h3><img src="${imgs[1]}"></div>
+</div>
+<div class="grid2">
+<div class="card"><h3>${chartTitles[2]}</h3><img src="${imgs[2]}"></div>
+<div class="card"><h3>${chartTitles[3]}</h3><img src="${imgs[3]}"></div>
+</div>
+<div class="grid2">
+<div class="card"><h3>${chartTitles[4]}</h3><img src="${imgs[4]}"></div>
+<div class="card"><h3>${chartTitles[5]}</h3><img src="${imgs[5]}"><div class="sent">${sentHtml}</div></div>
+</div>
+${aiVisible?`<div class="ai-box"><h3 style="text-align:left;margin-bottom:0.6rem;">🧠 AI 종합 분석 인사이트</h3>${aiHtml}</div>`:''}
+<div class="footer">사립대학 뉴스 분석 대시보드 | 생성일: ${new Date().toISOString().split('T')[0]}</div>
+</body></html>`;
+  const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=`뉴스분석_${new Date().toISOString().split('T')[0]}.html`;
+  document.body.appendChild(a);a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},100);
+}
 
 render();
 updateApiKeyBtn();
