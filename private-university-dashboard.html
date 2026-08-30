@@ -347,7 +347,7 @@
 <div class="header">
   <div class="header-top">
     <div>
-      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.2.1</span></h1>
+      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.3.0</span></h1>
       <div class="subtitle">5대 유형 + 관점 + 지역별 사립대 이슈 모니터링</div>
     </div>
     <div class="meta-info">
@@ -373,6 +373,12 @@
         <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:0.4rem;">실시간 뉴스 검색에 필요합니다. <a href="https://developers.naver.com/apps/" target="_blank" style="color:#60a5fa;">developers.naver.com</a>에서 발급</div>
         <input id="naverClientIdInput" type="text" placeholder="Client ID" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.6rem 0.8rem;border-radius:6px;font-size:0.9rem;outline:none;margin-bottom:0.5rem;font-family:Consolas,monospace;box-sizing:border-box;">
         <input id="naverClientSecretInput" type="password" placeholder="Client Secret" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.6rem 0.8rem;border-radius:6px;font-size:0.9rem;outline:none;margin-bottom:1rem;font-family:Consolas,monospace;box-sizing:border-box;">
+
+        <div style="border-top:1px solid var(--border);margin-bottom:1rem;"></div>
+
+        <div style="font-size:0.82rem;font-weight:700;color:#06b6d4;margin-bottom:0.3rem;">🌐 Perplexity API (추가 뉴스 검색)</div>
+        <div style="font-size:0.75rem;color:var(--text-dim);margin-bottom:0.4rem;">Perplexity Sonar로 추가 뉴스를 검색합니다. <a href="https://docs.perplexity.ai/" target="_blank" style="color:#60a5fa;">docs.perplexity.ai</a>에서 발급</div>
+        <input id="perplexityApiKeyInput" type="password" placeholder="pplx-..." style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:0.6rem 0.8rem;border-radius:6px;font-size:0.9rem;outline:none;margin-bottom:1rem;font-family:Consolas,monospace;box-sizing:border-box;">
 
         <div style="display:flex;gap:0.5rem;justify-content:flex-end;">
           <button onclick="clearAllKeys()" style="background:transparent;border:1px solid var(--border);color:var(--text-dim);padding:0.45rem 1rem;border-radius:6px;cursor:pointer;font-size:0.82rem;">전체 삭제</button>
@@ -403,6 +409,8 @@
       <option value="300" style="background:#1e1e2e;color:#f0f0f0;padding:4px;">300건</option>
       <option value="400" style="background:#1e1e2e;color:#f0f0f0;padding:4px;">400건</option>
       <option value="500" style="background:#1e1e2e;color:#f0f0f0;padding:4px;">500건</option>
+      <option value="700" style="background:#1e1e2e;color:#f0f0f0;padding:4px;">700건</option>
+      <option value="1000" style="background:#1e1e2e;color:#f0f0f0;padding:4px;">1000건</option>
     </select>
     <button id="liveSearchBtn" class="preset-btn" style="background:#e67e22;color:#fff;font-weight:700;margin-left:4px;padding:4px 14px;" onclick="triggerLiveSearch()">🔍 실시간 검색</button>
   </div>
@@ -1020,8 +1028,6 @@ function getFiltered(){
   if(showBookmarksOnly){const bm=getBookmarks();f=f.filter(n=>bm.includes(n.link));}
   const sort=document.getElementById('sortBy').value;
   f.sort((a,b)=>sort==='date-desc'?b.dateObj-a.dateObj:a.dateObj-b.dateObj);
-  const maxDisplay=parseInt(document.getElementById('liveSearchCount')?.value||'200',10);
-  if(f.length>maxDisplay) f=f.slice(0,maxDisplay);
   return f;
 }
 
@@ -1055,7 +1061,7 @@ function renderNews(f){
           <span class="major-badge ${mt?.cssClass||''}">${mt?.label||''}</span>
           <span class="sub-badge">${sc?.label||''}</span>
           <span class="persp-badge ${pCls}">${PERSP_LABELS[n.perspective]||''}</span>
-          <span class="region-badge">${REGION_LABELS[n.region]||'전국'}</span>
+          <span class="region-badge">${REGION_LABELS[n.region]||'전국'}</span>${n.pplx?'<span style="font-size:0.55rem;padding:0.1rem 0.35rem;border-radius:3px;background:#0891b2;color:#fff;font-weight:700;">🌐 Pplx</span>':''}
         </div>
         <span class="importance">${'<span class="star-on">★</span>'.repeat(n.imp||3)+'<span class="star-off">★</span>'.repeat(5-(n.imp||3))}</span>
         <button class="bookmark-btn ${isBookmarked(n.link)?'bookmarked':''}" onclick="event.stopPropagation();toggleBookmark('${n.link.replace(/'/g,"\\'")}')" title="북마크">${isBookmarked(n.link)?'🔖':'🔖'}</button>
@@ -1225,6 +1231,7 @@ function toggleApiKeyModal(){
     document.getElementById('modalApiKeyInput').value=localStorage.getItem('claude_api_key')||'';
     document.getElementById('naverClientIdInput').value=localStorage.getItem('naver_client_id')||'';
     document.getElementById('naverClientSecretInput').value=localStorage.getItem('naver_client_secret')||'';
+    document.getElementById('perplexityApiKeyInput').value=localStorage.getItem('perplexity_api_key')||'';
     document.getElementById('modalApiKeyInput').focus();
   }
 }
@@ -1232,9 +1239,11 @@ function saveAllKeys(){
   const claude=document.getElementById('modalApiKeyInput')?.value?.trim();
   const naverId=document.getElementById('naverClientIdInput')?.value?.trim();
   const naverSecret=document.getElementById('naverClientSecretInput')?.value?.trim();
+  const pplx=document.getElementById('perplexityApiKeyInput')?.value?.trim();
   if(claude) localStorage.setItem('claude_api_key',claude);
   if(naverId) localStorage.setItem('naver_client_id',naverId);
   if(naverSecret) localStorage.setItem('naver_client_secret',naverSecret);
+  if(pplx) localStorage.setItem('perplexity_api_key',pplx);
   updateApiKeyBtn();
   toggleApiKeyModal();
 }
@@ -1242,6 +1251,7 @@ function clearAllKeys(){
   localStorage.removeItem('claude_api_key');
   localStorage.removeItem('naver_client_id');
   localStorage.removeItem('naver_client_secret');
+  localStorage.removeItem('perplexity_api_key');
   updateApiKeyBtn();
   toggleApiKeyModal();
   document.getElementById('aiLoading').style.display='block';
@@ -1251,19 +1261,22 @@ function clearAllKeys(){
 function updateApiKeyBtn(){
   const hasClaude=!!localStorage.getItem('claude_api_key');
   const hasNaver=!!localStorage.getItem('naver_client_id');
-  document.getElementById('apiKeyIcon').textContent=(hasClaude&&hasNaver)?'✅':hasClaude||hasNaver?'🔑':'🔑';
-  document.getElementById('apiKeyLabel').textContent=(hasClaude||hasNaver)?'API 키 변경':'API 키 설정';
+  const hasPplx=!!localStorage.getItem('perplexity_api_key');
+  const hasAny=hasClaude||hasNaver||hasPplx;
+  document.getElementById('apiKeyIcon').textContent=(hasClaude&&hasNaver&&hasPplx)?'✅':hasAny?'🔑':'🔑';
+  document.getElementById('apiKeyLabel').textContent=hasAny?'API 키 변경':'API 키 설정';
 }
 
 // ═══ Live News Search ═══
 function triggerLiveSearch(){
   const id=localStorage.getItem('naver_client_id');
   const secret=localStorage.getItem('naver_client_secret');
+  const pplxKey=localStorage.getItem('perplexity_api_key');
   if(!id||!secret){toggleApiKeyModal();return;}
-  fetchLiveNews(id,secret);
+  fetchLiveNews(id,secret,pplxKey);
 }
 
-async function fetchLiveNews(clientId,clientSecret){
+async function fetchLiveNews(clientId,clientSecret,pplxKey){
   const overlay=document.getElementById('liveSearchOverlay');
   const status=document.getElementById('liveSearchStatus');
   const progress=document.getElementById('liveSearchProgress');
@@ -1316,6 +1329,16 @@ async function fetchLiveNews(clientId,clientSecret){
     progress.textContent=`${done} / ${subs.length} 카테고리 (${results.length}건)`;
   }
 
+  // Perplexity 추가 검색
+  if(pplxKey){
+    status.textContent='Perplexity 추가 검색 중...';
+    try{
+      const pplxResults=await fetchPerplexityNews(pplxKey,seenLinks);
+      pplxResults.forEach(n=>results.push(n));
+      progress.textContent=`완료 (네이버+Perplexity ${results.length}건)`;
+    }catch(e){console.warn('Perplexity search error:',e);}
+  }
+
   if(results.length===0){
     overlay.style.display='none';
     alert('검색 결과가 없습니다.\n'+( lastError||'API 키를 확인하세요.'));
@@ -1337,6 +1360,61 @@ async function fetchLiveNews(clientId,clientSecret){
   overlay.style.display='none';
   render();
   fetchOgImagesForNews(allNews);
+}
+
+async function fetchPerplexityNews(apiKey,seenLinks){
+  const queries=[
+    {q:'한국 사립대학교 등록금 재정 최신 뉴스',sub:'tuition'},
+    {q:'사립대학 구조개혁 학령인구 감소 폐교 뉴스',sub:'reform'},
+    {q:'사립대학 비리 감사 사립학교법 뉴스',sub:'audit_law'},
+    {q:'사립대학 취업률 장학금 교원확보율 뉴스',sub:'career'},
+    {q:'사립대학 외국인 유학생 국제화 뉴스',sub:'intl_student'},
+    {q:'사립대학 법인전입금 부채 재정위기 뉴스',sub:'debt'},
+  ];
+  const results=[];
+  for(const {q,sub} of queries){
+    try{
+      const r=await fetch('https://api.perplexity.ai/chat/completions',{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
+        body:JSON.stringify({
+          model:'sonar',
+          messages:[{role:'user',content:`다음 주제에 대한 최신 한국 뉴스 기사를 찾아주세요. 각 기사를 JSON 배열로 반환해주세요. 형식: [{"title":"제목","link":"URL","desc":"요약","date":"YYYY-MM-DD"}]\n\n주제: ${q}\n\n반드시 실제 존재하는 뉴스 기사만 포함하고 JSON 배열만 반환하세요.`}],
+          max_tokens:2000,
+          return_citations:true,
+          search_recency_filter:'month'
+        })
+      });
+      if(!r.ok)continue;
+      const data=await r.json();
+      const text=data.choices?.[0]?.message?.content||'';
+      const citations=data.citations||[];
+      const jsonMatch=text.match(/\[[\s\S]*?\]/);
+      if(jsonMatch){
+        try{
+          const articles=JSON.parse(jsonMatch[0]);
+          articles.forEach((a,idx)=>{
+            const link=a.link||(citations[idx])||'';
+            if(!link||seenLinks.has(link))return;
+            seenLinks.add(link);
+            const emoji=SUB_EMOJIS[sub]||'📰';
+            const region=detectRegion(a.title||'',a.desc||'',link);
+            const kws=extractKeywords(a.title||'',a.desc||'');
+            results.push({sub,title:`${emoji} ${a.title||''}`,link,desc:summary(a.desc||''),pubDate:a.date||new Date().toISOString().split('T')[0],kw:kws,r:region,pplx:true});
+          });
+        }catch(e){}
+      }
+      if(citations.length>0&&!jsonMatch){
+        citations.forEach((url,idx)=>{
+          if(seenLinks.has(url))return;
+          seenLinks.add(url);
+          const emoji=SUB_EMOJIS[sub]||'📰';
+          results.push({sub,title:`${emoji} ${q} 관련 뉴스 ${idx+1}`,link:url,desc:text.slice(0,100),pubDate:new Date().toISOString().split('T')[0],kw:[],r:'national',pplx:true});
+        });
+      }
+    }catch(e){console.warn('Perplexity query error:',e);}
+  }
+  return results;
 }
 
 function extractKeywords(title,desc){
