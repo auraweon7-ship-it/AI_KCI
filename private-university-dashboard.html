@@ -347,7 +347,7 @@
 <div class="header">
   <div class="header-top">
     <div>
-      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.1.0</span></h1>
+      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.2.0</span></h1>
       <div class="subtitle">5대 유형 + 관점 + 지역별 사립대 이슈 모니터링</div>
     </div>
     <div class="meta-info">
@@ -1268,25 +1268,25 @@ async function fetchLiveNews(clientId,clientSecret){
 
   const subs=Object.keys(SEARCH_QUERIES);
   const maxTotal=parseInt(document.getElementById('liveSearchCount')?.value||'200',10);
-  const perSub=Math.min(100,Math.max(5,Math.ceil(maxTotal/subs.length)));
+  const perSub=Math.ceil(maxTotal/subs.length);
   const results=[];
   const seenLinks=new Set();
   let done=0;
   let lastError='';
 
-  // 4개씩 병렬 요청
-  for(let i=0;i<subs.length;i+=4){
-    const batch=subs.slice(i,i+4);
-    const promises=batch.map(sub=>{
-      const q=SEARCH_QUERIES[sub];
-      return fetch(`/api/news?query=${encodeURIComponent(q)}&display=${perSub}&sort=date`,{
-        headers:{'X-Naver-Client-Id':clientId,'X-Naver-Client-Secret':clientSecret}
-      }).then(r=>{
-        if(!r.ok) return r.text().then(t=>{lastError=`HTTP ${r.status}: ${t}`;return null;});
-        return r.json();
-      }).then(data=>{
-        if(!data||!data.items)return;
-        if(data.errorCode){lastError=`Naver API: ${data.errorMessage}`;return;}
+  async function fetchSubPages(sub){
+    const q=SEARCH_QUERIES[sub];
+    let fetched=0;
+    for(let start=1;fetched<perSub&&start<=1000;start+=100){
+      const display=Math.min(100,perSub-fetched);
+      try{
+        const r=await fetch(`/api/news?query=${encodeURIComponent(q)}&display=${display}&start=${start}&sort=date`,{
+          headers:{'X-Naver-Client-Id':clientId,'X-Naver-Client-Secret':clientSecret}
+        });
+        if(!r.ok){lastError=`HTTP ${r.status}`;break;}
+        const data=await r.json();
+        if(!data||!data.items||data.errorCode){if(data?.errorMessage)lastError=`Naver API: ${data.errorMessage}`;break;}
+        let added=0;
         data.items.forEach(item=>{
           const link=item.originallink||item.link;
           if(seenLinks.has(link))return;
@@ -1296,17 +1296,20 @@ async function fetchLiveNews(clientId,clientSecret){
           const emoji=SUB_EMOJIS[sub]||'📰';
           const region=detectRegion(title,desc,link);
           const kws=extractKeywords(title,desc);
-          results.push({
-            sub,title:`${emoji} ${title}`,link,
-            desc:summary(desc),pubDate:new Date(item.pubDate).toISOString().split('T')[0],
-            kw:kws,r:region
-          });
+          results.push({sub,title:`${emoji} ${title}`,link,desc:summary(desc),pubDate:new Date(item.pubDate).toISOString().split('T')[0],kw:kws,r:region});
+          added++;
         });
-      }).catch(e=>{lastError=e.message;});
-    });
-    await Promise.all(promises);
+        fetched+=data.items.length;
+        if(data.items.length<display)break;
+      }catch(e){lastError=e.message;break;}
+    }
+  }
+
+  for(let i=0;i<subs.length;i+=4){
+    const batch=subs.slice(i,i+4);
+    await Promise.all(batch.map(sub=>fetchSubPages(sub)));
     done+=batch.length;
-    progress.textContent=`${done} / ${subs.length} 카테고리`;
+    progress.textContent=`${done} / ${subs.length} 카테고리 (${results.length}건)`;
   }
 
   if(results.length===0){
