@@ -347,10 +347,11 @@
 <div class="header">
   <div class="header-top">
     <div>
-      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.4.0</span></h1>
+      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.4.1</span></h1>
       <div class="subtitle">5대 유형 + 관점 + 지역별 사립대 이슈 모니터링</div>
     </div>
     <div class="meta-info">
+      <span id="visitorCount" style="background:var(--card);padding:0.3rem 0.8rem;border-radius:6px;border:1px solid var(--border);font-size:0.85rem;color:var(--text-dim);">👤 <span id="visitorNum">0</span></span>
       <span id="updateDate">갱신: 2026-06-01</span>
       <span id="totalCount">전체 0건</span>
       <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
@@ -2583,6 +2584,18 @@ ${aiVisible?`<div class="ai-box"><h3 style="text-align:left;margin-bottom:0.6rem
 render();
 updateApiKeyBtn();
 setTimeout(()=>fetchOgImagesForNews(allNews),200);
+
+// visitor counter
+(function(){
+  try{
+    const key='univnews_visitor';
+    const today=new Date().toISOString().split('T')[0];
+    const data=JSON.parse(localStorage.getItem(key)||'{}');
+    if(data.lastVisit!==today){data.count=(data.count||0)+1;data.lastVisit=today;localStorage.setItem(key,JSON.stringify(data));}
+    const el=document.getElementById('visitorNum');
+    if(el)el.textContent=data.count||1;
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
