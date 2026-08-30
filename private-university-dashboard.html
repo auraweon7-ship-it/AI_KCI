@@ -353,7 +353,7 @@
 <div class="header">
   <div class="header-top">
     <div>
-      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.6.2</span></h1>
+      <h1>한국 사립대학교 뉴스 대시보드 <span style="font-size:0.55em;color:#ef4444;font-weight:700;vertical-align:middle;margin-left:0.4rem;">v1.7.0</span></h1>
       <div class="subtitle">5대 유형 + 관점 + 지역별 사립대 이슈 모니터링</div>
     </div>
     <div class="meta-info">
@@ -505,8 +505,7 @@
     <div class="chart-card"><h3>📅 일별 뉴스 추이</h3><canvas id="chartTimeline"></canvas></div>
     <div class="chart-card"><h3>😊 감성 분석 게이지</h3><canvas id="chartSentiment"></canvas><div class="sentiment-indicators" id="sentimentIndicators"></div></div>
   </div>
-  <div class="charts-row charts-row-3">
-    <div class="chart-card"><h3>📈 주간 트렌드 비교</h3><canvas id="chartWeeklyTrend"></canvas></div>
+  <div class="charts-row charts-row-2">
     <div class="chart-card"><h3>🔗 키워드 연관 네트워크</h3><div id="keywordNetwork" style="width:100%;height:280px;position:relative;"></div></div>
     <div class="chart-card"><h3>🏫 대학별 언급 빈도 TOP 10</h3><canvas id="chartUnivMention"></canvas></div>
   </div>
@@ -1122,7 +1121,7 @@ document.getElementById('sortBy').addEventListener('change',render);
 document.getElementById('searchInput').addEventListener('input',render);
 
 // ═══ Charts ═══
-let chartMajorInst, chartSourceInst, chartTimelineInst, chartSentimentInst, chartSubCatInst, chartRegionInst, chartWeeklyTrendInst, chartUnivMentionInst;
+let chartMajorInst, chartSourceInst, chartTimelineInst, chartSentimentInst, chartSubCatInst, chartRegionInst, chartUnivMentionInst;
 const CHART_COLORS = ['#ef4444','#06b6d4','#10b981','#f59e0b','#8b5cf6'];
 const MAJOR_NAMES = ['재정 건전성','교육 투자','학생 경쟁력','법인 책무성','지속가능성'];
 const MAJOR_IDS = ['fiscal','invest','student','account','sustain'];
@@ -1136,7 +1135,6 @@ function renderCharts(f){
   renderTimelineChart(f);
   renderSentimentGauge(f);
   renderTopNews(f);
-  renderWeeklyTrend(f);
   renderKeywordNetwork(f);
   renderUnivMention(f);
   updateAnalyticsPeriod(f.length);
@@ -1173,23 +1171,6 @@ function renderTopNews(f){
     const reason=getTopNewsReason(n,f);
     return `<li class="top-news-item"><span class="top-news-rank ${rc}">${i+1}</span><div class="top-news-info"><a class="top-news-title" href="${safeLink}" target="_blank" rel="noopener">${cleanTitle}</a><div class="top-news-meta"><span class="top-news-stars">${stars}</span><span>${cleanCat}</span><span>${n.pubDate||''}</span><span class="top-news-reason">💡 ${reason}</span></div></div></li>`;
   }).join('');
-}
-
-function renderWeeklyTrend(f){
-  const now=new Date();
-  const thisWeekStart=new Date(now);thisWeekStart.setDate(now.getDate()-now.getDay());thisWeekStart.setHours(0,0,0,0);
-  const lastWeekStart=new Date(thisWeekStart);lastWeekStart.setDate(lastWeekStart.getDate()-7);
-  const thisWeek=f.filter(n=>n.dateObj>=thisWeekStart);
-  const lastWeek=f.filter(n=>n.dateObj>=lastWeekStart&&n.dateObj<thisWeekStart);
-  const labels=MAJOR_NAMES;
-  const thisData=MAJOR_IDS.map(id=>thisWeek.filter(n=>n.major===id).length);
-  const lastData=MAJOR_IDS.map(id=>lastWeek.filter(n=>n.major===id).length);
-  if(chartWeeklyTrendInst){chartWeeklyTrendInst.data.datasets[0].data=lastData;chartWeeklyTrendInst.data.datasets[1].data=thisData;chartWeeklyTrendInst.update('none');return;}
-  const ctx=document.getElementById('chartWeeklyTrend');
-  chartWeeklyTrendInst=new Chart(ctx,{type:'bar',data:{labels,datasets:[
-    {label:'지난주',data:lastData,backgroundColor:'rgba(139,143,163,0.5)',borderColor:'#8b8fa3',borderWidth:1,borderRadius:4},
-    {label:'이번주',data:thisData,backgroundColor:'rgba(108,92,231,0.7)',borderColor:'#6c5ce7',borderWidth:1,borderRadius:4}
-  ]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},plugins:{legend:{labels:{color:'#e4e6eb',font:{size:10}}}},scales:{x:{ticks:{color:'#e4e6eb',font:{size:9}},grid:{display:false}},y:{ticks:{color:'#e4e6eb',font:{size:10},stepSize:1},grid:{color:'#2d314830'}}}}});
 }
 
 function renderKeywordNetwork(f){
@@ -2569,8 +2550,8 @@ function exportAnalyticsHTML(){
   const aiHtml=document.getElementById('aiBody')?.innerHTML||'';
   const aiVisible=document.getElementById('aiBody')?.style.display!=='none';
   const topNewsHtml=document.getElementById('topNewsList')?.innerHTML||'';
-  const canvasIds=['chartMajor','chartSubCat','chartRegion','chartSource','chartTimeline','chartSentiment','chartWeeklyTrend','chartUnivMention'];
-  const chartTitles=['📁 대유형별 분포','📊 세부카테고리별 기사 수','🗺️ 지역별 기사 분포','📰 언론사별 보도량','📅 일별 뉴스 추이','😊 감성 분석 게이지','📈 주간 트렌드 비교','🏫 대학별 언급 빈도 TOP 10'];
+  const canvasIds=['chartMajor','chartSubCat','chartRegion','chartSource','chartTimeline','chartSentiment','chartUnivMention'];
+  const chartTitles=['📁 대유형별 분포','📊 세부카테고리별 기사 수','🗺️ 지역별 기사 분포','📰 언론사별 보도량','📅 일별 뉴스 추이','😊 감성 분석 게이지','🏫 대학별 언급 빈도 TOP 10'];
   const imgs=canvasIds.map(id=>{const c=document.getElementById(id);return c?c.toDataURL('image/png'):''});
   const sentHtml=document.getElementById('sentimentIndicators')?.innerHTML||'';
   const networkHtml=document.getElementById('keywordNetwork')?.innerHTML||'';
