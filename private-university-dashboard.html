@@ -1128,12 +1128,13 @@ function renderRegionChart(f){
   chartRegionInst=new Chart(ctx,{type:'doughnut',data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,animation:{duration:600},plugins:{legend:{display:true,position:'bottom',labels:{color:'#e4e6eb',font:{size:11},padding:10,usePointStyle:true}}}}});
 }
 
+const WC_STOP=new Set(['있다','없다','된다','한다','됐다','했다','됐다','나타','이상','이하','가운데','대비','기준','것으로','하는','하고','있는','있어','위해','통해','대한','따른','따르면','관련','이후','가장','또한','이번','올해','지난','지난해','이를','등이','까지','에서','으로','부터','에도','만에','중인','가까이','사이','해야','수준','현재','경우','대해','만큼','이미','다시','더욱','여전히','결과','보다','대략','한편','불구','위한','높은','낮은','많은','적은','새로운','기존','최근','전체','주요','매우','가능','필요','실제','약간','상당','일부','때문','정도','규모','비중','비율','상황','문제','가능성','불가피','일환','사실상','불과','중에서','이르는','달하는','넘는','넘게','미만','미치지','못하고','못한다','밑돈다','그쳤다','머물고','나서','앞두고','앞둔','맞물려','놓인','걸친','알려졌다','이어졌다','이어지고','나왔다','보인다','드러났다','지적됐다','분석됐다','평가됐다','확인됐다','전망했다','전망이다','밝혔다','강조했다','설명했다','말했다','덧붙였다','제시했다','촉구했다','요구했다','비판했다','주장했다','주장한다','지적했다','발의했다','발간','발표','나선다','되고','되는','되며','하며','대학교','대학교가','대학교는','대학은','대학이','대학의','대학에','건에','곳이','곳에','곳으로','중이다','만에도']);
 function renderWordCloud(f){
   const box=document.getElementById('wordcloud');
   const freq={};
   f.forEach(n=>{
     (n.kw||[]).forEach(k=>{freq[k]=(freq[k]||0)+1;});
-    n.title.replace(/[^가-힣a-zA-Z0-9]/g,' ').split(/\s+/).filter(w=>w.length>=2).forEach(w=>{freq[w]=(freq[w]||0)+1;});
+    n.title.replace(/[^가-힣a-zA-Z0-9]/g,' ').split(/\s+/).map(w=>w.replace(/[은는이가을를의에서도로만으로에서까지부터와과]$/,'')).filter(w=>w.length>=2&&!/^\d+$/.test(w)&&!WC_STOP.has(w)).forEach(w=>{freq[w]=(freq[w]||0)+1;});
   });
   const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,40);
   const max=sorted[0]?sorted[0][1]:1;
